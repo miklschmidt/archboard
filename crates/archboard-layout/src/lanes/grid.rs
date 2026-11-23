@@ -63,8 +63,8 @@ pub(crate) fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
 }
 
 /// The invisible edges that keep a wrapped rank's rows in columns: every
-/// lowered card chained to the card above it in its column.
-pub(crate) fn wrap_edges(plan: &Plan) -> Vec<Edge> {
+/// lowered card chained to the card above it in its column, `step` ranks below it.
+pub(crate) fn wrap_edges(plan: &Plan, step: f64) -> Vec<Edge> {
     let mut rows: Vec<Vec<&String>> = Vec::new();
     for (card, &row) in plan {
         if rows.len() <= row {
@@ -86,7 +86,7 @@ pub(crate) fn wrap_edges(plan: &Plan) -> Vec<Edge> {
                 (*head).clone(),
                 Attrs::of([
                     ("style", Value::from("invis")),
-                    ("minlen", Value::Num(2.0)),
+                    ("minlen", Value::Num(step)),
                     ("weight", Value::Num(COLUMN_WEIGHT)),
                 ]),
             ));

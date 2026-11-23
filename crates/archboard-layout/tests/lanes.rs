@@ -315,3 +315,28 @@ fn lanes_stands_the_doors_round_a_container_in_the_order_their_lines_enter_it() 
         "{swapped} of {pairs} pairs of doors stand the other way round from where they enter"
     );
 }
+
+#[test]
+fn lanes_lays_a_wrapped_rank_inside_a_container_in_whole_rows() {
+    // Painting: a container's stage calls five cards, dealt into two rows, and one of them
+    // leaves the container by a port on its bottom.
+    let drawn = drawn_by_lanes(
+        &serde_json::from_str(include_str!("fixtures/wrapped-inside-a-container.json")).unwrap(),
+    );
+    let frame = &drawn["frames"][0]["box"];
+    let at = |key: &str| frame[key].as_f64().expect("a frame's box");
+    let mut rows: Vec<f64> = drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .map(|card| &card["box"])
+        .filter(|card| {
+            let y = card["y"].as_f64().expect("a top");
+            at("y") < y && y < at("y") + at("height")
+        })
+        .map(|card| card["y"].as_f64().expect("a top"))
+        .collect();
+    rows.sort_by(f64::total_cmp);
+    rows.dedup();
+    assert_eq!(rows.len(), 3, "the stage and two whole rows: {rows:?}");
+}

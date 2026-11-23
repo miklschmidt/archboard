@@ -11,6 +11,19 @@ use super::card_layout::{Arrangement, CardLayout};
 use super::tree::header_of;
 
 impl CardLayout<'_> {
+    /// How many ranks a wrap lowers a card for each row: a row of cards and one of their line
+    /// words. A Lanes drawing draws no line words, so the words' rank stands empty; in a block
+    /// with ports on its bottom, Graphviz pulls a card whose line leaves by such a port down
+    /// into it, halfway between two rows. There a Lanes drawing lowers a row by the row of cards
+    /// alone. Elsewhere the empty rank closes up when the lanes space the bands.
+    pub(super) fn row_step(&self) -> f64 {
+        if self.tree.lanes && self.block.has_bottom_port() {
+            1.0
+        } else {
+            2.0
+        }
+    }
+
     /// The invisible edges that hold a wrap's lowered cards down: each under
     /// the card above it in its column when the rows keep their columns, and
     /// one no line or column reaches by the first card of the rank's first row.
@@ -19,7 +32,7 @@ impl CardLayout<'_> {
             lowered, columns, ..
         } = &self.arranged;
         let mut held = if *columns {
-            wrap_edges(lowered)
+            wrap_edges(lowered, self.row_step())
         } else {
             Vec::new()
         };
@@ -38,7 +51,7 @@ impl CardLayout<'_> {
                 card,
                 Attrs::of([
                     ("style", Value::from("invis")),
-                    ("minlen", Value::Num(2.0 * rows as f64)),
+                    ("minlen", Value::Num(self.row_step() * rows as f64)),
                     ("weight", Value::Num(0.0)),
                 ]),
             ));

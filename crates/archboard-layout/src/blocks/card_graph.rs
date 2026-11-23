@@ -176,8 +176,9 @@ impl<'t> CardLayout<'t> {
             None
         };
         let id = &line.key;
-        // A wrapped item sits a row of cards and its labels lower for each row it is lowered.
-        let minlen = 1.0 + 2.0 * self.arranged.lowered.get(&head).copied().unwrap_or(0) as f64;
+        // A wrapped item sits a row lower for each row it is lowered (`row_step`).
+        let minlen =
+            1.0 + self.row_step() * self.arranged.lowered.get(&head).copied().unwrap_or(0) as f64;
         let leg = |id: String| {
             Attrs::of([
                 ("id", Value::from(id)),
