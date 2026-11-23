@@ -201,21 +201,21 @@ describe("the words on a joined line", () => {
 	});
 });
 
-test("a cable keeps one line of each kind and one plate in ordinary and exact views", () => {
-	const model = modelOf(
-		[...closed("loud", []), ...closed("quiet", [])],
-		[
-			{ id: "calls", from: "loud", to: "quiet", kind: "sync", label: "first" },
-			{ id: "tells", from: "loud", to: "quiet", kind: "event", label: "second" },
-			{ id: "asks", from: "loud", to: "quiet", kind: "rpc", label: "third" },
-			{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
-		],
-	);
-	const relationships = model.relationships.map(({ id }) => id);
-	const visibility = { modules: ["loud", "quiet"], relationships, flows: [] };
-	const edges = projectModel(model).content.edges;
-	expect(projectModel(model, null, null, {}, undefined, visibility).content.edges).toEqual(edges);
-	expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+test("a cable keeps one plate and exact views still list each relationship's words", () => {
+	const relationships = [
+		{ id: "calls", from: "loud", to: "quiet", kind: "sync", label: "first" },
+		{ id: "tells", from: "loud", to: "quiet", kind: "event", label: "second" },
+		{ id: "asks", from: "loud", to: "quiet", kind: "rpc", label: "third" },
+		{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
+	];
+	const model = modelOf([{ id: "loud" }, { id: "quiet" }], relationships);
+	const ids = relationships.map(({ id }) => id);
+	const visibility = { modules: ["loud", "quiet"], relationships: ids, flows: [] };
+	const exact = projectModel(model, null, null, {}, undefined, visibility);
+	expect(exact.content.edges).toEqual(projectModel(model).content.edges);
+	const words = exact.connections.map(({ line }) => line.label);
+	expect(words).toEqual(["first", "second", "third", "back"]);
+	expect(exact.content.edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
 		["calls", "sync", "first +2"],
 		["tells", "event", undefined],
 		["asks", "rpc", undefined],

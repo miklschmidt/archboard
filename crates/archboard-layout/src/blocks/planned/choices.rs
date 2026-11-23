@@ -57,11 +57,20 @@ pub(super) fn search<'a>(
     };
     let sources = super::endpoint_choices::ends(model, edge, true, shape, guide, search);
     let targets = super::endpoint_choices::ends(model, edge, false, shape, guide, search);
+    let half = model.half(edge);
     for tail in sources {
         for &head in &targets {
             let pairs = super::endpoint_choices::aligned(model, edge, shape, tail, head);
             for (tail, head) in pairs {
                 if !usable(&tail) || !usable(&head) {
+                    // A bend approach can extend past the opposite wall of a straight span.
+                    let span = [tail.attachment, head.attachment];
+                    if (span[0].x == span[1].x || span[0].y == span[1].y)
+                        && super::channel::approaches(&span, half)
+                        && obstacles.clear(&span)
+                    {
+                        paths.push(span.to_vec());
+                    }
                     continue;
                 }
                 paths.extend(connect(
@@ -485,5 +494,50 @@ mod tests {
                 "no straight route at {x}"
             );
         }
+    }
+
+    #[test]
+    fn a_straight_cable_needs_room_for_its_marks_but_no_bend_approach() {
+        let graph: Node = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "children": [{"id": "source"}, {"id": "target"}, {"id": "obstacle"}],
+            "edges": [{"id": "cable", "sources": ["source"], "targets": ["target"],
+                "layoutOptions": {"archboard.cable": "sync;async;http;rpc;queue"}}]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let drawing = Placed {
+            width: 400.0,
+            height: 400.0,
+            cards: vec![
+                card("source", 100.0, 100.0, 200.0, 34.0),
+                card("target", 100.0, 206.0, 200.0, 34.0),
+                card("obstacle", 188.0, 160.0, 24.0, 24.0),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        };
+        let shape = super::super::fixed::placement(&model, drawing).unwrap();
+        let routes = choose(&model, &topology, 0, &shape, None, None, Search::Simple);
+        assert!(routes.iter().any(|line| {
+            line.points.len() == 2
+                && line.points.iter().all(|point| point.x == 136.0)
+                && (length(&line.points) - 72.0).abs() < 0.1
+        }));
     }
 }

@@ -4,7 +4,12 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 use super::planned::{Routed, Split, Step};
-use crate::{Graphviz, graph::Node, json::J};
+use crate::{
+    Graphviz,
+    graph::{CABLE, Node},
+    json::J,
+    lanes::scene::Set,
+};
 
 /// The root option carrying the placed drawing.
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
@@ -88,7 +93,7 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         let quiet = super::planned::without_words(&graph, |_| true);
         let mut placed = super::legacy::place(&quiet, host, lanes)?;
         if lanes {
-            through_frame_walls(&mut placed);
+            through_frame_walls(&mut placed, &quiet);
         }
         (placed, false)
     };
@@ -101,7 +106,7 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
 
 /// Bring a Lanes picture's lines that read better through a container's wall in through it
 /// (`lanes::frame_sides`).
-fn through_frame_walls(placed: &mut super::assembly::Placed) {
+fn through_frame_walls(placed: &mut super::assembly::Placed, graph: &Node) {
     let cards: Vec<_> = placed.cards.iter().map(|card| card.bx).collect();
     let frames: Vec<_> = (placed.frames.iter())
         .map(|frame| (frame.bx, frame.depth))
@@ -111,11 +116,27 @@ fn through_frame_walls(placed: &mut super::assembly::Placed) {
         .iter()
         .map(|edge| edge.points.clone())
         .collect();
-    crate::lanes::frame_sides::enter_by_frame_sides(&mut crate::lanes::frame_sides::Picture {
-        cards: &cards,
-        frames: &frames,
-        lines: &mut lines,
-    });
+    // Cables keep their face ports, whose approaches have room for the ribbon and its marks.
+    let cables: Set<&str> = graph
+        .edges
+        .iter()
+        .flatten()
+        .filter(|edge| edge.option(CABLE).is_some())
+        .map(|edge| edge.id.as_str())
+        .collect();
+    let candidates = placed
+        .edges
+        .iter()
+        .enumerate()
+        .filter_map(|(line, edge)| (!cables.contains(edge.id.as_str())).then_some(line));
+    crate::lanes::frame_sides::enter_by_frame_sides(
+        candidates,
+        &mut crate::lanes::frame_sides::Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        },
+    );
     for (edge, points) in placed.edges.iter_mut().zip(lines) {
         edge.points = points;
     }

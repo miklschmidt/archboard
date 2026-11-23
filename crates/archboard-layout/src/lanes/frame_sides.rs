@@ -202,11 +202,14 @@ mod approach_clearance {
             ],
             vec![at(180.0, 90.0), at(200.0, 90.0)],
         ];
-        enter_by_frame_sides(&mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut lines,
-        });
+        enter_by_frame_sides(
+            0..lines.len(),
+            &mut Picture {
+                cards: &cards,
+                frames: &frames,
+                lines: &mut lines,
+            },
+        );
         assert_eq!(lines[0].last(), Some(&at(170.0, 170.0)));
     }
 }
@@ -324,11 +327,14 @@ fn aligned_cards_can_both_receive_a_line_through_one_wall() {
             (150.0, 440.0),
         ]),
     ];
-    enter_by_frame_sides(&mut Picture {
-        cards: &cards,
-        frames: &frames,
-        lines: &mut lines,
-    });
+    enter_by_frame_sides(
+        0..lines.len(),
+        &mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        },
+    );
     assert_eq!(lines[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
     assert_eq!(lines[1].last(), Some(&Point { x: 120.0, y: 420.0 }));
 }
@@ -395,18 +401,21 @@ fn a_line_can_enter_two_frame_walls_without_undoing_its_first_end() {
     .into_iter()
     .map(|(x, y)| Point { x, y })
     .collect()];
-    enter_by_frame_sides(&mut Picture {
-        cards: &cards,
-        frames: &frames,
-        lines: &mut lines,
-    });
+    enter_by_frame_sides(
+        0..lines.len(),
+        &mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        },
+    );
     assert_eq!(lines[0].first(), Some(&Point { x: 120.0, y: 200.0 }));
     assert_eq!(lines[0].last(), Some(&Point { x: 110.0, y: 620.0 }));
 }
 
-/// Bring the lines that read better through a container's wall in through it.
-pub(crate) fn enter_by_frame_sides(placed: &mut Picture<'_>) {
-    let mut doors: Vec<Door> = (0..placed.lines.len())
+/// Bring eligible lines that read better through a container's wall in through it.
+pub(crate) fn enter_by_frame_sides(lines: impl Iterator<Item = usize>, placed: &mut Picture<'_>) {
+    let mut doors: Vec<Door> = lines
         .flat_map(|line| [door_of(placed, line, false), door_of(placed, line, true)])
         .flatten()
         .collect();
@@ -458,22 +467,28 @@ mod tests {
             (150.0, 180.0),
         ]);
         let mut clear = [top_entry.clone()];
-        enter_by_frame_sides(&mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut clear,
-        });
+        enter_by_frame_sides(
+            0..clear.len(),
+            &mut Picture {
+                cards: &cards,
+                frames: &frames,
+                lines: &mut clear,
+            },
+        );
         assert_eq!(clear[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
 
         let mut crossed = [
             top_entry.clone(),
             points(&[(64.0, 120.0), (84.0, 120.0), (96.0, 120.0)]),
         ];
-        enter_by_frame_sides(&mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut crossed,
-        });
+        enter_by_frame_sides(
+            0..crossed.len(),
+            &mut Picture {
+                cards: &cards,
+                frames: &frames,
+                lines: &mut crossed,
+            },
+        );
         assert_eq!(crossed[0], top_entry);
     }
 
@@ -500,20 +515,26 @@ mod tests {
             ]
         };
         let mut alone = [approach(170.0)];
-        enter_by_frame_sides(&mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut alone,
-        });
+        enter_by_frame_sides(
+            0..alone.len(),
+            &mut Picture {
+                cards: &cards,
+                frames: &frames,
+                lines: &mut alone,
+            },
+        );
         assert_eq!(alone[0].last(), Some(&at(120.0, 200.0)));
 
         let mut bus = [approach(162.0), vec![at(178.0, 120.0), at(178.0, 170.0)]];
         let before = bus.clone();
-        enter_by_frame_sides(&mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut bus,
-        });
+        enter_by_frame_sides(
+            0..bus.len(),
+            &mut Picture {
+                cards: &cards,
+                frames: &frames,
+                lines: &mut bus,
+            },
+        );
         assert_eq!(bus, before);
     }
 }
