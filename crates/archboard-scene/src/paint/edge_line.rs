@@ -129,9 +129,15 @@ fn stubs(
     let length = route_length(&routed.curve);
     [(false, tail), (true, head)]
         .into_iter()
-        .map(|(end, mark)| (end, set_back(routed, mark)))
-        .filter(|&(_, back)| back > 0.0 && length > back)
-        .map(|(end, back)| {
+        .map(|(end, mark)| (end, mark, set_back(routed, mark)))
+        .filter(|&(_, _, back)| back > 0.0 && length > back)
+        .map(|(end, mark, back)| {
+            // The caller's ring holds at its centre; the bare run meets its outside.
+            let back = if mark == Some(Head::Ring) {
+                back - body_short_of(Head::Ring)
+            } else {
+                back
+            };
             let (start, stop) = if end {
                 (length - back, 0.0)
             } else {
@@ -349,5 +355,30 @@ mod tests {
         assert_eq!(stubs(&strand(true), marks, Dash::Solid, &stroke).len(), 1);
         assert_eq!(set_back(&strand(false), marks.1), 0.0);
         assert_eq!(stubs(&strand(false), marks, Dash::Solid, &stroke).len(), 0);
+    }
+
+    #[test]
+    fn a_strands_bare_run_leaves_its_caller_ring_hollow() {
+        let runs = stubs(
+            &strand(true),
+            (Some(Head::Ring), Some(Head::Eye)),
+            Dash::Solid,
+            &Stroke::new(Colour::Black, 2.4),
+        );
+        let [
+            Item::Shape(Shape {
+                geometry: Geometry::Path { steps },
+                ..
+            }),
+        ] = runs[0].as_slice()
+        else {
+            panic!("the caller's bare run is a path");
+        };
+        assert_eq!(
+            steps.last(),
+            Some(&crate::scene::PathStep::Line {
+                to: point(ECHELON - crate::paint::heads::ring_reach(), 0.0),
+            }),
+        );
     }
 }

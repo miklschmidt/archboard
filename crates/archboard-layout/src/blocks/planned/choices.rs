@@ -55,18 +55,15 @@ pub(super) fn search<'a>(
             },
         ) && obstacles.clear(&[port.attachment, port.approach])
     };
-    let sources: Vec<_> = super::endpoint_choices::ends(model, edge, true, shape, guide, search)
-        .into_iter()
-        .filter(usable)
-        .collect();
-    let targets: Vec<_> = super::endpoint_choices::ends(model, edge, false, shape, guide, search)
-        .into_iter()
-        .filter(usable)
-        .collect();
+    let sources = super::endpoint_choices::ends(model, edge, true, shape, guide, search);
+    let targets = super::endpoint_choices::ends(model, edge, false, shape, guide, search);
     for tail in sources {
         for &head in &targets {
             let pairs = super::endpoint_choices::aligned(model, edge, shape, tail, head);
             for (tail, head) in pairs {
+                if !usable(&tail) || !usable(&head) {
+                    continue;
+                }
                 paths.extend(connect(
                     model,
                     edge,
@@ -442,5 +439,51 @@ mod tests {
         }
         let bottom = path(&[(180.0, 180.0), (180.0, 440.0), (900.0, 440.0)]);
         assert!(keep(bottom).is_some());
+    }
+
+    #[test]
+    fn a_straight_route_can_use_either_end_of_a_span_with_blocked_centres() {
+        let graph: Node = serde_json::from_value(serde_json::json!({"id": "root",
+            "children": [{"id": "source"}, {"id": "target"}, {"id": "obstacle"}],
+            "edges": [{"id": "line", "sources": ["source"], "targets": ["target"]}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let drawing = Placed {
+            width: 400.0,
+            height: 550.0,
+            cards: vec![
+                card("source", 100.0, 100.0, 120.0, 34.0),
+                card("target", 100.0, 380.0, 120.0, 34.0),
+                card("obstacle", 148.0, 150.0, 24.0, 214.0),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        };
+        let shape = super::super::fixed::placement(&model, drawing).unwrap();
+        let routes = choose(&model, &topology, 0, &shape, None, None, Search::Simple);
+        for x in [120.0, 200.0] {
+            assert!(
+                routes
+                    .iter()
+                    .any(|line| line.points.len() == 2
+                        && line.points.iter().all(|point| point.x == x)),
+                "no straight route at {x}"
+            );
+        }
     }
 }

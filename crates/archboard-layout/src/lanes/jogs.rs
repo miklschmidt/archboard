@@ -20,7 +20,7 @@ use crate::constants::{BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_min, sign};
 use crate::geometry::Rect;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
-use crate::lanes::channels::{End, NetId};
+use crate::lanes::channels::{End, NetId, PORT_MARGIN};
 use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
 
 /// Under this, two stations stand in one column.
@@ -122,15 +122,16 @@ impl Router<'_> {
     }
 
     /// Whether an x stands on a card's face, clear of its corners.
-    fn on_face(&self, station: StationId, x: f64) -> bool {
+    fn on_face(&self, station: StationId, x: f64, half: f64) -> bool {
         let item = self.scene.item(self.station(station).item.expect("a card"));
         let (left, width) = (item.bx.x, item.bx.width);
         let room = js_min(CORNER_ROOM, width / 2.0);
         let face = card_face(item);
-        x >= left + room
-            && x <= left + width - room
-            && x >= face.x + CARD_RADIUS
-            && x <= face.x + face.width - CARD_RADIUS
+        let margin = if half > 0.0 { PORT_MARGIN } else { CARD_RADIUS };
+        x - half >= left + room
+            && x + half <= left + width - room
+            && x - half >= face.x + margin
+            && x + half <= face.x + face.width - margin
     }
 
     /// Move a card's own port along its face to an x, when the port is no
@@ -146,13 +147,14 @@ impl Router<'_> {
         if self.bus {
             return self.slide_card(nets, net, end, x);
         }
-        if self.shared_at(net, end).is_some() || !self.on_face(station, x) {
+        let half = self.net(net).half_width();
+        if self.shared_at(net, end).is_some() || !self.on_face(station, x, half) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {
             other != net
                 && self.station(self.net(other).at(end)).item == item
-                && abs(self.net(other).x_at(end) - x) < LANE
+                && abs(self.net(other).x_at(end) - x) < LANE + half + self.net(other).half_width()
         });
         if crowded {
             return false;

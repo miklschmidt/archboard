@@ -54,11 +54,9 @@ function cablesOf(drawing: RenderedDiagram): Map<string, string[]> {
 	/**
 	 * The card a route ends on.
 	 * @param point The route's end.
-	 * @param point.x Its distance from the left edge.
-	 * @param point.y Its distance from the top edge.
 	 * @returns The card's id, if the end stands on one.
 	 */
-	const cardAt = (point: { x: number; y: number }) =>
+	const cardAt = (point: DrawnPoint) =>
 		cards.find(
 			([, box]) =>
 				point.x >= box.x - ON_EDGE &&

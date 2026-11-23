@@ -1,10 +1,10 @@
 //! Crossings along one line close enough for their hops to touch: who rises
 //! over them, and under how many arcs.
 
-use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
+use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, bridge_crossings};
 use super::{
-    DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from, drawing,
-    drawn, hops, points,
+    BTreeMap, DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from,
+    drawing, drawn, hops, lines_of, points,
 };
 
 /// The hops among a crossing pass's bridges.
@@ -46,7 +46,8 @@ fn the_strands_of_one_cable_crossing_a_line_are_hopped_as_one_ribbon() {
     );
     cable.edges[2].edge.from = from;
     cable.edges[2].edge.to = to;
-    let result = bridged(&cable);
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
     assert_eq!(result.bridges.len(), 1);
     let bridge = &result.bridges[0];
     assert_eq!(bridge.edge_id, "0");
@@ -54,6 +55,23 @@ fn the_strands_of_one_cable_crossing_a_line_are_hopped_as_one_ribbon() {
     let mut under = bridge.under.clone();
     under.sort();
     assert_eq!(under, ["1", "2"]);
+}
+
+#[test]
+fn independent_routes_between_the_same_parts_each_hop_the_line_they_cross() {
+    let mut reading = drawing(&[
+        down_from(50.0, -50.0, 150.0),
+        across_from(50.0, -50.0, 150.0),
+        across_from(66.0, -50.0, 150.0),
+    ]);
+    reading.edges[2].edge.from = reading.edges[1].edge.from.clone();
+    reading.edges[2].edge.to = reading.edges[1].edge.to.clone();
+    let result = bridged(&reading);
+    assert_eq!(result.bridges.len(), 2);
+    for bridge in &result.bridges {
+        assert!(hops(bridge));
+        assert_eq!(bridge.under, ["0"]);
+    }
 }
 
 // Code review: a hop on one of two close lines stood first, and left the

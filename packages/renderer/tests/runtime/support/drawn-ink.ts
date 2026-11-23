@@ -127,16 +127,22 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
 }
 
 /**
- * How many routes leave each card by each of its flanks: the left and right
+ * How many traced routes leave each card by each of its flanks: the left and right
  * faces when the page reads down, the top and bottom when it reads left to
  * right. A flank rule can put skips on either (TASK-245.08).
  * @param drawing The rendered document.
  * @param content The document.
+ * @param traced The lines a reader traces, one per cable.
  * @returns The largest count over the cards and flanks: a fan of routes down one flank.
  */
-function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
+function flankFanOf(
+	drawing: RenderedDiagram,
+	content: VariantContent,
+	traced: ReadonlySet<string>,
+): number {
 	const counts = new Map<string, number>();
 	for (const [id, points] of corridorPoints(drawing.svg)) {
+		if (!traced.has(id)) continue;
 		const edge = content.edges.find((candidate) => candidate.id === id);
 		const from = edge === undefined ? undefined : drawing.atlas.nodes[edge.from];
 		if (edge === undefined || from === undefined) continue;
@@ -151,18 +157,20 @@ function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
 /**
  * The share of route ink in runs along the reading beside no card, which is
  * a lane down a margin rather than a route between rows, and the bends per
- * route.
+ * traced route.
  * @param drawing The rendered document.
+ * @param traced The lines a reader traces, one per cable.
  * @returns Corridor ink over all ink, and bends per route.
  */
-function inkOf(drawing: RenderedDiagram): Ink {
+function inkOf(drawing: RenderedDiagram, traced: ReadonlySet<string>): Ink {
 	const cards = Object.values(drawing.atlas.nodes);
 	let total = 0,
 		corridor = 0,
 		bends = 0,
 		routes = 0;
-	for (const points of corridorPoints(drawing.svg).values()) {
-		routes += 1;
+	for (const [id, points] of corridorPoints(drawing.svg)) {
+		const follows = traced.has(id);
+		if (follows) routes += 1;
 		for (let index = 1; index < points.length; index += 1) {
 			const start = points[index - 1]!,
 				end = points[index]!;
@@ -175,7 +183,7 @@ function inkOf(drawing: RenderedDiagram): Ink {
 				!cards.some((box) => across(box) <= lane && lane <= across(box) + breadth(box))
 			)
 				corridor += length;
-			if (index >= 2) {
+			if (follows && index >= 2) {
 				const before = points[index - 2]!;
 				if ((before.x === start.x) !== (start.x === end.x)) bends += 1;
 			}
@@ -190,11 +198,7 @@ function inkOf(drawing: RenderedDiagram): Ink {
  * @param label The label's box.
  * @returns True when one run carries the whole label through its centre.
  */
-function onStraightRun(
-	points: readonly DrawnPoint[],
-	label: { x: number; y: number; width: number; height: number },
-	beside = 0,
-): boolean {
+function onStraightRun(points: readonly DrawnPoint[], label: DiagramBox, beside = 0): boolean {
 	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
 	// The engine centres an inline label at a rounded width and snaps routes to
 	// whole units, so a label on its run can sit up to about a unit off it
@@ -229,7 +233,7 @@ function labelsOffRuns(drawing: RenderedDiagram): string[] {
 	for (const [id, label] of routeLabels(drawing.svg)) {
 		const strands = cables.get(id) ?? [id];
 		const reach = plateReach(strands);
-		const on = strands.some((strand) => {
+		const on = strands.every((strand) => {
 			const route = routes.get(strand);
 			return route === undefined || onStraightRun(route, label, reach);
 		});

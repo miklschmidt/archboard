@@ -35,6 +35,7 @@ struct Door {
     line: usize,
     leaving: bool,
     card: Rect,
+    frame: Rect,
     wall: f64,
     run: f64,
     outside: Vec<Point>,
@@ -56,6 +57,24 @@ fn card_under(placed: &Picture<'_>, end: Point) -> Option<Rect> {
             && end.x > bx.x
             && end.x < bx.x + bx.width
     })
+}
+
+/// The line ends that touch cards or frames in the assembled picture.
+fn ends_of(placed: &Picture<'_>) -> impl Iterator<Item = Point> {
+    placed
+        .lines
+        .iter()
+        .filter_map(|points| Some([*points.first()?, *points.last()?]))
+        .flatten()
+}
+
+/// A wall move removes a port after routing. Only a lone port can leave its face centred.
+fn lone_on_face(placed: &Picture<'_>, card: &Rect, y: f64) -> bool {
+    ends_of(placed)
+        .filter(|end| abs(end.y - y) < 0.5 && end.x > card.x && end.x < card.x + card.width)
+        .take(2)
+        .count()
+        == 1
 }
 
 /// The innermost frame round a card.
@@ -99,9 +118,10 @@ fn wall_toward(placed: &Picture<'_>, frame: &Rect, card: &Rect) -> Option<f64> {
 /// The way in through a wall for one end of a line, when there is one.
 fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
     let points = outside_first(placed, line, leaving);
-    let card = card_under(placed, *points.last()?)?;
+    let end = *points.last()?;
+    let card = card_under(placed, end)?;
     let frame = frame_round(placed, &card)?;
-    if inside(points[0], &frame) {
+    if inside(points[0], &frame) || !lone_on_face(placed, &card, end.y) {
         return None;
     }
     let crossed = (0..points.len() - 1)
@@ -114,6 +134,7 @@ fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
         line,
         leaving,
         card,
+        frame,
         wall: wall_toward(placed, &frame, &card)?,
         run: points[crossed].y,
         outside: points[..crossed].to_vec(),
@@ -122,11 +143,8 @@ fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
 
 /// Whether a line already ends on a card's face.
 fn face_taken(placed: &Picture<'_>, card: &Rect, face: f64) -> bool {
-    placed.lines.iter().any(|points| {
-        let ends = [points[0], *points.last().expect("a point")];
-        ends.iter().any(|end| {
-            abs(end.x - face) < 0.5 && end.y > card.y - 0.5 && end.y < card.y + card.height + 0.5
-        })
+    ends_of(placed).any(|end| {
+        abs(end.x - face) < 0.5 && end.y > card.y - 0.5 && end.y < card.y + card.height + 0.5
     })
 }
 
@@ -147,19 +165,95 @@ fn among_cards(placed: &Picture<'_>, x: f64) -> bool {
     cards.clone().any(|bx| bx.x < x) && cards.any(|bx| bx.x + bx.width > x)
 }
 
+#[cfg(test)]
+mod approach_clearance {
+    use super::*;
+
+    #[test]
+    fn a_wall_door_keeps_other_side_approaches_clear() {
+        let at = |x, y| Point { x, y };
+        let bx = |x, y, width, height| Rect {
+            x,
+            y,
+            width,
+            height,
+        };
+        let cards = [
+            bx(0.0, 0.0, 100.0, 32.0),
+            bx(120.0, 170.0, 100.0, 60.0),
+            bx(48.0, 110.0, 25.0, 30.0),
+            bx(130.0, 30.0, 40.0, 32.0),
+        ];
+        let frames = [(bx(100.0, 100.0, 200.0, 220.0), 0)];
+        let mut lines = [
+            vec![
+                at(30.0, 32.0),
+                at(30.0, 70.0),
+                at(190.0, 70.0),
+                at(190.0, 140.0),
+                at(170.0, 140.0),
+                at(170.0, 170.0),
+            ],
+            vec![
+                at(73.0, 125.0),
+                at(95.0, 125.0),
+                at(95.0, 55.0),
+                at(130.0, 55.0),
+            ],
+            vec![at(180.0, 90.0), at(200.0, 90.0)],
+        ];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        });
+        assert_eq!(lines[0].last(), Some(&at(170.0, 170.0)));
+    }
+}
+
+/// The protected approaches to side ports on other lines already in the picture.
+fn side_approaches(placed: &Picture<'_>, line: usize) -> impl Iterator<Item = Run> {
+    placed
+        .lines
+        .iter()
+        .enumerate()
+        .filter(move |&(other, _)| other != line)
+        .flat_map(|(_, points)| {
+            let runs = points.windows(2);
+            let first = runs.clone().next().map(|pair| (pair[0], pair[1]));
+            let last = runs.last().map(|pair| (pair[1], pair[0]));
+            [first, last].into_iter().flatten()
+        })
+        .filter_map(|(end, next)| {
+            let side = abs(end.y - next.y) < 0.5
+                && placed.cards.iter().any(|card| {
+                    (abs(end.x - card.x) < 0.5 || abs(end.x - card.x - card.width) < 0.5)
+                        && end.y > card.y
+                        && end.y < card.y + card.height
+                });
+            side.then(|| at_face(end.x, next.x, end.y))
+        })
+}
+
 /// Whether a line through a wall reads better than the line it replaces, against the others.
 fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[Run]) -> bool {
     let old = outside_first(placed, door.line, door.leaving);
     let start = door.outside.len().saturating_sub(1);
-    let (new_runs, old_runs) = (runs_of(&points[start..]), runs_of(&old[start..]));
+    let outside = runs_of(&points[start..points.len() - 1]);
     let side = *points.last().expect("a point");
     let head = at_face(side.x, points[points.len() - 2].x, side.y);
-    let bused = met(&runs_of(&old), others) / OVERLAP > 0;
+    let old_meets = met(&runs_of(&old), others);
+    let bused = old_meets / OVERLAP > 0;
     !bused
-        && !blocked(placed, &new_runs[..new_runs.len() - 1], &door.card)
+        && !blocked(placed, &outside, &door.card)
         && !others.iter().any(|&other| meets(head, other) > 0)
+        && !side_approaches(placed, door.line).any(|approach| {
+            runs_of(&points[start..])
+                .iter()
+                .any(|&run| meets(approach, run) > 0)
+        })
         && length(points) <= length(&old)
-        && !worse(met(&new_runs, others), met(&old_runs, others))
+        && !worse(met(&runs_of(points), others), old_meets)
         && bends(points) < bends(&old)
 }
 
@@ -187,22 +281,75 @@ fn others_of(placed: &Picture<'_>, line: usize) -> Vec<Run> {
         .collect()
 }
 
+#[cfg(test)]
+#[test]
+fn aligned_cards_can_both_receive_a_line_through_one_wall() {
+    let card = |x, y| Rect {
+        x,
+        y,
+        width: 60.0,
+        height: 40.0,
+    };
+    let cards = [
+        card(0.0, 0.0),
+        card(120.0, 180.0),
+        card(120.0, 400.0),
+        card(0.0, 560.0),
+    ];
+    let frames = [(
+        Rect {
+            x: 100.0,
+            y: 100.0,
+            width: 300.0,
+            height: 400.0,
+        },
+        0,
+    )];
+    let points = |pairs: [(f64, f64); 6]| pairs.into_iter().map(|(x, y)| Point { x, y }).collect();
+    let mut lines = [
+        points([
+            (30.0, 40.0),
+            (30.0, 60.0),
+            (170.0, 60.0),
+            (170.0, 140.0),
+            (150.0, 140.0),
+            (150.0, 180.0),
+        ]),
+        points([
+            (30.0, 560.0),
+            (30.0, 540.0),
+            (170.0, 540.0),
+            (170.0, 460.0),
+            (150.0, 460.0),
+            (150.0, 440.0),
+        ]),
+    ];
+    enter_by_frame_sides(&mut Picture {
+        cards: &cards,
+        frames: &frames,
+        lines: &mut lines,
+    });
+    assert_eq!(lines[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
+    assert_eq!(lines[1].last(), Some(&Point { x: 120.0, y: 420.0 }));
+}
+
 /// Bring one line in through its wall where that reads better, a lane out from the lines
-/// already through it; answers the card face it lands on.
+/// already through it.
 fn through_wall_if_better(
     placed: &mut Picture<'_>,
     door: &Door,
-    taken: &[(f64, f64)],
-) -> Option<f64> {
+    taken: &[(Rect, f64)],
+) -> Option<(Rect, f64)> {
     let toward = if door.wall <= door.card.x { -1.0 } else { 1.0 };
+    // The card and wall stay fixed. A move at the other end can change the way in.
+    let door = &door_of(placed, door.line, door.leaving)?;
     let face = door.card.x + if toward < 0.0 { 0.0 } else { door.card.width };
-    let used = (taken
+    let used = taken
         .iter()
-        .filter(|(wall, _)| abs(*wall - door.wall) < 0.5))
-    .count();
+        .filter(|&&(frame, wall)| frame == door.frame && wall == door.wall)
+        .count();
     let lane = door.wall + toward * LANE * (used + 1) as f64;
-    let busy = taken.iter().any(|(_, x)| abs(*x - face) < 0.5);
-    if busy || face_taken(placed, &door.card, face) || !among_cards(placed, lane) {
+    if face_taken(placed, &door.card, face) || !among_cards(placed, lane) {
         return None;
     }
     let mut points = through_wall(door, lane, face);
@@ -213,7 +360,48 @@ fn through_wall_if_better(
         points.reverse();
     }
     placed.lines[door.line] = points;
-    Some(face)
+    Some((door.frame, door.wall))
+}
+
+#[cfg(test)]
+#[test]
+fn a_line_can_enter_two_frame_walls_without_undoing_its_first_end() {
+    let card = |x, y| Rect {
+        x,
+        y,
+        width: 60.0,
+        height: 40.0,
+    };
+    let frame = |x, y| Rect {
+        x,
+        y,
+        width: 300.0,
+        height: 200.0,
+    };
+    let cards = [card(120.0, 180.0), card(110.0, 600.0), card(0.0, 900.0)];
+    let frames = [(frame(100.0, 100.0), 0), (frame(90.0, 500.0), 0)];
+    let mut lines = [[
+        (150.0, 220.0),
+        (150.0, 260.0),
+        (180.0, 260.0),
+        (180.0, 340.0),
+        (30.0, 340.0),
+        (30.0, 460.0),
+        (180.0, 460.0),
+        (180.0, 540.0),
+        (140.0, 540.0),
+        (140.0, 600.0),
+    ]
+    .into_iter()
+    .map(|(x, y)| Point { x, y })
+    .collect()];
+    enter_by_frame_sides(&mut Picture {
+        cards: &cards,
+        frames: &frames,
+        lines: &mut lines,
+    });
+    assert_eq!(lines[0].first(), Some(&Point { x: 120.0, y: 200.0 }));
+    assert_eq!(lines[0].last(), Some(&Point { x: 110.0, y: 620.0 }));
 }
 
 /// Bring the lines that read better through a container's wall in through it.
@@ -224,10 +412,108 @@ pub(crate) fn enter_by_frame_sides(placed: &mut Picture<'_>) {
         .collect();
     let reach = |door: &Door| abs(door.outside.last().map_or(0.0, |point| point.x) - door.wall);
     doors.sort_by(|one, other| reach(other).total_cmp(&reach(one)));
-    let mut taken: Vec<(f64, f64)> = Vec::new();
+    let mut taken = Vec::new();
     for door in doors {
-        if let Some(face) = through_wall_if_better(placed, &door, &taken) {
-            taken.push((door.wall, face));
+        if let Some(wall) = through_wall_if_better(placed, &door, &taken) {
+            taken.push(wall);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn points(pairs: &[(f64, f64)]) -> Vec<Point> {
+        pairs.iter().map(|&(x, y)| Point { x, y }).collect()
+    }
+
+    fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {
+        Rect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    fn at(x: f64, y: f64) -> Point {
+        Point { x, y }
+    }
+
+    fn card(x: f64, y: f64) -> Rect {
+        rect(x, y, 100.0, 60.0)
+    }
+
+    #[test]
+    fn a_wall_entry_keeps_clear_of_a_crossing_at_a_straight_waypoint() {
+        let cards = [rect(0.0, 0.0, 60.0, 40.0), rect(120.0, 180.0, 60.0, 40.0)];
+        let frames = [(rect(100.0, 100.0, 300.0, 200.0), 0)];
+        let top_entry = points(&[
+            (30.0, 40.0),
+            (30.0, 60.0),
+            (170.0, 60.0),
+            (170.0, 140.0),
+            (150.0, 140.0),
+            (150.0, 180.0),
+        ]);
+        let mut clear = [top_entry.clone()];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut clear,
+        });
+        assert_eq!(clear[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
+
+        let mut crossed = [
+            top_entry.clone(),
+            points(&[(64.0, 120.0), (84.0, 120.0), (96.0, 120.0)]),
+        ];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut crossed,
+        });
+        assert_eq!(crossed[0], top_entry);
+    }
+
+    #[test]
+    fn a_wall_door_keeps_the_ends_on_the_card_face_centred() {
+        let cards = [card(0.0, -28.0), card(120.0, 170.0)];
+        let frames = [(
+            Rect {
+                x: 100.0,
+                y: 100.0,
+                width: 200.0,
+                height: 220.0,
+            },
+            0,
+        )];
+        let approach = |x| {
+            vec![
+                at(30.0, 32.0),
+                at(30.0, 70.0),
+                at(190.0, 70.0),
+                at(190.0, 140.0),
+                at(x, 140.0),
+                at(x, 170.0),
+            ]
+        };
+        let mut alone = [approach(170.0)];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut alone,
+        });
+        assert_eq!(alone[0].last(), Some(&at(120.0, 200.0)));
+
+        let mut bus = [approach(162.0), vec![at(178.0, 120.0), at(178.0, 170.0)]];
+        let before = bus.clone();
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut bus,
+        });
+        assert_eq!(bus, before);
     }
 }

@@ -53,9 +53,9 @@ pub async fn draw<S: Solver>(
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed, &riders));
     let frozen = placed.planned;
     let bridged = if frozen {
-        bridge_unfolded(&drawing, &measured.lines)
+        bridge_unfolded(&drawing, &measured.lines, &riders)
     } else {
-        bridge_crossings(&drawing, &measured.lines)
+        bridge_crossings(&drawing, &measured.lines, &riders)
     };
     Ok(PaintedDrawing {
         drawing,

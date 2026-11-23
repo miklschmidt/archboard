@@ -21,7 +21,9 @@ use crate::lanes::ports::gathered;
 use crate::lanes::route::{Routed, SceneLine, route_once};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
 use crate::lanes::score::crossing_places;
-use crate::lanes::side_runs::{CLEAR, Run, at_face, bends, meets, met, runs_of, through, worse};
+use crate::lanes::side_runs::{
+    CLEAR, Run, at_face, bends, meets, met, runs_of, through, turns, worse,
+};
 use crate::lanes::spacing::Rim;
 
 /// The ends of lines that land on a card's side: each line's key, and the end of its route, top
@@ -257,7 +259,8 @@ impl Router<'_> {
     }
 
     /// The ends of a routing's lines that could land on a side, but for a line in a bus between
-    /// two cards, which lands with the bus.
+    /// two cards, which lands with the bus, and a cable, whose ribbon and marks need the room a
+    /// face's port keeps.
     fn side_candidates(&self, routed: &Map<String, Routed>) -> Sided {
         let nets: Vec<NetId> = routed
             .values()
@@ -272,6 +275,12 @@ impl Router<'_> {
         for (id, route) in routed
             .iter()
             .filter(|(_, route)| pairs[&self.pair_of(route)] == 1)
+            .filter(|(_, route)| {
+                route
+                    .nets
+                    .iter()
+                    .all(|&net| self.net(net).half_width() == 0.0)
+            })
         {
             for end in [End::Top, End::Bottom] {
                 if self.could_side(route, end, &lanes) {
@@ -486,9 +495,9 @@ impl Router<'_> {
             Sided::default()
         };
         let (crossings, bends) = if self.bus {
-            let lines = routes.values().map(Vec::as_slice);
+            let lines: Vec<_> = routes.values().map(|points| turns(points)).collect();
             (
-                crossing_places(lines).len(),
+                crossing_places(lines.iter().map(Vec::as_slice)).len(),
                 routes.values().map(|one| bends(one)).sum(),
             )
         } else {

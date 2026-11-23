@@ -2,10 +2,12 @@
 //! for an arrowhead's approach, and, at a block's own edge rows, for the
 //! block's inset.
 
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, REGION_INSET};
+use crate::constants::{
+    APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, REGION_INSET, STRAIGHT_RUN, STRAND, approach_of,
+};
 use crate::ecma::{abs, js_max, js_min};
-use crate::lanes::chains::{LANE, Router};
-use crate::lanes::channels::NetId;
+use crate::lanes::chains::{Kind, LANE, Router};
+use crate::lanes::channels::{End, NetId};
 use crate::lanes::scene::{ItemId, Placement, Set};
 
 /// How far apart two ends may be and still be drawn as one straight drop.
@@ -56,6 +58,31 @@ fn rim_of(scene: &Placement, index: usize, rim: Option<Rim>) -> Option<f64> {
 }
 
 impl Router<'_> {
+    /// The first track's offset, and the room after the last. Each bent cable that reaches a
+    /// card keeps the same straight approach as the planner, including any track it detours on.
+    fn cable_approaches(&self, nets: &[NetId], rising: bool) -> (f64, f64) {
+        let mut first = first_track(rising);
+        let mut last = TRACK_BOTTOM;
+        for &id in nets {
+            let net = self.net(id);
+            let half = net.kind.matches(';').count() as f64 * STRAND / 2.0;
+            if half == 0.0 || (net.wall.is_none() && abs(net.top_x - net.bottom_x) <= STRAIGHT) {
+                continue;
+            }
+            let room = approach_of(half);
+            let on_card =
+                |end| net.wall != Some(end) && self.station(net.at(end)).kind == Kind::Card;
+            if on_card(End::Top) {
+                first = first.max(room - net.track as f64 * LANE);
+            }
+            if on_card(End::Bottom) {
+                let padded = (half / LANE).ceil() * LANE;
+                last = last.max(room - padded);
+            }
+        }
+        (first, last)
+    }
+
     /// Whether a line on a channel's first track turns there and rises into the band above.
     fn rises_on_first_track(&self, crossing: &[NetId], rising: &Set<NetId>) -> bool {
         crossing.iter().any(|&id| {
@@ -89,7 +116,8 @@ impl Router<'_> {
                 .collect();
             let tracks = self.assign_tracks(&crossing);
             let rises = self.rises_on_first_track(&crossing, rising);
-            self.scene.bands[index].first_track = first_track(rises);
+            let (first, last) = self.cable_approaches(&crossing, rises);
+            self.scene.bands[index].first_track = first;
             // A band no card or label stands on, which a nonnumeric centre leaves, keeps a region's inset.
             let unheld = crossing.is_empty() && !held.contains(&index);
             let rimmed = if tracks == 0 {
@@ -97,13 +125,19 @@ impl Router<'_> {
             } else {
                 None
             };
-            let channel = rimmed.unwrap_or_else(|| {
+            let mut channel = rimmed.unwrap_or_else(|| {
                 if unheld {
                     REGION_INSET
                 } else {
                     channel_height(tracks, rises)
                 }
             });
+            if tracks > 0 {
+                channel += first - first_track(rises) + last - TRACK_BOTTOM;
+            }
+            if crossing.iter().any(|&id| self.net(id).kind.contains(';')) {
+                channel = channel.max(STRAIGHT_RUN + 2.0 * ECHELON);
+            }
             let band = self.scene.bands[index];
             top += band.bottom - band.top + channel;
         }

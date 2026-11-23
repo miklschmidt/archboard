@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
+import { corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("relationships between two cards draw as one cable whose strands of different kinds stay apart", async () => {
@@ -38,10 +38,7 @@ test("relationships between two cards draw as one cable whose strands of differe
  * @param other Another route.
  * @returns The length of their shared ink.
  */
-function sharedLength(
-	one: readonly { x: number; y: number }[],
-	other: readonly { x: number; y: number }[],
-): number {
+function sharedLength(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): number {
 	let shared = 0;
 	for (const [index, end] of one.slice(1).entries()) {
 		const start = one[index]!;

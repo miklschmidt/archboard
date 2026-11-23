@@ -172,12 +172,13 @@ describe("the words on a joined line", () => {
 		expect(said.get("bare>void")).toBeUndefined();
 	});
 
-	test("on a two-way line, name the card with more parts reached", () => {
+	test("on a two-way cable, name the card with more parts reached", () => {
 		const [line] = projectModel(
 			modelOf(
 				[...closed("left", ["l1"]), ...closed("right", ["r1", "r2", "r3"])],
 				[
-					{ id: "there", from: "right", to: "l1", label: "ask" },
+					{ id: "lead", from: "right", to: "l1", kind: "http" },
+					{ id: "there", from: "right", to: "l1" },
 					{ id: "back", from: "l1", to: "r1" },
 					{ id: "again", from: "l1", to: "r2" },
 					{ id: "more", from: "l1", to: "r3" },
@@ -186,7 +187,6 @@ describe("the words on a joined line", () => {
 		).content.edges;
 		expect(line?.label).toBe("with the r1, the r2 +1");
 	});
-
 	test("skip an end that the content does not hold", () => {
 		const reading = projectModel(
 			modelOf(
@@ -201,7 +201,7 @@ describe("the words on a joined line", () => {
 	});
 });
 
-describe("a cable of lines between one pair of cards", () => {
+test("a cable keeps one line of each kind and one plate in ordinary and exact views", () => {
 	const model = modelOf(
 		[...closed("loud", []), ...closed("quiet", [])],
 		[
@@ -211,16 +211,16 @@ describe("a cable of lines between one pair of cards", () => {
 			{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
 		],
 	);
-
-	test("keeps a line of each kind, and wears one plate on its first line", () => {
-		const edges = projectModel(model).content.edges;
-		expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
-			["calls", "sync", "first +2"],
-			["tells", "event", undefined],
-			["asks", "rpc", undefined],
-			["back", "storage", "back"],
-		]);
-	});
+	const relationships = model.relationships.map(({ id }) => id);
+	const visibility = { modules: ["loud", "quiet"], relationships, flows: [] };
+	const edges = projectModel(model).content.edges;
+	expect(projectModel(model, null, null, {}, undefined, visibility).content.edges).toEqual(edges);
+	expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+		["calls", "sync", "first +2"],
+		["tells", "event", undefined],
+		["asks", "rpc", undefined],
+		["back", "storage", "back"],
+	]);
 });
 
 describe("doors", () => {

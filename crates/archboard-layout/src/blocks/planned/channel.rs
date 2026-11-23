@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND};
+use crate::constants::{BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND, approach_of};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -384,17 +384,9 @@ pub(super) fn shared_fragment(
         && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
-/// How long the straight run beside a wall must be for a line whose ink reaches `half` to
-/// either side: the arrow's approach and the bend's room, on the inner strand of a cable too,
-/// which turns `half` sooner, and room for the marks its strands set back in echelon.
-pub(super) fn approach_of(half: f64) -> f64 {
-    let echelon = if half > 0.0 { ECHELON } else { 0.0 };
-    APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
-}
-
-/// How many times its direct way a cable's route may run, past the long detour's length: a
+/// How many times its direct way a route may run, past the long detour's length: a
 /// ring round the page is refused, and placement makes room for the direct way instead.
-const CABLE_DETOUR: f64 = 2.5;
+const DETOUR_LIMIT: f64 = 2.5;
 
 /// Rounded corners must leave the complete arrow approach after painting (`approach_of`). A
 /// line with no bend needs only the room its marks take.
@@ -402,9 +394,14 @@ pub(super) fn approaches(points: &[Point], half: f64) -> bool {
     let required = if points.len() > 2 {
         approach_of(half)
     } else {
-        STRAIGHT_RUN + 2.0 * if half > 0.0 { ECHELON } else { 0.0 }
+        straight_run_of(half)
     };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+}
+
+/// The shortest straight route that fits the marks of a line or cable.
+pub(super) fn straight_run_of(half: f64) -> f64 {
+    STRAIGHT_RUN + if half > 0.0 { 2.0 * ECHELON } else { 0.0 }
 }
 
 /// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
@@ -534,8 +531,7 @@ fn basic(
     {
         return Some("attachment wall");
     }
-    // A cable a reader follows as one ribbon takes no long way round its direct one.
-    if girth > 0.0 && super::reading::runs_beyond(points, CABLE_DETOUR) {
+    if super::reading::runs_beyond(points, DETOUR_LIMIT) {
         return Some("detour");
     }
     if !points.iter().all(|point| {
@@ -552,4 +548,36 @@ fn basic(
         return Some("bounds");
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_lone_line_cannot_take_a_detour_around_the_page() {
+        let card = |x| Rect {
+            x,
+            y: 0.0,
+            width: 100.0,
+            height: 100.0,
+        };
+        let source = card(0.0);
+        let target = card(200.0);
+        let bounds = Rect {
+            width: 400.0,
+            height: 600.0,
+            ..source
+        };
+        let points = [
+            Point { x: 50.0, y: 100.0 },
+            Point { x: 50.0, y: 500.0 },
+            Point { x: 250.0, y: 500.0 },
+            Point { x: 250.0, y: 100.0 },
+        ];
+        assert_eq!(
+            basic((&points, 0.0), source, target, bounds),
+            Some("detour")
+        );
+    }
 }

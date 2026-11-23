@@ -385,10 +385,15 @@ function projectVisible(
 	const allConnections = complete.edges
 		.filter((edge) => relationships.has(edge.id) && visible.has(edge.from) && visible.has(edge.to))
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
-	const connections = drawnLines(
+	const connections = cablePlates(
 		complete,
-		allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
-		visible,
+		drawnLines(
+			complete,
+			allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
+			visible,
+		),
+		(edge) => [edge.from, edge.to],
+		(line) => standing[line.id] ?? "unchanged",
 	);
 	return {
 		...projectScope(complete, scope, standing, choices),
