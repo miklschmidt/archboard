@@ -5,11 +5,13 @@ import { WAITS } from "#shared/constants/waits.ts";
 
 /**
  * The length of one side of a relation.
- * @param side One duration, or several in a row.
+ * @param side A duration, a sum, or a backoff cap.
  * @returns Its length in milliseconds.
  */
 function length(side: Relation[0]): number {
-	return (typeof side === "string" ? [side] : side).reduce((sum, wait) => sum + WAITS[wait].ms, 0);
+	if (typeof side === "string") return WAITS[side].ms;
+	if ("cap" in side) return WAITS[side.cap].max;
+	return side.reduce((sum, wait) => sum + WAITS[wait].ms, 0);
 }
 
 test.each(RELATIONS.map((relation) => [JSON.stringify(relation), relation] as const))(

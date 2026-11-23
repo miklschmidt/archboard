@@ -1,11 +1,11 @@
 // What each duration must stay under or over, as data that one test checks
-// (`tests/shared/constants/relations.test.ts`). A side is one duration or the sum of several. The
+// (`tests/shared/constants/relations.test.ts`). A side is a duration, a sum, or a backoff cap. The
 // reason for each relation is written beside the durations it names.
 
-import type { Wait } from "#shared/constants/waits.ts";
+import type { Backoff, Wait } from "#shared/constants/waits.ts";
 
-/** One duration, or several that run one after another. */
-type Side = Wait | readonly Wait[];
+/** One duration, several that run in sequence, or the longest delay of a backoff. */
+type Side = Wait | readonly Wait[] | { readonly cap: Backoff };
 
 /**
  * `[shorter, "<", longer]`: the left side must stay under the right, at most it with "<=", or as
@@ -19,8 +19,10 @@ const RELATIONS: readonly Relation[] = [
 	["server.mutationDrain", "<", "server.stopConfirm"],
 	// A stuck keep-alive is forced closed before the stop's next observation could give up.
 	["server.httpStopGrace", "<", "server.stopConfirm"],
-	// The pidfile goes once the listener's close finishes, which takes up to the grace.
-	["server.httpStopGrace", "<", "server.stopPidfileWait"],
+	// The pidfile can remain while HTTP closes, so give it twice the grace.
+	[["server.httpStopGrace", "server.httpStopGrace"], "=", "server.stopPidfileWait"],
+	// Shutdown can refuse while an admitted Git identity probe is still cancellable.
+	["server.mutationDrain", "<", "git.command"],
 	// One cleanup grace serves the three waits on a terminated Git group.
 	["git.groupCleanup", "=", "git.groupGone"],
 	["git.groupCleanup", "=", "git.groupFreeze"],
@@ -34,8 +36,29 @@ const RELATIONS: readonly Relation[] = [
 		"<",
 		"check.fetchIncomingStale",
 	],
+	["git.command", "<", "check.vaultFetch"],
+	// Restart starts at its base and can back off at least as long as a request takes to settle.
+	["codex.restart", "<=", { cap: "codex.restart" }],
+	["codex.requestSettlement", "<=", { cap: "codex.restart" }],
+	// Queue refreshes and work-tree stop settle inside a Codex request window.
+	["codex.queueRereadFloor", "<", "codex.requestSettlement"],
+	["codex.workTreeStop", "<", "codex.requestSettlement"],
+	// A command lease outlasts the wait and visual approval, which outlasts the spoken gate.
+	["codex.dynamicWait", "<", "codex.browserCommandLease"],
+	["codex.requestSettlement", "<", "codex.browserCommandLease"],
+	["codex.approvalExpiry", "<", "codex.browserCommandLease"],
+	["codex.spokenGate", "<=", "codex.approvalExpiry"],
+	// Reconnect fits inside tab grace, which ends before the tab's approvals would expire.
+	["codex.clientReconnect", "<", "codex.tabSessionGrace"],
+	["codex.tabSessionGrace", "<", "codex.approvalExpiry"],
+	["codex.contextFreshness", "<", "codex.realtimeRecovery"],
 	// Realtime stop, stdin EOF and TERM leave time inside the composed cap to freeze and prove the group gone.
-	[["codex.stdinEofGrace", "codex.termGrace", "codex.groupFreeze"], "<", "codex.composedShutdown"],
+	["codex.realtimeStop", "<", "codex.termGrace"],
+	[
+		["codex.realtimeStop", "codex.stdinEofGrace", "codex.termGrace", "codex.groupFreeze"],
+		"<",
+		"codex.composedShutdown",
+	],
 	// A killed group's drain runs for the rest of the composed cap, which ends it first.
 	["codex.killDrain", "=", "codex.composedShutdown"],
 	// Chromium's port arrives inside its start, and a page opens within as long.
@@ -69,7 +92,7 @@ const RELATIONS: readonly Relation[] = [
 	// A post ends long before the next round.
 	["telemetry.send", "<", "telemetry.round"],
 	// A recorder waits out the longest a live page stays on one state, a step's talk or voice going live.
-	[["recording.stepMax", "recording.voiceStart"], "<=", "recorder.stall"],
+	[["recording.stepMax", "recording.voiceStart"], "=", "recorder.stall"],
 	// Voice goes live within a realtime start, and a page's readiness serves its three waits.
 	["codex.realtimeStart", "<", "recording.voiceStart"],
 	["recorder.pageLoad", "=", "recorder.pageReady"],
@@ -81,15 +104,33 @@ const RELATIONS: readonly Relation[] = [
 	["skillEval.reap", "=", "skillEval.groupStop"],
 	// The settle cap waits out a moved pane's report, with room for the round trip and a slow frame.
 	["pane.report", "<", "pane.settleCap"],
+	[["presentation.step", "pane.selectionDebounce"], "<", "pane.presentationPaneCheck"],
+	[["picture.transition", "pane.selectionDebounce"], "<", "pane.presentationPaneCheck"],
 	// One failed redial is a blip and a second is loss.
-	[["pane.socketReconnect", "pane.socketReconnect"], "<=", "pane.contactLost"],
+	[["pane.socketReconnect", "pane.socketReconnect"], "=", "pane.contactLost"],
 	// A reload plus a redial of the pane and of the voice fit inside a tab's grace.
 	[["pane.socketReconnect", "codex.clientReconnect"], "<", "codex.tabSessionGrace"],
 	// A model is put up before its first frame long enough for its entrance to end.
 	["picture.entry", "<", "replay.preroll"],
+	// A pointer gets a quick answer, and walkthrough text is ready before the motion finishes.
+	["exploring.lightingDwell", "<", "exploring.subjectTip"],
+	["exploring.cameraFit", "<", "presentation.step"],
+	["exploring.lightingFade", "<", "presentation.step"],
+	["exploring.reveal", "<", "presentation.step"],
+	["exploring.dive", "<", "presentation.step"],
+	["presentation.boxIn", "<", "presentation.step"],
+	["presentation.boxIn", "<", "voice.flight"],
+	["presentation.boxStep", "<", "presentation.step"],
+	["voice.extinguish", "<", "voice.ignite"],
+	["voice.seatOut", "<", "voice.flight"],
+	["voice.boxIn", "<", "voice.flight"],
+	["voice.boxOut", "<", "voice.boxIn"],
+	["subtitle.back", "<", "subtitle.out"],
 	// A docked sidebar slides with the conversation, and a settled slide is the slide and its settling.
 	["sidebar.dock", "=", "column.agentPanelSlide"],
 	[["column.agentPanelSlide", "column.slideSettled"], "=", "column.agentPanelSettled"],
+	["column.popoverOut", "<", "column.popoverIn"],
+	["sidebar.floatOut", "<", "sidebar.floatIn"],
 	// A model read that met a write is read again within the wait of an agent.
 	["modelCache.busyRetry", "<", "modelLock.readerWait"],
 ];
