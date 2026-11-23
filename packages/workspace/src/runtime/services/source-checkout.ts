@@ -184,6 +184,10 @@ const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
  * process runs the command itself.
  */
 async function handOff(argv: readonly string[]): Promise<number | null> {
+	// Consume the marker before any early return. Bun's spawn needs an explicit current env
+	// because its default uses the environment from process startup.
+	const handedTo = process.env[HANDED_OFF];
+	delete process.env[HANDED_OFF];
 	let cwd: string;
 	try {
 		cwd = process.cwd();
@@ -191,9 +195,6 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 		// A working directory that was deleted stands in no checkout.
 		return null;
 	}
-	// Read once and cleared, so that a command this one starts later hands off as any other would.
-	const handedTo = process.env[HANDED_OFF];
-	delete process.env[HANDED_OFF];
 	const running = installation().root;
 	const target = handOffTarget(cwd, running, process.env["ARCHBOARD_URL"]);
 	if (target === null) {
@@ -204,8 +205,8 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 	const root = path.dirname(path.dirname(target));
 	if (handedTo !== undefined) {
 		process.stderr.write(
-			`Error: archboard handed this command to ${handedTo}, but that runs the source of ${running}, ` +
-				`not of ${root}: its packages resolve into the other checkout, as a linked node_modules does. ` +
+			`Error: archboard handed this command to ${handedTo}, but it runs source from ${running} while the working directory is in ${root}. ` +
+				`A linked node_modules can cause this. ` +
 				`Run \`bun install\` in ${root} so that it has packages of its own, then run the command again.\n`,
 		);
 		return 1;

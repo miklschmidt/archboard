@@ -107,6 +107,12 @@ describe("archboard init", () => {
 		]);
 	});
 
+	test("a handed-off init keeps the hand-off marker out of the skills runner", () => {
+		using fixture = createInitFixture(join(checkoutRoot, "bin", "archboard"));
+		const result = fixture.init(fixture.repo("handed-off"));
+		expect(result.skills, initFailure(result.spawn)).toEqual({ runner: "bun" });
+	});
+
 	test("a failed skills CLI stops init before it changes the repository", () => {
 		using fixture = createInitFixture();
 		fixture.failRunner();

@@ -46,6 +46,7 @@ async function handOffLanguageServers(repo: string, interactive: boolean): Promi
 	if (chosen === undefined) return { next: LANGUAGE_SERVER_PROMPT };
 	const child = Bun.spawn([chosen.path, LANGUAGE_SERVER_PROMPT], {
 		cwd: repo,
+		env: process.env,
 		stdio: ["inherit", "inherit", "inherit"],
 	});
 	await child.exited;
