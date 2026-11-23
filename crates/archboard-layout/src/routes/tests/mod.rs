@@ -101,7 +101,7 @@ fn lines_of(drawing: &Drawing) -> BTreeMap<String, LineLook> {
 
 /// The crossings settled, each line drawn as its kind is.
 fn bridged(drawing: &Drawing) -> Bridged<EdgeFacts> {
-    bridge_crossings(drawing, &lines_of(drawing))
+    bridge_crossings(drawing, &lines_of(drawing), &BTreeMap::new())
 }
 
 fn across(y: f64) -> Vec<Point> {

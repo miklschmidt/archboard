@@ -82,6 +82,8 @@ struct Settling<'a> {
     scene: HopScene<'a>,
     /// How each line is drawn, by relationship id.
     lines: &'a BTreeMap<String, LineLook>,
+    /// Each strand that rides another line's route, by id.
+    riders: &'a BTreeMap<String, String>,
     crossings: Vec<DrawnCrossing>,
     clusters: Clusters,
     /// The rise each standing hop stands for, beside its hop in the scene's.
@@ -317,17 +319,20 @@ impl Settling<'_> {
         self.plan_of(0.0, FULL_ROOM, rises)
     }
 
-    /// Whether a cluster's crossers are the strands of one cable: lines between the same two
-    /// parts, which the cluster's line hops as one ribbon, under one crest, rather than each
-    /// strand hopping it.
+    /// Whether a cluster's crossers ride one route and are hopped as one ribbon.
     fn ribbon(&self, cluster: usize) -> bool {
-        let ends = (self.cluster(cluster).crossings.iter()).map(|&crossing| {
+        let mut lines = (self.cluster(cluster).crossings.iter()).map(|&crossing| {
             let crosser = self.sides(cluster, crossing).1;
-            let edge = &self.edges()[self.scene.runs[crosser.drawer].edge_index].edge;
-            (edge.from.as_str(), edge.to.as_str())
+            &self.edges()[self.scene.runs[crosser.drawer].edge_index]
+                .edge
+                .id
         });
-        let ends: Vec<_> = ends.collect();
-        ends.len() > 1 && ends.iter().all(|&one| one == ends[0])
+        let Some(first) = lines.next() else {
+            return false;
+        };
+        let leader = self.riders.get(first).unwrap_or(first);
+        lines.clone().any(|id| id != first)
+            && lines.all(|id| self.riders.get(id).unwrap_or(id) == leader)
     }
 
     /// The plans one cluster offers, by stage: its crossers hopping it one
@@ -537,6 +542,7 @@ fn by_key(a: &Plan, b: &Plan) -> f64 {
 pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
+    riders: &BTreeMap<String, String>,
 ) -> Bridged<EdgeFacts> {
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
@@ -551,6 +557,7 @@ pub(crate) fn bridge_unfolded(
     let mut state = Settling {
         scene: HopScene::new(drawing, runs, lines),
         lines,
+        riders,
         settled: vec![false; crossings.len()],
         risen: vec![None; crossings.len()],
         crossings,
@@ -577,6 +584,7 @@ pub(crate) fn bridge_unfolded(
 pub(crate) fn bridge_crossings(
     settled: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
+    riders: &BTreeMap<String, String>,
 ) -> Bridged<EdgeFacts> {
-    bridge_unfolded(&unfold_crossings(settled), lines)
+    bridge_unfolded(&unfold_crossings(settled), lines, riders)
 }
