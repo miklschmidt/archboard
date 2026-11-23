@@ -12,6 +12,7 @@ export interface MeasureRow {
 	commits: number;
 	changesWith: number;
 	unjoined: number;
+	strongest?: Partial<Record<"changesWith" | "unjoined", number>>;
 }
 
 // The two tables of the app's Measures dialog that this data answers, in the app's order and
@@ -51,6 +52,28 @@ export const measureTabs = [
 
 export type MeasureKey = (typeof measureTabs)[number]["columns"][number]["key"];
 
+/** Order by count, with blanks last and ties settled by the strongest pair, then by name. */
+export function compareMeasures(
+	one: MeasureRow,
+	other: MeasureRow,
+	key: MeasureKey,
+	descending: boolean,
+): number {
+	const left = one[key];
+	const right = other[key];
+	const byCount =
+		left === null || right === null
+			? Number(left === null) - Number(right === null)
+			: descending
+				? right - left
+				: left - right;
+	const byStrongest =
+		key === "changesWith" || key === "unjoined"
+			? (other.strongest?.[key] ?? 0) - (one.strongest?.[key] ?? 0)
+			: 0;
+	return byCount || byStrongest || one.name.localeCompare(other.name, "en");
+}
+
 export const measureRows: MeasureRow[] = [
 	{
 		name: "renderer",
@@ -71,6 +94,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 437,
 		changesWith: 2,
 		unjoined: 0,
+		strongest: { changesWith: 293 },
 	},
 	{
 		name: "Browser",
@@ -91,6 +115,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 294,
 		changesWith: 1,
 		unjoined: 0,
+		strongest: { changesWith: 293 },
 	},
 	{
 		name: "Archboard server",
@@ -101,6 +126,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 212,
 		changesWith: 1,
 		unjoined: 0,
+		strongest: { changesWith: 65 },
 	},
 	{
 		name: "code-intel",
@@ -121,6 +147,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 8,
 		changesWith: 5,
 		unjoined: 5,
+		strongest: { changesWith: 7, unjoined: 7 },
 	},
 	{
 		name: "Diagram surface",
@@ -131,6 +158,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 24,
 		changesWith: 6,
 		unjoined: 2,
+		strongest: { changesWith: 16, unjoined: 8 },
 	},
 	{
 		name: "Talk contract",
@@ -141,6 +169,7 @@ export const measureRows: MeasureRow[] = [
 		commits: 11,
 		changesWith: 5,
 		unjoined: 3,
+		strongest: { changesWith: 7, unjoined: 7 },
 	},
 	{
 		name: "Recorder",
@@ -151,5 +180,6 @@ export const measureRows: MeasureRow[] = [
 		commits: 8,
 		changesWith: 5,
 		unjoined: 5,
+		strongest: { changesWith: 7, unjoined: 7 },
 	},
 ];
