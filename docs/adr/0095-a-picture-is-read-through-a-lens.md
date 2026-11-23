@@ -96,7 +96,8 @@ a reader reads the picture's question before its lines, and a note at the foot w
 Where the default lens would draw no line and `all` would draw some, a reading that names no lens
 reads through `all`, and the status says so: `Main lines has no lines here · Showing all
 relationships`. The owner decided this on 2026-11-22 (TASK-663), because in this repository the
-default drew nothing in modules that only compute, such as Painting. A lens the reader names is a
+default drew nothing in modules that only compute, such as Painting. Manual filters apply
+after that choice. Hiding every line by hand keeps the chosen lens. A lens the reader names is a
 question, and an empty picture with its note answers it, so a named lens never gives way. The
 reading records the lens it drew, `all`, so its recipe redraws the same picture.
 
