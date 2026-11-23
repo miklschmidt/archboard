@@ -3,11 +3,12 @@
 //! Each painter turns it into what a frontend shows; the SVG painter
 //! (`archboard-svg`) writes it as a document.
 //!
-//! A scene is items in the order they are drawn: groups ([`group`]), shapes
-//! ([`shape`]), runs of words, icons and viewports ([`text`]), definitions
-//! ([`definition`]) and trains of pulses ([`traffic`]). Colours name the
-//! page's tokens and the operations that mix them ([`colour`]); the frontend
-//! resolves them in its theme. The scene holds no interaction state: the
+//! A scene is items in the order they are drawn: groups ([`Group`]), shapes
+//! ([`Shape`]), runs of words, icons and viewports ([`Text`], [`Icon`],
+//! [`Viewport`]), definitions ([`Definition`]) and trains of pulses
+//! ([`TrafficMark`]). Colours name the page's tokens and the operations that
+//! mix them ([`Colour`]); the frontend resolves them in its theme. Every type
+//! has one path: `scene::` and its name. The scene holds no interaction state: the
 //! light, the recede, the far view, the camera and the flight are each
 //! painter's own (ADR 0023).
 
@@ -16,12 +17,12 @@ use ts_rs::TS;
 
 use crate::drawing::ReadingDirection;
 
-pub mod colour;
-pub mod definition;
-pub mod group;
-pub mod shape;
-pub mod text;
-pub mod traffic;
+mod colour;
+mod definition;
+mod group;
+mod shape;
+mod text;
+mod traffic;
 
 pub use colour::{Colour, Paint, Token};
 pub use definition::{
