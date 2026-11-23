@@ -258,7 +258,9 @@ function drawnThrough<Reading extends { connections: readonly unknown[]; leftOut
 	if (id !== undefined || projection.connections.length > 0 || projection.leftOut === 0)
 		return { projection, lens: named, emptyLens: undefined };
 	const lens = readingLens(policy, allLens());
-	return { projection: read(lens), lens, emptyLens: { id: named.id, name: named.name } };
+	const fallback = read(lens);
+	if (fallback.connections.length === 0) return { projection, lens: named, emptyLens: undefined };
+	return { projection: fallback, lens, emptyLens: { id: named.id, name: named.name } };
 }
 
 /**
