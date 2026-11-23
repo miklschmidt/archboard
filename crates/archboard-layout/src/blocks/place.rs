@@ -88,7 +88,7 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         let quiet = super::planned::without_words(&graph, |_| true);
         let mut placed = super::legacy::place(&quiet, host, lanes)?;
         if lanes {
-            crate::lanes::frame_sides::enter_by_frame_sides(&mut placed);
+            through_frame_walls(&mut placed);
         }
         (placed, false)
     };
@@ -97,6 +97,28 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         told.push((BLOCKS_PLANNED, "true".to_owned()));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
+}
+
+/// Bring a Lanes picture's lines that read better through a container's wall in through it
+/// (`lanes::frame_sides`).
+fn through_frame_walls(placed: &mut super::assembly::Placed) {
+    let cards: Vec<_> = placed.cards.iter().map(|card| card.bx).collect();
+    let frames: Vec<_> = (placed.frames.iter())
+        .map(|frame| (frame.bx, frame.depth))
+        .collect();
+    let mut lines: Vec<_> = placed
+        .edges
+        .iter()
+        .map(|edge| edge.points.clone())
+        .collect();
+    crate::lanes::frame_sides::enter_by_frame_sides(&mut crate::lanes::frame_sides::Picture {
+        cards: &cards,
+        frames: &frames,
+        lines: &mut lines,
+    });
+    for (edge, points) in placed.edges.iter_mut().zip(lines) {
+        edge.points = points;
+    }
 }
 
 /// How the graph of a part of a split solve starts: the part, named first on its root.

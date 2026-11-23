@@ -4,7 +4,7 @@
 //! round them (`packing`). The picture, every container, every group region
 //! and every column a block folds into is a block (`tree.rs`).
 
-pub(crate) mod assembly;
+mod assembly;
 mod card_graph;
 mod card_layout;
 mod cycles;
