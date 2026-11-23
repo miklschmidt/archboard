@@ -68,14 +68,15 @@ impl<'a> Seating<'a> {
         edge: usize,
         line: &PlacedLine,
     ) -> Option<StrokeIndex> {
-        let strokes = self.strokes.with(edge, &line.points);
+        let strokes = self.strokes.with(model, edge, &line.points);
         let labels = &Labels::default();
         for &(placed, other, need) in &self.lines {
             let covered = match need {
                 Need::Never => false,
                 Need::Always => true,
                 Need::Covered(words) => {
-                    StrokeIndex::path_crosses(edge, &line.points, other, inflate(words, 12.01))
+                    let words = inflate(words, 12.01);
+                    StrokeIndex::path_crosses(model, (edge, &line.points), other, words)
                 }
             };
             if covered {

@@ -13,7 +13,7 @@
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every document, not only the current one
-// ENGINE=track       lay every document out with this engine, not the default one
+// ENGINE=lanes       lay every document out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
@@ -159,7 +159,9 @@ if (against !== undefined) {
 		const moved: string[] = [];
 		const counts = { better: 0, worse: 0 };
 		result.measures.forEach((measure, index) => {
-			const previous = before.measures[index]!;
+			const previous = before.measures[index];
+			// A measure the saved run did not take yet has nothing to compare.
+			if (previous === undefined) return;
 			const verdict = verdictOf(previous, measure);
 			if (verdict === "same") return;
 			if (verdict === "better" || verdict === "worse") counts[verdict] += 1;

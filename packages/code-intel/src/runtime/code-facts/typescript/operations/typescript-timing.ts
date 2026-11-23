@@ -15,12 +15,47 @@ const STARTERS = new Set([
 	"requestAnimationFrame",
 ]);
 
+/** The callables a scheduler runs later when they are its first argument. */
+const CALLBACKS = new Set(["arrow_function", "function_expression"]);
+/** The syntax of a call. */
+const CALLS = new Set(["call_expression", "new_expression"]);
+
+/**
+ * Whether some syntax hands its arguments to a timer or the microtask queue.
+ * @param holder The syntax.
+ * @param held Its child.
+ * @returns True when `held` is the argument list of a scheduling call.
+ */
+function schedules(holder: Node, held: Node): boolean {
+	return (
+		holder.type === "call_expression" &&
+		holder.childForFieldName("arguments")?.id === held.id &&
+		STARTERS.has(lastWord(holder.childForFieldName("function")))
+	);
+}
+
+/**
+ * Whether a scheduler runs a site later: the callback it is handed by name, or a call inside the
+ * callable it is handed. A call that computes the callback runs before scheduling.
+ * @param callback The scheduler's first argument.
+ * @param site The call or name being classified.
+ * @returns True when it runs later.
+ */
+function runsLater(callback: Node, site: Node): boolean {
+	if (callback.id === site.id) return !CALLS.has(site.type);
+	return (
+		CALLBACKS.has(callback.type) &&
+		callback.startIndex <= site.startIndex &&
+		site.endIndex <= callback.endIndex
+	);
+}
+
 /**
  * How TypeScript awaits and starts a call: `await`, `.then` on its result, a
  * timer or the microtask queue. A bare call's callee decides.
  */
 const TYPESCRIPT_TIMING: TimingSyntax = {
-	calls: new Set(["call_expression", "new_expression"]),
+	calls: CALLS,
 	awaits: new Set(["await_expression"]),
 	wrappers: new Set([
 		"parenthesized_expression",
@@ -34,15 +69,18 @@ const TYPESCRIPT_TIMING: TimingSyntax = {
 		["finally", "pass"],
 	]),
 	/**
-	 * A timer's or the microtask queue's call starts what its arguments hold.
+	 * A timer or microtask queue runs its callback later. Its other arguments
+	 * and calls that compute the callback are evaluated before scheduling.
 	 * @param holder The syntax.
 	 * @param held Its child.
-	 * @returns Whether it starts it.
+	 * @param site The call or name being classified.
+	 * @returns Whether the scheduler runs it.
 	 */
-	starts: (holder, held) =>
-		holder.type === "call_expression" &&
-		holder.childForFieldName("arguments")?.id === held.id &&
-		STARTERS.has(lastWord(holder.childForFieldName("function"))),
+	starts: (holder, held, site) => {
+		if (!schedules(holder, held)) return false;
+		const callback = held.namedChildren.find((child) => child.type !== "comment");
+		return callback !== undefined && runsLater(callback, site);
+	},
 	/**
 	 * A construction is plain; any other call is as its callee is.
 	 * @param call The call.

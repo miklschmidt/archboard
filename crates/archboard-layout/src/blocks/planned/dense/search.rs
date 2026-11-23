@@ -294,7 +294,13 @@ impl<'r> Stage<'r> {
                 && from != to
             {
                 let plate = edge.label().and_then(|label| label.height).unwrap_or(0.0);
-                self.scene.lines.push(Line { from, to, plate });
+                let weight = super::super::model::weight_of(super::super::model::strands(edge));
+                self.scene.lines.push(Line {
+                    from,
+                    to,
+                    plate,
+                    weight,
+                });
             }
         }
     }

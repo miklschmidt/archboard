@@ -14,7 +14,6 @@
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import { renderSemanticView } from "#shared/render/rules/diagram.ts";
-import { scopedRequest } from "#shared/render/rules/drawing-key.ts";
 import type {
 	SemanticViewRenderRequest,
 	RenderedDiagram,
@@ -137,7 +136,6 @@ async function drawLegacyBoardHere(
  * @returns Its local rendering operation.
  */
 function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
-	const request = scopedRequest(scoped);
 	return {
 		/**
 		 * Render only after the renderer core and the icons are available.
@@ -147,8 +145,8 @@ function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
 		draw: async (): Promise<RenderedDiagram> => {
 			if (started === undefined)
 				throw new Error("Start the browser renderer before drawing content.");
-			await Promise.all([started, loadDiagramIcons(request.policy)]);
-			return renderSemanticView(request);
+			await Promise.all([started, loadDiagramIcons(scoped.policy)]);
+			return renderSemanticView(scoped);
 		},
 	};
 }

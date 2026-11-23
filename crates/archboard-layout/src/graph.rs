@@ -129,8 +129,6 @@ pub(crate) const PLACING_GROUP: &str = "archboard.group";
 pub(crate) const GROUPS: &str = "archboard.groups";
 /// The root option carrying each placing group's caption size.
 pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
-/// The option marking a child an entry point of its container.
-pub(crate) const ENTRY_POINT: &str = "archboard.entry";
 /// The option marking a card a door, which keeps its measured size in any cell.
 pub(crate) const DOOR: &str = "archboard.door";
 /// The option naming what a relationship does, where it states it: lines of
@@ -138,5 +136,9 @@ pub(crate) const DOOR: &str = "archboard.door";
 pub(crate) const EFFECT: &str = "archboard.relationship.effect";
 /// The effect of a relationship as the variant's own reading draws it, beside its held kind.
 pub(crate) const HELD_EFFECT: &str = "archboard.relationship.held-effect";
+/// The option on the line a cable is laid out as: the treatment of each of its strands, in the
+/// picture's order, `;`-joined. Two cables share ports, fans and trunks only when every strand
+/// does; a line of one strand carries none.
+pub(crate) const CABLE: &str = "archboard.cable";
 /// The option carrying each size a container's header can take.
 pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T16:20:00Z'
-updated_date: '2026-11-22T16:32:00Z'
+updated_date: '2026-11-23T01:55:00Z'
 labels:
   - bug
 dependencies: []
@@ -42,6 +42,8 @@ When a newer Archboard writes a record into the local archboard-history branch (
 
 <!-- SECTION:NOTES:BEGIN -->
 Records are decoded in one place, decodeRecord in packages/model/src/runtime/canonical/archive/store/model-archive-record.ts, used by readRecord and archiveRecords. The marker is the existing schemaVersion, now named RECORD_FORMAT (1); the reader accepts 1..RECORD_FORMAT. A format above it is ARCHIVE_NEWER (new failure code, HTTP 422 by default); any other schema failure is ARCHIVE_UNREADABLE with the record id and its first problem. assertTipWritable and the publication closure pass ARCHIVE_NEWER through instead of rewrapping it. record-format.test.ts pins the record schema's JSON Schema digest to RECORD_FORMAT. Older readers (before this commit) cannot be fixed and still show the dump; the history ref was not touched. The new file is not bound to a module in .archboard/vault yet. Checks: tsc (source and frontend) clean, TypeScript lint clean, format:check clean, 256 tests in packages/model/tests/runtime/{canonical,upgrade,legacy-boards,store} pass. vp run types/lint:all stop at the renderer core build (wasm-bindgen glue guard in scripts/build-core.ts), outside this task.
+
+The upgrade record schema was subsequently bumped to format 2 in 841316d687. The reader accepts formats 1 and 2 and reports ARCHIVE_NEWER for a higher format.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -23,7 +23,6 @@ use archboard_scene::request::{Arrowhead, Dash};
 use serde::{Deserialize, Serialize};
 
 pub(crate) use crossings::{bridge_crossings, bridge_unfolded};
-pub(crate) use folded::unfold_crossings;
 
 /// How a relationship's line is drawn: its dash and its head, as the vault's
 /// policy draws its kind.

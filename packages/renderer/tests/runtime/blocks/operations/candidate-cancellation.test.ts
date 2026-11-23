@@ -48,7 +48,6 @@ test.each(["rejected", "thrown"] as const)(
 			const outcome = await renderArchitecture({
 				policy: defaultSemanticPolicy(),
 				content,
-				layout: "blocks",
 				theme: "light",
 			}).catch((error: unknown) => error);
 			// The core carries the host's failure out by its words.

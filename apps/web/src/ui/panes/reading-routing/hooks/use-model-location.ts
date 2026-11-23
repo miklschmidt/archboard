@@ -12,7 +12,7 @@ import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messa
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
 import { allLens } from "@archboard/model/content";
-import { lineEffect } from "@archboard/model/policy";
+import { hiddenKinds as policyHiddenKinds, lineEffect } from "@archboard/model/policy";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 /** The two lists of what a reader hid besides the lens. */
@@ -329,18 +329,16 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	// The legend decides what a switch or a row's name hides; the address only holds the list.
 	const setHidden = useCallback(
 		(field: FilterField, ids: readonly string[]): void => {
-			userChanged?.("view");
-			void navigate({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
+			explore({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
 		},
-		[navigate, userChanged],
+		[explore],
 	);
 	// A lens is a question of its own, so choosing one shows every kind and effect it selects.
 	const selectLens = useCallback(
 		(id: string): void => {
-			userChanged?.("view");
-			void navigate({ lens: id, hideKinds: undefined, hideEffects: undefined });
+			explore({ lens: id, hideKinds: undefined, hideEffects: undefined });
 		},
-		[navigate, userChanged],
+		[explore],
 	);
 	const showAll = useCallback((): void => {
 		selectLens(allLens());
@@ -350,10 +348,13 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			ids: readonly string[],
 			edges: readonly Parameters<typeof lineEffect>[0][],
 			widen: boolean,
+			policy: Model["policy"],
 		): void => {
 			const kinds = new Set(edges.map((edge) => edge.kind));
 			const effects = new Set(edges.map(lineEffect));
-			const hidden = filters.hideKinds.filter((kind) => !kinds.has(kind));
+			const hidden = policyHiddenKinds(filters.hideKinds, policy).filter(
+				(kind) => !kinds.has(kind),
+			);
 			const muted = filters.hideEffects.filter((effect) => !effects.has(effect));
 			explore({
 				grammar: undefined,

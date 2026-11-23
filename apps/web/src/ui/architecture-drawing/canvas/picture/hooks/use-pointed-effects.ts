@@ -2,7 +2,7 @@
 // touches the card. Nothing moves until the pointer rests, and nothing moves for a reader who asked
 // for no motion; the still marks carry the whole meaning.
 
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 import type { StagedPicture } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
@@ -38,10 +38,14 @@ function usePointedEffects(
 	resting: string | null,
 	reducedMotion: boolean,
 ): void {
+	const surface = picture?.surface;
+	const play = useEffectEvent((target: Element, part: string): void => {
+		stageOf(target)?.playEffects(pointedLines(lines, part));
+	});
 	useEffect(() => {
-		if (picture === null || resting === null || reducedMotion) return;
-		stageOf(picture.surface)?.playEffects(pointedLines(lines, resting));
-	}, [picture, lines, resting, reducedMotion]);
+		if (surface === undefined || resting === null || reducedMotion) return;
+		play(surface, resting);
+	}, [surface, resting, reducedMotion]);
 }
 
-export { pointedLines, usePointedEffects };
+export { usePointedEffects };

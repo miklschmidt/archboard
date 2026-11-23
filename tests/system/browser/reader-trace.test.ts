@@ -33,7 +33,7 @@ function writeModule(
 			outgoing: sends.map((to) => ({
 				id: `Shop#${name.slice(0, 4)}${to.slice(0, 4)}`,
 				to: `Shop#${to}`,
-				kind: "call",
+				kind: "sync",
 				effect: "mutation",
 				order: 10,
 			})),

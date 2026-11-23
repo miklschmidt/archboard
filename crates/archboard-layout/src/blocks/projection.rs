@@ -9,13 +9,12 @@ use std::rc::Rc;
 
 use crate::geometry::Side;
 use crate::graph::Edge;
-use crate::track::route::trunk_kind;
-use crate::track::scene::{Map, Set};
+use crate::lanes::route::trunk_kind;
+use crate::lanes::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection, Route,
-    exit_key, header_of, holds,
+    BlockId, BlockTree, Ends, Kind, Line, Piece, Pin, Projection, Route, exit_key, header_of,
 };
 
 impl BlockTree {
@@ -90,25 +89,21 @@ impl BlockTree {
         let header = header_of(block);
         let upward: Vec<bool> = here
             .iter()
-            .map(|projection| {
-                projection.to == header || holds(block, &projection.to, &projection.from)
-            })
+            .map(|projection| projection.to == header)
             .collect();
         let mut walk = CycleWalk::default();
         for (projection, &up) in here.iter().zip(&upward) {
             if !up {
-                walk.add(&projection.from, &projection.to, Some(&projection.edge.id));
+                walk.add(&projection.from, &projection.to, &projection.edge.id);
             }
         }
-        let containment: Vec<(String, String)> = block
-            .cluster_of
-            .iter()
-            .filter(|&(_, around)| block.clusters[around.as_str()].kind == ClusterKind::Frame)
-            .map(|(member, around)| (member.clone(), around.clone()))
-            .collect();
         let mut items = vec![header];
         items.extend(block.items.iter().cloned());
-        let walked = walk.with_containment(&items, &containment);
+        let walked = if self.lanes {
+            walk.fewest_back(&items)
+        } else {
+            walk.back_edges(&items)
+        };
         let mut back: Set<String> = here
             .iter()
             .zip(&upward)
@@ -303,9 +298,6 @@ impl BlockTree {
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
     pub(super) fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
-        if self.nesting != Nesting::Blocks && self.peer_of(projection.edge.target()).is_some() {
-            return projection.at;
-        }
         if projection.edge.label_count() > 0
             && let Some(frame) = self
                 .block_of(projection.edge.source())
@@ -339,12 +331,10 @@ impl BlockTree {
             .unwrap_or(own)
     }
 
-    /// Whether a block can hold a line's label: every block drawn inline can,
-    /// and of the blocks packed each on its own, a block of cards. A block of
+    /// Whether a block can hold a line's label: a block of cards. A block of
     /// blocks draws only trunks between them (`pack.rs`).
     fn holds_labels(&self, block: BlockId) -> bool {
-        self.nesting != Nesting::Blocks
-            || !self.get(block).items.iter().any(|item| self.is_block(item))
+        !self.get(block).items.iter().any(|item| self.is_block(item))
     }
 
     /// The edge a port crosses: the wall an earlier layout moved it to, or its
@@ -361,7 +351,7 @@ impl BlockTree {
             && own.kind == Kind::Frame
             && own.lone.as_ref().is_some_and(|lone| {
                 own.header.as_ref().is_some_and(|header| {
-                    super::lone::caption_width(lone) + 2.0 * crate::track::chains::LANE
+                    super::lone::caption_width(lone) + 2.0 * crate::lanes::chains::LANE
                         >= header.width
                 })
             })

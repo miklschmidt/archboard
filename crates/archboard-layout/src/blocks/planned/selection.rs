@@ -101,7 +101,11 @@ fn quality(
         let length = super::geometry::length(&line.points);
         detours += usize::from(length > shortest * 1.5 && length > shortest + 120.0);
     }
-    let (approaches, cost) = super::reading::rank(lines);
+    let weigh = |id: &str| {
+        let edge = model.edge_index[id];
+        super::model::weight_of(super::model::strands(model.edges[edge]))
+    };
+    let (approaches, cost) = super::reading::rank(lines, &weigh);
     (approaches, detours, cost)
 }
 

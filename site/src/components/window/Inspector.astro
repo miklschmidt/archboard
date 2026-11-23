@@ -1,17 +1,25 @@
 ---
 // The right panel of the mock shell, with Checkout API selected at the shop's root, as the shell
-// shows it: the subject and its interface, then the legend that ends the scroll,
-// over a row of keys. The shell lists more under a module, and the mock keeps its first sections.
+// shows it: the subject, its interface and its implementation, then the legend that ends the
+// scroll, over a row of keys. The shell lists more under a module, and the mock keeps its first
+// sections. Only the open module's interface has the key to About, so a selected card's has none.
 // The counts are the example shop's.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import PanelLegend from "./PanelLegend.astro";
 import SectionLabel from "./SectionLabel.astro";
 
-const interfaceCounts = [
-	["Entries", 2],
-	["Caller", 1],
-	["Pass-through", 0],
+const sections = [
+	{
+		icon: "plug",
+		title: "Interface",
+		counts: [
+			["Entries", 2],
+			["Caller", 1],
+			["Pass-through", 0],
+		],
+	},
+	{ icon: "lock", title: "Implementation", counts: [["Hidden part", 1]] },
 ] as const;
 ---
 
@@ -27,22 +35,24 @@ const interfaceCounts = [
 			</div>
 			<p class="summary">Takes an order, charges it and confirms it</p>
 		</div>
-		<div class="block">
-			<p class="label">
-				<SectionLabel icon="plug" title="Interface" />
-				<span class="small">Open in About</span>
-			</p>
-			<ul class="rows">
-				{
-					interfaceCounts.map(([label, value]) => (
-						<li class:list={{ off: value === 0 }}>
-							{label}
-							<span class="mono">{value}</span>
-						</li>
-					))
-				}
-			</ul>
-		</div>
+		{
+			sections.map((section) => (
+				<div class="block">
+					<p class="label">
+						<SectionLabel icon={section.icon} title={section.title} />
+						<span class="fold"><Icon name="chevronDown" size={16} /></span>
+					</p>
+					<ul class="rows">
+						{section.counts.map(([label, value]) => (
+							<li class:list={{ off: value === 0 }}>
+								{label}
+								<span class="mono">{value}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			))
+		}
 		<PanelLegend />
 	</div>
 	<div class="actions">
@@ -112,21 +122,20 @@ const interfaceCounts = [
 		padding-top: 14px;
 		border-top: 1px solid var(--rule);
 	}
-	/* A section's label is the left column's, and a key of the section stands at its end. */
+	/* A section's label is the left column's. The chevron that folds the section stands at its
+	   end, as in the left column. */
 	.label {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 8px;
 		min-height: 24px;
 	}
-	.small {
-		padding: 3px 8px;
-		font-weight: 600;
-		color: var(--ink);
-		border-radius: 3px;
-		font-size: 12px;
-		background: var(--raised);
-		box-shadow: var(--shadow-raised);
+	.fold {
+		display: inline-flex;
+		margin-left: auto;
+		/* The ink of the chevron, not its box, ends where the rows' words and numbers end. */
+		margin-right: -3.75px;
+		color: var(--ink-muted);
 	}
 	/* A count is a row of the left column, on the panel's ground with no plate: what it counts at
 	   the start, its number at the end. */

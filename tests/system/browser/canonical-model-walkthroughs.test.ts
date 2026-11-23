@@ -103,7 +103,7 @@ test("walkthrough beats change readings while one revision stays captured until 
 						scope: "Shop#Gateway",
 						focus: ["Shop#Handler"],
 						selection: ["Shop#Handler"],
-						filters: { relationships: ["call"], groups: ["public"] },
+						filters: { relationships: ["sync"], groups: ["public"] },
 					},
 				},
 				{

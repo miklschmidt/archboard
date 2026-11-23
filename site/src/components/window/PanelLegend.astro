@@ -32,7 +32,7 @@ const lines = [
 ---
 
 <div class="legend">
-	<p class="head"><SectionLabel icon="shapes" title="Legend" /></p>
+	<p class="head"><SectionLabel icon="shapes" title="Legend" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
 	<ul class="grid">
 		{
 			kinds.map(([kind, name]) => (
@@ -42,7 +42,7 @@ const lines = [
 			))
 		}
 	</ul>
-	<p class="head"><SectionLabel icon="share" title="Relationships" /></p>
+	<p class="head"><SectionLabel icon="share" title="Relationships" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
 	<ul class="lenses">
 		{lenses.map((name, index) => <li class:list={{ "is-on": index === 0 }}>{name}</li>)}
 	</ul>
@@ -81,15 +81,14 @@ const lines = [
 	<ul class="grid marks">
 		<li><span class="line traffic"></span> Illustrated traffic</li>
 	</ul>
-	<p class="head"><SectionLabel icon="priceTag" title="Groups" /></p>
+	<p class="head"><SectionLabel icon="priceTag" title="Groups" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
 
 <style>
 	/* The legend has two sections, each under the label of any section of the panel. The lens
 	   presets open the relationships in a well, the chosen one raised with the gold foot. A kind of
-	   line or an effect stands on a row of its own, and the row is its switch, with an eye at its
-	   end. The marks of lines, which no reader hides, stand under them. A row is 28px, with no
+	   line or an effect stands on a row of its own, with its eye switch at the end. The marks of lines, which no reader hides, stand under them. A row is 28px, with no
 	   plate under it. */
 	.legend {
 		display: flex;
@@ -107,6 +106,13 @@ const lines = [
 		padding-top: 14px;
 		border-top: 1px solid var(--rule);
 		font-size: 12.5px;
+	}
+	/* The chevron that folds a part stands at the end of its head, as in every section. */
+	.fold {
+		display: inline-flex;
+		/* The ink of the chevron, not its box, ends where the rows' words and numbers end. */
+		margin-right: -3.75px;
+		color: var(--ink-muted);
 	}
 	.grid + .head,
 	.tags + .head {
@@ -164,9 +170,9 @@ const lines = [
 	.effects {
 		margin-top: 4px;
 	}
-	/* The eye stands at the end of its own row, where a click on the row hides the type. */
+	/* The eye toggles visibility. Its ink aligns with the end of the panel's words. */
 	.rows :global(.eye) {
-		margin: 0 4px 0 auto;
+		margin: 0 -0.75px 0 auto;
 		color: var(--ink-muted);
 	}
 	.line {

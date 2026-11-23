@@ -14,7 +14,6 @@
 
 mod appearance;
 mod architecture;
-mod entries;
 mod flows;
 mod memo;
 mod request;

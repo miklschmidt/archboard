@@ -14,8 +14,7 @@ test.each(fixtures.map((fixture) => [fixture.name, fixture] as const))(
 			content,
 			policy: semanticPolicySchema().parse(fixture.policy),
 			theme: "light",
-			layout: "blocks",
 		});
-		expectDrawingIntact(drawing, content, "blocks");
+		expectDrawingIntact(drawing, content);
 	},
 );

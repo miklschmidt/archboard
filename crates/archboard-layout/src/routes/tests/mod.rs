@@ -1,14 +1,13 @@
 //! Which line rises where two lines cross, where a hop may stand, and how the
 //! crossing pass keeps every route's rounding, on fixed route geometry, so a
 //! test holds the crossing pass apart from any placement engine. Which of two
-//! lines rises by its look is in `layering`, crossings close along one line
-//! in `clusters`, and a drawing with some subjects left out in `shown`.
+//! lines rises by its look is in `layering`, and crossings close along one line
+//! in `clusters`.
 
 mod clusters;
 mod crowding;
 mod ink;
 mod layering;
-mod shown;
 
 use std::collections::BTreeMap;
 
@@ -58,6 +57,7 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
         .iter()
         .enumerate()
         .map(|(index, route)| DrawingEdge {
+            echelon: false,
             edge: looks.iter().find(|look| look.0 == index).map_or_else(
                 || facts(index),
                 |&(_, kind, emphasis)| EdgeFacts {

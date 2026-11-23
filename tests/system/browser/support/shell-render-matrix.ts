@@ -269,10 +269,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		};
 		const foreground = luminance(getComputedStyle(wordmark).color);
 		const backdrop = luminance(surface(header));
-		// A live socket is the normal state and says nothing: the pane header's
-		// only visible output is the reconnecting warning.
+		// A live socket is the normal state and says nothing: besides the lens
+		// status, which every reading shows, the pane header's only visible
+		// output is the reconnecting warning.
 		const connectionTrouble = [...paneHeader.querySelectorAll('output')]
-			.filter(node => !node.classList.contains('sr-only')).length;
+			.filter(node => !node.classList.contains('sr-only')
+				&& node.getAttribute('data-slot') !== 'model-lens-status').length;
 		return {
 			deviceScaleFactor: devicePixelRatio,
 			queryTruth: { dark: matchMedia('(prefers-color-scheme: dark)').matches,

@@ -200,7 +200,7 @@ pub(crate) fn placed(x: f64, y: f64, scale: f64) -> Affine {
 const TRIM_ACCURACY: f64 = 0.01;
 
 /// A path with a length taken off its start and its end, along its ink. A
-/// path shorter than what it gives is left as it is.
+/// path with no length left is empty.
 pub(crate) fn trimmed(path: &BezPath, start: f64, end: f64) -> Cow<'_, BezPath> {
     if start <= 0.0 && end <= 0.0 {
         return Cow::Borrowed(path);
@@ -211,7 +211,7 @@ pub(crate) fn trimmed(path: &BezPath, start: f64, end: f64) -> Cow<'_, BezPath> 
         .map(|seg| seg.arclen(TRIM_ACCURACY))
         .collect();
     if lengths.iter().sum::<f64>() <= start + end {
-        return Cow::Borrowed(path);
+        return Cow::Owned(BezPath::new());
     }
     let mut left = end;
     while left > 0.0 {
@@ -243,12 +243,22 @@ pub(crate) fn trimmed(path: &BezPath, start: f64, end: f64) -> Cow<'_, BezPath> 
 
 #[cfg(test)]
 mod tests {
-    use super::{end_of, outline_of, path_of, stroke_of};
+    use super::{end_of, outline_of, path_of, stroke_of, trimmed};
     use archboard_scene::geometry::{Point, Rect};
     use archboard_scene::scene::{Cap, Geometry, PathStep, Stroke, Token};
 
     fn at(x: f64, y: f64) -> Point {
         Point { x, y }
+    }
+
+    #[test]
+    fn a_short_body_gives_way_when_its_marks_take_all_its_room() {
+        let body = path_of(&[
+            PathStep::Move { to: at(0.0, 0.0) },
+            PathStep::Line { to: at(10.0, 0.0) },
+        ]);
+        assert!(trimmed(&body, 3.0, 8.0).is_empty());
+        assert!(!trimmed(&body, 3.0, 5.0).is_empty());
     }
 
     #[test]

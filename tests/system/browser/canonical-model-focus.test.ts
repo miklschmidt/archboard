@@ -43,7 +43,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	gateway.outgoing.push({
 		id: "Shop#Handle",
 		to: "Shop#Handler",
-		kind: "call",
+		kind: "sync",
 		effect: "mutation",
 		order: 20,
 		label: "Handle",
@@ -74,7 +74,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 				{
 					id: "Shop#Private",
 					to: "Shop#Hidden",
-					kind: "call",
+					kind: "sync",
 					effect: "mutation",
 					order: 60,
 					label: "Internal only",

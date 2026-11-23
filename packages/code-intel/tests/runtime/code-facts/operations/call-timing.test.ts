@@ -11,7 +11,9 @@ test("TypeScript awaits with await and then, starts with a timer, and leaves a b
 			"async function checkout() {",
 			"  await ledger.post();",
 			"  load().then(show);",
-			"  setTimeout(() => notify(), 0);",
+			"  setTimeout(() => notify(), delay());",
+			"  setTimeout(makeCallback(), 0);",
+			"  queueMicrotask(refresh);",
 			"  audit();",
 			"  new Receipt();",
 			"}",
@@ -20,6 +22,9 @@ test("TypeScript awaits with await and then, starts with a timer, and leaves a b
 		"ledger.post": "awaited",
 		load: "awaited",
 		notify: "started",
+		delay: "unawaited",
+		makeCallback: "unawaited",
+		refresh: "started",
 		audit: "unawaited",
 		Receipt: "plain",
 	});
@@ -108,13 +113,20 @@ test("Go starts with go, and every other call is plain", async () => {
 		await timingsOf("shop.go", [
 			"package shop",
 			"func Checkout() {",
-			"\tgo notify()",
-			"\tgo func() { audit() }()",
+			"\tgo notify(format())",
+			"\tgo func(value int) { audit(value) }(count())",
 			"\tdefer total()",
 			"\tledger.Post()",
 			"}",
 		]),
-	).toMatchObject({ notify: "started", audit: "started", total: "plain", "ledger.Post": "plain" });
+	).toMatchObject({
+		notify: "started",
+		format: "plain",
+		audit: "started",
+		count: "plain",
+		total: "plain",
+		"ledger.Post": "plain",
+	});
 });
 
 test("C# awaits with await, starts with Task.Run and a thread, and marks async and task methods", async () => {

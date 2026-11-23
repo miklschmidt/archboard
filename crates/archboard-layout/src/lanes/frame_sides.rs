@@ -1,0 +1,233 @@
+//! Frame side doors, in a Lanes drawing. A line that crosses a container's top or bottom to a
+//! card inside that stands nearest one of the container's walls on its row can come in through
+//! that wall instead: its run outside turns down (or up) beside the wall, a lane out, and enters
+//! the card's side straight through the wall. Each such line is kept only where it then bends
+//! less, runs no longer, crosses no more lines and none at its arrowhead, overlaps none, and
+//! passes no box; a line that runs with its bus keeps to the bus. One such line lands on a card
+//! face, and a face another line already ends on takes none. The lines through one wall stand a
+//! lane apart outside it, the line whose run comes from further away innermost.
+
+use archboard_scene::geometry::{Point, Rect};
+
+use crate::ecma::abs;
+use crate::lanes::chains::LANE;
+use crate::lanes::side_runs::{
+    OVERLAP, Run, at_face, bends, length, meets, met, runs_of, through, worse,
+};
+
+/// What the pass reads of a laid-out picture: every card's box, every frame's box with its depth,
+/// and every line's points, which it rewrites.
+pub(crate) struct Picture<'p> {
+    pub cards: &'p [Rect],
+    pub frames: &'p [(Rect, usize)],
+    pub lines: &'p mut [Vec<Point>],
+}
+
+/// Whether a point stands inside a box.
+fn inside(point: Point, bx: &Rect) -> bool {
+    point.x > bx.x && point.x < bx.x + bx.width && point.y > bx.y && point.y < bx.y + bx.height
+}
+
+/// A line that could come in through a wall: its index, whether it is drawn from the card
+/// (leaving), the card's box, the wall's x, the run's height outside, and its points up to that
+/// run, outside end first.
+struct Door {
+    line: usize,
+    leaving: bool,
+    card: Rect,
+    wall: f64,
+    run: f64,
+    outside: Vec<Point>,
+}
+
+/// A line's points, outside end first.
+fn outside_first(placed: &Picture<'_>, line: usize, leaving: bool) -> Vec<Point> {
+    let mut points = placed.lines[line].clone();
+    if leaving {
+        points.reverse();
+    }
+    points
+}
+
+/// The card a point stands on the top or bottom face of.
+fn card_under(placed: &Picture<'_>, end: Point) -> Option<Rect> {
+    placed.cards.iter().copied().find(|bx| {
+        (abs(end.y - bx.y) < 0.5 || abs(end.y - bx.y - bx.height) < 0.5)
+            && end.x > bx.x
+            && end.x < bx.x + bx.width
+    })
+}
+
+/// The innermost frame round a card.
+fn frame_round(placed: &Picture<'_>, card: &Rect) -> Option<Rect> {
+    let corner = Point {
+        x: card.x + 1.0,
+        y: card.y + 1.0,
+    };
+    let frame = (placed
+        .frames
+        .iter()
+        .filter(|frame| inside(corner, &frame.0)))
+    .max_by_key(|frame| frame.1)?;
+    Some(frame.0)
+}
+
+/// The wall of a frame nearer a card, when nothing stands on the card's row between them.
+fn wall_toward(placed: &Picture<'_>, frame: &Rect, card: &Rect) -> Option<f64> {
+    let walls = [
+        (frame.x, card.x),
+        (frame.x + frame.width, card.x + card.width),
+    ];
+    let (wall, face) = walls
+        .into_iter()
+        .min_by(|one, other| abs(one.0 - one.1).total_cmp(&abs(other.0 - other.1)))?;
+    let mid = card.y + card.height / 2.0;
+    let row = (Point { x: wall, y: mid }, Point { x: face, y: mid });
+    let boxes = placed.cards.iter().copied();
+    let frames = placed
+        .frames
+        .iter()
+        .map(|one| one.0)
+        .filter(|bx| bx != frame);
+    let between = boxes
+        .chain(frames)
+        .filter(|bx| bx != card && !inside(row.0, bx))
+        .any(|bx| through(row, &bx));
+    (!between).then_some(wall)
+}
+
+/// The way in through a wall for one end of a line, when there is one.
+fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
+    let points = outside_first(placed, line, leaving);
+    let card = card_under(placed, *points.last()?)?;
+    let frame = frame_round(placed, &card)?;
+    if inside(points[0], &frame) {
+        return None;
+    }
+    let crossed = (0..points.len() - 1)
+        .rev()
+        .find(|&at| !inside(points[at], &frame))?;
+    if crossed == 0 || abs(points[crossed - 1].y - points[crossed].y) > 0.5 {
+        return None;
+    }
+    Some(Door {
+        line,
+        leaving,
+        card,
+        wall: wall_toward(placed, &frame, &card)?,
+        run: points[crossed].y,
+        outside: points[..crossed].to_vec(),
+    })
+}
+
+/// Whether a line already ends on a card's face.
+fn face_taken(placed: &Picture<'_>, card: &Rect, face: f64) -> bool {
+    placed.lines.iter().any(|points| {
+        let ends = [points[0], *points.last().expect("a point")];
+        ends.iter().any(|end| {
+            abs(end.x - face) < 0.5 && end.y > card.y - 0.5 && end.y < card.y + card.height + 0.5
+        })
+    })
+}
+
+/// Whether runs outside, up to the one that comes in through the wall, pass a box: a card but
+/// the one they reach, or a frame they cross into or out of.
+fn blocked(placed: &Picture<'_>, runs: &[Run], card: &Rect) -> bool {
+    runs.iter().any(|&run| {
+        let cards = placed.cards.iter().copied().filter(|bx| bx != card);
+        let frames = (placed.frames.iter().map(|frame| frame.0))
+            .filter(|bx| !(inside(run.0, bx) && inside(run.1, bx)));
+        cards.chain(frames).any(|bx| through(run, &bx))
+    })
+}
+
+/// Whether an x stands among a picture's cards, not round the outside of them all.
+fn among_cards(placed: &Picture<'_>, x: f64) -> bool {
+    let mut cards = placed.cards.iter().copied();
+    cards.clone().any(|bx| bx.x < x) && cards.any(|bx| bx.x + bx.width > x)
+}
+
+/// Whether a line through a wall reads better than the line it replaces, against the others.
+fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[Run]) -> bool {
+    let old = outside_first(placed, door.line, door.leaving);
+    let start = door.outside.len().saturating_sub(1);
+    let (new_runs, old_runs) = (runs_of(&points[start..]), runs_of(&old[start..]));
+    let side = *points.last().expect("a point");
+    let head = at_face(side.x, points[points.len() - 2].x, side.y);
+    let bused = met(&runs_of(&old), others) / OVERLAP > 0;
+    !bused
+        && !blocked(placed, &new_runs[..new_runs.len() - 1], &door.card)
+        && !others.iter().any(|&other| meets(head, other) > 0)
+        && length(points) <= length(&old)
+        && !worse(met(&new_runs, others), met(&old_runs, others))
+        && bends(points) < bends(&old)
+}
+
+/// The points of a line through a wall: its points up to its run outside, a turn a lane out
+/// from the wall, and a level run through the wall onto the card's side at its middle.
+fn through_wall(door: &Door, lane: f64, face: f64) -> Vec<Point> {
+    let y = door.card.y + door.card.height / 2.0;
+    let mut points = door.outside.clone();
+    points.extend([
+        Point {
+            x: lane,
+            y: door.run,
+        },
+        Point { x: lane, y },
+        Point { x: face, y },
+    ]);
+    points
+}
+
+/// The runs of every line but one.
+fn others_of(placed: &Picture<'_>, line: usize) -> Vec<Run> {
+    (placed.lines.iter().enumerate())
+        .filter(|&(at, _)| at != line)
+        .flat_map(|(_, points)| runs_of(points))
+        .collect()
+}
+
+/// Bring one line in through its wall where that reads better, a lane out from the lines
+/// already through it; answers the card face it lands on.
+fn through_wall_if_better(
+    placed: &mut Picture<'_>,
+    door: &Door,
+    taken: &[(f64, f64)],
+) -> Option<f64> {
+    let toward = if door.wall <= door.card.x { -1.0 } else { 1.0 };
+    let face = door.card.x + if toward < 0.0 { 0.0 } else { door.card.width };
+    let used = (taken
+        .iter()
+        .filter(|(wall, _)| abs(*wall - door.wall) < 0.5))
+    .count();
+    let lane = door.wall + toward * LANE * (used + 1) as f64;
+    let busy = taken.iter().any(|(_, x)| abs(*x - face) < 0.5);
+    if busy || face_taken(placed, &door.card, face) || !among_cards(placed, lane) {
+        return None;
+    }
+    let mut points = through_wall(door, lane, face);
+    if !reads_better(placed, door, &points, &others_of(placed, door.line)) {
+        return None;
+    }
+    if door.leaving {
+        points.reverse();
+    }
+    placed.lines[door.line] = points;
+    Some(face)
+}
+
+/// Bring the lines that read better through a container's wall in through it.
+pub(crate) fn enter_by_frame_sides(placed: &mut Picture<'_>) {
+    let mut doors: Vec<Door> = (0..placed.lines.len())
+        .flat_map(|line| [door_of(placed, line, false), door_of(placed, line, true)])
+        .flatten()
+        .collect();
+    let reach = |door: &Door| abs(door.outside.last().map_or(0.0, |point| point.x) - door.wall);
+    doors.sort_by(|one, other| reach(other).total_cmp(&reach(one)));
+    let mut taken: Vec<(f64, f64)> = Vec::new();
+    for door in doors {
+        if let Some(face) = through_wall_if_better(placed, &door, &taken) {
+            taken.push((door.wall, face));
+        }
+    }
+}

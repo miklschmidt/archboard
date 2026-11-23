@@ -33,6 +33,29 @@ fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
     }
 }
 
+// Kinds layer: where a ribbon of strands crossed a line, every strand hopped the
+// line on its own, and a crossing of two ribbons drew a hop at every pair.
+#[test]
+fn the_strands_of_one_cable_crossing_a_line_are_hopped_as_one_ribbon() {
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
+    let mut cable = drawing(&[crossed(), crosser(50.0), crosser(66.0)]);
+    let (from, to) = (
+        cable.edges[1].edge.from.clone(),
+        cable.edges[1].edge.to.clone(),
+    );
+    cable.edges[2].edge.from = from;
+    cable.edges[2].edge.to = to;
+    let result = bridged(&cable);
+    assert_eq!(result.bridges.len(), 1);
+    let bridge = &result.bridges[0];
+    assert_eq!(bridge.edge_id, "0");
+    assert!(hops(bridge));
+    let mut under = bridge.under.clone();
+    under.sort();
+    assert_eq!(under, ["1", "2"]);
+}
+
 // Code review: a hop on one of two close lines stood first, and left the
 // other line cut where one crest over both fits.
 #[test]

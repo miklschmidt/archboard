@@ -35,6 +35,13 @@ export const cliGroups = [
 		commands: ["model"],
 	},
 	{
+		slug: "upgrade",
+		label: "`upgrade`",
+		title: "The `upgrade` commands",
+		description: "Review the relationship inventory and install the current vault format.",
+		commands: ["upgrade"],
+	},
+	{
 		slug: "check",
 		label: "`check`",
 		title: "The `check` commands",

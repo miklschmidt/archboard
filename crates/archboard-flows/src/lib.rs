@@ -4,8 +4,8 @@
 //! (`archboard-scene`) turns into a scene.
 //!
 //! Every width and line break is the core's own
-//! (`archboard_scene::measure`). A flowchart is laid out by the track engine,
-//! as an architecture is (`archboard_layout::draw`).
+//! (`archboard_scene::measure`). A flowchart is laid out from its flow
+//! (ADR 0073).
 
 mod content;
 pub mod flowchart;

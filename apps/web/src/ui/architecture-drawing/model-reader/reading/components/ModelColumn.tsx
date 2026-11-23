@@ -1,9 +1,10 @@
-import { RiArrowRightSLine, type RemixiconComponentType } from "@remixicon/react";
+import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import { Button, cn } from "@archboard/ui-kit/components";
+import { Button } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
+import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import { ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
 
@@ -177,27 +178,16 @@ function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
 	return (
 		<section data-column-section={section} aria-label={label} className={SECTION}>
 			<div className="bg-sidebar sticky top-0 z-[11]">
-				<h2 className="m-0">
-					<button
-						type="button"
-						aria-expanded={!folded}
-						aria-controls={folded ? undefined : body}
-						onClick={fold}
-						className="group/head focus-visible:ring-ring flex h-7 w-full items-center justify-between gap-2 pr-3 pl-2 outline-none focus-visible:ring-1 focus-visible:ring-inset"
-					>
-						<span className="flex min-w-0 items-center gap-2">
-							<SectionLabel icon={props.icon} title={label} count={count} />
-							{props.summary}
-						</span>
-						<RiArrowRightSLine
-							aria-hidden="true"
-							className={cn(
-								"text-muted-foreground group-hover/head:text-foreground size-4 shrink-0 transition-transform motion-reduce:transition-none",
-								!folded && "rotate-90",
-							)}
-						/>
-					</button>
-				</h2>
+				<SectionHead
+					level={2}
+					folded={folded}
+					onFold={fold}
+					controls={body}
+					className="h-7 pr-3 pl-2"
+				>
+					<SectionLabel icon={props.icon} title={label} count={count} />
+					{props.summary}
+				</SectionHead>
 				{strip !== undefined && (
 					<div style={STRIP_STYLE} className="flex items-center px-2 pb-1">
 						{strip}

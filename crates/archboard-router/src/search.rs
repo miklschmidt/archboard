@@ -309,18 +309,6 @@ impl Search<'_> {
     }
 }
 
-/// The cheapest route of one connector, its points simplified to its turns,
-/// or nothing when no route through free space reaches its head.
-pub(crate) fn shortest(
-    grid: &Grid,
-    scene: &Scene,
-    connector: &Connector,
-    taken: &Taken,
-    memory: &mut Memory,
-) -> Option<Vec<Point>> {
-    limited(grid, scene, connector, taken, memory, usize::MAX)
-}
-
 /// The same search with a deterministic bound on settled states.
 pub(crate) fn limited(
     grid: &Grid,

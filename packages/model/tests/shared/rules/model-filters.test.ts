@@ -221,6 +221,13 @@ describe("a lens", () => {
 		expect(fallen.emptyLens).toEqual({ id: "main", name: "Main lines" });
 		expect(drawn(fallen)).toEqual(["read", "sum"]);
 		expect(fallen.leftOut).toBe(0);
+		const hidden = projectModel(computing, "system", null, {
+			hideEffects: ["query", "compute"],
+		});
+		expect(hidden.lens.id).toBe("main");
+		expect(hidden.emptyLens).toBeUndefined();
+		expect(hidden.connections).toHaveLength(0);
+		expect(hidden.leftOut).toBe(2);
 		const named = projectModel(computing, "system", null, { lens: "main" });
 		expect(named.lens.id).toBe("main");
 		expect(named.emptyLens).toBeUndefined();

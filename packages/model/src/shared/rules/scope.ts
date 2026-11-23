@@ -243,6 +243,69 @@ function partsReachedIn(
 	};
 }
 
+/**
+ * One plate for each cable. The lines between one pair of drawn parts, one way and in one
+ * comparison state, draw as one cable of strands, so its first line wears the words a joined
+ * line of them all would wear (`wordsOnJoinedLine`), and its other lines wear none.
+ * @param content The content the reading draws from.
+ * @param lines The lines the reading draws.
+ * @param endsOf Where a relationship's line starts and ends.
+ * @param standingOf How a line stands in a comparison.
+ * @returns The lines, each cable worded once.
+ */
+function cablePlates(
+	content: VariantContent,
+	lines: readonly OverviewLine[],
+	endsOf: (edge: SemanticEdge) => readonly [string, string],
+	standingOf: (line: DrawnEdge) => string,
+): OverviewLine[] {
+	const reached = partsReachedIn(content, endsOf);
+	const words = new Map<string, string | undefined>();
+	for (const cable of cablesOf(lines, standingOf)) {
+		const [first, ...rest] = cable;
+		if (first === undefined || rest.length === 0) continue;
+		const ends = { from: first.line.from, to: first.line.to, twoWay: first.line.twoWay === true };
+		const joins = cable.flatMap((one) => one.joins);
+		words.set(first.line.id, wordsOnJoinedLine(joins, ends, reached));
+		for (const other of rest) words.set(other.line.id, undefined);
+	}
+	return lines.map((one) =>
+		words.has(one.line.id) ? { ...one, line: worded(one.line, words.get(one.line.id)) } : one,
+	);
+}
+
+/**
+ * The cables some lines draw as: the lines between one pair of drawn parts, one way and in one
+ * comparison state, each cable's lines in the picture's order.
+ * @param lines The lines.
+ * @param standingOf How a line stands in a comparison.
+ * @returns Each cable's lines.
+ */
+function cablesOf(
+	lines: readonly OverviewLine[],
+	standingOf: (line: DrawnEdge) => string,
+): OverviewLine[][] {
+	const cables = new Map<string, OverviewLine[]>();
+	for (const one of lines) {
+		const key = [standingOf(one.line), one.line.from, one.line.to].join("\u0000");
+		cables.set(key, [...(cables.get(key) ?? []), one]);
+	}
+	return [...cables.values()].map((cable) =>
+		cable.toSorted((one, other) => one.line.order - other.line.order),
+	);
+}
+
+/**
+ * A line with other words, or none.
+ * @param line The line.
+ * @param label Its words.
+ * @returns The line.
+ */
+function worded(line: DrawnEdge, label: string | undefined): DrawnEdge {
+	const { label: _words, ...bare } = line;
+	return label === undefined ? bare : { ...bare, label };
+}
+
 /** One line of the overview, and the relationships it stands for. */
 interface OverviewLine {
 	/** What the overview draws. */
@@ -464,6 +527,7 @@ export {
 	EVERYTHING_VIEW,
 	MIXED_KIND,
 	RESERVED_VIEW_NAMES,
+	cablePlates,
 	containersOf,
 	findView,
 	overviewLines,

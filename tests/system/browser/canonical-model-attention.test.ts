@@ -121,10 +121,10 @@ test("attention lights canonical connections without hiding labels or cutting sh
 			...["Hub", ...FAN].map((name) => ({ name, kind: "module", parent: "Fanout" })),
 		],
 		edges: [
-			{ from: "Writer", to: "Renderer", kind: "call", label: "draws" },
-			{ from: "Renderer", to: "Viewer", kind: "call", label: "shows" },
+			{ from: "Writer", to: "Renderer", kind: "sync", label: "draws" },
+			{ from: "Renderer", to: "Viewer", kind: "sync", label: "shows" },
 			{ from: "Archive", to: "Viewer", kind: "storage", label: "replays" },
-			...FAN.map((to) => ({ from: "Hub", to, kind: "call" })),
+			...FAN.map((to) => ({ from: "Hub", to, kind: "sync" })),
 		],
 	});
 	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;

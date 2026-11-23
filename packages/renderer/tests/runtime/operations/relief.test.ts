@@ -7,7 +7,7 @@ const content = orderedFixture({
 	nodes: ["a", "b"].map((id) => ({ id, name: id, kind: "module" })),
 	edges: [{ id: "ab", from: "a", to: "b", kind: "call" }],
 });
-const request = { policy: defaultSemanticPolicy(), content, layout: "blocks" as const };
+const request = { policy: defaultSemanticPolicy(), content };
 
 test("a flat relief changes how blocks are painted and never where they stand", async () => {
 	const raised = await renderArchitecture(request);

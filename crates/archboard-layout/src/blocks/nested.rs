@@ -1,12 +1,14 @@
-//! A picture drawn as blocks (the Blocks engine): every container is a block of
-//! its own and every group region round more than one node too, each laid out
+//! A picture drawn as blocks: every container is a block of its own and every group region round more than one node too, each laid out
 //! on its own. A block of blocks gathers the cards it holds outside every block
-//! into a cluster, so every block holds cards alone or blocks alone.
+//! into a cluster, so every block holds cards alone or blocks alone, except in a Lanes drawing
+//! (`BlockTree::lanes`): there the cards beside a block are ranked with it, so each card stands
+//! above or below the blocks it talks to.
 
 use std::rc::Rc;
 
-use crate::graph::{Edge, Node};
-use crate::track::scene::Set;
+use crate::ecma::sorted_by;
+use crate::graph::{Edge, Node, semantic_order};
+use crate::lanes::scene::Set;
 
 use super::headers::Header;
 use super::laid::tab_of;
@@ -14,11 +16,12 @@ use super::lone::{band_of, card_as, frame_header, placing_group};
 use super::tree::{Block, BlockId, BlockTree, Kind};
 
 impl BlockTree {
-    /// Fill a block drawn as blocks with nodes, gathering each group's members
-    /// into its region.
-    pub(super) fn fill_nested(&mut self, block: BlockId, nodes: &[&Node]) -> Result<(), String> {
-        for node in nodes {
-            let group = placing_group(&mut self.lone, &self.captions, node, nodes);
+    /// Fill a block with nodes, in the picture's order, gathering each group's
+    /// members into its region.
+    pub(super) fn fill(&mut self, block: BlockId, nodes: &[Node]) -> Result<(), String> {
+        let nodes = by_order(nodes);
+        for &node in &nodes {
+            let group = placing_group(&mut self.lone, &self.captions, node, &nodes);
             let holder = match group {
                 None => block,
                 Some(group) => self.region(block, &group),
@@ -69,14 +72,19 @@ impl BlockTree {
     /// Gather loose cards into compact units beside the blocks a parent holds.
     /// A named parent interface keeps disconnected member work independent.
     /// The picture's loose collaborators retain their shared rank context.
+    /// A Lanes drawing gathers none: a cluster is laid out without the blocks beside it, so it
+    /// stands every card on one rank and wraps that rank into a grid, whatever the card talks to.
     pub(super) fn gather(&mut self, block: BlockId, edges: &[Rc<Edge>]) {
+        if self.lanes {
+            return;
+        }
         let items = self.get(block).items.clone();
         let inner: Vec<&String> = items.iter().filter(|item| self.is_block(item)).collect();
         for item in &inner {
             self.gather(self.blocks[item.as_str()], edges);
         }
         let loose: Vec<&String> = items.iter().filter(|item| !self.is_block(item)).collect();
-        if self.nesting != super::tree::Nesting::Blocks || inner.is_empty() || loose.is_empty() {
+        if inner.is_empty() || loose.is_empty() {
             return;
         }
         let groups = card_groups(self.get(block), &loose, edges);
@@ -154,4 +162,12 @@ fn connected(card: &str, remaining: &mut Set<String>, edges: &[Rc<Edge>]) -> Set
         at += 1;
     }
     members
+}
+
+/// Nodes in the picture's order: by their authored order, stably.
+fn by_order(nodes: &[Node]) -> Vec<&Node> {
+    let all: Vec<&Node> = nodes.iter().collect();
+    sorted_by(&all, |one, other| {
+        semantic_order(one.layout_options.as_ref()) - semantic_order(other.layout_options.as_ref())
+    })
 }

@@ -262,6 +262,7 @@ fn drawing_of(
         .into_iter()
         .enumerate()
         .map(|(order, run)| DrawingEdge {
+            echelon: false,
             edge: EdgeFacts {
                 id: edge_id(&run, order),
                 from: run.from,
@@ -444,7 +445,6 @@ pub fn picture(request: FlowchartRequest) -> PaintRequest {
     PaintRequest {
         picture: Picture::Architecture(Box::new(ArchitecturePicture {
             drawing,
-            whole: None,
             appearances,
             lines,
             steps: Vec::new(),

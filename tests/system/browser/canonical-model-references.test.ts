@@ -152,7 +152,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	foreignGateway.outgoing.push({
 		id: "Ledger#Audit",
 		to: "Ledger#Worker",
-		kind: "call",
+		kind: "sync",
 		effect: "mutation",
 		order: 30,
 		label: "Audit dispatch",

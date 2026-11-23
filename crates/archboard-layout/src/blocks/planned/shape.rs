@@ -49,16 +49,21 @@ impl Shape {
             .unwrap_or_else(|| self.endpoints[&endpoint])
     }
 
-    /// What one line keeps clear of at one endpoint: its own ends are bare, and
-    /// a line that ends on the foot of a tab touches that tab.
-    pub(super) fn clearance(&self, ends: (usize, usize), foot: Option<usize>, id: usize) -> Rect {
+    /// What one line, whose ink reaches `half` to either side of its route, keeps clear of at one
+    /// endpoint: its own ends are bare, and a line that ends on the foot of a tab touches that tab.
+    pub(super) fn clearance(
+        &self,
+        (ends, half): ((usize, usize), f64),
+        foot: Option<usize>,
+        id: usize,
+    ) -> Rect {
         let own = |at: usize| at == ends.0 || at == ends.1;
         if own(id) {
             self.endpoints[&id]
         } else if foot.is_some_and(own) {
             self.solid(id)
         } else {
-            inflate(self.solid(id), LINE_CLEAR)
+            inflate(self.solid(id), LINE_CLEAR + half)
         }
     }
 

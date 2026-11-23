@@ -164,6 +164,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 			[...selection.ids].filter((id) => !behavioralIds.has(id)),
 			edges,
 			!edges.every(lens.draws),
+			model.policy,
 		);
 	}, [model.relationships, model.policy, drawnLens, selection.ids, reveal, behavioralIds]);
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");

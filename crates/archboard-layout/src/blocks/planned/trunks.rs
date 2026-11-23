@@ -136,7 +136,7 @@ fn cost(
         let target =
             connector.subjects.1.is_some() && connector.subjects.1 == other.connector.subjects.1;
         (!(source || target) || super::junctions::sharing(path, points, source, target))
-            && super::junctions::ordered(path, points, source || target)
+            && super::junctions::ordered(path, points, (source || target, 0.0))
     });
     if !good {
         return None;

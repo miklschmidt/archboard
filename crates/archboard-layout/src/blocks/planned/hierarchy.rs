@@ -63,14 +63,7 @@ impl Channels<'_, '_> {
         let source = shape.endpoints[&from];
         let mut paths = Vec::new();
         for side in [Side::Top, Side::Bottom, Side::Left, Side::Right] {
-            let Some(end) = port(
-                model,
-                edge,
-                false,
-                side,
-                shape,
-                *tail.last().expect("a departure"),
-            ) else {
+            let Some(end) = port(model, edge, false, side, shape) else {
                 continue;
             };
             let head = vec![end.attachment, end.approach];
@@ -135,14 +128,13 @@ impl Channels<'_, '_> {
     fn clear_segment(&self, path: &[Point]) -> bool {
         let (model, shape, edge) = (self.model, self.shape, self.edge);
         let ends = model.ends[edge];
-        shape
-            .endpoints
-            .keys()
-            .all(|&id| !crosses_box(path, shape.clearance(ends, model.endpoints[id].foot, id)))
-            && shape
-                .labels
-                .iter()
-                .all(|(&id, &at)| id == edge || !crosses_box(path, inflate(at, 4.0)))
+        shape.endpoints.keys().all(|&id| {
+            let clear = shape.clearance((ends, model.half(edge)), model.endpoints[id].foot, id);
+            !crosses_box(path, clear)
+        }) && shape
+            .labels
+            .iter()
+            .all(|(&id, &at)| id == edge || !crosses_box(path, inflate(at, 4.0)))
             && shape
                 .drawing
                 .regions

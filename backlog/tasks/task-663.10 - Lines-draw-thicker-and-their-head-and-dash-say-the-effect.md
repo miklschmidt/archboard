@@ -1,11 +1,11 @@
 ---
 id: TASK-663.10
-title: Lines draw thicker, and their head and dash say the effect
+title: Relationship marks show the final effect decoration
 status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T14:12:00Z'
-updated_date: '2026-11-22T20:54:00Z'
+updated_date: '2026-11-23T01:54:00Z'
 labels:
   - feature
 dependencies: []
@@ -51,6 +51,8 @@ Open: packages/renderer tests: 4 corpus failures. Lane spacing on Packages and B
 Owner round 2 (after final-sheet.png): heads larger but not ballooned. Marks at 1.5 units per square unit (wedge 15x15 on a 2.4 line); '=' bars 8.4 apart, 13 across, reach 21; imprint 9 reach, 2.6 thick; ring 4.2; far-out floor 8 px square so the '=' stays open at Painting's opening zoom (~0.28); straight approach 30 (owner: 'a bit longer' than 23); a line with no bend needs 23; compaction keeps columns while parting gains less than APPROACH+LANE. Evidence: artifacts/t663-evidence/v2/final2-*.png, final2-sheet.png. Owner: a relationship ending on a container is not allowed (RELATIONSHIP_ON_CONTAINER), so the renderer test for its header arrival goes. Vault: part 'Legend symbols' with Viewer marks and Export legend drawing from it (RELATIONSHIP_UNDRAWN warning gone).
 
 Round 2 results. Layout: a line with no bend needs only 23 (STRAIGHT_RUN); compaction keeps columns while parting gains less than APPROACH+LANE; Blocks labels keep 24 apart; a lone end may land under its turn; a door widens until its heads stand a lane apart; channel tracks pack a lane apart; when Blocks takes the retained placement it draws no line words (owner). Track-only fixes reverted: Track is being deleted lower in the stack (TASK-672), and its fallback router stays as an engine option; the Track 'Archboard (root)' wide-pictures case still fails and goes with Track. Removed the renderer test of a line ending on a container (owner: RELATIONSHIP_ON_CONTAINER is not allowed). Legend sample box 30 -> 36 units so a query's ring and eye keep a line. Vault: parts 'Legend symbols' and 'Archive record format' (the latter fixes ANCHOR_SYMBOL_MISSING left by TASK-670). Redrawn: README architecture/sequence/shop SVGs, banner, social card, site diagrams; site mock legend now matches the shell (no left-out rows: the shop's default lens leaves nothing out). Checks: archboard check only the 3 known MODULE_SHALLOW; types, lint:all, format:check pass; cargo test, clippy -D warnings pass; renderer 848 pass, 1 Track fail; model 615 pass; browser legend, filters, surface, modes pass. README clips and narrated videos are stale and need attaching (not done).
+
+The owner’s final decoration supersedes the earlier dashed query and dotted compute designs. ADR 0094 records the shipped marks. Earlier implementation notes document the iterations.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

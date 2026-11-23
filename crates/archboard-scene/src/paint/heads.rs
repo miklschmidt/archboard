@@ -14,6 +14,7 @@ use crate::drawing::Emphasis;
 use crate::geometry::Point;
 use crate::paint::styles::{HEAD_LENGTH, stroke_width};
 use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, Shape, Stroke};
+use crate::sizes::THIN_BODY;
 
 /// The side of the square a new mark is drawn in, in its own units.
 const MARK_BOX: f64 = 16.0;
@@ -28,6 +29,9 @@ pub(super) const APPROACH: f64 = 30.0;
 /// ring at its start, and a little of the body between them. Such a line has
 /// no bend for a head to sit on, so it needs no approach.
 pub(super) const STRAIGHT_RUN: f64 = 23.0;
+/// How far back from its end a strand in echelon stands its mark: a mark's whole square, so
+/// that its mark clears the marks of the strands beside it, which stand at the end.
+pub(super) const ECHELON: f64 = MARK_BOX * MARK_UNIT;
 
 /// How many picture units one unit of a new mark's square is: a wedge 15
 /// units long and as wide, about six times as long as its line is thick, so it
@@ -214,14 +218,6 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
             steps.push(PathStep::Close);
             vec![
                 Shape::path(Purpose::Arrowhead, steps).stroked(Stroke::new(ink, OUTLINE).rounded()),
-                Shape::new(
-                    Purpose::Arrowhead,
-                    Geometry::Circle {
-                        centre: back(6.2, 0.0),
-                        radius: 0.95,
-                    },
-                )
-                .filled(ink),
             ]
         }
         // The bars stand wide apart and reach well past the line, so the "="
@@ -251,20 +247,44 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
 pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
     let place = place_of(head);
     let length = mark_length(head);
+    let width = stroke_width(weight);
+    let body_width = if head == Head::Detached {
+        THIN_BODY * width
+    } else {
+        width
+    };
     Marker {
         id,
         view: place.view,
         reference: place.reference,
         hold: place.hold,
-        size: crate::geometry::round_coord(length / stroke_width(weight)),
+        size: crate::geometry::round_coord(length / body_width),
         shapes: mark_shapes(head, ink),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{APPROACH, STRAIGHT_RUN, body_short_of};
+    use super::{APPROACH, STRAIGHT_RUN, body_short_of, mark_length, mark_marker, stroke_width};
+    use crate::drawing::Emphasis;
     use crate::scene::Head;
+    use crate::scene::{HeadInk, MarkerId, Token};
+    use crate::sizes::THIN_BODY;
+
+    #[test]
+    fn a_thinner_body_keeps_its_chevron_at_the_route_end() {
+        for weight in [Emphasis::Normal, Emphasis::Hero] {
+            let head = Head::Detached;
+            let id = MarkerId::Shared {
+                head,
+                weight,
+                ink: HeadInk::Neutral,
+            };
+            let marker = mark_marker(id, head, weight, &Token::Border.into());
+            let size = marker.size * stroke_width(weight) * THIN_BODY;
+            assert!((size - mark_length(head)).abs() < 0.02);
+        }
+    }
 
     #[test]
     fn every_mark_and_a_little_body_fit_the_straight_approach_and_a_straight_line() {

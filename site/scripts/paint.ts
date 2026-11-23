@@ -62,7 +62,6 @@ async function read(vault: string, open: boolean) {
 	const reading = projectModel(model, null, null, { expand }, undefined);
 	const request = {
 		content: reading.content,
-		variant: reading.complete,
 		held: reading.held,
 		standing: reading.standing,
 		unsettled: reading.unsettled,

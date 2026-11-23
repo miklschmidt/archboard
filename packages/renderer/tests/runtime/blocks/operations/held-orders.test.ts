@@ -33,7 +33,7 @@ const policy = semanticPolicySchema().parse({
 
 test("a block's ports keep the order its parent settles without crossing nested routes", async () => {
 	const content = orderedFixture(durableWriteBoundary);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawing = await renderArchitecture({ content, theme: "light", policy });
 	const routes = corridorPoints(drawing.svg);
 	for (const id of ["i6pk24Ov", "smLdyKlp"])
 		for (const other of ["9O4o9jcE", "C0t1t0gb", "E4f3pKJb", "V478HCgq"])
@@ -45,6 +45,6 @@ test("a block's ports keep the order its parent settles without crossing nested 
 // and was chosen, and one of its lines ran up and round Semantic renderer.
 test("a held order does not part lines joined on their way to a card", async () => {
 	const content = orderedFixture(modelRequestPath);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawing = await renderArchitecture({ content, theme: "light", policy });
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
 });

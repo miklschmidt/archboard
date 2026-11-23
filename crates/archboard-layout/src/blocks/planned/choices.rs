@@ -239,14 +239,14 @@ fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape)
     let mut obstacles: Vec<_> = shape
         .endpoints
         .keys()
-        .map(|&id| shape.clearance((from, to), model.endpoints[id].foot, id))
+        .map(|&id| shape.clearance(((from, to), model.half(edge)), model.endpoints[id].foot, id))
         .collect();
     obstacles.extend(
         shape
             .labels
             .iter()
             .filter(|(id, _)| **id != edge)
-            .map(|(_, &r)| inflate(r, 12.01)),
+            .map(|(_, &r)| inflate(r, 12.01 + model.half(edge))),
     );
     obstacles.extend(
         shape
@@ -342,7 +342,7 @@ fn connect(
                 &mut points,
             );
             if points.len() >= 2
-                && super::channel::approaches(&points)
+                && super::channel::approaches(&points, model.half(edge))
                 && super::channel::attached(points[0], points[1], a)
                 && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
             {

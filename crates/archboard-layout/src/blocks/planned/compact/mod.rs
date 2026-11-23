@@ -5,15 +5,16 @@
 
 use crate::{
     blocks::assembly::Placed,
-    constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET},
+    constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, ECHELON},
     geometry::Axis,
-    track::chains::LANE,
+    lanes::chains::LANE,
 };
 
 use super::{junctions::JOIN_ROOM, shape::Shape};
 
 mod sheet;
 
+pub(super) use sheet::Looks;
 use sheet::{Kind, Piece, Sheet};
 
 /// The least room between two cards.
@@ -123,7 +124,19 @@ impl Found {
     /// from that card.
     fn keep(&mut self, first: &Piece, second: &Piece) {
         let gap = second.low - first.high;
-        let mut least = room(first.kind, second.kind, self.reach);
+        // A cable's ink reaches its half-width past its run, and its set-back marks need as much
+        // again of its approach beside a card.
+        let card_and_line = matches!(
+            (first.kind, second.kind),
+            (Kind::Card | Kind::Door, Kind::Line) | (Kind::Line, Kind::Card | Kind::Door)
+        );
+        let setback = if card_and_line && first.ink + second.ink > 0.0 {
+            ECHELON
+        } else {
+            0.0
+        };
+        let mut least =
+            room(first.kind, second.kind, self.reach) + first.ink + second.ink + setback;
         if first.joins.contains(&second.mover) || second.joins.contains(&first.mover) {
             least = least.max(JOIN_ROOM);
         }
@@ -305,9 +318,9 @@ fn squeeze(
     axis: Axis,
     stations: &[Vec<usize>],
     reach: f64,
-    two_way: &[&str],
+    looks: Looks<'_>,
 ) -> bool {
-    let mut sheet = Sheet::of(drawing, axis, two_way);
+    let mut sheet = Sheet::of(drawing, axis, looks);
     reach_through(&mut sheet.pieces, reach);
     let (rules, bodies) = rules_of(&sheet.pieces, sheet.movers, reach);
     let start = sheet.pieces.iter().map(|piece| piece.low);
@@ -332,15 +345,15 @@ fn squeeze(
 /// A routed drawing with the space that nothing uses taken out, if any was. Every run keeps
 /// a clearance of `clear` on each side. `two_way` names the lines with an arrowhead at their
 /// start. The caller must place the labels again and apply the complete geometry guard.
-pub(super) fn drawing(shape: &Shape, clear: f64, two_way: &[&str]) -> Option<Placed> {
+pub(super) fn drawing(shape: &Shape, clear: f64, looks: Looks<'_>) -> Option<Placed> {
     let mut drawing = shape.routed();
     let reach = 2.0 * clear;
     let columns = stations(&drawing, Axis::X);
     let rows = stations(&drawing, Axis::Y);
     let mut moved = false;
     for _ in 0..PASSES {
-        moved |= squeeze(&mut drawing, Axis::X, &columns, reach, two_way);
-        moved |= squeeze(&mut drawing, Axis::Y, &rows, reach, two_way);
+        moved |= squeeze(&mut drawing, Axis::X, &columns, reach, looks);
+        moved |= squeeze(&mut drawing, Axis::Y, &rows, reach, looks);
     }
     moved.then_some(drawing)
 }

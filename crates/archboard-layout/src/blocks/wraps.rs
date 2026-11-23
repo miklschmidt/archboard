@@ -6,15 +6,15 @@ use std::rc::Rc;
 use crate::constants::LAYOUT_ASPECT;
 use crate::ecma::{abs, sorted_by};
 use crate::geometry::Rect;
-use crate::track::grid::grids;
-use crate::track::scene::Map;
-use crate::track::score::{
+use crate::lanes::grid::grids;
+use crate::lanes::scene::Map;
+use crate::lanes::score::{
     Plan, Weighed, crossings_of, score_of, scores_better, sinks, wrap_plans,
 };
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
-use super::tree::{BlockId, BlockTree, Kind, Nesting};
+use super::tree::{BlockId, BlockTree, Kind};
 
 /// How much better a wrap must fit the page than the picture whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -95,28 +95,19 @@ pub(crate) fn search_of(
     let Wrapping { laid, insets } = laying.wrapping;
     let loose = CardLayout::new(tree, laid, block, insets, Arrangement::default()).loose_cards();
     let mut candidates = Vec::new();
-    if loose.iter().any(|cards| grids(cards.len())) {
+    if grids(loose.len()) {
         candidates.push(Candidate::Grid);
     }
-    for lowered in wraps_of(laying.whole, tree, block) {
-        if !tree.expanded
-            && !try_wrap(
-                &lowered,
-                tree.nesting,
-                laying.whole.boxes.len(),
-                tree.cards.len(),
-            )
-        {
+    for lowered in wraps_of(laying.whole, tree) {
+        if !tree.expanded && !try_wrap(&lowered, laying.whole.boxes.len(), tree.cards.len()) {
             continue;
         }
-        candidates.extend(
-            column_choices(&lowered, tree.nesting, tree.expanded)
-                .into_iter()
-                .map(|columns| Candidate::Lowered {
-                    lowered: lowered.clone(),
-                    columns,
-                }),
-        );
+        candidates.extend(column_choices(tree.expanded).into_iter().map(|columns| {
+            Candidate::Lowered {
+                lowered: lowered.clone(),
+                columns,
+            }
+        }));
     }
     (!candidates.is_empty()).then_some(Search { needed, candidates })
 }
@@ -218,14 +209,12 @@ fn tried(
         let lined = layout.lined(gv, widths)?;
         return Ok(Some(wrap_of(layout.finish(gv, lined)?, None)));
     };
-    let held = tree.get(block);
-    let around = |card: &str| held.cluster_of.get(card).cloned();
     let lined = layout.lined(gv, widths)?;
-    if sinks(lowered, &lined.boxes, around) {
+    if sinks(lowered, &lined.boxes) {
         return Ok(None);
     }
     let wrapped = wrap_of(layout.finish(gv, lined)?, Some(lowered));
-    Ok((!sinks(lowered, &wrapped.laid.boxes, around)).then_some(wrapped))
+    Ok((!sinks(lowered, &wrapped.laid.boxes)).then_some(wrapped))
 }
 
 /// Whether one wrap reads better than another: it scores higher, or, as well,
@@ -243,21 +232,16 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 }
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
-/// Track keeps its existing choices. The first Blocks hierarchy holds columns;
-/// the bounded placement comparison can also try the hierarchy with free columns.
-fn column_choices(lowered: &Plan, nesting: Nesting, free: bool) -> Vec<bool> {
-    let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep && nesting != Nesting::Blocks || nesting == Nesting::Blocks && !free {
-        vec![true]
-    } else {
-        vec![false, true]
-    }
+/// The first hierarchy holds columns; the bounded placement comparison can also
+/// try the hierarchy with free columns.
+fn column_choices(free: bool) -> Vec<bool> {
+    if free { vec![false, true] } else { vec![true] }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block
 /// is wider than the page's shape. Interchangeable cards standing together
 /// stay in one row.
-fn wraps_of(whole: &Laid, tree: &BlockTree, block: BlockId) -> Vec<Plan> {
+fn wraps_of(whole: &Laid, tree: &BlockTree) -> Vec<Plan> {
     let bands: Vec<_> = whole
         .bands
         .iter()
@@ -276,13 +260,8 @@ fn wraps_of(whole: &Laid, tree: &BlockTree, block: BlockId) -> Vec<Plan> {
     let across = sorted_by(&widest.items, |one, other| {
         whole.boxes[one.as_str()].x - whole.boxes[other.as_str()].x
     });
-    let held = tree.get(block);
     let runs = peer_runs(&across, &whole.boxes, |id| {
-        let peers = tree.cards.get(id)?.peers.as_ref()?;
-        Some(format!(
-            "{}|{peers}",
-            held.cluster_of.get(id).map_or("", String::as_str)
-        ))
+        tree.cards.get(id)?.peers.clone()
     });
     wrap_plans(&runs)
         .into_iter()
@@ -317,8 +296,8 @@ fn peer_runs(
         .collect()
 }
 
-fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize, cards: usize) -> bool {
-    if nesting != Nesting::Blocks || boxes <= 24 {
+fn try_wrap(lowered: &Plan, boxes: usize, cards: usize) -> bool {
+    if boxes <= 24 {
         return true;
     }
     let rows = lowered.values().copied().max().unwrap_or(0) + 1;

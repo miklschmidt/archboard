@@ -32,16 +32,11 @@ function boxes(drawn: DrawnPicture): [string, DiagramBox][] {
 	);
 }
 
-for (const [layout, view] of [
-	["track", undefined],
-	["blocks", undefined],
-	["blocks", "Exchange"],
-] as const) {
-	test(`a title stands above the ${view ?? "architecture"} drawn by ${layout}, which moves down whole`, async () => {
-		const plain = await exported({ variant: "Worker pool", layout, view });
+for (const view of [undefined, "Exchange"] as const) {
+	test(`a title stands above the ${view ?? "architecture"}, which moves down whole`, async () => {
+		const plain = await exported({ variant: "Worker pool", view });
 		const titled = await exported({
 			variant: "Worker pool",
-			layout,
 			view,
 			title: "Ingest & <queue>",
 		});

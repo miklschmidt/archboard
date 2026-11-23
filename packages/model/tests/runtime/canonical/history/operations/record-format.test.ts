@@ -46,14 +46,14 @@ function archiveWith(record: unknown) {
 }
 
 test("a record from a newer Archboard says so and says to update, without the schema", async () => {
-	const { vault, id } = archiveWith({ schemaVersion: 2, kind: "checkpoint", added: true });
+	const { vault, id } = archiveWith({ schemaVersion: 3, kind: "checkpoint", added: true });
 	expect(await listArchitectureCheckpoints(vault)).toMatchObject({
 		success: false,
 		code: "ARCHIVE_NEWER",
 		diagnostics: [
 			{
 				file: id,
-				message: `This vault's history was written by a newer Archboard: record ${id} has format 2, and this Archboard reads formats up to 1.`,
+				message: `This vault's history was written by a newer Archboard: record ${id} has format 3, and this Archboard reads formats up to 2.`,
 				recovery:
 					"Update Archboard to the newest release, then retry. The history is intact: do not restore, fetch or roll back the archboard-history branch.",
 			},
@@ -79,7 +79,7 @@ test("the record format is raised whenever the record schema changes", () => {
 	// A failure here means the history record changed. Raise RECORD_FORMAT, so an
 	// older Archboard reading a new record says it needs an update, then pin both.
 	expect({ format: RECORD_FORMAT, shape }).toEqual({
-		format: 1,
-		shape: "6d437b44ac2e3b468d10edb6cd3722a75bf609826adecfecf772d598085e4998",
+		format: 2,
+		shape: "1a15140b38d62ad3c67a322938e06c677d2102b4bf6c8882b64dfafca3af3cbc",
 	});
 });

@@ -26,7 +26,7 @@ function ModelLensPresets(props: {
 	const choose = useCallback(
 		(values: readonly unknown[]): void => {
 			const [value] = values;
-			if (typeof value === "string" && value !== lens) onSelect(value);
+			onSelect(typeof value === "string" ? value : lens);
 		},
 		[onSelect, lens],
 	);

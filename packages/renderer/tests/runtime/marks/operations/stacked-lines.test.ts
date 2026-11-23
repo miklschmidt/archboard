@@ -1,7 +1,7 @@
 // Two lines with no card in common must never share one stroke: drawn on one
 // coordinate they read as one line, and a trunk joining sources to the wrong
 // targets. Cards one routing gap apart leave room for one line between them.
-// What this catches: an engine leaving two unrelated lines in such a gap
+// What this catches: two unrelated lines left in such a gap
 // when both turn into it from the cards on either side.
 
 import { expect, test } from "bun:test";
@@ -10,7 +10,6 @@ import {
 	type SemanticPolicy,
 	defaultSemanticPolicy,
 } from "@archboard/model/policy";
-import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
@@ -65,20 +64,17 @@ function runsOf(points: readonly DrawnPoint[]): Run[] {
 /**
  * The pairs of unrelated lines a drawing draws on one stroke.
  * @param content The document.
- * @param layout The engine that draws it.
  * @param options The vocabulary, where the document needs its own.
  * @param options.policy The policy.
  * @returns One key for every such pair.
  */
 async function stackedPairs(
 	content: VariantContent,
-	layout: LayoutEngineName,
 	options: { readonly policy?: SemanticPolicy } = {},
 ): Promise<string[]> {
 	const drawn = await renderArchitecture({
 		content,
 		theme: "light",
-		layout,
 		policy: options.policy ?? defaultSemanticPolicy(),
 	});
 	const routes = corridorPoints(drawn.svg);
@@ -101,9 +97,6 @@ async function stackedPairs(
 	);
 }
 
-test.each(layoutEngineSchema().options)(
-	"unrelated lines never share one stroke in the gap between two cards (%s)",
-	async (layout) => {
-		expect(await stackedPairs(orderedFixture(agentWorkbench), layout, { policy })).toEqual([]);
-	},
-);
+test("unrelated lines never share one stroke in the gap between two cards", async () => {
+	expect(await stackedPairs(orderedFixture(agentWorkbench), { policy })).toEqual([]);
+});

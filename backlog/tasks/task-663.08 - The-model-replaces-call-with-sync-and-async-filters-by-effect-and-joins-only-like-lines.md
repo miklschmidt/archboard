@@ -3,11 +3,11 @@ id: TASK-663.08
 title: >-
   The model replaces call with sync and async, filters by effect, and joins only
   like lines
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T14:11:00Z'
-updated_date: '2026-11-22T14:45:00Z'
+updated_date: '2026-11-23T02:12:00Z'
 labels:
   - feature
 dependencies: []
@@ -26,7 +26,7 @@ ordinal: 1154000
 - [x] #1 The built-in kinds are sync, async, http, rpc, event, queue, stream, spawn, render, storage and dependency, with the colors of the spec, and no kind sets the arrowhead
 - [x] #2 A relationship, lens selector, --hide-kind or relationshipKinds entry naming call is refused with sync and async named
 - [x] #3 Lenses are main, effects (Side effects), sync-compute (Sync compute), network, reads, dependencies and all, in that order
-- [ ] #4 hideEffects with tokens mutation, query, compute and declared filters after the lens, and the address, recipe and CLI --hide-effect carry it
+- [x] #4 hideEffects with tokens mutation, query, compute and declared filters after the lens, and the address, recipe and CLI --hide-effect carry it
 - [x] #5 Relationships join into one line only when they share kind and effect
 - [x] #6 An old address or recipe with hideKinds=call reads as sync and async
 - [x] #7 The upgrade inventory seeds sync or async from code facts and leaves the rest blank
@@ -53,4 +53,12 @@ Implemented in ea792e0f9f, 5d88e047d6, f9e8945a6d, 909bc41dba, 2a3f85eda5.
 - Joining: lines join only within one kind, one effect and one comparison state. The model never emits the mixed kind; legacy overview readings still can.
 - Built-ins moved to shared/schemas/built-in-vocabulary.ts.
 - AC4 is open: the web address (apps/web reading-routing) must parse hideEffects<pane>; that is TASK-663.11's scope. The render request, the recipe (same schema), the server render route, the pane reading schema and the CLI carry hideEffects. The system tests that render end to end wait for TASK-663.10's core to build.
+
+AC4 verified on ec32ee706c: the address carries hideEffects<pane> (TASK-663.11, legend and filter browser tests pass); render and rasterize take --hide-effect and record hideEffects in the recipe (tests/system/models/model-render-context.test.ts passes in the system lane); a repeatable option with choices keeps every value (apps/cli parameters.test.ts).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+sync and async replace call; hideEffects filters after the lens and travels in the address, recipe and CLI; lenses are main, Side effects, Sync compute, network, reads, dependencies and all; lines join only by kind and effect; old hideKinds=call reads as both; the upgrade seeds sync or async from code facts. Verified by the full gate on ec32ee706c (modules 5,270, system 231, solo 15, repository, browser lane) and four Sol reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->

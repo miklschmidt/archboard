@@ -8,6 +8,8 @@ use crate::geometry::{Point, Rect};
 #[derive(Clone)]
 struct Stroke {
     edge: usize,
+    /// How far the stroke's ink reaches to either side: a cable's half, a lone line's nothing.
+    half: f64,
     across: f64,
     lo: f64,
     hi: f64,
@@ -33,7 +35,7 @@ impl StrokeIndex {
         let mut strokes: Strokes = Default::default();
         for line in &shape.routes {
             let edge = model.edge_index[line.id.as_str()];
-            for (horizontal, stroke) in line.points.windows(2).map(|pair| Stroke::of(edge, pair)) {
+            for (horizontal, stroke) in strokes_of(model, edge, &line.points) {
                 strokes[usize::from(horizontal)].push(stroke);
             }
         }
@@ -47,9 +49,14 @@ impl StrokeIndex {
         }
     }
     /// The index of these routes and one more route after them, as `new` makes it.
-    pub(in crate::blocks::planned) fn with(&self, edge: usize, path: &[Point]) -> Self {
+    pub(in crate::blocks::planned) fn with(
+        &self,
+        model: &Model<'_>,
+        edge: usize,
+        path: &[Point],
+    ) -> Self {
         let mut strokes = self.strokes.clone();
-        for (horizontal, stroke) in path.windows(2).map(|pair| Stroke::of(edge, pair)) {
+        for (horizontal, stroke) in strokes_of(model, edge, path) {
             let axis = &mut strokes[usize::from(horizontal)];
             // A later stroke follows every stroke of its bin, as the stable sort of `new` puts it.
             axis.insert(axis.partition_point(|s| s.bin <= stroke.bin), stroke);
@@ -67,19 +74,23 @@ impl StrokeIndex {
     }
     /// Whether a route of a line would cross a box in an index of another line: `crosses` for
     /// the strokes of that route alone.
-    pub(super) fn path_crosses(line: usize, path: &[Point], edge: usize, rect: Rect) -> bool {
-        path.windows(2).any(|pair| {
-            let (horizontal, stroke) = Stroke::of(line, pair);
+    pub(super) fn path_crosses(
+        model: &Model<'_>,
+        (line, path): (usize, &[Point]),
+        edge: usize,
+        rect: Rect,
+    ) -> bool {
+        strokes_of(model, line, path).any(|(horizontal, stroke)| {
             let (low, high, start, end) = if horizontal {
                 (rect.y, rect.y + rect.height, rect.x, rect.x + rect.width)
             } else {
                 (rect.x, rect.x + rect.width, rect.y, rect.y + rect.height)
             };
             stroke.edge != edge
-                && stroke.across > low
-                && stroke.across < high
-                && stroke.lo < end
-                && stroke.hi > start
+                && stroke.across + stroke.half > low
+                && stroke.across - stroke.half < high
+                && stroke.lo - stroke.half < end
+                && stroke.hi + stroke.half > start
         })
     }
     pub(super) fn crosses(&self, edge: usize, rect: Rect) -> bool {
@@ -93,10 +104,10 @@ impl StrokeIndex {
             let last = bin((high * 1e6).ceil()) + 1;
             if self.range(horizontal, first, last).iter().any(|stroke| {
                 stroke.edge != edge
-                    && stroke.across > low
-                    && stroke.across < high
-                    && stroke.lo < end
-                    && stroke.hi > start
+                    && stroke.across + stroke.half > low
+                    && stroke.across - stroke.half < high
+                    && stroke.lo - stroke.half < end
+                    && stroke.hi + stroke.half > start
             }) {
                 return true;
             }
@@ -114,24 +125,25 @@ impl StrokeIndex {
             let last = bin((high * 1e6).ceil()) + 1;
             for stroke in self.range(horizontal, first, last).iter().filter(|stroke| {
                 stroke.edge != edge
-                    && stroke.across >= low
-                    && stroke.across <= high
-                    && stroke.lo <= end
-                    && stroke.hi >= start
+                    && stroke.across + stroke.half >= low
+                    && stroke.across - stroke.half <= high
+                    && stroke.lo - stroke.half <= end
+                    && stroke.hi + stroke.half >= start
             }) {
+                let (h, length) = (stroke.half, stroke.hi - stroke.lo);
                 visit(if horizontal {
                     Rect {
-                        x: stroke.lo,
-                        y: stroke.across,
-                        width: stroke.hi - stroke.lo,
-                        height: 0.0,
+                        x: stroke.lo - h,
+                        y: stroke.across - h,
+                        width: length + 2.0 * h,
+                        height: 2.0 * h,
                     }
                 } else {
                     Rect {
-                        x: stroke.across,
-                        y: stroke.lo,
-                        width: 0.0,
-                        height: stroke.hi - stroke.lo,
+                        x: stroke.across - h,
+                        y: stroke.lo - h,
+                        width: 2.0 * h,
+                        height: length + 2.0 * h,
                     }
                 });
             }
@@ -177,9 +189,20 @@ impl StrokeIndex {
     }
 }
 
+/// The strokes of a route of a line, each as wide as the line's ink.
+fn strokes_of<'p>(
+    model: &Model<'_>,
+    edge: usize,
+    path: &'p [Point],
+) -> impl Iterator<Item = (bool, Stroke)> + 'p {
+    let half = model.half(edge);
+    path.windows(2)
+        .map(move |pair| Stroke::of((edge, half), pair))
+}
+
 impl Stroke {
     /// The stroke of one run of a route, and whether it runs across the page.
-    fn of(edge: usize, pair: &[Point]) -> (bool, Self) {
+    fn of((edge, half): (usize, f64), pair: &[Point]) -> (bool, Self) {
         let horizontal = pair[0].y == pair[1].y;
         let (across, a, b) = if horizontal {
             (pair[0].y, pair[0].x, pair[1].x)
@@ -188,6 +211,7 @@ impl Stroke {
         };
         let stroke = Self {
             edge,
+            half,
             across,
             lo: a.min(b),
             hi: a.max(b),

@@ -4,8 +4,8 @@
 //! routed on tracks (`card_layout.rs`), its widest rank wrapped into rows
 //! (`wraps.rs`) or its ranks folded into columns (`fold.rs`) where that is
 //! worth taking. Last, assembly places every block and joins each relationship's
-//! lines through its ports (`assembly.rs`). The graph fixes the nesting,
-//! acyclic entry order and fan-in labels before the one solve starts.
+//! lines through its ports (`assembly.rs`). The graph fixes the acyclic
+//! entry order and fan-in labels before the one solve starts.
 
 use std::rc::Rc;
 
@@ -13,9 +13,9 @@ use crate::Graphviz;
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::geometry::Side;
 use crate::graph::Node;
-use crate::track::route::PAGE_MARGIN;
-use crate::track::scene::Map;
-use crate::track::score::crossings_of;
+use crate::lanes::route::PAGE_MARGIN;
+use crate::lanes::scene::Map;
+use crate::lanes::score::crossings_of;
 
 use super::assembly::Assembly;
 use super::card_layout::{Arrangement, CardLayout, Engine};
@@ -27,7 +27,7 @@ use super::orders::held_orders;
 use super::packing::{PackLayout, Packing};
 use super::settle::{Settling, settle_ports};
 use super::sides::sides_of;
-use super::tree::{Block, BlockId, BlockTree, Kept, Kind, Nesting};
+use super::tree::{Block, BlockId, BlockTree, Kept, Kind};
 use super::wraps::{Unwrapped, Wrapping, best_wrap, weighed};
 
 /// The insets a block keeps: left and right, above its first rank, below its
@@ -92,7 +92,9 @@ fn lay_cards(
         .ports
         .values()
         .any(|side| matches!(side, Side::Left | Side::Right));
-    let plan = if walled {
+    // A Lanes drawing folds no ranks: a line between two folded columns could only leave the
+    // bottom of one and enter the top of the other, round the page.
+    let plan = if walled || tree.lanes {
         None
     } else {
         fold_plan(tree.get(block), &whole, insets, &weighed(&whole))
@@ -146,8 +148,7 @@ struct Earlier {
 }
 
 /// Lay one block out: packed with its child blocks as the pieces when it
-/// holds child blocks alone, with no inline clusters or labels, else as cards.
-/// Track packs complete parent frames here; group regions keep shared ranks.
+/// holds child blocks alone, with no labels, else as cards.
 fn lay_block(
     gv: &mut Engine<'_>,
     picture: &mut Picture,
@@ -157,12 +158,7 @@ fn lay_block(
     let tree = &picture.tree;
     let one = tree.get(block);
     let packs = !one.items.is_empty()
-        && one.clusters.is_empty()
-        && one.items.iter().all(|item| {
-            tree.block_of(item).is_some_and(|child| {
-                tree.nesting == Nesting::Blocks || tree.get(child).kind == Kind::Frame
-            })
-        })
+        && one.items.iter().all(|item| tree.block_of(item).is_some())
         && !tree
             .get(block)
             .lines
@@ -191,9 +187,9 @@ fn lay_all(
         graph,
         Kept {
             expanded: way.expanded,
+            lanes: way.lanes,
             ..earlier.kept.clone()
         },
-        way.nesting,
     )?;
     reserve_room(&mut tree, way);
     let mut picture = Picture {
@@ -282,20 +278,20 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The retained placement path: Track's, and Blocks' for a reading that no planned placement
-/// routes.
+/// The lanes' placement: every Lanes drawing, when `lanes` says so, and a Blocks reading that no
+/// planned placement routes.
 pub(super) fn place(
     graph: &Node,
-    nesting: Nesting,
     host: &mut dyn Graphviz,
+    lanes: bool,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
     let picture = lay_out(
         &mut gv,
         graph,
         &Way {
-            nesting,
             expanded: false,
+            lanes,
             room: Vec::new(),
             extra: 0.0,
             complete_repair: false,
@@ -379,8 +375,8 @@ pub(super) fn candidates<'g>(
     }
     let mut gv = Engine::new(host);
     let way = Way {
-        nesting: Nesting::Blocks,
         expanded: false,
+        lanes: false,
         room: room.to_vec(),
         extra,
         complete_repair,
@@ -474,8 +470,9 @@ fn expanded_candidates(
 
 #[derive(Clone)]
 struct Way {
-    nesting: Nesting,
     expanded: bool,
+    /// The layout is a Lanes drawing (`BlockTree::lanes`).
+    lanes: bool,
     room: Vec<String>,
     extra: f64,
     complete_repair: bool,

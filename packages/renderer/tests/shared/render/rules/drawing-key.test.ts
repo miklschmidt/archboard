@@ -2,7 +2,7 @@
 // holds still through an edit the drawing does not read.
 import { expect, test } from "bun:test";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { drawingKey, interfaceContent } from "#shared/render/rules/drawing-key.ts";
+import { drawingKey } from "#shared/render/rules/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 const whole = orderedFixture({
@@ -30,7 +30,6 @@ function keyOf(variant: typeof whole, overrides: Partial<Parameters<typeof drawi
 	return drawingKey({
 		grammar: "architecture",
 		content: { ...variant, nodes: scoped, edges: [] },
-		variant: interfaceContent(variant),
 		policy: defaultSemanticPolicy(),
 		...overrides,
 	});
@@ -47,7 +46,7 @@ test("a key is a bounded digest, whatever the size of the model", () => {
 	expect(keyOf(large).length).toBeLessThan(48);
 });
 
-test("an edit outside the scope that no interface reads keeps the key", () => {
+test("an edit outside the scope keeps the key", () => {
 	const edited = {
 		...whole,
 		nodes: whole.nodes.map((node) =>
@@ -59,11 +58,6 @@ test("an edit outside the scope that no interface reads keeps the key", () => {
 
 test("every fact the drawing depends on moves the key", () => {
 	const key = keyOf(whole);
-	const reached = {
-		...whole,
-		edges: [...whole.edges, { ...whole.edges[0]!, id: "new", from: "other", to: "job" }],
-	};
-	expect(keyOf(reached)).not.toBe(key);
 	const moved = {
 		...whole,
 		nodes: whole.nodes.map((node) => (node.id === "other" ? { ...node, parent: "svc" } : node)),

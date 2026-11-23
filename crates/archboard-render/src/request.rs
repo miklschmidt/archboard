@@ -132,10 +132,6 @@ pub struct RenderRequest {
     /// The variant's own reading of the view, when the content is more than that.
     #[serde(default)]
     pub(crate) held: Option<Reading>,
-    /// The whole variant, before a view narrows it, which a container's
-    /// interface is read from (ADR 0044).
-    #[serde(default)]
-    pub(crate) variant: Option<Reading>,
     /// The subjects nobody has decided yet.
     #[serde(default)]
     pub(crate) unsettled: Vec<String>,
@@ -176,10 +172,5 @@ impl RenderRequest {
         } else {
             &self.content
         }
-    }
-
-    /// The whole variant the picture reads.
-    pub(crate) fn variant(&self) -> &Reading {
-        self.variant.as_ref().unwrap_or_else(|| self.held())
     }
 }

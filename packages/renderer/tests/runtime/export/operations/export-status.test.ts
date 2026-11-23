@@ -84,3 +84,8 @@ test("one line left out is counted in the singular", async () => {
 	const { svg } = await drawn({ leftOut: { lens: "Network", count: 1 } });
 	expect(slotted(svg, "export-status")?.words).toBe("Network · 1 line left out");
 });
+
+test("a lens that keeps every line shows its name without a count", async () => {
+	const { svg } = await drawn({ leftOut: { lens: "All relationships", count: 0 } });
+	expect(slotted(svg, "export-status")?.words).toBe("All relationships");
+});

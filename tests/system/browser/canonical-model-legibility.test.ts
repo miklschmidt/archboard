@@ -87,7 +87,7 @@ test("a reader sees what is unsettled and what belongs together, painted on both
 			{ name: "Ledger", kind: "datastore" },
 		],
 		edges: [
-			{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
+			{ from: "Gateway", to: "Writer", kind: "sync", label: "hands it over" },
 			{ from: "Writer", to: "Ledger", kind: "storage", label: "writes" },
 		],
 	});

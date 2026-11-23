@@ -70,7 +70,7 @@ test("a container a line leaves by its bottom keeps its inset under its lowest c
 		],
 		edges: [{ id: "e1", from: "wire", to: "server", kind: "call" }],
 	});
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const { child, wire } = drawn.atlas.nodes;
 	expect(child!.y + child!.height - (wire!.y + wire!.height)).toBe(wire!.x - child!.x);
 });
@@ -89,16 +89,16 @@ test("a container's cards stand under its title, not beside it", async () => {
 		],
 		edges: [{ id: "e1", from: "cli", to: "pipe", kind: "call", label: "filter, sort, paginate" }],
 	});
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const { nodes } = drawn.atlas;
 	const header = headerCards(drawn).get("pool")!;
 	expect(nodes["pipe"]!.y).toBeGreaterThanOrEqual(header.y + header.height);
-	expectDrawingIntact(drawn, content, "blocks");
+	expectDrawingIntact(drawn, content);
 });
 
 test("blocks are packed the way their trunks run, not only the way the page fits", async () => {
 	const content = orderedFixture(owningTheChild);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const { nodes } = drawn.atlas;
 	// Codex process spawns Codex app-server: packed beside the container, the
 	// line would climb back over it; packed below, it drops straight.
@@ -194,7 +194,7 @@ function squeezed(routes: ReadonlyMap<string, readonly { x: number; y: number }[
 
 test("trunks between packed blocks keep a lane apart however many share a gap", async () => {
 	const content = orderedFixture(agentWorkbench);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	expect(squeezed(corridorPoints(drawn.svg))).toEqual([]);
 });
 
@@ -202,7 +202,7 @@ test("trunks between packed blocks keep a lane apart however many share a gap", 
 // ran four points inside the container's left wall, as it keeps from the right.
 test("a reserved trunk stays distinct from its container wall", async () => {
 	const content = orderedFixture(workingWithAnAgent);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const inset = alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["yAFyqal3"]!);
 	expect(inset).toEqual([]);
 });
@@ -213,20 +213,20 @@ test("a reserved trunk stays distinct from its container wall", async () => {
 // container's outline.
 test("a line parted from another keeps off its container's wall", async () => {
 	const content = orderedFixture(recordingAWalkthrough);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const frame = drawn.atlas.nodes["yAFyqal3"]!;
 	expect(alongWalls(routePoints(drawn.svg), frame)).toEqual([]);
 });
 
 test("a reserved trunk between adjacent blocks preserves its labels and endpoints", async () => {
 	const content = orderedFixture(workingWithAnAgent);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawn, content, "blocks");
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	expectDrawingIntact(drawn, content);
 });
 
 test("two chains leaving a block preserve their forward reading", async () => {
 	const content = orderedFixture(twoChains);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const { nodes } = drawn.atlas;
 	// The chain into the Platform is a card shorter; it stays level with the
 	// other rather than hanging from the block's bottom between its rows.
@@ -238,12 +238,12 @@ test("two chains leaving a block preserve their forward reading", async () => {
 			target = nodes[to]!;
 		expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
 	}
-	expectDrawingIntact(drawn, content, "blocks");
+	expectDrawingIntact(drawn, content);
 });
 
 test("a trunk into a port too close to a block for a pin still runs round the block", async () => {
 	const content = orderedFixture(tightWallPort);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	// The line from the outside card enters the outer container by its wall,
 	// a few points from the nested container, and runs on to a card beside it.
 	const route = routePoints(drawn.svg).get("f3lzoqzb")!;
@@ -252,19 +252,19 @@ test("a trunk into a port too close to a block for a pin still runs round the bl
 
 test("trunks reach a container's own ports from inside it, not along its border", async () => {
 	const content = orderedFixture(agentWorkbench);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
 });
 
 test("a nested write boundary keeps its complete reserved channels", async () => {
 	const content = orderedFixture(durableWriteBoundary);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawn, content, "blocks");
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	expectDrawingIntact(drawn, content);
 });
 
 test("lines that join on the way to a card stay joined, without running along a border", async () => {
 	const content = orderedFixture(oneCommand);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const [routes, ends] = [corridorPoints(drawn.svg), routeEnds(drawn.svg)];
 	const [queue, typed] = [routes.get("b9HU99hH")!, routes.get("Qh7VZ9MQ")!];
 	const [one, other] = [ends.get("b9HU99hH")!, ends.get("Qh7VZ9MQ")!];
@@ -289,15 +289,15 @@ test("a line into a container itself keeps its header endpoint and its private l
 		],
 		edges: [{ id: "e1", from: "lb", to: "pool", kind: "call", label: "L4 forwarding" }],
 	});
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	expect(headerCards(drawn).has("pool")).toBe(true);
 	expect(endsOffCards(drawn, content)).toEqual([]);
-	expectDrawingIntact(drawn, content, "blocks");
+	expectDrawingIntact(drawn, content);
 });
 
 test("a line into a container enters the card from the side its source stands on", async () => {
 	const content = orderedFixture(requestPath);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const [card, source] = [drawn.atlas.nodes["42C5lYne"]!, drawn.atlas.nodes["KpJL9Y0f"]!];
 	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
 	expect(end.y < card.y + card.height / 2).toBe(source.y < card.y);
@@ -306,8 +306,8 @@ test("a line into a container enters the card from the side its source stands on
 // This nested arrival keeps its label and header clear regardless of the chosen face.
 test("a line into a block above its source preserves its header and source label", async () => {
 	const content = orderedFixture(theTwoThreads);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawn, content, "blocks");
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	expectDrawingIntact(drawn, content);
 });
 
 // Reduced from the same document: a container's own port on its wall stood
@@ -315,7 +315,7 @@ test("a line into a block above its source preserves its header and source label
 // on the same wall, so the line out stepped between the two.
 test("a line out of nested containers by their walls runs level between them", async () => {
 	const content = orderedFixture(requestPath);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const route = corridorPoints(drawn.svg).get("FOrXU78u")!;
 	const levels = new Set(
 		route.slice(1).flatMap((point, index) => (point.y === route[index]!.y ? [point.y] : [])),
@@ -353,7 +353,7 @@ function wallCrossings(
 
 test("lines of two kinds out of a container cross its walls apart", async () => {
 	const content = orderedFixture(wallPortKinds);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	const routes = corridorPoints(drawn.svg);
 	const [rpc, call] = ["MZtuHuMT", "o63C7KPd"].map((id) =>
 		wallCrossings(routes.get(id)!, drawn.atlas.nodes["Fvl3uDPi"]!),

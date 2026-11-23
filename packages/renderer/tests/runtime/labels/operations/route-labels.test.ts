@@ -9,12 +9,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import {
-	routeLabels,
-	routePoints,
-	corridorPoints,
-	distanceToFrame,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { routeLabels, routePoints, distanceToFrame } from "#tests/runtime/support/drawn-routes.ts";
 import { detached, covering, overlaps, masking } from "#tests/runtime/support/drawn-labels.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
@@ -234,7 +229,7 @@ describe("a label belongs to one line", () => {
 		});
 	}
 
-	test("parallel labelled skips reserve measured room beside their tracks", async () => {
+	test("parallel labelled skips draw as one cable with one plate, with room beside its strands", async () => {
 		const content = orderedFixture({
 			...LABELLED_FORK,
 			edges: [
@@ -250,7 +245,8 @@ describe("a label belongs to one line", () => {
 		});
 		for (const theme of ["light", "dark"] as const) {
 			const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
-			expect(routeLabels(drawn.svg).size).toBe(4);
+			// The two lines from graph to layout draw as one cable, which wears one plate.
+			expect(routeLabels(drawn.svg).size).toBe(3);
 			expect(detached(drawn)).toEqual([]);
 			expect(covering(drawn)).toEqual([]);
 			expect(overlaps(drawn, content)).toEqual([]);
@@ -307,38 +303,4 @@ describe("a label belongs to one line", () => {
 			).toEqual([]);
 		}
 	});
-});
-
-// A native straight channel must survive the reservation needed by two wide badges.
-test("parallel database badges keep their straight channels and measured separation", async () => {
-	const content = orderedFixture({
-		nodes: [
-			{ id: "pool", name: "VM Pool", kind: "container" },
-			{ id: "one", name: "VM 3", kind: "service", parent: "pool" },
-			{ id: "two", name: "VM 4", kind: "service", parent: "pool" },
-			{ id: "db", name: "Database 2", kind: "database" },
-		],
-		edges: [
-			{ id: "one-db", from: "one", to: "db", kind: "data", label: "Database connection" },
-			{ id: "two-db", from: "two", to: "db", kind: "data", label: "Database connection" },
-		],
-	});
-	const drawn = await renderArchitecture({
-		policy: defaultSemanticPolicy(),
-		content,
-		theme: "dark",
-		// Track reserves straight parallel channels for these labels.
-		layout: "track",
-	});
-	const routes = corridorPoints(drawn.svg);
-	for (const edge of content.edges) {
-		const points = routes.get(edge.id)!;
-		expect(points).toHaveLength(2);
-		expect(points[0]!.x).toBe(points[1]!.x);
-	}
-	const labels = [...routeLabels(drawn.svg).values()].toSorted((one, two) => one.x - two.x);
-	expect(labels).toHaveLength(2);
-	expect(labels[1]!.x - labels[0]!.x - labels[0]!.width).toBeGreaterThanOrEqual(23.95);
-	expect(detached(drawn)).toEqual([]);
-	expect(overlaps(drawn, content)).toEqual([]);
 });

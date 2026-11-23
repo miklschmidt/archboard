@@ -9,6 +9,8 @@
 //! cluster (`clusters`): its crossers hop it one each where every one may and
 //! every hop fits, else its line rises over all of it under one crest, else
 //! over single crossings of it where it is the upper line at the rest. A
+//! cluster whose crossers are the strands of one cable is hopped as one ribbon:
+//! its line rises over all of it under one crest. A
 //! crossing no plan settles still hops where a hop fits, and else gets the
 //! least crowded arc that stands wherever a line runs straight past both of a
 //! hop's feet (`forced`): its own hop, the hops beside it grown into one
@@ -315,6 +317,19 @@ impl Settling<'_> {
         self.plan_of(0.0, FULL_ROOM, rises)
     }
 
+    /// Whether a cluster's crossers are the strands of one cable: lines between the same two
+    /// parts, which the cluster's line hops as one ribbon, under one crest, rather than each
+    /// strand hopping it.
+    fn ribbon(&self, cluster: usize) -> bool {
+        let ends = (self.cluster(cluster).crossings.iter()).map(|&crossing| {
+            let crosser = self.sides(cluster, crossing).1;
+            let edge = &self.edges()[self.scene.runs[crosser.drawer].edge_index].edge;
+            (edge.from.as_str(), edge.to.as_str())
+        });
+        let ends: Vec<_> = ends.collect();
+        ends.len() > 1 && ends.iter().all(|&one| one == ends[0])
+    }
+
     /// The plans one cluster offers, by stage: its crossers hopping it one
     /// each with a bend's room, or, for a lone crossing no other line crosses
     /// among others, its line hopping it; then its line rising over all of it
@@ -331,7 +346,7 @@ impl Settling<'_> {
                 .len()
                 == 1;
         let mut plans = Vec::new();
-        if several {
+        if several && !self.ribbon(cluster) {
             plans.extend(self.one_each(cluster));
         }
         if alone {

@@ -67,13 +67,13 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		};
 	const drawn = await renderArchitecture({
 		content: projection.content,
-		variant: projection.complete,
 		held: projection.held,
 		standing: projection.standing,
 		unsettled: projection.unsettled,
 		grammar: input.grammar,
 		policy: model.policy,
 		theme: input.theme,
+		layout: input.layout,
 		frame: exportFrame(input, projection),
 	});
 	return renderReceipt(model, reading, vault, drawn, flow);

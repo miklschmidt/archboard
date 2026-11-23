@@ -139,6 +139,27 @@ test("a signal sent to the command reaches the bin/archboard it handed off to", 
 	expect(readFileSync(mark, "utf8")).toBe("TERM\n");
 });
 
+test("a checkout whose packages resolve into another checkout is refused once, not handed off again", async () => {
+	// Its bin runs this repository's source, as a checkout with a linked node_modules does, so the
+	// command it starts stands in it and runs another checkout's source. The count stops a
+	// regression after three runs instead of letting it hand the command on forever.
+	const count = join(scratch, "linked.count");
+	const standing = standIn(
+		"linked",
+		`n=$(( $(cat "${count}" 2>/dev/null || echo 0) + 1 ))\necho "$n" > "${count}"\n` +
+			`if [ "$n" -gt 3 ]; then echo LOOPED >&2; exit 99; fi\nexec "${packageBin}" "$@"\n`,
+	);
+
+	const ran = await archboard(["status"], standing);
+
+	expect(readFileSync(count, "utf8")).toBe("1\n");
+	expect(ran.status).toBe(1);
+	expect(ran.stderr).not.toContain("LOOPED");
+	expect(ran.stderr).toContain(join(standing, "bin", "archboard"));
+	expect(ran.stderr).toContain(repoRoot);
+	expect(ran.stderr).toContain("bun install");
+});
+
 test("a checkout without its packages is refused with what to run", async () => {
 	const standing = standIn("unpackaged", "exit 0\n", { packages: false });
 

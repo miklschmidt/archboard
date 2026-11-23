@@ -86,8 +86,7 @@ fn search_local(
     let mut found = Vec::new();
     let mut memory = search::Memory::default();
     for (index, connector) in local.connectors.iter().enumerate() {
-        let Some(grid) = grid::Grid::bounded(local, &[], &found, Some(window), limits.coordinates)
-        else {
+        let Some(grid) = grid::Grid::bounded(local, &found, window, limits.coordinates) else {
             found.push(None);
             continue;
         };

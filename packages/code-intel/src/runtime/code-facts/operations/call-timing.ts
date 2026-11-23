@@ -47,8 +47,9 @@ interface TimingSyntax {
 	 * Whether syntax starts what one of its children holds as a task.
 	 * @param holder The syntax.
 	 * @param held Its child that holds the call.
+	 * @param site The original call or name.
 	 */
-	readonly starts: (holder: Node, held: Node) => boolean;
+	readonly starts: (holder: Node, held: Node, site: Node) => boolean;
 	/**
 	 * What a call that is neither awaited nor started is.
 	 * @param call The call.
@@ -126,7 +127,7 @@ function directTiming(outer: Node, syntax: TimingSyntax): CallSite | undefined {
 function startedIn(node: Node, syntax: TimingSyntax): boolean {
 	let held = node;
 	for (let holder = node.parent; holder !== null; holder = holder.parent) {
-		if (syntax.starts(holder, held)) return true;
+		if (syntax.starts(holder, held, node)) return true;
 		held = holder;
 	}
 	return false;

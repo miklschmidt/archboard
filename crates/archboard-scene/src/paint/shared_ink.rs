@@ -259,6 +259,7 @@ mod tests {
     /// A straight route along a row, from one x to another.
     fn line(id: &str, from: f64, to: f64, two_way: bool) -> Edge {
         Edge {
+            echelon: false,
             edge: crate::drawing::EdgeFacts {
                 id: id.to_owned(),
                 from: "a".to_owned(),

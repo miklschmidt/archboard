@@ -174,7 +174,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 					source: "Shop#Gateway",
 					relationship: {
 						to: "Queue",
-						kind: "call",
+						kind: "sync",
 						effect: "mutation",
 						order: 20,
 						label: "Enqueue",

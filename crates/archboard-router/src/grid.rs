@@ -31,21 +31,6 @@ impl Buffer {
             bottom: rect.y + rect.height + clearance,
         }
     }
-
-    /// Whether a point lies strictly inside, not on the edge.
-    pub(crate) fn holds(&self, point: Point) -> bool {
-        self.spans_x(point.x) && self.spans_y(point.y)
-    }
-
-    /// Whether an x lies strictly between the left and right edges.
-    fn spans_x(&self, x: f64) -> bool {
-        x > self.left + SAME && x < self.right - SAME
-    }
-
-    /// Whether a y lies strictly between the top and bottom edges.
-    fn spans_y(&self, y: f64) -> bool {
-        y > self.top + SAME && y < self.bottom - SAME
-    }
 }
 
 /// Where a pin's route leaves its own obstacle's buffer, going the way the
@@ -77,8 +62,6 @@ pub(crate) struct Grid {
     pub ys: Vec<f64>,
     /// Every obstacle's buffer, by obstacle index.
     pub buffers: Vec<Buffer>,
-    /// The buffers that block routes: those that hold no free end.
-    pub blocking: Vec<Buffer>,
     free: Vec<bool>,
     /// Whether the edge from (i, j) to (i + 1, j) is free.
     across: Vec<bool>,
@@ -94,17 +77,11 @@ fn sorted(mut values: Vec<f64>) -> Vec<f64> {
 }
 
 impl Grid {
-    /// The grid of a scene, the buffers named in `exempt` not blocking.
-    pub(crate) fn new(scene: &Scene, exempt: &[usize], routes: &[Option<Vec<Point>>]) -> Grid {
-        Self::bounded(scene, exempt, routes, None, usize::MAX).expect("an unbounded grid")
-    }
-
     /// Refuse an oversized grid before allocating its vertices. A window never drops an obstacle.
     pub(crate) fn bounded(
         scene: &Scene,
-        exempt: &[usize],
         routes: &[Option<Vec<Point>>],
-        window: Option<Rect>,
+        window: Rect,
         coordinates: usize,
     ) -> Option<Grid> {
         let clearance = scene.params.clearance;
@@ -112,26 +89,6 @@ impl Grid {
             .obstacles
             .iter()
             .map(|rect| Buffer::around(rect, clearance))
-            .collect();
-        let free_ends: Vec<Point> = scene
-            .connectors
-            .iter()
-            .flat_map(|connector| [&connector.ends.0, &connector.ends.1])
-            .filter_map(|end| match end {
-                End::Free { at } => Some(*at),
-                End::Pin { .. } => None,
-            })
-            .collect();
-        // A free end inside a buffer could never be reached, so that buffer
-        // does not block: a free end is reached from any side.
-        let blocking: Vec<Buffer> = buffers
-            .iter()
-            .enumerate()
-            .filter(|(index, buffer)| {
-                !exempt.contains(index)
-                    && (window.is_some() || !free_ends.iter().any(|at| buffer.holds(*at)))
-            })
-            .map(|(_, buffer)| *buffer)
             .collect();
         let (xs, ys) = coordinates_of(scene, &buffers, routes, window, coordinates)?;
         let (width, height) = (xs.len(), ys.len());
@@ -142,7 +99,6 @@ impl Grid {
             xs,
             ys,
             buffers,
-            blocking,
         };
         grid.block_buffers();
         Some(grid)
@@ -159,7 +115,7 @@ impl Grid {
         };
         let (across, down) = (midpoints(&self.xs), midpoints(&self.ys));
         let width = self.xs.len();
-        for buffer in &self.blocking {
+        for buffer in &self.buffers {
             let left = self.xs.partition_point(|&x| x <= buffer.left + SAME);
             let right = self
                 .xs
@@ -240,7 +196,7 @@ fn coordinates_of(
     scene: &Scene,
     buffers: &[Buffer],
     routes: &[Option<Vec<Point>>],
-    window: Option<Rect>,
+    window: Rect,
     limit: usize,
 ) -> Option<(Vec<f64>, Vec<f64>)> {
     let mut xs = Vec::new();
@@ -283,7 +239,7 @@ fn bounded_axes(
     mut xs: Vec<f64>,
     mut ys: Vec<f64>,
     scene: &Scene,
-    window: Option<Rect>,
+    window: Rect,
 ) -> (Vec<f64>, Vec<f64>) {
     let lane = scene.params.lane;
     xs = xs
@@ -300,11 +256,9 @@ fn bounded_axes(
         ys.retain(|&y| y >= low.y - SAME);
         ys.push(low.y);
     }
-    if let Some(window) = window {
-        xs.retain(|&x| x >= window.x && x <= window.x + window.width);
-        ys.retain(|&y| y >= window.y && y <= window.y + window.height);
-        xs.extend([window.x, window.x + window.width]);
-        ys.extend([window.y, window.y + window.height]);
-    }
+    xs.retain(|&x| x >= window.x && x <= window.x + window.width);
+    ys.retain(|&y| y >= window.y && y <= window.y + window.height);
+    xs.extend([window.x, window.x + window.width]);
+    ys.extend([window.y, window.y + window.height]);
     (xs, ys)
 }

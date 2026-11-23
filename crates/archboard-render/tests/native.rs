@@ -5,7 +5,7 @@
 //! request its host wrote, the icons it was given, and the document it wrote.
 //! `fixtures/recommendations.json` is a reading of the old format, which draws
 //! each kind as its policy recorded it; `fixtures/effects.json` is the same
-//! request in the current format, where each line's dash says its effect
+//! request in the current format, where each line's marks show its effect
 //! (TASK-663). The native render lays out each solve here, Graphviz included
 //! (ADR 0060), so a native build lays a picture out with no C library and no
 //! host's Graphviz.

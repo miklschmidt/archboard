@@ -137,11 +137,11 @@ test("a drawing of one engine never answers for the other", async () => {
 		wrapper: withClient(client),
 	});
 	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>blocks</svg>"));
-	act(() => chooseLayoutEngine("track"));
+	act(() => chooseLayoutEngine("lanes"));
 	expect(pane.result.current.pending).toBe(true);
 	expect(pane.result.current.scene?.picture.svg).toBe("<svg>blocks</svg>");
-	await draw(client, gateway, "<svg>tracks</svg>", "track");
-	expect(pane.result.current.scene?.picture.svg).toBe("<svg>tracks</svg>");
+	await draw(client, gateway, "<svg>lanes</svg>", "lanes");
+	expect(pane.result.current.scene?.picture.svg).toBe("<svg>lanes</svg>");
 	expect(pane.result.current.pending).toBe(false);
 });
 

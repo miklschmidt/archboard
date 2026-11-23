@@ -6,23 +6,22 @@ import { expect } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DrawnPicture } from "@archboard/model/render-reply";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * A document whose draft lacks what its current variant has, drawn with its
- * comparison and without, in one engine and one view.
+ * comparison and without, in one view.
  * @param current The current variant's content.
  * @param draft The draft's content.
- * @param how The engine, and the view when it is one.
- * @param how.layout The engine.
+ * @param how The view, when the drawing is of one.
  * @param how.view The view's grammar and scope, when the drawing is of one.
  * @returns Both drawings.
  */
 async function bothModes(
 	current: unknown,
 	draft: unknown,
-	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
+	how: { view?: { grammar: string; scope?: unknown } },
 ): Promise<{ compared: DrawnPicture; plain: DrawnPicture }> {
 	const document = LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
@@ -46,7 +45,7 @@ async function bothModes(
 			},
 		],
 	});
-	const ask = { variant: "draft", layout: how.layout } as const;
+	const ask = { variant: "draft" } as const;
 	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
 		renderLegacyBoard(document, { ...ask, ...view }, defaultSemanticPolicy()),

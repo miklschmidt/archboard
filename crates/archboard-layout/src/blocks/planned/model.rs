@@ -46,11 +46,38 @@ pub(super) struct Model<'a> {
     pub edge_index: rustc_hash::FxHashMap<&'a str, usize>,
     pub ends: Vec<(usize, usize)>,
     pub treatments: Vec<String>,
+    /// How wide each line is: a cable as wide as its strands stand apart, a lone line nothing.
+    pub girth: Vec<f64>,
     pub outgoing: Vec<Vec<usize>>,
     pub incoming: Vec<Vec<usize>>,
 }
 
+/// How many strands a line carries: a cable as many as it names, a lone line one.
+pub(super) fn strands(edge: &Edge) -> usize {
+    edge.option(crate::graph::CABLE)
+        .map_or(1, |cable| cable.split(';').count())
+}
+
+/// How much a line of some strands weighs when a placement or a drawing is priced: more than a
+/// lone line, as its strands are lines a reader traces, but less than as many lone lines, so that
+/// one wide cable cannot dictate the grid (both advisors settled `sqrt(n)` over `n`).
+pub(super) fn weight_of(strands: usize) -> f64 {
+    (strands as f64).sqrt()
+}
+
+/// Each line's weight by its id, for pricing drawings that name their lines only by id.
+pub(super) fn weights(graph: &Node) -> rustc_hash::FxHashMap<&str, f64> {
+    (graph.edges.iter().flatten())
+        .map(|edge| (edge.id.as_str(), weight_of(strands(edge))))
+        .collect()
+}
+
 impl<'a> Model<'a> {
+    /// How far a line's ink reaches to either side of its route.
+    pub(super) fn half(&self, edge: usize) -> f64 {
+        self.girth[edge] / 2.0
+    }
+
     pub(super) fn new(graph: &'a Node) -> Result<Self, String> {
         let captions: Vec<(String, f64, f64)> =
             serde_json::from_str(graph.option(GROUP_CAPTIONS).unwrap_or("[]"))
@@ -74,6 +101,7 @@ impl<'a> Model<'a> {
             edge_index: rustc_hash::FxHashMap::default(),
             ends: Vec::new(),
             treatments: Vec::new(),
+            girth: Vec::new(),
             outgoing: Vec::new(),
             incoming: Vec::new(),
         };
@@ -110,18 +138,27 @@ impl<'a> Model<'a> {
                 .ends
                 .push((model.ending(from, to), model.ending(to, from)));
         }
+        // A cable is a kind of its own: two cables never share a port or a fan, because the
+        // order of a ribbon's strands turns with the side it comes from, and two ribbons that
+        // met on one port from two sides would cross their strands beside it.
         model.treatments = model
             .edges
             .iter()
             .map(|edge| {
+                if let Some(cable) = edge.option(crate::graph::CABLE) {
+                    return format!("{cable}|{}", edge.id);
+                }
                 format!(
                     "{}|{}|{}",
-                    crate::track::route::trunk_kind(edge),
+                    crate::lanes::route::trunk_kind(edge),
                     edge.option("archboard.relationship.held-kind")
                         .unwrap_or(""),
                     edge.option(crate::graph::HELD_EFFECT).unwrap_or("")
                 )
             })
+            .collect();
+        model.girth = (model.edges.iter())
+            .map(|edge| (strands(edge) - 1) as f64 * crate::constants::STRAND)
             .collect();
         model.outgoing = vec![Vec::new(); model.endpoints.len()];
         model.incoming = vec![Vec::new(); model.endpoints.len()];

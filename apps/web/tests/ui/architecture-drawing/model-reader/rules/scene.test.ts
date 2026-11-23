@@ -132,7 +132,7 @@ test("a state, comparison or filter is carried on one model, and a focus starts 
 	expect(sceneFit({ reading: { ...scope, against: "Current" } })).not.toBe(
 		sceneFit({ reading: scope }),
 	);
-	expect(sceneFit({ reading: scope, layout: "track" })).not.toBe(
+	expect(sceneFit({ reading: scope, layout: "lanes" })).not.toBe(
 		sceneFit({ reading: scope, layout: "blocks" }),
 	);
 });

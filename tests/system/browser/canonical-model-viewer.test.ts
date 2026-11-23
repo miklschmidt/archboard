@@ -48,7 +48,10 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	await pollUntil(modelState, (state) => state === "ready", "the canonical model to open", WAIT);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="pane-header"] output') === null`),
+			// The lens status is the header's one output while the socket is live.
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="pane-header"] output:not([data-slot="model-lens-status"])') === null`,
+			),
 		(connected) => connected,
 		"the model pane to connect",
 		WAIT,

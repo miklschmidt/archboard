@@ -22,7 +22,7 @@ test("the corpus draws the states that read, and a comparison only where a state
 				"render",
 				out,
 				"--engines",
-				"track",
+				"blocks",
 				"--themes",
 				"light",
 				"--comparison",

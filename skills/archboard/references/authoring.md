@@ -41,7 +41,7 @@ Take the most specific contract that the source relies on.
 When none of these says how a relationship travels, add a kind of the vault's own under `relationshipKinds` in `.archboard/config.yaml`, with its name and color.
 JSON-RPC over HTTP is `rpc`.
 A service that asks a repository object for orders is `sync` or `async`, and the repository that issues the SQL is `storage`.
-A function or a value that the source uses at run time is `sync` or `async`, never a `dependency`.
+Use `sync` or `async` for a function or value that the source uses within the same process when no more specific kind applies.
 `call` is gone: the configuration, a lens and `--hide-kind` refuse it.
 
 #### Sync or async
@@ -49,14 +49,14 @@ A function or a value that the source uses at run time is `sync` or `async`, nev
 Read the call at the anchor, the source's call into the target, and its callee:
 
 - `async` when the source awaits it (`await`, `.await`, `.then`, or it hands the promise or future on to its own awaiting caller).
-- `async` when the source starts it and leaves it to run: a task, a goroutine, a thread, `spawn`, `spawn_blocking`, `create_task`, `Task.Run`, `Task {}`, `dispatch_async`, `pthread_create`, a timer, a worker message, or an async function called without being awaited.
+- `async` when the source starts it and leaves it to run: a task, a goroutine, a thread, `spawn`, `spawn_blocking`, `create_task`, `Task.Run`, `Task {}`, `dispatch_async`, `pthread_create`, a timer, or an async function called without being awaited.
 - `sync` for a plain call of a function that is not async, and for a value the source reads.
 
 Judge the call into the target, not the source's own signature: an async function that makes plain calls into the target is `sync` for those calls.
 Registering a callback is `sync` when the registering call returns at once; the later calls of the callback are the target's own relationship.
 A relationship that stands for several calls takes the timing of the operation its label names.
 
-The code facts already say how each call site runs its callee, where the language can tell: TypeScript, Rust, Python, C#, Swift, Go (`go f()` only), Objective-C (dispatch queues) and C (`pthread_create`).
+The code facts already say how each call site runs its callee, where the language can tell: TypeScript, Rust, Python, C#, Swift, Go, Objective-C and C.
 `check code` reports `CALL_TIMING_MISMATCH`, as information, on a `sync` relationship whose anchored calls are all awaited or started, and on an `async` one whose anchored calls are all plain.
 Read the call, then correct the kind, or move the anchor to the call the relationship stands for.
 Where the sites disagree or one is unknown, the check says nothing, and your reading decides.
