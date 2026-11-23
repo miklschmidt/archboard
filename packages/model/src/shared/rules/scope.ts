@@ -259,30 +259,39 @@ function cablePlates(
 	endsOf: (edge: SemanticEdge) => readonly [string, string],
 	standingOf: (line: DrawnEdge) => string,
 ): OverviewLine[] {
+	const reached = partsReachedIn(content, endsOf);
+	const words = new Map<string, string | undefined>();
+	for (const cable of cablesOf(lines, standingOf)) {
+		const [first, ...rest] = cable;
+		if (first === undefined || rest.length === 0) continue;
+		const ends = { from: first.line.from, to: first.line.to, twoWay: first.line.twoWay === true };
+		const joins = cable.flatMap((one) => one.joins);
+		words.set(first.line.id, wordsOnJoinedLine(joins, ends, reached));
+		for (const other of rest) words.set(other.line.id, undefined);
+	}
+	return lines.map((one) =>
+		words.has(one.line.id) ? { ...one, line: worded(one.line, words.get(one.line.id)) } : one,
+	);
+}
+
+/**
+ * The cables some lines draw as: the lines between one pair of drawn parts, one way and in one
+ * comparison state, each cable's lines in the picture's order.
+ * @param lines The lines.
+ * @param standingOf How a line stands in a comparison.
+ * @returns Each cable's lines.
+ */
+function cablesOf(
+	lines: readonly OverviewLine[],
+	standingOf: (line: DrawnEdge) => string,
+): OverviewLine[][] {
 	const cables = new Map<string, OverviewLine[]>();
 	for (const one of lines) {
 		const key = [standingOf(one.line), one.line.from, one.line.to].join("\u0000");
 		cables.set(key, [...(cables.get(key) ?? []), one]);
 	}
-	const reached = partsReachedIn(content, endsOf);
-	const words = new Map<string, string | undefined>();
-	for (const cable of cables.values()) {
-		if (cable.length < 2) continue;
-		const [first, ...rest] = cable.toSorted((one, other) => one.line.order - other.line.order);
-		if (first === undefined) continue;
-		const ends = { from: first.line.from, to: first.line.to, twoWay: first.line.twoWay === true };
-		words.set(
-			first.line.id,
-			wordsOnJoinedLine(
-				cable.flatMap(({ joins }) => joins),
-				ends,
-				reached,
-			),
-		);
-		for (const other of rest) words.set(other.line.id, undefined);
-	}
-	return lines.map((one) =>
-		words.has(one.line.id) ? { ...one, line: worded(one.line, words.get(one.line.id)) } : one,
+	return [...cables.values()].map((cable) =>
+		cable.toSorted((one, other) => one.line.order - other.line.order),
 	);
 }
 
