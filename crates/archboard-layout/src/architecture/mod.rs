@@ -47,9 +47,10 @@ pub async fn draw<S: Solver>(
     engine: Engine,
     solver: &S,
 ) -> Result<Painted, String> {
-    let graph = graph::compound_graph(content, measured, standings, engine);
+    let riders = graph::riders(content, standings);
+    let graph = graph::compound_graph(content, measured, standings, &riders, engine);
     let placed = choosing::placed_drawing(solver, graph).await?;
-    let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed));
+    let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed, &riders));
     let frozen = placed.planned;
     let bridged = if frozen {
         bridge_unfolded(&drawing, &measured.lines)

@@ -227,13 +227,43 @@ fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
         .collect()
 }
 
+/// The relationship that each other relationship between the same two ends rides with, by id:
+/// the layout routes one line from one part to another, the first in the picture's order, and
+/// the rest of them take its route. Relationships that stand differently in a comparison keep
+/// lines of their own.
+pub(crate) fn riders(content: &Content, standings: Option<&Standings>) -> BTreeMap<String, String> {
+    let ordered = ecma::sorted_by(&content.edges.iter().collect::<Vec<_>>(), |one, other| {
+        one.order - other.order
+    });
+    let standing = |edge: &Edge| {
+        standings
+            .and_then(|standings| standings.get(&edge.id))
+            .map(word)
+    };
+    let mut first: BTreeMap<(&str, &str, Option<&str>), &str> = BTreeMap::new();
+    let mut riders = BTreeMap::new();
+    for edge in ordered {
+        let ends = (edge.from.as_str(), edge.to.as_str(), standing(edge));
+        match first.get(&ends) {
+            Some(&leader) => {
+                riders.insert(edge.id.clone(), leader.to_owned());
+            }
+            None => {
+                first.insert(ends, edge.id.as_str());
+            }
+        }
+    }
+    riders
+}
+
 /// The graph of a picture, as the JSON a solve lays out: its nodes in their containers, and its relationships
-/// with their labels and options.
+/// with their labels and options, each pair of ends joined once (`riders`).
 /// The variant's own overview kinds ride on each relationship that has one.
 pub(crate) fn compound_graph(
     content: &Content,
     measured: &Measured,
     standings: Option<&Standings>,
+    riders: &BTreeMap<String, String>,
     engine: super::Engine,
 ) -> String {
     let places = gathered_order(content);
@@ -258,6 +288,7 @@ pub(crate) fn compound_graph(
     let unchanged = "unchanged";
     let edges: Vec<J> = edges
         .iter()
+        .filter(|edge| !riders.contains_key(&edge.id))
         .map(|edge| {
             let standing =
                 standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));

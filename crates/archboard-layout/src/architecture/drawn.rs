@@ -46,12 +46,13 @@ fn self_loop(bounds: Rect) -> Curve {
     )
 }
 
-/// Every relationship along its route, in the picture's order.
+/// Every relationship along its route, in the picture's order. A rider runs along the route of
+/// the relationship it rides with, and wears no words.
 fn edges_of(
     content: &Content,
     measured: &Measured,
     placed: &Placed,
-    boxes: &BTreeMap<&str, Rect>,
+    (boxes, riders): (&BTreeMap<&str, Rect>, &BTreeMap<String, String>),
 ) -> Vec<DrawingEdge<EdgeFacts>> {
     let routes: BTreeMap<&str, _> = placed
         .edges
@@ -63,7 +64,8 @@ fn edges_of(
     })
     .into_iter()
     .map(|edge| {
-        let route = routes.get(edge.id.as_str());
+        let ridden = riders.get(&edge.id);
+        let route = routes.get(ridden.unwrap_or(&edge.id).as_str());
         let curve = match route {
             Some(route) if route.points.len() >= 2 => curve_through(&route.points, true),
             _ => self_loop(boxes.get(edge.from.as_str()).copied().unwrap_or(Rect {
@@ -77,7 +79,11 @@ fn edges_of(
         let label = measured
             .labels
             .get(&edge.id)
-            .zip(route.and_then(|route| route.label))
+            .zip(
+                route
+                    .filter(|_| ridden.is_none())
+                    .and_then(|route| route.label),
+            )
             .map(|(wide, bounds)| {
                 let narrow = measured.narrow_labels.get(&edge.id);
                 let words = narrow.filter(|narrow| (narrow.width - bounds.width).abs() < 1e-6);
@@ -100,6 +106,7 @@ pub(crate) fn drawing_of(
     content: &Content,
     measured: &Measured,
     placed: &Placed,
+    riders: &BTreeMap<String, String>,
 ) -> ArchitectureDrawing<NodeFacts, EdgeFacts> {
     let cards: Vec<DrawingNode<NodeFacts>> = placed
         .cards
@@ -135,7 +142,7 @@ pub(crate) fn drawing_of(
         .chain(&containers)
         .map(|node| (node.measured.node.id.as_str(), node.bounds))
         .collect();
-    let edges = edges_of(content, measured, placed, &boxes);
+    let edges = edges_of(content, measured, placed, (&boxes, riders));
     ArchitectureDrawing {
         direction: ReadingDirection::Down,
         width: placed.width,
