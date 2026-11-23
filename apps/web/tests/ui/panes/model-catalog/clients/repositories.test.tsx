@@ -170,6 +170,49 @@ test("a reconnect takes the server's snapshot, even from a server that counts fr
 		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
 	}));
 
+test("a checkout answer after redial wins over an older reconnect snapshot", () =>
+	onTestClock(async () => {
+		const client = createModelQueryClient();
+		const { result } = readIn(client);
+		await act(async () => {});
+		const first = followingNow();
+		await act(async () => first.receive(listing(MAIN, 4)));
+		await act(async () => first.close());
+		await redial();
+
+		const { revision, repositories } = listing(FEATURE, 1);
+		globalThis.fetch = Object.assign(
+			async () => Response.json({ success: true, revision, repositories }),
+			{ preconnect: realFetch.preconnect },
+		);
+		await act(async () => chooseCheckout(client, { repository: ORDERS, root: FEATURE }));
+		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
+		await act(async () => followingNow().receive(listing(MAIN, 0)));
+		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
+	}));
+
+test("an answer pending on a lost connection cannot overwrite the next snapshot", () =>
+	onTestClock(async () => {
+		const client = createModelQueryClient();
+		const { result } = readIn(client);
+		await act(async () => {});
+		const first = followingNow();
+		await act(async () => first.receive(listing(MAIN, 4)));
+
+		const answer = Promise.withResolvers<Response>();
+		globalThis.fetch = Object.assign(() => answer.promise, { preconnect: realFetch.preconnect });
+		const choosing = chooseCheckout(client, { repository: ORDERS, root: MAIN });
+		await act(async () => first.close());
+		await redial();
+		await act(async () => followingNow().receive(listing(FEATURE, 0)));
+		const { revision, repositories } = listing(MAIN, 4);
+		await act(async () => {
+			answer.resolve(Response.json({ success: true, revision, repositories }));
+			await choosing;
+		});
+		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
+	}));
+
 test("two tabs that choose at once each end on the newest listing, whatever order the answers come in", async () => {
 	const tabs = [createModelQueryClient(), createModelQueryClient()];
 	const readers = tabs.map(readIn);

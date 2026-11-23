@@ -12,7 +12,7 @@ type RepositoriesFrame = Extract<ArchitectureFeedFrame, { type: "repositories" }
 /** What hears one topic of the socket: a vault's events, or the repositories of the machine. */
 interface FeedFollower<Heard> {
 	readonly event: (heard: Heard) => void;
-	readonly lost: () => void;
+	readonly lost: (disconnected: boolean) => void;
 }
 
 /** What the socket asks the server to send it. */
@@ -66,7 +66,7 @@ function createFeedSocket() {
 	 */
 	function receive(message: MessageEvent<unknown>): void {
 		const frame = decodedFrame(message.data);
-		if (frame === null) for (const follower of everyone()) follower.lost();
+		if (frame === null) for (const follower of everyone()) follower.lost(false);
 		else if (frame.type === "repositories") machine?.event(frame);
 		else toVault(frame);
 	}
@@ -76,7 +76,7 @@ function createFeedSocket() {
 	 */
 	function toVault(frame: Exclude<ArchitectureFeedFrame, RepositoriesFrame>): void {
 		const follower = followers.get(frame.vault);
-		if (frame.type === "architecture_unavailable") follower?.lost();
+		if (frame.type === "architecture_unavailable") follower?.lost(false);
 		else follower?.event(frame);
 	}
 	/** Open the socket while anything follows, and open it again after it drops. */
@@ -92,7 +92,7 @@ function createFeedSocket() {
 		opening.addEventListener("message", receive);
 		opening.addEventListener("close", () => {
 			socket = null;
-			for (const follower of everyone()) follower.lost();
+			for (const follower of everyone()) follower.lost(true);
 			after("pane.socketReconnect", connect);
 		});
 	}
