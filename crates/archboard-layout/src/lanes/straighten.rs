@@ -34,7 +34,7 @@ impl CrossingsFor {
 
 impl Router<'_> {
     /// Straighten every run of lanes onto one column where that column is free
-    /// on every band the run passes; a run no one column
+    /// on every band the run passes and keeps the frames; a run no one column
     /// is free for takes as few columns as hold it, from the top down.
     pub(crate) fn straighten_lanes(&mut self, chains: &[ChainId]) {
         let mut occupancy = Occupancy::new(self.scene, &Set::default());
@@ -168,6 +168,7 @@ impl Router<'_> {
         occupancy: &mut Occupancy,
         bands: &[ByBand],
     ) -> Option<f64> {
+        let straight = self.straight_on(run.before, run.after);
         let xs = sorted_by(
             &run.lanes
                 .iter()
@@ -176,12 +177,18 @@ impl Router<'_> {
             |one, other| one - other,
         );
         let median = xs[xs.len() / 2];
-        let mut columns = self.straight_from_port(run, bands, median);
-        columns.extend([self.x(run.after), self.x(run.before), median]);
-        columns.extend(xs.iter().copied());
+        let (columns, near) = if straight.is_empty() {
+            let mut columns = self.straight_from_port(run, bands, median);
+            columns.extend([self.x(run.after), self.x(run.before), median]);
+            columns.extend(xs.iter().copied());
+            (columns, median)
+        } else {
+            let near = straight[0];
+            (straight, near)
+        };
         let fits = occupancy.fitting(self, run);
         let edges = occupancy.edges(self, &run.lanes);
-        let found = nearest(median, |x| fits.passes(x), &edges);
+        let found = nearest(near, |x| fits.passes(x), &edges);
         let free: Vec<f64> = columns
             .into_iter()
             .filter(|&x| fits.passes(x))

@@ -1,7 +1,8 @@
 //! A block of cards' placed leaves, set right where Graphviz leaves them
 //! off: the header in its corner, with the ports on its rank beside it.
 
-use crate::ecma::{js_max, max, min};
+use crate::constants::CONTAINER_INSET;
+use crate::ecma::{js_max, js_min, max, min, via_text};
 use crate::geometry::{Point, Rect};
 use crate::lanes::chains::LANE;
 use crate::lanes::scene::{Map, Placement};
@@ -132,7 +133,22 @@ pub(crate) fn pinned_leaf(
         y,
         width: PORT,
         height: inner.height,
+        children: None,
+        frame: None,
     }
+}
+
+/// Every leaf under a block's placed nodes, those inside its frames included.
+pub(crate) fn leaves_of(nodes: &mut [PlacedNode]) -> Vec<&mut PlacedNode> {
+    let mut leaves = Vec::new();
+    for node in nodes {
+        if node.children.is_none() {
+            leaves.push(node);
+        } else if let Some(children) = &mut node.children {
+            leaves.extend(leaves_of(children));
+        }
+    }
+    leaves
 }
 
 /// Where a block routed again stands a pin or a block inside it: a pin where
@@ -166,6 +182,33 @@ pub(crate) fn settled_leaf(
         width,
         height,
     })
+}
+
+/// Grow inline frames around children resized after their ports settle.
+pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
+    for node in nodes {
+        let Some(children) = node
+            .children
+            .as_mut()
+            .filter(|children| !children.is_empty())
+        else {
+            continue;
+        };
+        hold_resized_children(children);
+        let Some(row) = &node.frame else {
+            continue;
+        };
+        let inset = CONTAINER_INSET + row.below.map_or(0.0, via_text);
+        let low = js_min(node.x, min(children.iter().map(|child| child.x - inset)));
+        let high = js_max(
+            node.x + node.width,
+            max(children.iter().map(|child| child.x + child.width + inset)),
+        );
+        node.x = low;
+        node.width = high - low;
+        let row = node.frame.as_mut().expect("a frame");
+        row.title[0] = low;
+    }
 }
 
 /// The room a block of cards keeps where no line turns under its header, a

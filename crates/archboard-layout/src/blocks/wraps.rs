@@ -95,10 +95,10 @@ pub(crate) fn search_of(
     let Wrapping { laid, insets } = laying.wrapping;
     let loose = CardLayout::new(tree, laid, block, insets, Arrangement::default()).loose_cards();
     let mut candidates = Vec::new();
-    if grids(loose.len()) {
+    if loose.iter().any(|cards| grids(cards.len())) {
         candidates.push(Candidate::Grid);
     }
-    for lowered in wraps_of(laying.whole, tree) {
+    for lowered in wraps_of(laying.whole, tree, block) {
         if !tree.expanded && !try_wrap(&lowered, laying.whole.boxes.len(), tree.cards.len()) {
             continue;
         }
@@ -209,12 +209,14 @@ fn tried(
         let lined = layout.lined(gv, widths)?;
         return Ok(Some(wrap_of(layout.finish(gv, lined)?, None)));
     };
+    let held = tree.get(block);
+    let around = |card: &str| held.cluster_of.get(card).cloned();
     let lined = layout.lined(gv, widths)?;
-    if sinks(lowered, &lined.boxes) {
+    if sinks(lowered, &lined.boxes, around) {
         return Ok(None);
     }
     let wrapped = wrap_of(layout.finish(gv, lined)?, Some(lowered));
-    Ok((!sinks(lowered, &wrapped.laid.boxes)).then_some(wrapped))
+    Ok((!sinks(lowered, &wrapped.laid.boxes, around)).then_some(wrapped))
 }
 
 /// Whether one wrap reads better than another: it scores higher, or, as well,
@@ -235,13 +237,13 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 /// The first hierarchy holds columns; the bounded placement comparison can also
 /// try the hierarchy with free columns.
 fn column_choices(free: bool) -> Vec<bool> {
-    if free { vec![false, true] } else { vec![true] }
+    if !free { vec![true] } else { vec![false, true] }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block
 /// is wider than the page's shape. Interchangeable cards standing together
 /// stay in one row.
-fn wraps_of(whole: &Laid, tree: &BlockTree) -> Vec<Plan> {
+fn wraps_of(whole: &Laid, tree: &BlockTree, block: BlockId) -> Vec<Plan> {
     let bands: Vec<_> = whole
         .bands
         .iter()
@@ -260,8 +262,13 @@ fn wraps_of(whole: &Laid, tree: &BlockTree) -> Vec<Plan> {
     let across = sorted_by(&widest.items, |one, other| {
         whole.boxes[one.as_str()].x - whole.boxes[other.as_str()].x
     });
+    let held = tree.get(block);
     let runs = peer_runs(&across, &whole.boxes, |id| {
-        tree.cards.get(id)?.peers.clone()
+        let peers = tree.cards.get(id)?.peers.as_ref()?;
+        Some(format!(
+            "{}|{peers}",
+            held.cluster_of.get(id).map_or("", String::as_str)
+        ))
     });
     wrap_plans(&runs)
         .into_iter()

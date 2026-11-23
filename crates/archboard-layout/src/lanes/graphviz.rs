@@ -7,13 +7,15 @@ use serde::Deserialize;
 use crate::ecma::{abs, js_max, js_min, max, min, number_of, via_text};
 use crate::geometry::{Point, Rect};
 use crate::lanes::scene::{Map, Set};
-use crate::lanes::wrap_columns;
+use crate::lanes::{hold_slots, wrap_columns};
 use crate::viz::Node;
 
-/// One object Graphviz placed.
+/// One object Graphviz placed: a node or a cluster.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Object {
     pub name: String,
+    #[serde(default)]
+    pub bb: Option<String>,
     #[serde(default)]
     pub pos: Option<String>,
 }
@@ -134,6 +136,22 @@ pub(crate) struct Join {
     pub legs: Option<Vec<String>>,
 }
 
+/// The wrap Graphviz placed a block's rank by.
+pub(crate) struct Wrap<'a> {
+    /// Every card of the wrapped rank and the row it was dealt to.
+    pub rows: &'a Map<String, usize>,
+    /// The innermost cluster around a card, if any.
+    pub around: &'a dyn Fn(&str) -> Option<String>,
+}
+
+/// The invisible holds a block's containers keep their members below their titles with.
+pub(crate) struct Holds<'a> {
+    /// How far in from its container's wall a hold passing beside a member stands it.
+    pub slot: f64,
+    /// The innermost container around a card, if any.
+    pub around: &'a dyn Fn(&str) -> Option<String>,
+}
+
 /// What an item moved sideways must keep to.
 pub(crate) struct Room<'a> {
     /// How far it keeps from every other item.
@@ -144,8 +162,10 @@ pub(crate) struct Room<'a> {
     pub within: &'a dyn Fn(&str) -> Option<(f64, f64)>,
     /// Whether an item is a card, whose width may be evened with the card over or under it.
     pub card: Option<&'a dyn Fn(&str) -> bool>,
-    /// The row each card of the wrapped rank was dealt to.
-    pub wrap: Option<&'a Map<String, usize>>,
+    /// The wrap the block's rank was placed by.
+    pub wrap: Option<Wrap<'a>>,
+    /// The invisible holds the block's containers keep their members with.
+    pub holds: Option<Holds<'a>>,
 }
 
 impl Room<'_> {
@@ -458,11 +478,14 @@ impl<'a, 'r> Columns<'a, 'r> {
 }
 
 /// Line up the joined cards Graphviz stacked a few points out of one column.
-/// Where the room names the cards, two joined cards on one centre whose widths differ by no more than
+/// First, where the room names the holds, a member a hold stood a slot in
+/// from its container's wall moves onto it. Last, where the room names the
+/// cards, two joined cards on one centre whose widths differ by no more than
 /// a near miss are made one width, and where it names a wrap, its lowered
 /// cards stand out of the way of the lines through it.
 pub(crate) fn align_columns(boxes: &mut Map<String, Rect>, joins: &[Join], room: &Room<'_>) {
     let mut columns = Columns::new(boxes, joins, room);
+    hold_slots::close_slots(&mut columns, room.holds.as_ref());
     for join in columns.stacked() {
         let shift = abs(columns.offset(&join));
         if (0.5..=NEAR_MISS).contains(&shift) {
@@ -475,5 +498,5 @@ pub(crate) fn align_columns(boxes: &mut Map<String, Rect>, joins: &[Join], room:
     }
     // Widening one card can line its edges up with a third's.
     while columns.stacked().iter().any(|join| columns.even(join)) {}
-    wrap_columns::clear_wrap(&mut columns, room.wrap);
+    wrap_columns::clear_wrap(&mut columns, room.wrap.as_ref());
 }

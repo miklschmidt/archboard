@@ -5,6 +5,7 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, hypot};
 use crate::geometry::{Point, Rect};
+use crate::lanes::containers::{FrameShape, RegionShape};
 use crate::lanes::scene::Map;
 
 use super::card_layout::Reroute;
@@ -57,6 +58,10 @@ pub(crate) struct Laid {
     pub lines: Map<String, Vec<Point>>,
     /// Its ranks, top to bottom, when Graphviz ranked it.
     pub bands: Vec<Band>,
+    /// The containers it draws inline, in its own coordinates.
+    pub frames: Option<Vec<FrameShape>>,
+    /// The group regions it draws inline, in its own coordinates.
+    pub regions: Option<Vec<RegionShape>>,
     /// Which of its header's wider sizes a container's block took, when it took one.
     pub header: Option<usize>,
     /// How many of its lines lap round it, which its score counts as crossings.

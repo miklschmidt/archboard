@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::ecma::{max, min};
 use crate::geometry::Side;
-use crate::lanes::scene::Map;
+use crate::lanes::scene::{Map, Set};
 use crate::lanes::score::{Weighed, crossings_of, score_of, scores_better};
 use crate::lanes::spacing::channel_height;
 
@@ -56,7 +56,8 @@ fn folded_size(laid: &Laid, runs: &[Vec<&Band>], insets: Insets) -> (f64, f64) {
         .map(|run| run[run.len() - 1].bottom - run[0].top));
     let gutters = (runs.len() - 1) as f64 * MIN_GUTTER;
     let width = widths.iter().fold(0.0, |sum, width| sum + width) + gutters + 2.0 * insets.side;
-    let height = laid.height - span + tallest + 2.0 * channel_height(runs.len() - 1, false);
+    let height =
+        laid.height - span + tallest + 2.0 * channel_height(runs.len() - 1, 0.0, false, false);
     (width, height)
 }
 
@@ -108,12 +109,22 @@ fn header_drops(block: &Block) -> bool {
         .any(|line| joins(&line.from, &line.to) || joins(&line.to, &line.from))
 }
 
-/// The run of bands each item stands in.
-fn run_of<'b>(runs: &[Vec<&'b Band>]) -> Map<&'b str, usize> {
+/// The run of bands each item and each container drawn inline stands in: a
+/// container stands in the run that holds its cards.
+fn run_of<'b>(block: &'b Block, runs: &[Vec<&'b Band>]) -> Map<&'b str, usize> {
     let mut run_of: Map<&str, usize> = Map::default();
     for (index, run) in runs.iter().enumerate() {
         let items = run.iter().flat_map(|band| band.items.iter());
         run_of.extend(items.map(|item| (item.as_str(), index)));
+    }
+    let mut clusters: Map<&str, usize> = Map::default();
+    for (item, &index) in &run_of {
+        for cluster in block.clusters_from(block.cluster_of.get(*item).map(String::as_str)) {
+            clusters.insert(cluster, index);
+        }
+    }
+    for (cluster, index) in clusters {
+        run_of.insert(cluster, index);
     }
     run_of
 }
@@ -121,7 +132,7 @@ fn run_of<'b>(runs: &[Vec<&'b Band>]) -> Map<&'b str, usize> {
 /// How many of a block's lines run from one run of bands to another: each is
 /// drawn from the bottom of one column round to the top of a later one.
 fn bus_lines(block: &Block, runs: &[Vec<&Band>]) -> f64 {
-    let run_of = run_of(runs);
+    let run_of = run_of(block, runs);
     block
         .lines
         .values()
@@ -137,6 +148,32 @@ fn bus_lines(block: &Block, runs: &[Vec<&Band>]) -> f64 {
         .count() as f64
 }
 
+/// The bands each cluster a block draws inline spans, as the first and last
+/// band holding one of its cards.
+fn cluster_spans(block: &Block, bands: &[&Band]) -> Vec<(usize, usize)> {
+    let mut band_of: Map<&str, usize> = Map::default();
+    for (index, band) in bands.iter().enumerate() {
+        for item in &band.items {
+            band_of.insert(item, index);
+        }
+    }
+    let mut spans: Map<&str, (usize, usize)> = Map::default();
+    for (item, &band) in &band_of {
+        for cluster in block.clusters_from(block.cluster_of.get(*item).map(String::as_str)) {
+            let (low, high) = spans.get(cluster).copied().unwrap_or((band, band));
+            spans.insert(cluster, (low.min(band), high.max(band)));
+        }
+    }
+    spans.into_values().collect()
+}
+
+/// The boundaries between bands that keep every container and region whole.
+fn cut_points(count: usize, spans: &[(usize, usize)]) -> Vec<usize> {
+    (1..count)
+        .filter(|&cut| !spans.iter().any(|&(low, high)| low < cut && cut <= high))
+        .collect()
+}
+
 /// The runs of bands that score best folded, when they beat the bands
 /// unfolded by a clear margin. Each run is estimated at its size with the
 /// block's own crossings, so a fold never trades a crossing for fit.
@@ -148,7 +185,7 @@ fn best_runs<'b>(
     unfolded: &Weighed,
 ) -> Option<(Vec<Vec<&'b Band>>, Weighed)> {
     let crossings = crossings_of(laid.lines.values().map(Vec::as_slice));
-    let places: Vec<usize> = (1..bands.len()).collect();
+    let places = cut_points(bands.len(), &cluster_spans(block, bands));
     let mut best: Option<(Vec<Vec<&'b Band>>, Weighed)> = None;
     visit_cuts(&places, &[], &mut |cuts| {
         let mut starts = vec![0];
@@ -178,7 +215,8 @@ fn best_runs<'b>(
 }
 
 /// Fold a block into columns: its items move into one column block each, in
-/// order, and every line of the block is cut where it leaves and enters a
+/// order, each cluster the block draws inline into the column that holds its
+/// cards, and every line of the block is cut where it leaves and enters a
 /// column. Answers the columns.
 pub(crate) fn fold_block(
     tree: &mut BlockTree,
@@ -210,8 +248,50 @@ pub(crate) fn fold_block(
             column
         })
         .collect();
+    for &column in &columns {
+        hold_clusters(tree, block, column);
+    }
+    let folded = tree.get_mut(block);
+    folded.clusters.clear();
+    folded.cluster_of.clear();
     cut_all(tree, block, &columns);
     columns
+}
+
+/// Give one column the clusters around its cards, in the block's order so a
+/// parent comes before the clusters inside it.
+fn hold_clusters(tree: &mut BlockTree, block: BlockId, column: BlockId) {
+    let folded = tree.get(block);
+    let held: Set<String> = tree
+        .get(column)
+        .items
+        .iter()
+        .flat_map(|item| folded.clusters_from(folded.cluster_of.get(item).map(String::as_str)))
+        .map(str::to_owned)
+        .collect();
+    let clusters: Vec<_> = folded
+        .clusters
+        .iter()
+        .filter(|(id, _)| held.contains(*id))
+        .map(|(id, cluster)| (id.clone(), cluster.clone()))
+        .collect();
+    let members: Vec<(String, String)> = folded
+        .cluster_of
+        .iter()
+        .filter(|(_, around)| held.contains(*around))
+        .map(|(member, around)| (member.clone(), around.clone()))
+        .collect();
+    let frames: Vec<String> = clusters
+        .iter()
+        .filter(|(_, cluster)| cluster.kind == super::tree::ClusterKind::Frame)
+        .map(|(id, _)| id.clone())
+        .collect();
+    let target = tree.get_mut(column);
+    target.clusters.extend(clusters);
+    target.cluster_of.extend(members);
+    for id in frames {
+        tree.holder.insert(id, column);
+    }
 }
 
 /// The column holding a line end, if a column holds it.
@@ -220,10 +300,10 @@ fn column_of(tree: &BlockTree, columns: &[BlockId], end: &str) -> Option<BlockId
         .pins
         .get(end)
         .map_or(end, |pin| tree.get(pin.block).id.as_str());
-    columns
-        .iter()
-        .copied()
-        .find(|&column| tree.get(column).items.iter().any(|one| one == item))
+    columns.iter().copied().find(|&column| {
+        let held = tree.get(column);
+        held.items.iter().any(|one| one == item) || held.clusters.contains_key(item)
+    })
 }
 
 /// Cut every line of the block where it leaves and enters a column, and put
@@ -369,20 +449,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn folds_are_visited_in_the_order_that_breaks_score_ties() {
-        let places: Vec<usize> = (1..4).collect();
+    fn folds_keep_clusters_whole_in_the_order_that_breaks_score_ties() {
+        let places = cut_points(9, &[(0, 1), (2, 4), (5, 6), (7, 8)]);
         let mut folds = Vec::new();
         visit_cuts(&places, &[], &mut |cuts| folds.push(cuts.to_vec()));
         assert_eq!(
             folds,
             vec![
-                vec![1],
-                vec![1, 2],
-                vec![1, 2, 3],
-                vec![1, 3],
                 vec![2],
-                vec![2, 3],
-                vec![3],
+                vec![2, 5],
+                vec![2, 5, 7],
+                vec![2, 7],
+                vec![5],
+                vec![5, 7],
+                vec![7],
             ]
         );
     }

@@ -4,10 +4,11 @@
 //! that stands to one side of both its ends has to jog on the way in and on
 //! the way out. Here each box slides sideways, within its band, to where both
 //! ends could reach it straight, and then to the middle of that stretch where
-//! the room allows. Cards and lanes stay where they are; boxes between them keep their spacing and their order, or the order
+//! the room allows. Cards, title rows, lanes and frame walls stay where they
+//! are; boxes between them keep their spacing and their order, or the order
 //! of where they want to be when that crosses fewer lines (`label_runs.rs`).
 
-use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
+use crate::constants::{CONTAINER_INSET, LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
 use crate::ecma::{abs, js_max, js_min, max, min, number_key, sort_by, sorted_by, via_text};
 use crate::geometry::Rect;
 use crate::lanes::chains::{Kind, LANE, Router, StationId};
@@ -29,11 +30,12 @@ type Runs = Map<(u64, u64), ((f64, f64), Vec<Slider>)>;
 /// Something that stays put on a band, as an interval a box may not enter.
 type Wall = (f64, f64);
 
-/// How far the scene's cards and labels reach, left and right.
+/// How far the scene's cards, title rows and labels reach, left and right.
 pub(crate) fn extent_of(scene: &Placement) -> Wall {
     let boxes: Vec<Rect> = scene
         .cards
         .values()
+        .chain(scene.titles.values())
         .chain(scene.labels.values())
         .map(|&item| scene.item(item).bx)
         .collect();
@@ -44,17 +46,30 @@ pub(crate) fn extent_of(scene: &Placement) -> Wall {
 }
 
 /// Everything on the scene a label box keeps a card's clearance from.
-fn standing(scene: &Placement) -> Vec<Item> {
+fn standing(scene: &Placement, label: &Item) -> Vec<Item> {
     scene
         .cards
         .values()
+        .chain(scene.titles.values())
         .map(|&item| *scene.item(item))
+        .chain(scene.captions_for(label))
         .collect()
 }
 
-/// What stays put on one band for a label box, widened by the gap a box keeps.
-fn walls_on(scene: &Placement, band: usize, lanes: &[f64]) -> Vec<Wall> {
-    let items: Vec<Item> = standing(scene)
+/// The walls of every frame and group region a band passes through, widened by the frame's inset.
+fn frame_walls_on(scene: &Placement, band: usize) -> Vec<Wall> {
+    scene
+        .walled(band)
+        .values()
+        .flat_map(|&(left, right)| {
+            [left, right].map(|wall| (wall - CONTAINER_INSET, wall + CONTAINER_INSET))
+        })
+        .collect()
+}
+
+/// What stays put on one band for one label box, widened by the gap a box keeps.
+fn walls_on(scene: &Placement, band: usize, lanes: &[f64], label: &Item) -> Vec<Wall> {
+    let items: Vec<Item> = standing(scene, label)
         .into_iter()
         .filter(|item| item.band == band)
         .collect();
@@ -64,6 +79,7 @@ fn walls_on(scene: &Placement, band: usize, lanes: &[f64]) -> Vec<Wall> {
         .map(|item| (item.bx.x - LABEL_GAP, item.bx.x + item.bx.width + LABEL_GAP))
         .collect();
     walls.extend(lanes.iter().map(|&x| (x - LABEL_GAP, x + LABEL_GAP)));
+    walls.extend(frame_walls_on(scene, band));
     walls.push((-OPEN_REACH, left));
     walls.push((right, OPEN_REACH));
     sort_by(&mut walls, |one, other| one.0 - other.0);
@@ -115,13 +131,18 @@ fn within(bx: &Rect, stretch: Wall) -> bool {
     bx.x >= stretch.0 && bx.x + bx.width <= stretch.1
 }
 
+/// How far a box keeps from a container's wall, on whichever side it stands.
+fn keeps_from(bx: &Rect, wall: f64) -> f64 {
+    js_max(bx.x - wall, wall - bx.x - bx.width)
+}
+
 /// Whether a label box, moved, keeps its room from everything else on its band.
 fn clear_on_band(scene: &Placement, item: ItemId, bx: &Rect, lanes: &[f64]) -> bool {
     let label = *scene.item(item);
     keeps_gap(
         (item, &label),
         bx,
-        standing(scene).into_iter().map(|one| (None, one)),
+        standing(scene, &label).into_iter().map(|one| (None, one)),
         LABEL_CARD_CLEARANCE,
     ) && keeps_gap(
         (item, &label),
@@ -134,6 +155,13 @@ fn clear_on_band(scene: &Placement, item: ItemId, bx: &Rect, lanes: &[f64]) -> b
     ) && lanes
         .iter()
         .all(|&x| x <= bx.x - LABEL_GAP || x >= bx.x + bx.width + LABEL_GAP)
+        && scene
+            .walled(label.band)
+            .values()
+            .flat_map(|&(left, right)| [left, right])
+            .all(|wall| {
+                keeps_from(bx, wall) >= js_min(CONTAINER_INSET, keeps_from(&label.bx, wall))
+            })
         && within(bx, extent_of(scene))
 }
 
@@ -230,7 +258,7 @@ impl Router<'_> {
                 .filter(|slider| self.scene.item(slider.item).band == band)
             {
                 let item = *self.scene.item(slider.item);
-                let walls = walls_on(self.scene, band, on_band);
+                let walls = walls_on(self.scene, band, on_band, &item);
                 // The stretch is keyed and read back through its spelling, which loses a negative zero.
                 let (low, high) = stretch_of(&walls, &item);
                 let key = (number_key(low), number_key(high));
@@ -293,7 +321,7 @@ impl Router<'_> {
                         bx.x + bx.width + LABEL_LABEL_CLEARANCE,
                     )
                 });
-            let mut walls = walls_on(self.scene, item.band, &lanes[item.band]);
+            let mut walls = walls_on(self.scene, item.band, &lanes[item.band], &item);
             walls.extend(labels);
             let (left, right) = stretch_of(&walls, &item);
             let half = item.bx.width / 2.0;
