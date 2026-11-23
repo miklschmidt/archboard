@@ -98,60 +98,73 @@ struct Greedy<'w> {
     links: Vec<(&'w String, &'w String, &'w String)>,
 }
 
+/// An item's line counts to and from the items still unplaced.
+#[derive(Default)]
+struct Degree {
+    sends: usize,
+    takes: usize,
+}
+
 impl<'w> Greedy<'w> {
     /// Every item in the greedy order: the items first, in authored order, then
     /// any end no item names.
     fn order(&self, items: &'w [String]) -> Vec<&'w String> {
-        let mut left: Vec<&String> = items.iter().collect();
+        let mut left: Map<&String, Degree> =
+            items.iter().map(|item| (item, Degree::default())).collect();
         for &(from, to, _) in &self.links {
-            for end in [from, to] {
-                if !left.contains(&end) {
-                    left.push(end);
-                }
+            let outgoing = left.entry(from).or_default();
+            if from != to {
+                outgoing.sends += 1;
+                left.entry(to).or_default().takes += 1;
             }
         }
         let (mut first, mut last) = (Vec::new(), Vec::new());
         while !left.is_empty() {
-            if let Some(sink) = left.iter().position(|item| self.sends(item, &left) == 0) {
-                last.push(left.remove(sink));
+            let next = self.next(&left);
+            let (item, degree) = self.remove(&mut left, next);
+            if degree.sends == 0 {
+                last.push(item);
             } else {
-                let next = self.next(&left);
-                first.push(left.remove(next));
+                first.push(item);
             }
         }
         first.extend(last.into_iter().rev());
         first
     }
 
-    /// Where the next item to go first stands among those left: one nothing left
-    /// points at, else the one whose sent lines lead its taken lines the most.
-    fn next(&self, left: &[&String]) -> usize {
-        if let Some(source) = left.iter().position(|item| self.takes(item, left) == 0) {
+    /// Remove an item and discount its lines to and from the items still unplaced.
+    fn remove(&self, left: &mut Map<&'w String, Degree>, index: usize) -> (&'w String, Degree) {
+        let (item, degree) = left.shift_remove_index(index).expect("an item left");
+        for &(from, to, _) in &self.links {
+            if from == item
+                && let Some(target) = left.get_mut(to)
+            {
+                target.takes -= 1;
+            } else if to == item
+                && let Some(source) = left.get_mut(from)
+            {
+                source.sends -= 1;
+            }
+        }
+        (item, degree)
+    }
+
+    /// The first sink, else the first source, else the greatest lead in authored order.
+    fn next(&self, left: &Map<&String, Degree>) -> usize {
+        if let Some(sink) = left.values().position(|degree| degree.sends == 0) {
+            return sink;
+        }
+        if let Some(source) = left.values().position(|degree| degree.takes == 0) {
             return source;
         }
-        // Every count stays below the number of links, so the lead never falls below zero.
-        let lead =
-            |item: &&String| self.links.len() + self.sends(item, left) - self.takes(item, left);
-        let best = left.iter().map(lead).max().expect("an item left");
-        left.iter()
-            .position(|item| lead(item) == best)
-            .expect("the item that leads")
-    }
-
-    /// The lines an item sends to the items left, itself apart.
-    fn sends(&self, item: &String, left: &[&String]) -> usize {
-        self.links
-            .iter()
-            .filter(|&&(from, to, _)| from == item && to != item && left.contains(&to))
-            .count()
-    }
-
-    /// The lines an item takes from the items left, itself apart.
-    fn takes(&self, item: &String, left: &[&String]) -> usize {
-        self.links
-            .iter()
-            .filter(|&&(from, to, _)| to == item && from != item && left.contains(&from))
-            .count()
+        // Offset the lead by the number of links so it never falls below zero.
+        // The maximum keeps the last tie, so read the remaining items in reverse.
+        left.values()
+            .enumerate()
+            .rev()
+            .max_by_key(|(_, degree)| self.links.len() + degree.sends - degree.takes)
+            .map(|(index, _)| index)
+            .expect("an item left")
     }
 }
 
