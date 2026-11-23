@@ -87,6 +87,11 @@ impl Net {
             .then(|| self.bottom_x + sign(self.bottom_x - self.top_x) * LANE)
     }
 
+    /// How far the outermost strand stands from this net's route.
+    pub(crate) fn half_width(&self) -> f64 {
+        self.kind.matches(';').count() as f64 * crate::constants::STRAND / 2.0
+    }
+
     /// The station at one end.
     pub(crate) fn at(&self, end: End) -> StationId {
         match end {
@@ -459,8 +464,7 @@ impl Router<'_> {
         let mut wide = vec![0; rows];
         for &(unit, row) in tracks {
             for &net in &units[unit].1 {
-                let strands = self.net(net).kind.split(';').count();
-                let half = (strands - 1) as f64 * crate::constants::STRAND / 2.0;
+                let half = self.net(net).half_width();
                 #[expect(
                     clippy::cast_possible_truncation,
                     clippy::cast_sign_loss,
