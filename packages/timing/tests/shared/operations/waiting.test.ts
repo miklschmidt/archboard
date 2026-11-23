@@ -238,6 +238,7 @@ describe("after and every", () => {
 				`import { after, every } from "@archboard/timing";
 				after("claim.activityLinger", () => console.log("lingered"));
 				every("modelLock.watch", () => console.log("watched"));
+				every("pane.repositoryRecheck", () => console.log("rechecked"));
 				after("modelLock.stealGuard", () => console.log("settled"));`,
 			],
 			timeout: 2000,

@@ -60,7 +60,7 @@ const PANE = {
 	 * command ends. One look reads the registry and a few directories, once per server and not
 	 * once per tab.
 	 */
-	"pane.repositoryRecheck": tick(2_000),
+	"pane.repositoryRecheck": { ...tick(2_000), background: true },
 	/**
 	 * How long the server waits for the panes to say where they ended up, after
 	 * asking the browser to split or close one.
