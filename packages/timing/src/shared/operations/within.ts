@@ -42,20 +42,19 @@ function within<T>(
 			signal?.removeEventListener("abort", abandon);
 			settle();
 		};
+		/**
+		 * Settle the race before notifying work, whose abort handlers may abort the caller.
+		 * @param reason Why the wait ended.
+		 */
+		const stop = (reason: unknown): void => {
+			end(() => reject(reason));
+			controller.abort(reason);
+		};
 		/** Abort the work for the caller's reason. */
 		const abandon = (): void => {
-			controller.abort(signal?.reason);
-			end(() => reject(signal?.reason));
+			stop(signal?.reason);
 		};
-		const timer = setTimeout(
-			() => {
-				const timedOut = new TimedOut(wait, ms);
-				controller.abort(timedOut);
-				end(() => reject(timedOut));
-			},
-			ms,
-			wait,
-		);
+		const timer = setTimeout(() => stop(new TimedOut(wait, ms)), ms, wait);
 		signal?.addEventListener("abort", abandon, { once: true });
 		try {
 			work(controller.signal).then(

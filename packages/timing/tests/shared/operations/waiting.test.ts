@@ -111,6 +111,28 @@ describe("within", () => {
 		).rejects.toThrow("refused");
 		expect(jest.getTimerCount()).toBe(0);
 	});
+
+	test("expiry wins if aborting the work causes the caller to abort too", async () => {
+		const caller = new AbortController();
+		const work = Promise.withResolvers<never>();
+		const outcome = await drive(
+			within(
+				"server.mutationDrain",
+				(signal) => {
+					signal.addEventListener("abort", () => caller.abort(new Error("work ended")), {
+						once: true,
+					});
+					return work.promise;
+				},
+				{ signal: caller.signal },
+			),
+		);
+		expect(caller.signal.aborted).toBe(true);
+		expect((outcome as PromiseRejectedResult).reason).toBeInstanceOf(TimedOut);
+		work.reject(new Error("work later failed"));
+		await settle();
+		expect(jest.getTimerCount()).toBe(0);
+	});
 });
 
 describe("pollUntil", () => {
