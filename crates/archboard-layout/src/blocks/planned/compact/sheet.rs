@@ -339,6 +339,31 @@ impl Sheet {
         (self.lines.iter()).flat_map(|points| points.windows(2).map(|pair| (pair[0], pair[1])))
     }
 
+    /// The two movers at the ends of a straight cable along this axis, its length and half-width.
+    pub(super) fn straight_cables<'a>(
+        &'a self,
+        drawing: &'a Placed,
+        axis: Axis,
+        (_, inks): Looks<'a>,
+    ) -> impl Iterator<Item = ((usize, usize), f64, f64)> + 'a {
+        drawing
+            .edges
+            .iter()
+            .zip(&self.lines)
+            .filter_map(move |(line, movers)| {
+                let half = *inks.get(line.id.as_str())?;
+                let ([a, b], [first, second]) = (line.points.as_slice(), movers.as_slice()) else {
+                    return None;
+                };
+                let span = axis.of(*b) - axis.of(*a);
+                if span > 0.0 {
+                    Some(((*first, *second), span, half))
+                } else {
+                    (span < 0.0).then_some(((*second, *first), -span, half))
+                }
+            })
+    }
+
     /// Where the far end of the drawing stands once each mover took its shift.
     pub(super) fn end(&self, shifts: &[f64]) -> f64 {
         self.pieces
