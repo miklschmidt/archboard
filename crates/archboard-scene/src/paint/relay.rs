@@ -6,8 +6,9 @@
 use std::collections::HashMap;
 
 use crate::drawing::Traffic;
+use crate::ecma::within;
 use crate::geometry::{Point, Rect};
-use crate::js::{self, within};
+use crate::js;
 use crate::sizes::CARD_RADIUS;
 
 /// The least distance between two pulses on a line.

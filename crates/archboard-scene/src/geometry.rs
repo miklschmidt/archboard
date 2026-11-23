@@ -5,7 +5,6 @@ use ts_rs::TS;
 
 use crate::js;
 use crate::route::point_on_segment;
-pub(crate) use crate::route::segment_length;
 use crate::sizes::EPSILON;
 
 /// A position in the diagram's own units.

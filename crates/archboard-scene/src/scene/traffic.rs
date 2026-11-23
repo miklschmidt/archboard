@@ -8,20 +8,17 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_length, segment_start};
+use crate::ecma::within;
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 use crate::js;
+use crate::route::segment_length;
 use crate::scene::colour::Colour;
 use crate::scene::definition::Stop;
 use crate::scene::shape::PathStep;
+use crate::sizes::{
+    PULSE_FRONT, PULSE_HEAD, PULSE_TAIL, pulse_breadth, pulse_span, with_light_room,
+};
 
-/// How long a pulse's hot front is, along its line.
-const PULSE_FRONT: f64 = 3.0;
-/// How long a pulse's head is, behind its front.
-const PULSE_HEAD: f64 = 12.0;
-/// How long a pulse's tail is at most, behind its head.
-const PULSE_TAIL: f64 = 56.0;
-/// How far a pulse's light reaches past the line it rides, either side.
-const PULSE_MASK_ROOM: f64 = 2.0;
 /// The share of the room between pulses that a pulse fills.
 const PULSE_FILL: f64 = 0.8;
 /// How a pulse falls off across its line: how much wider than its core each
@@ -46,27 +43,6 @@ const OVERLAP: f64 = 0.5;
 /// most of that room, and a tail never runs past its longest.
 fn pulse_tail(room: f64) -> f64 {
     (room * PULSE_FILL - PULSE_HEAD - PULSE_FRONT).clamp(0.0, PULSE_TAIL)
-}
-
-/// How long a pulse with its longest tail is.
-const fn pulse_span() -> f64 {
-    PULSE_FRONT + PULSE_HEAD + PULSE_TAIL
-}
-
-/// A length with the room a pulse's light takes past it added.
-fn with_light_room(length: f64) -> f64 {
-    length + PULSE_MASK_ROOM
-}
-
-/// How long a clock runs on after a message's pulse has left its route: the
-/// whole pulse and the room its light takes.
-pub(crate) fn pulse_clearance() -> f64 {
-    with_light_room(pulse_span())
-}
-
-/// How thick a pulse's core is on a line of one width.
-pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(1.5, line_width + 0.6)
 }
 
 /// The colours of a pulse and how thick the line it rides is.
@@ -219,7 +195,7 @@ impl Slide {
     /// How far the bar has slid at a moment of the traffic's clock, in seconds.
     pub fn at(&self, seconds: f64) -> f64 {
         match *self {
-            Slide::Loop { length, speed } => js::within(seconds * speed, length),
+            Slide::Loop { length, speed } => within(seconds * speed, length),
             Slide::Pass {
                 cycle,
                 enter,
@@ -227,7 +203,7 @@ impl Slide {
                 from,
                 to,
             } => {
-                let moment = js::within(seconds, cycle);
+                let moment = within(seconds, cycle);
                 if moment <= enter {
                     from
                 } else if moment >= leave {
@@ -265,7 +241,7 @@ impl TrafficMark {
                             // The bar covers the piece and a pulse past each end,
                             // so the repeating gradient fills it wherever it slides.
                             let bar = (-period - 1.0, leg.length + 2.0 * period + 2.0);
-                            let rest = js::within(phase - leg.along + PULSE_FRONT, period) - period;
+                            let rest = within(phase - leg.along + PULSE_FRONT, period) - period;
                             piece_of(leg, core, bar, rest, slide)
                         })
                         .collect(),

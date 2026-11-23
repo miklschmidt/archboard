@@ -16,11 +16,11 @@ use crate::paint::styles::{
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
-use crate::scene::pulse_clearance;
 use crate::scene::{
     Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
     SubjectKind, TrafficMark,
 };
+use crate::sizes::pulse_clearance;
 use crate::sizes::{
     MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
     STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,

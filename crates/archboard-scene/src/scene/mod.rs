@@ -37,7 +37,6 @@ pub use text::{GlyphPlace, Icon, Text, Viewport};
 pub use traffic::{
     BeamGradient, BeamPiece, Frame, MaskLayer, Motion, PulseLook, Slide, TrafficMark,
 };
-pub(crate) use traffic::{pulse_breadth, pulse_clearance};
 
 /// One thing in a scene's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
