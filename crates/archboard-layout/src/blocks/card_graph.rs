@@ -186,7 +186,13 @@ impl<'t> CardLayout<'t> {
             ])
         };
         let Some(label) = label else {
-            let attributes = leg(id.clone());
+            let mut attributes = leg(id.clone());
+            if let Some(field) = self.field_of(&line.tail) {
+                attributes.set("tailport", field);
+            }
+            if let Some(field) = self.field_of(&line.head) {
+                attributes.set("headport", field);
+            }
             self.edges.push(Edge::new(tail, head, attributes));
             return;
         };

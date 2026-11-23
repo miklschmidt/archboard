@@ -207,3 +207,111 @@ fn lanes_stands_a_caller_above_a_container_and_what_it_calls_below() {
         "the callee stands below"
     );
 }
+
+/// A card, as the tests draw it.
+fn card(id: &str, width: u32) -> Value {
+    json!({"id":id,"width":width,"height":60})
+}
+
+/// A line of one kind.
+fn line(id: &str, from: &str, to: &str, kind: &str) -> Value {
+    json!({"id":id,"sources":[from],"targets":[to],
+        "layoutOptions":{"archboard.relationship.kind":kind,
+            "archboard.relationship.held-kind":kind}})
+}
+
+#[test]
+fn lanes_lands_the_lines_bound_for_one_card_together_a_lane_apart() {
+    let graph = json!({"id":"root","layoutOptions":{},
+    "children":[card("left",200),card("middle",200),card("right",200),card("target",900)],
+    "edges":[
+        line("from left","left","target","call"),
+        line("from middle","middle","target","http"),
+        line("from right","right","target","event"),
+    ]});
+    let drawn = drawn_by_lanes(&graph);
+    let mut heads: Vec<f64> = lines_of(&drawn)
+        .into_iter()
+        .map(|(_, points)| points.last().expect("a head").0)
+        .collect();
+    heads.sort_by(f64::total_cmp);
+    assert!(
+        heads
+            .windows(2)
+            .all(|pair| (pair[1] - pair[0] - LANE).abs() < 0.01),
+        "the heads stand together a lane apart: {heads:?}"
+    );
+}
+
+#[test]
+fn lanes_runs_no_line_round_the_outside_of_the_readme_reading() {
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/readme-all.json")).unwrap());
+    let boxes: Vec<(f64, f64)> = drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .map(|card| {
+            let x = card["box"]["x"].as_f64().expect("an x");
+            (x, x + card["box"]["width"].as_f64().expect("a width"))
+        })
+        .collect();
+    let left = boxes.iter().map(|one| one.0).fold(f64::INFINITY, f64::min);
+    let right = boxes
+        .iter()
+        .map(|one| one.1)
+        .fold(f64::NEG_INFINITY, f64::max);
+    for (id, points) in lines_of(&drawn) {
+        assert!(
+            points
+                .iter()
+                .all(|&(x, _)| x >= left - 1.0 && x <= right + 1.0),
+            "{id} runs between the outermost cards"
+        );
+    }
+}
+
+#[test]
+fn lanes_stands_the_doors_round_a_container_in_the_order_their_lines_enter_it() {
+    let drawn = drawn_by_lanes(
+        &serde_json::from_str(include_str!("fixtures/doors-round-a-container.json")).unwrap(),
+    );
+    let frame = &drawn["frames"][0]["box"];
+    let at = |key: &str| frame[key].as_f64().expect("a frame's box");
+    let (left, top, right) = (at("x"), at("y"), at("x") + at("width"));
+    // Each line that comes down into the container: where its door stands, and where it enters.
+    let mut entries: Vec<(f64, f64)> = lines_of(&drawn)
+        .into_iter()
+        .filter_map(|(_, points)| {
+            let door = if points[0].1 < top {
+                points[0]
+            } else {
+                *points.last().expect("an end")
+            };
+            points.windows(2).find_map(|pair| {
+                let ((x, one), (other_x, other)) = (pair[0], pair[1]);
+                (x == other_x
+                    && one.min(other) < top
+                    && top < one.max(other)
+                    && left < x
+                    && x < right)
+                    .then_some((door.0, x))
+            })
+        })
+        .collect();
+    entries.sort_by(|one, other| one.0.total_cmp(&other.0));
+    let (mut pairs, mut swapped) = (0, 0);
+    for (at, one) in entries.iter().enumerate() {
+        for other in &entries[at + 1..] {
+            pairs += 1;
+            if one.0 < other.0 - 1.0 && one.1 > other.1 + 1.0 {
+                swapped += 1;
+            }
+        }
+    }
+    assert!(pairs > 10, "the reading has doors to order");
+    assert!(
+        4 * swapped <= pairs,
+        "{swapped} of {pairs} pairs of doors stand the other way round from where they enter"
+    );
+}

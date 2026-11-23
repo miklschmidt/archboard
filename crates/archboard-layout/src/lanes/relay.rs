@@ -27,6 +27,9 @@ const STRAY: f64 = 2.0 * LANE;
 const SAVING: f64 = 8.0 * LANE;
 /// How many times the chains not yet relaid are tried again.
 const PASSES: usize = 3;
+/// What a route pays for each line it crosses in a bus, where a line crosses a bundle square
+/// and reads at a glance: a lap round the drawing costs more than a few such crossings.
+const BUS_CROSSING: f64 = 8.0 * LANE;
 /// The spacing of the columns a route may take, besides the edges of what stands on its bands.
 const STEP: f64 = LANE / 2.0;
 
@@ -70,6 +73,8 @@ pub(super) struct Relay {
     /// a chain whose stations were read again no longer has one, as the
     /// TypeScript engine kept it by the map it read them into first.
     kinds: Vec<Option<Rc<str>>>,
+    /// What a route pays for each line it crosses.
+    pub(super) crossing: f64,
 }
 
 impl Router<'_> {
@@ -143,6 +148,7 @@ impl Relay {
                 .iter()
                 .map(|(_, kind)| Some(Rc::clone(kind)))
                 .collect(),
+            crossing: if track.bus { BUS_CROSSING } else { CROSSING },
         }
     }
 
@@ -259,7 +265,7 @@ impl Relay {
             .iter()
             .map(|station| search.masks[station].as_slice())
             .collect();
-        let chosen = Self::cheapest(track, stations, &search.xs, &masks, &search.traffic)?;
+        let chosen = self.cheapest(track, stations, &search.xs, &masks, &search.traffic)?;
         let mut route = vec![track.x(stations[0])];
         route.extend(chosen);
         route.push(track.x(*stations.last().expect("a station")));
@@ -343,8 +349,8 @@ impl Relay {
         }
         let run = travel;
         [
-            run + CROSSING * crossings,
-            run + CROSSING * self.trunks_crossed(track, stations, xs),
+            run + self.crossing * crossings,
+            run + self.crossing * self.trunks_crossed(track, stations, xs),
         ]
     }
 }

@@ -88,7 +88,7 @@ pub(super) fn routed(
         &lines,
         (insets.side, insets.top),
         rim,
-        (reserve, tree.packed),
+        (reserve, tree.packed, tree.lanes),
     )
     .map_err(|widths| by_card(&scene, &widths))?;
     for (key, points) in beside_points(&scene, &beside, insets.side) {

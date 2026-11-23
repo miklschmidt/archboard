@@ -2,7 +2,7 @@
 //! for over the other end of its line, the ports a face spreads and fans, and
 //! the x each net takes at both of its ends.
 
-use crate::ecma::{abs, js_max, max, min, or, sorted_by};
+use crate::ecma::{abs, js_max, js_min, max, min, or, sorted_by};
 use crate::geometry::Rect;
 use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN, TrunkId, port_reach, spread_along};
@@ -47,6 +47,20 @@ fn fanned(face: &Rect, wanted: &[f64]) -> Vec<f64> {
         low,
     );
     asked
+}
+
+/// The ports of a face gathered into one group a lane apart, in the order asked, round the middle
+/// of what they ask for and inside the face's reach; spread as asked when the group does not fit.
+fn gathered((low, high): (f64, f64), wanted: &[f64]) -> Vec<f64> {
+    let span = (wanted.len().saturating_sub(1)) as f64 * LANE;
+    if wanted.len() < 2 || span > high - low {
+        return spread_along((low, high), wanted);
+    }
+    let middle = wanted.iter().sum::<f64>() / wanted.len() as f64;
+    let start = js_min(high - span, js_max(low, middle - span / 2.0));
+    (0..wanted.len())
+        .map(|at| start + at as f64 * LANE)
+        .collect()
 }
 
 /// Spread two or more ports evenly over a stretch of a face, the last at its
@@ -159,10 +173,12 @@ impl Router<'_> {
             .first()
             .is_some_and(|request| request.side == End::Bottom);
         let (low, high) = self.face_reach(item, &face, fan);
-        let ports = spread_along(
-            (low.min(high), high),
-            &if fan { fanned(&face, &wanted) } else { wanted },
-        );
+        let reach = (low.min(high), high);
+        let ports = if self.bus {
+            gathered(reach, &wanted)
+        } else {
+            spread_along(reach, &if fan { fanned(&face, &wanted) } else { wanted })
+        };
         for (index, request) in ordered.iter().enumerate() {
             for &net in &request.nets {
                 self.net_mut(net).set_x_at(request.side, ports[index]);

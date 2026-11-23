@@ -6,7 +6,7 @@ use crate::ecma::{js_max, js_min, sort_by};
 use crate::lanes::chains::{Router, StationId};
 use crate::lanes::relay::Relay;
 use crate::lanes::scene::Map;
-use crate::lanes::sweep::{CROSSING, Span, backtrack, descend, from_reach, spanned, warp};
+use crate::lanes::sweep::{Span, backtrack, descend, from_reach, spanned, warp};
 
 /// What the other lines do in one channel, read onto the columns.
 pub(super) struct Traffic {
@@ -18,10 +18,10 @@ pub(super) struct Traffic {
 
 /// Each column's cost once a station stands there: half the crossings of the
 /// traffic above and below it, and no way through a column its mask shuts.
-fn cross_at(cost: &mut [f64], mask: &[bool], (above, below): (&[f64], &[f64])) {
+fn cross_at(cost: &mut [f64], mask: &[bool], (above, below): (&[f64], &[f64]), crossing: f64) {
     for j in 0..cost.len() {
         cost[j] = if mask[j] {
-            cost[j] + (CROSSING * (above[j] + below[j])) / 2.0
+            cost[j] + (crossing * (above[j] + below[j])) / 2.0
         } else {
             f64::INFINITY
         };
@@ -90,7 +90,7 @@ impl Relay {
             .map(|&(one, two)| (js_min(one, two), js_max(one, two)))
             .collect();
         Traffic {
-            warped: warp(xs, &ends),
+            warped: warp(xs, &ends, self.crossing),
             across: spanned(xs, &runs),
         }
     }
@@ -98,6 +98,7 @@ impl Relay {
     /// The cheapest free route over a chain's middle stations, by estimate:
     /// each middle station's x, or nothing when no route is free.
     pub(super) fn cheapest(
+        &self,
         track: &Router<'_>,
         stations: &[StationId],
         xs: &[f64],
@@ -122,7 +123,7 @@ impl Relay {
                 traffic[&(band - 1)].across.as_slice(),
                 traffic[&band].across.as_slice(),
             );
-            cross_at(&mut cost, masks[index], crossed);
+            cross_at(&mut cost, masks[index], crossed, self.crossing);
         }
         let mut totals = from_reach(
             xs,
