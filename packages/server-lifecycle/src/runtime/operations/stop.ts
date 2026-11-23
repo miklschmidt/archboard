@@ -122,7 +122,10 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 		await pollUntil("server.stopConfirm", async () => ((await healthOrNull()) ? undefined : true));
 	} catch (error) {
 		if (error instanceof TimedOut) {
-			throw new Error(`${error.message} The server's pid is ${pid}.`, { cause: error });
+			throw new Error(
+				`${error.message} Check the server process with \`ps -p ${pid}\`, then run \`archboard stop\` again.`,
+				{ cause: error },
+			);
 		}
 		throw error;
 	}
