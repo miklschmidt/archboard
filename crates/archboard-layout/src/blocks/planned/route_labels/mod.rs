@@ -1,11 +1,13 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
 pub(super) mod own;
+mod plate;
 mod seating;
 mod strokes;
 mod trunk;
 
 use own::{Own, keeps, meets};
+use plate::Plate;
 pub(super) use seating::Seating;
 pub(super) use strokes::StrokeIndex;
 pub(super) use trunk::{branches, from_part, seat};
@@ -17,7 +19,6 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
-    constants::{BEND_RADIUS, STRAIGHT_RUN, apron},
     geometry::{Point, Rect, inflate},
 };
 
@@ -179,23 +180,6 @@ fn spans(edge: usize, path: &[Point], shape: &Shape, index: &StrokeIndex) -> Vec
     spans
 }
 
-/// The size of a label's plate, or of its narrow plate where its words wrap narrower.
-fn plate(model: &Model<'_>, edge: usize, narrow: bool) -> Option<Rect> {
-    let label = model.edges[edge].label()?;
-    let (width, height) = if narrow {
-        let plate = label.narrow?;
-        (plate.width, plate.height)
-    } else {
-        (label.width.unwrap_or(0.0), label.height.unwrap_or(0.0))
-    };
-    Some(Rect {
-        x: 0.0,
-        y: 0.0,
-        width,
-        height,
-    })
-}
-
 /// A spot for a route's words on its `spans`, as `spans` finds them, and whether it is a
 /// fallback.
 fn spot_on(
@@ -207,22 +191,7 @@ fn spot_on(
     labels: &super::label_space::Labels,
     narrow: bool,
 ) -> Option<(Rect, bool)> {
-    let size = plate(model, own.edge, narrow)?;
-    let (half, reach) = model.ink(own.edge);
-    // A cable's inner strand bends as much nearer its words than its middle does as the run beyond
-    // the bend stands its strands out, at most half its fan, and its corner ends a bend's radius
-    // further on. At its cards a cable that bends steps its strands out over the apron, and a
-    // strand's jog rounds a bend beyond it; a straight one only keeps its marks clear.
-    let mark_room = match (reach > 0.0, own.path.len()) {
-        (false, _) => 0.0,
-        (true, 2) => STRAIGHT_RUN,
-        (true, _) => apron(half, reach) + BEND_RADIUS,
-    };
-    let plate = Plate {
-        size,
-        bend_room: BEND_ROOM.max(BEND_RADIUS + reach + CORNER_CLEAR),
-        mark_room,
-    };
+    let plate = Plate::of(model, own, narrow)?;
     if shape.trunk.contains_key(&own.edge) {
         return nearest(spans, plate, shape, own, index, labels).map(|at| (at, false));
     }
@@ -230,31 +199,6 @@ fn spot_on(
     midway
         .map(|at| (at, false))
         .or_else(|| nearest(spans, plate, shape, own, index, labels).map(|at| (at, true)))
-}
-
-/// How far a line's words stand at least from each end of the run they stand on, where the
-/// line bends.
-const BEND_ROOM: f64 = 16.0;
-/// How far a cable's words stand at least past the corner of its inner strand.
-const CORNER_CLEAR: f64 = 4.0;
-
-/// The space the words take, and what their ends keep clear of bends and marks.
-#[derive(Clone, Copy)]
-struct Plate {
-    size: Rect,
-    bend_room: f64,
-    mark_room: f64,
-}
-impl Plate {
-    fn room_at(self, point: Point, own: Own<'_>) -> f64 {
-        if self.mark_room > self.bend_room
-            && (own.path.first() == Some(&point) || own.path.last() == Some(&point))
-        {
-            self.mark_room
-        } else {
-            self.bend_room
-        }
-    }
 }
 
 /// The middle of the longest run that holds the words.
@@ -601,54 +545,3 @@ fn update(
 
 #[cfg(test)]
 mod tests;
-
-/// A straight cable holds its plate only with a mark's straight run clear at each end: 40 of plate
-/// and 23 at each end need 86 of the 80 a short cable has.
-#[cfg(test)]
-#[test]
-fn a_cables_plate_needs_room_between_its_marks() {
-    use crate::blocks::{assembly::Placed, planned::shape::ScopePlacement};
-    use serde_json::json;
-
-    let graph = serde_json::from_value(json!({
-        "id": "root", "children": [{"id": "a"}, {"id": "b"}], "edges": [{
-            "id": "cable", "sources": ["a"], "targets": ["b"],
-            "layoutOptions": {"archboard.cable": "one;two"},
-            "labels": [{"width": 80, "height": 40}]
-        }]
-    }))
-    .unwrap();
-    let model = Model::new(&graph).unwrap();
-    let mut shape = Shape::new(Placed {
-        width: 400.0,
-        height: 400.0,
-        cards: vec![],
-        frames: vec![],
-        regions: vec![],
-        edges: vec![],
-        titles: vec![],
-        routed: None,
-    });
-    std::rc::Rc::make_mut(&mut shape.scopes).insert(
-        0,
-        ScopePlacement {
-            bounds: Rect {
-                x: 0.0,
-                y: 0.0,
-                width: 400.0,
-                height: 400.0,
-            },
-        },
-    );
-    let slots = Slots::new(&model, &shape);
-    let slot = |to| {
-        slots.slot(
-            &model,
-            0,
-            &[Point { x: 100.0, y: 100.0 }, Point { x: 100.0, y: to }],
-        )
-    };
-    assert!(slot(180.0).is_none());
-    let (label, _) = slot(250.0).expect("the plate fits between the cable's marks");
-    assert_eq!(label.y, 155.0);
-}
