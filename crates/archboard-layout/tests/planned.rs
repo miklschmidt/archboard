@@ -590,3 +590,41 @@ fn lanes_takes_the_lanes_placement_where_blocks_plans() {
         assert!(!told(&graph), "Lanes never plans");
     }
 }
+
+/// What one solve answers for a graph: the drawing as it was written, and whether it was planned.
+fn told(graph: &Value) -> (String, bool) {
+    let answer =
+        lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore).expect("a drawing");
+    let mut answer: Value = serde_json::from_str(&answer).expect("an answer");
+    let options = answer["layoutOptions"]
+        .as_object_mut()
+        .expect("its options");
+    let planned = options.contains_key("archboard.blocks.planned");
+    let placed = options["archboard.blocks.placed"]
+        .as_str()
+        .expect("a drawing");
+    (placed.to_owned(), planned)
+}
+
+#[test]
+fn lanes_draws_a_reading_blocks_draws_by_its_fallback_byte_for_byte_without_line_words() {
+    for graph in [
+        crowded_card(),
+        include_str!("fixtures/readme-all.json").to_owned(),
+    ] {
+        let mut graph: Value = serde_json::from_str(&graph).unwrap();
+        let (blocks, planned) = told(&graph);
+        assert!(!planned, "Blocks draws this reading by its fallback");
+        graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
+        let (lanes, _) = told(&graph);
+        assert_eq!(lanes, blocks);
+        let drawn: Value = serde_json::from_str(&lanes).unwrap();
+        let lines = drawn["edges"].as_array().expect("its lines");
+        assert_ne!(lines.len(), 0);
+        assert!(
+            lines
+                .iter()
+                .all(|line| line.get("label").is_none_or(Value::is_null))
+        );
+    }
+}
