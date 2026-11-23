@@ -146,6 +146,8 @@ pub(crate) struct Router<'s> {
     pub bus: bool,
     /// The net ends that land on a card's side, not its face (`sides.rs`).
     pub sided: Set<(NetId, End)>,
+    /// The nets of lines that run on their own, in no trunk (`knots.rs`).
+    pub loose: Set<NetId>,
 }
 
 impl<'s> Router<'s> {
@@ -159,6 +161,7 @@ impl<'s> Router<'s> {
             trunks: Vec::new(),
             bus: false,
             sided: Set::default(),
+            loose: Set::default(),
         }
     }
 

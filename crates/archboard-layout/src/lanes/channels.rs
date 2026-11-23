@@ -17,7 +17,7 @@ use crate::ecma::{abs, js_max, js_min, max, min, sign, sorted_by, unique};
 use crate::geometry::Rect;
 use crate::lanes::chains::{Kind, LANE, Router, StationId};
 use crate::lanes::scene::{ItemId, Map, Set};
-use crate::lanes::tracks::{Unit, stack_units};
+use crate::lanes::tracks::{Unit, overlap, stack_units};
 
 /// How far a port keeps from a card's corner.
 pub(crate) const PORT_MARGIN: f64 = 20.0;
@@ -171,6 +171,11 @@ impl Router<'_> {
             let pieces: Vec<Vec<NetId>> = self
                 .trunk_groups(nets, side)
                 .into_iter()
+                .map(|one| {
+                    one.into_iter()
+                        .filter(|net| !self.loose.contains(net))
+                        .collect()
+                })
                 .map(|one| self.without_twins(one, side, &line_ends))
                 .flat_map(|one| self.apart(one, nets, side))
                 .filter(|group| group.len() >= 2)
@@ -441,6 +446,9 @@ impl Router<'_> {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
+        if self.bus {
+            return self.pack_units(&units, &tracks);
+        }
         let wide = self.wide_of(&units, &tracks);
         let lanes = self.lanes_of(&units, &tracks, &wide);
         for &(unit, row) in &tracks {
@@ -449,6 +457,68 @@ impl Router<'_> {
             }
         }
         lanes.last().copied().unwrap_or(0)
+    }
+
+    /// In a Lanes drawing, give each unit its own lanes, in the order the units took tracks:
+    /// the first lane below every earlier unit it overlaps, and a hand-off below every earlier
+    /// unit it reads as one with. A unit no hand-off pushes keeps the lanes above it, so the
+    /// channel holds no lane a run does not use. Answers how many lanes the channel takes.
+    fn pack_units(&mut self, units: &[(Unit, Vec<NetId>)], tracks: &[(usize, usize)]) -> usize {
+        let takes = |unit: usize| {
+            let detour = (units[unit].1.iter()).any(|&net| self.net(net).detour_x().is_some());
+            if detour { 2 } else { 1 }
+        };
+        let spans: Vec<usize> = (0..units.len())
+            .map(|unit| takes(unit) + 2 * self.cable_reach(&units[unit].1))
+            .collect();
+        let mut first: Vec<Option<usize>> = vec![None; units.len()];
+        for &(unit, _) in tracks {
+            let lane = (tracks.iter())
+                .filter_map(|&(other, _)| first[other].map(|at| (other, at)))
+                .map(|(other, at)| {
+                    let below = if overlap(&units[unit].0, &units[other].0) {
+                        at + spans[other]
+                    } else {
+                        0
+                    };
+                    let parted = if self.reads_as_one(&units[unit].1, &units[other].1) {
+                        at + HAND_OFF
+                    } else {
+                        0
+                    };
+                    below.max(parted)
+                })
+                .max()
+                .unwrap_or(0);
+            first[unit] = Some(lane);
+        }
+        let mut height = 0;
+        for &(unit, _) in tracks {
+            let lane = first[unit].expect("a lane");
+            for &net in &units[unit].1 {
+                self.net_mut(net).track = lane + self.cable_reach(&units[unit].1);
+            }
+            height = height.max(lane + spans[unit]);
+        }
+        height
+    }
+
+    /// How many lanes the widest cable among some nets reaches to either side of its track.
+    fn cable_reach(&self, nets: &[NetId]) -> usize {
+        nets.iter()
+            .map(|&net| {
+                let strands = self.net(net).kind.split(';').count();
+                let half = (strands - 1) as f64 * crate::constants::STRAND / 2.0;
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "a whole count of lanes, never negative"
+                )]
+                let lanes = (half / LANE).ceil() as usize;
+                lanes
+            })
+            .max()
+            .unwrap_or(0)
     }
 
     /// How many lanes each row's widest cable reaches to either side of its track: a cable's
@@ -505,6 +575,25 @@ impl Router<'_> {
             lanes.push(lanes[row] + takes[row] + 2 * wide[row]);
         }
         lanes
+    }
+
+    /// Whether two units read as one line where they hand off, in a Lanes drawing: lines of two
+    /// kinds are drawn in two colours and never do.
+    fn reads_as_one(&self, one: &[NetId], other: &[NetId]) -> bool {
+        let colour = |nets: &[NetId]| -> Vec<String> {
+            let kinds = nets.iter().map(|&net| {
+                self.net(net)
+                    .kind
+                    .split('|')
+                    .next()
+                    .unwrap_or_default()
+                    .to_owned()
+            });
+            kinds.collect()
+        };
+        let (mine, theirs) = (colour(one), colour(other));
+        let shared = mine.iter().any(|kind| theirs.contains(kind));
+        shared && self.handed(one, other)
     }
 
     /// Whether a net of one unit and a net of another read as one line.
