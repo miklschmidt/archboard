@@ -189,7 +189,9 @@ fn turns(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
             let at = shape.wall(endpoint, side);
             (turns.iter())
                 .filter(move |(far, _)| upright(*far) != upright(side))
-                .map(move |&(_, turn)| super::ports::on_wall(at, side, turn, margin))
+                .map(move |&(_, turn)| {
+                    super::ports::on_wall(at, side, turn, margin).reaching(model.half(edge))
+                })
         })
         .collect()
 }
@@ -211,9 +213,10 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     for side in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
         if walls.contains(&side) {
             let at = shape.wall(endpoint, side);
-            ports.push(super::ports::on_wall(at, side, toward, margin));
+            let half = model.half(edge);
+            ports.push(super::ports::on_wall(at, side, toward, margin).reaching(half));
             let slot = wall_slot(model, shape, &incidents, (edge, source), (side, at));
-            ports.push(super::ports::on_wall(at, side, slot, 20.0));
+            ports.push(super::ports::on_wall(at, side, slot, 20.0).reaching(half));
         }
     }
     ports

@@ -44,8 +44,12 @@ pub(super) fn settled(
         .filter(|edge| edge.option(super::channel::TWO_WAY).is_some())
         .map(|edge| edge.id.as_str())
         .collect();
+    let inks: rustc_hash::FxHashMap<&str, f64> = (model.edges.iter().enumerate())
+        .filter(|&(edge, _)| model.girth[edge] > 0.0)
+        .map(|(edge, line)| (line.id.as_str(), model.half(edge)))
+        .collect();
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
-        if let Some(drawing) = super::compact::drawing(shape, clear, &two_way)
+        if let Some(drawing) = super::compact::drawing(shape, clear, (&two_way, &inks))
             && let Ok(mut compact) = placement(model, drawing)
         {
             compact.trunk = std::rc::Rc::clone(&shape.trunk);

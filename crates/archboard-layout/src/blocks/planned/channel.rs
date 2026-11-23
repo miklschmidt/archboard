@@ -384,15 +384,21 @@ pub(super) fn shared_fragment(
         && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
-/// Rounded corners must leave the complete arrow approach after painting, on the inner strand
-/// of a cable too, which turns `half` sooner, and with room for the marks its strands set back
-/// in echelon. A line with no bend needs only the room its marks take.
-pub(super) fn approaches(points: &[Point], half: f64) -> bool {
+/// How long the straight run beside a wall must be for a line whose ink reaches `half` to
+/// either side: the arrow's approach and the bend's room, on the inner strand of a cable too,
+/// which turns `half` sooner, and room for the marks its strands set back in echelon.
+pub(super) fn approach_of(half: f64) -> f64 {
     let echelon = if half > 0.0 { ECHELON } else { 0.0 };
+    APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
+}
+
+/// Rounded corners must leave the complete arrow approach after painting (`approach_of`). A
+/// line with no bend needs only the room its marks take.
+pub(super) fn approaches(points: &[Point], half: f64) -> bool {
     let required = if points.len() > 2 {
-        APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
+        approach_of(half)
     } else {
-        STRAIGHT_RUN + 2.0 * echelon
+        STRAIGHT_RUN + 2.0 * if half > 0.0 { ECHELON } else { 0.0 }
     };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
 }

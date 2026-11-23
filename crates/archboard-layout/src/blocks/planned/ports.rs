@@ -13,6 +13,30 @@ pub(super) struct Port {
     pub approach: Point,
 }
 
+impl Port {
+    /// The port of a line whose ink reaches `half` to either side: a cable's straight run
+    /// reaches as far from the wall as its approach needs (`approach_of`). A lone line's port
+    /// is as it was made.
+    pub(super) fn reaching(self, half: f64) -> Self {
+        if half == 0.0 {
+            return self;
+        }
+        let (dx, dy) = (
+            self.approach.x - self.attachment.x,
+            self.approach.y - self.attachment.y,
+        );
+        let length = dx.hypot(dy);
+        let reach = super::channel::approach_of(half) + 0.02;
+        Self {
+            approach: Point {
+                x: self.attachment.x + dx / length * reach,
+                y: self.attachment.y + dy / length * reach,
+            },
+            ..self
+        }
+    }
+}
+
 /// One treatment shares a port only in one direction at one endpoint.
 pub(super) fn port(
     model: &Model<'_>,
@@ -23,6 +47,7 @@ pub(super) fn port(
     toward: Point,
 ) -> Option<Port> {
     choose_port(model, edge, source, side, shape, toward)
+        .map(|port| port.reaching(model.half(edge)))
 }
 
 fn choose_port(
@@ -393,7 +418,26 @@ fn room(at: Rect, side: Side, widths: &[f64], margin: f64, spacing: f64) -> bool
 
 #[cfg(test)]
 mod tests {
-    use super::along;
+    use super::{Port, along, on_wall};
+    use crate::geometry::{Point, Rect, Side};
+
+    #[test]
+    fn a_cables_port_reaches_as_far_from_its_wall_as_its_approach_needs() {
+        let card = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 200.0,
+            height: 100.0,
+        };
+        let port = on_wall(card, Side::Bottom, Point { x: 100.0, y: 0.0 }, 20.0);
+        let reach = |port: Port| port.approach.y - port.attachment.y;
+        assert!(port.reaching(0.0) == port);
+        let half = 12.0;
+        assert!(
+            (reach(port.reaching(half)) - super::super::channel::approach_of(half) - 0.02).abs()
+                < 1e-9
+        );
+    }
 
     #[test]
     fn a_wall_shorter_than_its_margins_holds_a_place_at_its_middle() {
