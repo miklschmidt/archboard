@@ -5,9 +5,9 @@ import { bound, delay, handed, polled } from "#shared/constants/uses.ts";
 /**
  * Grace after Git termination for the detached group, leader and both output
  * pipes to disappear. A killed group normally leaves within milliseconds. The
- * macOS group that outlived one second (TASK-362) was not slow: a child forked
- * during the stop had escaped both group signals (TASK-470, fixed in the stop
- * barrier). Three seconds stays below `git.command`, so failed cleanup is still
+ * macOS group once seen to outlive one second was not slow: a child forked
+ * during the stop had escaped both group signals, which the stop barrier now
+ * prevents. Three seconds stays below `git.command`, so failed cleanup is still
  * diagnosed before the command timeout would be. Each of its three uses below has
  * a name of its own.
  */
@@ -20,8 +20,8 @@ const GIT = {
 	 * work runs before a model lock or synchronous note write, so this never extends either critical
 	 * section. It is longer than the server mutation-drain refusal window: stop may refuse and keep the
 	 * application intact while a slow probe is still cancellable by its request or application owner.
-	 * The exception is code-target's probe of the checkout that holds a vault: its Git calls, at most
-	 * three, are synchronous for the synchronous vault check, so each can block the event loop this long.
+	 * The exception is code-target's probe of the checkout that holds the model: its Git calls, at
+	 * most three, are synchronous for a synchronous check, so each can block the event loop this long.
 	 * Handed to the command runner, which a caller may give a longer bound of its own.
 	 */
 	"git.command": handed(5000),

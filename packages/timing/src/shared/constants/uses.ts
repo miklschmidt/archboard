@@ -146,4 +146,14 @@ function motion(ms: number): MotionUse {
 }
 
 export { backoff, bound, delay, handed, motion, polled, span, tick };
-export type { Use };
+export type {
+	BackoffUse,
+	BoundUse,
+	DelayUse,
+	HandedUse,
+	MotionUse,
+	PolledUse,
+	SpanUse,
+	TickUse,
+	Use,
+};
