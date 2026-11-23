@@ -144,6 +144,7 @@ async function runForEncoders(
 	signal: AbortSignal,
 ): Promise<ProbeRun> {
 	const child = Bun.spawn([...command.argv, "-hide_banner", "-encoders"], {
+		env: process.env,
 		stdin: "ignore",
 		stdout: "pipe",
 		stderr: "pipe",
