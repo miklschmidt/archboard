@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -409,7 +409,9 @@ pub(super) fn approaches(points: &[Point], half: f64) -> bool {
 
 /// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
 /// that turn the same way, the inner strand's run is shorter by the girth, and still holds both
-/// rounded corners.
+/// rounded corners with a straight between them as long as the strands stand apart. Corners
+/// that met with no straight between them would turn the inner strand in one S, unlike the
+/// strands beside it.
 fn turns_clear(points: &[Point], girth: f64) -> bool {
     let turn = |at: usize| {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
@@ -417,7 +419,8 @@ fn turns_clear(points: &[Point], girth: f64) -> bool {
     };
     girth == 0.0
         || (1..points.len().saturating_sub(2)).all(|at| {
-            turn(at) != turn(at + 1) || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS
+            turn(at) != turn(at + 1)
+                || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS + STRAND
         })
 }
 
