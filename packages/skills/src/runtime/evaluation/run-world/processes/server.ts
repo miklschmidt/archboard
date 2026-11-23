@@ -87,7 +87,7 @@ async function awaitHealthy(
 			{ signal },
 		);
 	} catch (error) {
-		if (!(error instanceof TimedOut)) throw error;
+		if (!(error instanceof TimedOut) || error === signal.reason) throw error;
 		throw new Error(`${error.message} See ${log}.`, { cause: error });
 	}
 }

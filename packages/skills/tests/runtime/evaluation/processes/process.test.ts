@@ -5,6 +5,7 @@ import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
+import { TimedOut } from "@archboard/timing";
 
 /** A short pause for test observations and the grace for a process that outlives TERM. */
 const TEST_POLL_MS = 100;
@@ -135,10 +136,10 @@ describe("evaluation process ownership with local shell fakes", () => {
 	});
 });
 
-test("cancellation during a successful health probe stops the server and its inherited child", async () => {
+test("a parent timeout during the health probe stops the server and preserves the reason", async () => {
 	const root = mkdtempSync(path.join(tmpdir(), "skill-server-cancel-"));
 	const controller = new AbortController();
-	const cancelled = new Error("Cancelled during the health probe.");
+	const cancelled = new TimedOut("server.mutationDrain");
 	const pids = path.join(root, "pids");
 	mkdirSync(path.join(root, "apps/server/src"), { recursive: true });
 	writeFileSync(
