@@ -196,6 +196,8 @@ fn through_wall_if_better(
     taken: &[(f64, f64)],
 ) -> Option<f64> {
     let toward = if door.wall <= door.card.x { -1.0 } else { 1.0 };
+    // The card and wall stay fixed. A move at the other end can change the way in.
+    let door = &door_of(placed, door.line, door.leaving)?;
     let face = door.card.x + if toward < 0.0 { 0.0 } else { door.card.width };
     let used = (taken
         .iter()
@@ -215,6 +217,47 @@ fn through_wall_if_better(
     }
     placed.lines[door.line] = points;
     Some(face)
+}
+
+#[cfg(test)]
+#[test]
+fn a_line_can_enter_two_frame_walls_without_undoing_its_first_end() {
+    let card = |x, y| Rect {
+        x,
+        y,
+        width: 60.0,
+        height: 40.0,
+    };
+    let frame = |x, y| Rect {
+        x,
+        y,
+        width: 300.0,
+        height: 200.0,
+    };
+    let cards = [card(120.0, 180.0), card(110.0, 600.0), card(0.0, 900.0)];
+    let frames = [(frame(100.0, 100.0), 0), (frame(90.0, 500.0), 0)];
+    let mut lines = [[
+        (150.0, 220.0),
+        (150.0, 260.0),
+        (180.0, 260.0),
+        (180.0, 340.0),
+        (30.0, 340.0),
+        (30.0, 460.0),
+        (180.0, 460.0),
+        (180.0, 540.0),
+        (140.0, 540.0),
+        (140.0, 600.0),
+    ]
+    .into_iter()
+    .map(|(x, y)| Point { x, y })
+    .collect()];
+    enter_by_frame_sides(&mut Picture {
+        cards: &cards,
+        frames: &frames,
+        lines: &mut lines,
+    });
+    assert_eq!(lines[0].first(), Some(&Point { x: 120.0, y: 200.0 }));
+    assert_eq!(lines[0].last(), Some(&Point { x: 110.0, y: 620.0 }));
 }
 
 /// Bring the lines that read better through a container's wall in through it.
