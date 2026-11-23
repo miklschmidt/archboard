@@ -1,11 +1,11 @@
 ---
 id: TASK-663.12
 title: This repository's relationships are sync or async, and the records teach them
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T14:12:00Z'
-updated_date: '2026-11-22T15:00:00Z'
+updated_date: '2026-11-23T02:12:00Z'
 labels:
   - feature
 dependencies: []
@@ -24,7 +24,7 @@ The vault holds 1,027 call relationships, and the ADRs, glossary, design rules a
 - [x] #1 No relationship in .archboard/vault has kind call
 - [x] #2 Each relationship's sync or async kind agrees with its anchored call site, or its note says why
 - [x] #3 ADR 0094 and 0095, CONTEXT.md, DESIGN.md and the archboard skill references describe sync, async, the decoration, the joining rule, hideEffects and the lenses
-- [ ] #4 archboard check reports no new warning
+- [x] #4 archboard check reports no new warning
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,12 @@ Examples: canonical-model (Dispatch async) and site/model (server awaits the ren
 Blocker: archboard check code and check embeds fail reading history: RecordedModuleEditSchema reuses StructureChangeSchema, whose kind refine refuses call in recorded intents (packages/model/src/shared/canonical-contracts/schemas/model-operations.ts:123-128, 263-269). Owned by TASK-663.08.
 
 Evidence: no relationship in .archboard/vault, examples or site/model has kind call (grep). archboard check semantics: 0 warnings, 0 errors. archboard check code over a history-free copy of this commit: 3 CALL_TIMING_MISMATCH, each read in code and kept async with a description saying why (import left to run; camera flight that calls back); its 4 warnings are module depth (MODULE_SHALLOW Scene, Repository queries, timing; EXPOSED_UNUSED CallTiming in code-intel from TASK-663.09), none about kinds. AC4 stays open: in place, archboard check, check code, check embeds and even model read fail with ARCHITECTURE_UNAVAILABLE because RecordedModuleEditSchema refuses call in recorded history (TASK-663.08's schema). Re-run archboard check after that fix; the README embeds of this vault will then also need a refresh after TASK-663.10.
+
+AC4 verified on ec32ee706c: archboard check exits 0 with no warning or error; check embeds is clean after the README redraw (5ec1140faf). MODULE_SHALLOW is switched off on this layer and back on in the deepening layer above.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+This vault's 1,027 call relationships became 733 sync and 294 async from code facts and reading the code; the records (ADR 0094, 0095, older ADRs), CONTEXT.md, DESIGN.md and the archboard skill teach sync, async, the decoration, the joining rule, hideEffects and the lenses. A Sol review sampled 28 relationships against their call sites with no misclassification.
+<!-- SECTION:FINAL_SUMMARY:END -->

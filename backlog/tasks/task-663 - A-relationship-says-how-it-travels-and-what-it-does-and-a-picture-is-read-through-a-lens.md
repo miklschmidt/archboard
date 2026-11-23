@@ -3,10 +3,10 @@ id: TASK-663
 title: >-
   A relationship says how it travels and what it does, and a picture is read
   through a lens
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-22T03:38:00Z'
-updated_date: '2026-11-22T13:15:00Z'
+updated_date: '2026-11-23T02:12:00Z'
 labels: []
 dependencies: []
 ordinal: 1144000
@@ -20,8 +20,8 @@ Pictures of many modules are unreadable: this model's 1328 relationships are 78%
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every subtask is Done
-- [ ] #2 This repository's model states a kind and an effect on every relationship, and its pictures read through the default lens are compared with the old ones in the pull request
+- [x] #1 Every subtask is Done
+- [x] #2 This repository's model states a kind and an effect on every relationship, and its pictures read through the default lens are compared with the old ones in the pull request
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -32,4 +32,12 @@ Owner chose 2026-11-22: a reading that names no lens reads through all where the
 Owner decided 2026-11-22: a lens follows the TASK-647 rule (PR 134): a part whose every line the lens leaves out leaves the picture. ADR 0095, CONTEXT.md and the archboard skill updated. A named lens that leaves no part shows the empty state with Show every relationship.
 
 Owner decided 2026-11-22: the built-in relationship kind other is retired. A relationship that fits no built-in kind takes a kind the vault adds; the upgrade tool refuses other with both ways out. ADR 0094, authoring and upgrade references updated. The part kind other stays.
+
+All twelve subtasks are Done. PR #154 compares Packages and Painting before and after through the default lens, with the kind and effect histogram.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every relationship states how it travels (kind) and what it does (effect). call is replaced by sync and async, other is retired; kind is the line's color and effect its mark at the card (wedge and imprint, eye and caller ring, '=', broken line with a detached chevron); lenses with one-click presets, kind and effect switches, and the status line above the picture; the upgrade seeds sync and async from code facts, and the code check flags a contradicting kind. Verified by the full gate and four Sol reviews (PR #154). Follow-ups: TASK-666 to 669.
+<!-- SECTION:FINAL_SUMMARY:END -->
