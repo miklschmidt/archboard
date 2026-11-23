@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use archboard_scene::names::word;
 use archboard_scene::scene::{
     Clip, ClipId, Definition, Gradient, GradientForm, GradientId, HeadInk, Item, Marker, MarkerId,
-    Mask, MaskId, Scene, Stop,
+    Mask, MaskId, Scene, Stop, every,
 };
 
 use crate::css::{colour_id, css};
@@ -31,7 +31,11 @@ impl Names {
     pub(crate) fn of(scene: &Scene) -> Names {
         let mut names = Names::default();
         names.take(&scene.definitions);
-        names.walk(&scene.body);
+        for item in every(&scene.body) {
+            if let Item::Definitions { definitions } = item {
+                names.take(definitions);
+            }
+        }
         names
     }
 
@@ -48,19 +52,6 @@ impl Names {
                     self.clips.insert(clip.id.card.clone(), id);
                 }
                 Definition::Marker(_) | Definition::Gradient(_) => {}
-            }
-        }
-    }
-
-    /// The masks and clips defined among some items.
-    fn walk(&mut self, items: &[Item]) {
-        for item in items {
-            match item {
-                Item::Definitions { definitions } => self.take(definitions),
-                Item::Group(group) => self.walk(&group.items),
-                Item::Viewport(viewport) => self.walk(&viewport.items),
-                Item::Shape(_) | Item::Text(_) | Item::Icon(_) | Item::Traffic(_) | Item::Break => {
-                }
             }
         }
     }

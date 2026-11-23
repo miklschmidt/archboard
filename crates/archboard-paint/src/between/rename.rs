@@ -3,7 +3,7 @@
 //! and a line that both draw has a mask in each. Rewriting the last scene's
 //! once keeps the two apart for the whole move.
 
-use archboard_scene::scene::{ClipId, Definition, Item, MaskId, Scene, Shape};
+use archboard_scene::scene::{ClipId, Definition, Item, MaskId, Scene, Shape, each_list};
 
 /// What the last scene's ids begin with. A subject's id is a short run of
 /// letters and digits, so no id of the next scene begins with it.
@@ -40,26 +40,30 @@ pub(super) fn definitions(definitions: &mut [Definition]) {
     }
 }
 
-/// Rename what some items name or define.
-fn items(items: &mut [Item]) {
-    for item in items {
-        match item {
-            Item::Group(group) => {
-                if let Some(mask) = &mut group.mask {
-                    mask_id(mask);
+/// Rename what some items name or define, at any depth.
+fn items(items: &mut Vec<Item>) {
+    each_list(items, &mut |list| {
+        for item in list {
+            match item {
+                Item::Group(group) => {
+                    if let Some(mask) = &mut group.mask {
+                        mask_id(mask);
+                    }
                 }
-                self::items(&mut group.items);
-            }
-            Item::Shape(shape) => {
-                if let Some(clip) = &mut shape.clip {
-                    clip_id(clip);
+                Item::Shape(shape) => {
+                    if let Some(clip) = &mut shape.clip {
+                        clip_id(clip);
+                    }
                 }
+                Item::Definitions { definitions } => self::definitions(definitions),
+                Item::Viewport(_)
+                | Item::Text(_)
+                | Item::Icon(_)
+                | Item::Traffic(_)
+                | Item::Break => {}
             }
-            Item::Viewport(viewport) => self::items(&mut viewport.items),
-            Item::Definitions { definitions } => self::definitions(definitions),
-            Item::Text(_) | Item::Icon(_) | Item::Traffic(_) | Item::Break => {}
         }
-    }
+    });
 }
 
 /// Rename every mask and clip a scene defines and refers to.

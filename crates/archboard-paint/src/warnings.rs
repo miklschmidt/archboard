@@ -13,7 +13,9 @@ use std::collections::{HashMap, HashSet};
 
 use archboard_scene::geometry::{Curve, Point, Rect, Segment, label_anchor_of};
 use archboard_scene::paint::viewer_marks;
-use archboard_scene::scene::{Geometry, Group, Item, PathStep, Purpose, Role, Scene, SubjectKind};
+use archboard_scene::scene::{
+    Geometry, Group, Item, PathStep, Purpose, Role, Scene, SubjectKind, every,
+};
 
 use crate::sweep::is_route;
 
@@ -41,16 +43,11 @@ fn gather<'s>(
     ids: &HashSet<String>,
     found: &mut HashMap<&'s str, Vec<&'s Group>>,
 ) {
-    for item in items {
-        match item {
-            Item::Group(group) => {
-                if let Some(subject) = group.subject.as_ref().filter(|one| ids.contains(&one.id)) {
-                    found.entry(subject.id.as_str()).or_default().push(group);
-                }
-                gather(&group.items, ids, found);
-            }
-            Item::Viewport(viewport) => gather(&viewport.items, ids, found),
-            _ => {}
+    for item in every(items) {
+        if let Item::Group(group) = item
+            && let Some(subject) = group.subject.as_ref().filter(|one| ids.contains(&one.id))
+        {
+            found.entry(subject.id.as_str()).or_default().push(group);
         }
     }
 }

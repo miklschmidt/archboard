@@ -4,7 +4,7 @@ use archboard_scene::drawing::{DiagramFont, Emphasis, FontFamily};
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
     Atlas, AtlasBox, Boxes, Colour, Group, Head, HeadInk, Item, MarkerId, Pointer, Purpose, Role,
-    Scene, Shape, Stroke, Subject, SubjectKind, Text, Token,
+    Scene, Shape, Stroke, Subject, SubjectKind, Text, Token, every,
 };
 
 use super::phases::Phases;
@@ -151,20 +151,19 @@ pub(super) fn scene(body: Vec<Item>, nodes: &[(&str, Rect)]) -> Scene {
 
 /// The groups that draw a subject, in drawing order, wherever they stand.
 pub(super) fn drawing<'a>(items: &'a [Item], id: &str) -> Vec<&'a Group> {
-    let mut found = Vec::new();
-    for item in items {
-        if let Item::Group(group) = item {
-            if group
-                .subject
-                .as_ref()
-                .is_some_and(|subject| subject.id == id)
+    every(items)
+        .filter_map(|item| match item {
+            Item::Group(group)
+                if group
+                    .subject
+                    .as_ref()
+                    .is_some_and(|subject| subject.id == id) =>
             {
-                found.push(group);
+                Some(group)
             }
-            found.extend(drawing(&group.items, id));
-        }
-    }
-    found
+            _ => None,
+        })
+        .collect()
 }
 
 /// The first box a group draws directly.

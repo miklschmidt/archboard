@@ -7,7 +7,7 @@
 use std::collections::BTreeSet;
 
 use archboard_scene::js;
-use archboard_scene::scene::{Item, Text};
+use archboard_scene::scene::{Item, Text, every};
 use archboard_text::{Face, Segment, outline};
 
 use crate::css::css;
@@ -20,27 +20,15 @@ pub(crate) struct Glyphs(BTreeSet<(Face, u32)>);
 impl Glyphs {
     /// The glyphs some items draw, in groups and boxes of their own too.
     pub(crate) fn of(items: &[Item]) -> Glyphs {
-        let mut glyphs = Glyphs::default();
-        glyphs.walk(items);
-        glyphs
-    }
-
-    fn walk(&mut self, items: &[Item]) {
-        for item in items {
-            match item {
-                Item::Text(text) => {
-                    self.0
-                        .extend(text.glyphs.iter().map(|glyph| (glyph.face, glyph.id)));
-                }
-                Item::Group(group) => self.walk(&group.items),
-                Item::Viewport(viewport) => self.walk(&viewport.items),
-                Item::Shape(_)
-                | Item::Icon(_)
-                | Item::Definitions { .. }
-                | Item::Traffic(_)
-                | Item::Break => {}
-            }
-        }
+        Glyphs(
+            every(items)
+                .filter_map(|item| match item {
+                    Item::Text(text) => Some(text),
+                    _ => None,
+                })
+                .flat_map(|text| text.glyphs.iter().map(|glyph| (glyph.face, glyph.id)))
+                .collect(),
+        )
     }
 
     /// Each glyph that draws anything, as a path.

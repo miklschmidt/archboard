@@ -196,17 +196,15 @@ mod tests {
     use crate::paint::Node;
     use crate::paint::palette::Palette;
     use crate::request::{NodeAppearance, Standing};
-    use crate::scene::{Item, Paint, Purpose, Shape};
+    use crate::scene::{Item, Paint, Purpose, Shape, every};
     use crate::sizes::{TAB_PADDING, TAB_SHOULDER};
 
     /// Shapes in a frame, without the scene's grouping and line breaks.
     fn shapes(items: &[Item]) -> Vec<&Shape> {
-        items
-            .iter()
-            .flat_map(|item| match item {
-                Item::Shape(shape) => vec![shape],
-                Item::Group(group) => shapes(&group.items),
-                _ => Vec::new(),
+        every(items)
+            .filter_map(|item| match item {
+                Item::Shape(shape) => Some(shape),
+                _ => None,
             })
             .collect()
     }

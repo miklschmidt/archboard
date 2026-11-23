@@ -8,7 +8,7 @@
 //! title beside it is not disturbed.
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform};
+use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform, each_list};
 
 /// Whether a group of a card is one a move parks until it lands.
 pub(super) fn is_parked(group: &Group) -> bool {
@@ -21,14 +21,9 @@ pub(super) fn is_parked(group: &Group) -> bool {
 /// where they land, so a mark stands at its new place while the lines, the
 /// cards and the labels are still on their way.
 pub(super) fn unpark(items: &mut Vec<Item>) {
-    items.retain(|item| !matches!(item, Item::Group(group) if is_parked(group)));
-    for item in items {
-        match item {
-            Item::Group(group) => unpark(&mut group.items),
-            Item::Viewport(viewport) => unpark(&mut viewport.items),
-            _ => {}
-        }
-    }
+    each_list(items, &mut |list| {
+        list.retain(|item| !matches!(item, Item::Group(group) if is_parked(group)));
+    });
 }
 
 /// Take out what a move parks from inside each subject, where a shadow that the

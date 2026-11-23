@@ -4,6 +4,7 @@
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{
     Clip, ClipId, Definition, Group, Item, Mask, MaskId, Purpose, Role, Scene, Shape, Transform,
+    every,
 };
 
 use super::Between;
@@ -14,13 +15,10 @@ use super::testing::{
 
 /// Every run of words a group draws, to any depth.
 fn said(items: &[Item]) -> Vec<String> {
-    items
-        .iter()
-        .flat_map(|item| match item {
-            Item::Text(text) => vec![text.words.clone()],
-            Item::Group(group) => said(&group.items),
-            Item::Viewport(viewport) => said(&viewport.items),
-            _ => Vec::new(),
+    every(items)
+        .filter_map(|item| match item {
+            Item::Text(text) => Some(text.words.clone()),
+            _ => None,
         })
         .collect()
 }

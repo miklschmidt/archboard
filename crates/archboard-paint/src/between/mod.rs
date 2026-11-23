@@ -49,7 +49,9 @@ mod unfold;
 use std::collections::{HashMap, HashSet};
 
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
+use archboard_scene::scene::{
+    Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform, every,
+};
 
 use arrive::{Ground, LABEL_GONE_BY, Leave, Swap, arriving, ready_cards};
 use card::CardCarry;
@@ -206,16 +208,12 @@ fn drawn_lines(
 /// What a move would park, among some items, to any depth: the shadows and the
 /// marks where routes join.
 fn parked_in(items: &[Item]) -> Vec<Group> {
-    let mut found = Vec::new();
-    for item in items {
-        match item {
-            Item::Group(group) if is_parked(group) => found.push(group.clone()),
-            Item::Group(group) => found.extend(parked_in(&group.items)),
-            Item::Viewport(viewport) => found.extend(parked_in(&viewport.items)),
-            _ => {}
-        }
-    }
-    found
+    every(items)
+        .filter_map(|item| match item {
+            Item::Group(group) if is_parked(group) => Some(group.clone()),
+            _ => None,
+        })
+        .collect()
 }
 
 /// The mover of a subject only the last scene had.
@@ -262,18 +260,12 @@ fn stopping(
 
 /// Every line's pulses among some items, to any depth.
 fn traffic_in<'a>(items: &'a [Item], found: &mut HashMap<&'a str, &'a Group>) {
-    for item in items {
-        match item {
-            Item::Group(group) => match &group.role {
-                Role::Traffic(line) => {
-                    if mark_of(group).is_some() {
-                        found.insert(line, group);
-                    }
-                }
-                _ => traffic_in(&group.items, found),
-            },
-            Item::Viewport(viewport) => traffic_in(&viewport.items, found),
-            _ => {}
+    for item in every(items) {
+        if let Item::Group(group) = item
+            && let Role::Traffic(line) = &group.role
+            && mark_of(group).is_some()
+        {
+            found.insert(line, group);
         }
     }
 }

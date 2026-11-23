@@ -11,6 +11,7 @@ use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{
     Definition, Geometry, Group, Item, MarkerId, Paint, Purpose, Role, Scene, Shape, SubjectKind,
+    every,
 };
 use serde_json::Value;
 
@@ -26,18 +27,12 @@ fn painted() -> (Scene, Value) {
 
 /// Every group of some items, depth first.
 fn groups(items: &[Item]) -> Vec<&Group> {
-    let mut found = Vec::new();
-    for item in items {
-        match item {
-            Item::Group(group) => {
-                found.push(group);
-                found.extend(groups(&group.items));
-            }
-            Item::Viewport(viewport) => found.extend(groups(&viewport.items)),
-            _ => {}
-        }
-    }
-    found
+    every(items)
+        .filter_map(|item| match item {
+            Item::Group(group) => Some(group),
+            _ => None,
+        })
+        .collect()
 }
 
 /// The group that draws a subject in some role.
@@ -75,33 +70,23 @@ fn shapes(items: &[Item]) -> Vec<&Shape> {
 
 /// Every word some items say, depth first.
 fn words(items: &[Item]) -> Vec<&str> {
-    items
-        .iter()
-        .flat_map(|item| match item {
-            Item::Text(text) => vec![text.words.as_str()],
-            Item::Group(group) => words(&group.items),
-            Item::Viewport(viewport) => words(&viewport.items),
-            _ => Vec::new(),
+    every(items)
+        .filter_map(|item| match item {
+            Item::Text(text) => Some(text.words.as_str()),
+            _ => None,
         })
         .collect()
 }
 
 /// Every definition of a scene: its head's, and those its items carry.
 fn definitions(scene: &Scene) -> Vec<&Definition> {
-    fn inline(items: &[Item]) -> Vec<&Definition> {
-        items
-            .iter()
-            .flat_map(|item| match item {
-                Item::Definitions { definitions } => definitions.iter().collect(),
-                Item::Group(group) => inline(&group.items),
-                _ => Vec::new(),
-            })
-            .collect()
-    }
     scene
         .definitions
         .iter()
-        .chain(inline(&scene.body))
+        .chain(every(&scene.body).flat_map(|item| match item {
+            Item::Definitions { definitions } => definitions.iter().collect(),
+            _ => Vec::new(),
+        }))
         .collect()
 }
 

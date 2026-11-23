@@ -4,7 +4,7 @@
 use archboard_scene::drawing::{Bridged, EdgeFacts, PaintedDrawing};
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
-use archboard_scene::scene::{Colour, Definition, Geometry, Item, Paint, PathStep, Scene};
+use archboard_scene::scene::{Colour, Definition, Geometry, Item, Paint, PathStep, Scene, every};
 use serde_json::json;
 
 use super::Drawing;
@@ -36,12 +36,9 @@ fn picture(drawing: &Drawing, bridged: &Bridged<EdgeFacts>) -> Scene {
 
 /// Every definition kept among the scene's items.
 fn definitions(items: &[Item]) -> Vec<&Definition> {
-    items
-        .iter()
+    every(items)
         .flat_map(|item| match item {
             Item::Definitions { definitions } => definitions.iter().collect(),
-            Item::Group(group) => definitions(&group.items),
-            Item::Viewport(viewport) => definitions(&viewport.items),
             _ => Vec::new(),
         })
         .collect()
@@ -49,12 +46,8 @@ fn definitions(items: &[Item]) -> Vec<&Definition> {
 
 /// Whether a line is drawn through its mask.
 fn uses_mask(items: &[Item], id: &str) -> bool {
-    items.iter().any(|item| match item {
-        Item::Group(group) => {
-            group.mask.as_ref().is_some_and(|mask| mask.line == id) || uses_mask(&group.items, id)
-        }
-        Item::Viewport(viewport) => uses_mask(&viewport.items, id),
-        _ => false,
+    every(items).any(|item| {
+        matches!(item, Item::Group(group) if group.mask.as_ref().is_some_and(|mask| mask.line == id))
     })
 }
 

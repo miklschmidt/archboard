@@ -3,16 +3,13 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::scene::{Definition, Item, Mask, Scene};
+use archboard_scene::scene::{Definition, Item, Mask, Scene, each_list, every};
 
 /// Every definition among some items, to any depth.
 fn defined_in(items: &[Item], found: &mut Vec<Definition>) {
-    for item in items {
-        match item {
-            Item::Definitions { definitions } => found.extend(definitions.iter().cloned()),
-            Item::Group(group) => defined_in(&group.items, found),
-            Item::Viewport(viewport) => defined_in(&viewport.items, found),
-            _ => {}
+    for item in every(items) {
+        if let Item::Definitions { definitions } = item {
+            found.extend(definitions.iter().cloned());
         }
     }
 }
@@ -20,14 +17,9 @@ fn defined_in(items: &[Item], found: &mut Vec<Definition>) {
 /// Drop definitions from a body whose complete definitions were lifted into
 /// the scene. A body's old mask must not replace the mask of the current frame.
 pub(super) fn clear_definitions(items: &mut Vec<Item>) {
-    items.retain(|item| !matches!(item, Item::Definitions { .. }));
-    for item in items {
-        match item {
-            Item::Group(group) => clear_definitions(&mut group.items),
-            Item::Viewport(viewport) => clear_definitions(&mut viewport.items),
-            _ => {}
-        }
-    }
+    each_list(items, &mut |list| {
+        list.retain(|item| !matches!(item, Item::Definitions { .. }));
+    });
 }
 
 /// Every mask of a scene, by the name of its line.

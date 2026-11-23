@@ -6,7 +6,7 @@
 //! on a line with traffic of its own.
 
 use archboard_scene::request::LineEffect;
-use archboard_scene::scene::{Group, Item, Paint, Role, Token};
+use archboard_scene::scene::{Group, Item, Paint, Role, Token, every};
 use kurbo::{BezPath, ParamCurveArclen as _};
 use peniko::Color;
 
@@ -88,12 +88,10 @@ pub(crate) fn play_at(start: f64, now: f64) -> Option<f64> {
 
 /// Whether some items carry traffic of a line's own.
 fn carries_traffic(items: &[Item], id: &str) -> bool {
-    items.iter().any(|item| match item {
-        Item::Group(group) => match &group.role {
-            Role::Traffic(line) if line == id => holds_traffic(&group.items),
-            _ => carries_traffic(&group.items, id),
-        },
-        Item::Viewport(viewport) => carries_traffic(&viewport.items, id),
+    every(items).any(|item| match item {
+        Item::Group(group) => {
+            matches!(&group.role, Role::Traffic(line) if line == id) && holds_traffic(&group.items)
+        }
         _ => false,
     })
 }
@@ -112,19 +110,13 @@ impl<C: Canvas> Walk<'_, C> {
     pub(super) fn holds_play(&self, item: &Item) -> bool {
         let plays = &self.presentation.plays;
         !plays.is_empty()
-            && match item {
-                Item::Group(group) => {
-                    group
-                        .subject
-                        .as_ref()
-                        .is_some_and(|subject| plays.iter().any(|playing| playing.id == subject.id))
-                        || group.items.iter().any(|inner| self.holds_play(inner))
-                }
-                Item::Viewport(viewport) => {
-                    viewport.items.iter().any(|inner| self.holds_play(inner))
-                }
+            && every(std::slice::from_ref(item)).any(|inner| match inner {
+                Item::Group(Group {
+                    subject: Some(subject),
+                    ..
+                }) => plays.iter().any(|playing| playing.id == subject.id),
                 _ => false,
-            }
+            })
     }
 
     /// The play of a line's group at this moment, if one runs on it.

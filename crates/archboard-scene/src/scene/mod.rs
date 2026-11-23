@@ -63,6 +63,35 @@ pub enum Item {
     Break,
 }
 
+/// Every item among some, those inside groups and viewports too: depth first,
+/// each one before what it holds. Which items hold items is known here only.
+pub fn every(items: &[Item]) -> impl Iterator<Item = &Item> {
+    let mut pending: Vec<&Item> = items.iter().rev().collect();
+    std::iter::from_fn(move || {
+        let item = pending.pop()?;
+        match item {
+            Item::Group(group) => pending.extend(group.items.iter().rev()),
+            Item::Viewport(viewport) => pending.extend(viewport.items.iter().rev()),
+            _ => {}
+        }
+        Some(item)
+    })
+}
+
+/// Visit a list of items and each list inside it, at any depth: a list is
+/// visited before the lists of the items it keeps, so a visit may take items
+/// out of its list or put new ones in.
+pub fn each_list(items: &mut Vec<Item>, visit: &mut dyn FnMut(&mut Vec<Item>)) {
+    visit(items);
+    for item in items {
+        match item {
+            Item::Group(group) => each_list(&mut group.items, visit),
+            Item::Viewport(viewport) => each_list(&mut viewport.items, visit),
+            _ => {}
+        }
+    }
+}
+
 /// One subject's box in the picture, in the units of the document.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(rename = "DiagramBox")]
@@ -171,4 +200,63 @@ pub struct PaintedDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub reading_direction: Option<ReadingDirection>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Group, Item, Role, Viewport, each_list, every};
+    use crate::geometry::Rect;
+
+    fn group(items: Vec<Item>) -> Item {
+        Item::Group(Group::new(Role::Marks, items))
+    }
+
+    fn viewport(items: Vec<Item>) -> Item {
+        let frame = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 1.0,
+            height: 1.0,
+        };
+        Item::Viewport(Viewport {
+            frame,
+            view: frame,
+            items,
+        })
+    }
+
+    /// A group holding a viewport that holds a group, then a break, then a break
+    /// after the group: `g v g b b b`.
+    fn nested() -> Vec<Item> {
+        vec![
+            group(vec![viewport(vec![group(vec![Item::Break])]), Item::Break]),
+            Item::Break,
+        ]
+    }
+
+    fn name(item: &Item) -> char {
+        match item {
+            Item::Group(_) => 'g',
+            Item::Viewport(_) => 'v',
+            _ => 'b',
+        }
+    }
+
+    #[test]
+    fn every_goes_depth_first_through_groups_and_viewports_parents_first() {
+        let items = nested();
+        assert_eq!(every(&items).map(name).collect::<String>(), "gvgbbb");
+    }
+
+    #[test]
+    fn each_list_visits_every_list_and_what_a_visit_leaves_in_it() {
+        let mut items = nested();
+        let mut seen = 0;
+        each_list(&mut items, &mut |list| {
+            seen += 1;
+            list.retain(|item| !matches!(item, Item::Break));
+        });
+        assert_eq!(seen, 4, "the page's list and the three inside it");
+        assert_eq!(every(&items).map(name).collect::<String>(), "gvg");
+    }
 }

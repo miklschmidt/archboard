@@ -3,7 +3,7 @@
 //! route, and a soft mask in the shape of that piece. The SVG moves the bar
 //! with SMIL. Here the bar sits where the slide stands at the clock's moment.
 
-use archboard_scene::scene::{BeamGradient, BeamPiece, Item, TrafficMark};
+use archboard_scene::scene::{BeamGradient, BeamPiece, Item, TrafficMark, every};
 use kurbo::{Affine, Shape as _};
 use peniko::{Color, ColorStop, Extend, Gradient, InterpolationAlphaSpace};
 
@@ -72,12 +72,7 @@ fn draw_piece<C: Canvas>(
 
 /// Whether any traffic runs among some items.
 pub(crate) fn holds_traffic(items: &[Item]) -> bool {
-    items.iter().any(|item| match item {
-        Item::Traffic(_) => true,
-        Item::Group(group) => holds_traffic(&group.items),
-        Item::Viewport(viewport) => holds_traffic(&viewport.items),
-        _ => false,
-    })
+    every(items).any(|item| matches!(item, Item::Traffic(_)))
 }
 
 /// A line's traffic at a moment of the traffic's clock.
