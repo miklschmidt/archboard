@@ -63,7 +63,8 @@ esac
 
 async function waitForFile(file: string): Promise<void> {
 	const deadline = Date.now() + TEST_GIT_FIXTURE_START_MS;
-	while (!existsSync(file)) {
+	// The fake Git creates a marker before it writes the pid line into it.
+	while (!existsSync(file) || !readFileSync(file, "utf8").endsWith("\n")) {
 		if (Date.now() >= deadline) {
 			throw new Error(`Timed out waiting for ${file}.`);
 		}
