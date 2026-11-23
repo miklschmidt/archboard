@@ -1,34 +1,4 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
-      "order": 22000,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "error codes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/process/src/runtime/processes/group.ts",
-        "symbol": "errnoCode"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
-      "order": 23000,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "cleanup durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/process/src/runtime/processes/group-cleanup.ts",
-        "symbol": "codexProcessMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    }
-  ],
   "order": 960210,
   "name": "Process groups",
   "kind": "module",
@@ -39,5 +9,35 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#R3jPedS8",
-  "parent": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+  "parent": "vKEsyHFk/vKEsyHFk#Biz0M6Ld",
+  "outgoing": [
+    {
+      "order": 22000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "error codes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/group.ts",
+        "symbol": "errnoCode"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 23000,
+      "kind": "async",
+      "effect": "query",
+      "label": "wait for a process group to leave",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/group-cleanup.ts",
+        "symbol": "pollUntil"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ]
 }

@@ -1,34 +1,4 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk#qtFUIpvR",
-      "order": 100,
-      "kind": "sync",
-      "effect": "mutation",
-      "label": "record what a pane reports",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
-        "symbol": "panes"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "id": "vKEsyHFk#N2puYRTF",
-      "order": 200,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "how long a layout request waits",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
-        "symbol": "paneMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    }
-  ],
   "order": 4200,
   "name": "Pane arrivals",
   "kind": "module",
@@ -40,7 +10,37 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 2,
-  "id": "vKEsyHFk#r2iFMYJk"
+  "id": "vKEsyHFk#r2iFMYJk",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "record what a pane reports",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "panes"
+      },
+      "id": "vKEsyHFk#qtFUIpvR",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 200,
+      "kind": "async",
+      "effect": "query",
+      "label": "how long a layout request waits",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "pollUntil"
+      },
+      "id": "vKEsyHFk#N2puYRTF",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ]
 }

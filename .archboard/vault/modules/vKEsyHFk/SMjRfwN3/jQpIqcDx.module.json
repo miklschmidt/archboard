@@ -1,7 +1,18 @@
 {
+  "order": 29000,
+  "name": "Recording entry",
+  "kind": "module",
+  "responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
+  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
+  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
   "outgoing": [
     {
-      "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
       "order": 20000,
       "kind": "async",
       "effect": "mutation",
@@ -13,10 +24,10 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "DevTools.readBlobTo"
       },
+      "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
     },
     {
-      "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
       "order": 21000,
       "kind": "async",
       "effect": "mutation",
@@ -31,10 +42,10 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "drive"
       },
+      "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
       "to": "vKEsyHFk/SMjRfwN3#hlLOugjc"
     },
     {
-      "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
       "order": 28000,
       "kind": "sync",
       "effect": "mutation",
@@ -45,10 +56,10 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "writeTalk"
       },
+      "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     },
     {
-      "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "order": 29000,
       "kind": "async",
       "effect": "mutation",
@@ -63,10 +74,10 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "renderTalk"
       },
+      "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "to": "vKEsyHFk/SMjRfwN3#EWBbxckL"
     },
     {
-      "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "order": 51000,
       "kind": "async",
       "effect": "mutation",
@@ -77,10 +88,10 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "startBrowser"
       },
+      "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
     },
     {
-      "id": "vKEsyHFk#109Kq4Cc",
       "order": 980070,
       "kind": "sync",
       "effect": "compute",
@@ -91,33 +102,22 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "canonicalRecordingModel"
       },
+      "id": "vKEsyHFk#109Kq4Cc",
       "to": "vKEsyHFk#6RJ25ejV"
     },
     {
-      "id": "vKEsyHFk#Y3nWPghd",
       "order": 981000,
       "kind": "sync",
       "effect": "compute",
-      "label": "recording durations",
+      "label": "how long a browser protocol call may run",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
-        "symbol": "recorderMs"
+        "symbol": "ms"
       },
+      "id": "vKEsyHFk#Y3nWPghd",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
-  ],
-  "order": 29000,
-  "name": "Recording entry",
-  "kind": "module",
-  "responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
-  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts"
-  },
-  "schemaVersion": 2,
-  "id": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
-  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN"
+  ]
 }

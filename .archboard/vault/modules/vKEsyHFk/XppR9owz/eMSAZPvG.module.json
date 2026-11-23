@@ -1,90 +1,4 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
-      "order": 33000,
-      "kind": "sync",
-      "effect": "query",
-      "label": "the Codex executable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "to": "vKEsyHFk#06cbjPhn"
-    },
-    {
-      "id": "vKEsyHFk#yiUSoTWB",
-      "order": 34000,
-      "kind": "sync",
-      "effect": "query",
-      "label": "the server command, and where Codex must be installed",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "installation"
-      },
-      "to": "vKEsyHFk#4FdKQJqK"
-    },
-    {
-      "id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
-      "order": 45000,
-      "kind": "sync",
-      "effect": "mutation",
-      "label": "observe and stop the server process",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "readProcessObservation"
-      },
-      "to": "vKEsyHFk#R3jPedS8"
-    },
-    {
-      "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
-      "order": 49000,
-      "kind": "sync",
-      "effect": "query",
-      "label": "locate the server pidfile",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
-        "symbol": "stateDir"
-      },
-      "to": "vKEsyHFk#Q1jP0WbC"
-    },
-    {
-      "id": "vKEsyHFk/XppR9owz#qXImR60k",
-      "order": 58000,
-      "kind": "sync",
-      "effect": "mutation",
-      "label": "identity probe",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "markServerIdentityVerified"
-      },
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "id": "vKEsyHFk#a2fjUiQD",
-      "order": 59000,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "server start and stop durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "serverLifecycleMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    }
-  ],
   "order": 32000,
   "name": "Server launcher",
   "kind": "module",
@@ -116,6 +30,92 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 33000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the Codex executable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
+      "to": "vKEsyHFk#06cbjPhn"
+    },
+    {
+      "order": 34000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the server command, and where Codex must be installed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#yiUSoTWB",
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "order": 45000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "observe and stop the server process",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "readProcessObservation"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
+      "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "order": 49000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "locate the server pidfile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
+      "to": "vKEsyHFk#Q1jP0WbC"
+    },
+    {
+      "order": 58000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "identity probe",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "markServerIdentityVerified"
+      },
+      "id": "vKEsyHFk/XppR9owz#qXImR60k",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 59000,
+      "kind": "async",
+      "effect": "query",
+      "label": "wait for the server to start or stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "pollUntil"
+      },
+      "id": "vKEsyHFk#a2fjUiQD",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }
