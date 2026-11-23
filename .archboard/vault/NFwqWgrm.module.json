@@ -17,14 +17,5 @@
   "formerNames": [
     "Painter core"
   ],
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "dependency",
-      "label": "the SVG its parity tests hold the canvas to",
-      "emphasis": "normal",
-      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
-      "id": "vKEsyHFk#CPgBdjsI"
-    }
-  ]
+  "outgoing": []
 }
