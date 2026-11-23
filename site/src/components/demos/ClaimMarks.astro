@@ -8,6 +8,7 @@ import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import SectionLabel from "../window/SectionLabel.astro";
 
+const claim = "An agent has claimed Checkout API and Place order in Shop.";
 const rows = [
 	{ name: "Storefront" },
 	{ name: "Checkout API", claimed: true, open: true },
@@ -19,6 +20,7 @@ const rows = [
 ---
 
 <div class="claimed table" data-claim-marks data-loop>
+	<p class="sr-only" role="status" data-claim-status>{claim}</p>
 	<div class="shell" aria-hidden="true">
 		<div class="column">
 			<p class="switcher">
@@ -317,12 +319,15 @@ const rows = [
 	for (const root of document.querySelectorAll<HTMLElement>("[data-claim-marks]")) {
 		const button = root.querySelector<HTMLButtonElement>("[data-release]");
 		const label = root.querySelector<HTMLElement>("[data-release-label]");
-		if (!button || !label) continue;
+		const status = root.querySelector<HTMLElement>("[data-claim-status]");
+		if (!button || !label || !status) continue;
+		const claimed = status.textContent;
 		let released = false;
 		button.addEventListener("click", () => {
 			released = !released;
 			root.classList.toggle("is-released", released);
 			label.textContent = released ? "Reset the example" : "Release the claim";
+			status.textContent = released ? "Claim released. No active claims." : claimed;
 		});
 	}
 </script>
