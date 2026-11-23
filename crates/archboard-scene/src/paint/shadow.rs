@@ -33,9 +33,9 @@ pub(super) fn falling(ink: &Colour, share: f64) -> Vec<Stop> {
     let last = (FALLOFF.len() - 1) as f64;
     (FALLOFF.iter().enumerate())
         .map(|(index, opacity)| Stop {
-            offset: Some(share * index as f64 / last),
+            offset: share * index as f64 / last,
             colour: ink.clone(),
-            opacity: Some(*opacity),
+            opacity: *opacity,
         })
         .collect()
 }
@@ -125,7 +125,7 @@ pub(super) fn smooth_shadow(rect: Rect, radius: f64, reach: f64) -> Items {
                         width: round_coord(widths[usize::from(column)]),
                         height: round_coord(heights[usize::from(row)]),
                     },
-                    None,
+                    0.0,
                 )
                 .filled(GradientId::Shadow { row, column }),
             ));
@@ -180,9 +180,9 @@ pub(super) fn shadow_definitions(palette: &Palette) -> Vec<Definition> {
             user_space: false,
         },
         stops: vec![Stop {
-            offset: None,
+            offset: 0.0,
             colour: ink,
-            opacity: None,
+            opacity: 1.0,
         }],
     }));
     definitions

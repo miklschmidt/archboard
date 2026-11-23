@@ -17,7 +17,12 @@ pub(crate) const HALO_CLASS: &str = "ab-halo";
 /// a stated value that equals its attribute's initial one is not written: the
 /// reader draws the same without it. The stylesheet's selectors on a written
 /// value (`path[stroke-width="…"]`) must not name an initial one.
-const INITIAL: [(&str, &str); 7] = [
+const INITIAL: [(&str, &str); 12] = [
+    ("rx", "0"),
+    ("cx", "0"),
+    ("cy", "0"),
+    ("offset", "0"),
+    ("stop-opacity", "1"),
     ("fill-opacity", "1"),
     ("stroke-width", "1"),
     ("stroke-opacity", "1"),
@@ -130,13 +135,12 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
             out.set("x", rect.x)
                 .set("y", rect.y)
                 .set("width", rect.width)
-                .set("height", rect.height)
-                .maybe("rx", *radius);
+                .set("height", rect.height);
+            stated(out, "rx", *radius);
         }
         Geometry::Circle { centre, radius } => {
-            if let Some(centre) = centre {
-                out.set("cx", centre.x).set("cy", centre.y);
-            }
+            stated(out, "cx", centre.x);
+            stated(out, "cy", centre.y);
             out.set("r", *radius);
         }
         Geometry::Line { from, to } => {
@@ -177,7 +181,7 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             out.maybe("fill", shape.fill.as_ref().map(paint));
         }
         FillOpacity => {
-            out.maybe("fill-opacity", shape.fill_opacity);
+            stated(out, "fill-opacity", shape.fill_opacity);
         }
         Stroke => {
             out.maybe("stroke", stroke.map(|stroke| paint(&stroke.paint)));

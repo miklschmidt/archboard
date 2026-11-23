@@ -76,7 +76,7 @@ impl<C: Canvas> Walk<'_, C> {
         if let Some(Item::Shape(light)) = light
             && matches!(light.geometry, Geometry::Rect { .. })
         {
-            light.fill_opacity = Some(HOVER_LIGHT);
+            light.fill_opacity = HOVER_LIGHT;
         }
         self.items(&items, held);
     }

@@ -416,7 +416,7 @@ pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
                 None => Shape::new(
                     Purpose::Line,
                     Geometry::Circle {
-                        centre: Some(from),
+                        centre: from,
                         radius: round_coord(radius),
                     },
                 )

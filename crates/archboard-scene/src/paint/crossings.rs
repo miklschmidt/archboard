@@ -121,7 +121,7 @@ pub(super) fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for label in labels {
         let shape =
-            Shape::rect(Purpose::Box, boxed(*label), Some(PILL_RADIUS)).filled(Colour::Black);
+            Shape::rect(Purpose::Box, boxed(*label), PILL_RADIUS).filled(Colour::Black);
         for routed in edges
             .iter()
             .filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label))
@@ -165,7 +165,7 @@ fn grouped(cutouts: Vec<Cutout>) -> Grouped {
 /// One route's mask: all of the route's ink but its cutouts.
 fn mask_of(routed: &Edge, cutouts: Vec<Shape>) -> Mask {
     let bounds = boxed(inflate(curve_bounds(&routed.curve), 18.0));
-    let mut shapes = vec![Shape::rect(Purpose::Box, bounds, None).filled(Colour::White)];
+    let mut shapes = vec![Shape::rect(Purpose::Box, bounds, 0.0).filled(Colour::White)];
     shapes.extend(cutouts);
     Mask {
         id: MaskId {

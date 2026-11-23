@@ -24,7 +24,7 @@ fn card(id: &str, x: f64) -> Item {
                         width: 20.0,
                         height: 20.0,
                     },
-                    None,
+                    0.0,
                 )
                 .filled(Token::DiagramText),
             )],

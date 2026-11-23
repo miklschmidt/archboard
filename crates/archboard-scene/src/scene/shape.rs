@@ -163,21 +163,17 @@ pub enum PathStep {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Geometry {
-    /// A box, its corners rounded by a radius when it has one.
+    /// A box, its corners rounded by a radius; square at zero.
     Rect {
         /// The box.
         rect: Rect,
         /// How round its corners are.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[ts(optional)]
-        radius: Option<f64>,
+        radius: f64,
     },
-    /// A circle round a centre; the origin when it states none.
+    /// A circle round a centre.
     Circle {
         /// Its centre.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[ts(optional)]
-        centre: Option<Point>,
+        centre: Point,
         /// Its radius.
         radius: f64,
     },
@@ -225,10 +221,8 @@ pub struct Shape {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub fill: Option<Paint>,
-    /// How solid its fill is, from 0 to 1; fully when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub fill_opacity: Option<f64>,
+    /// How solid its fill is, from 0 to 1.
+    pub fill_opacity: f64,
     /// How its outline is stroked; not at all when it states none.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -260,7 +254,7 @@ impl Shape {
             purpose,
             geometry,
             fill: None,
-            fill_opacity: None,
+            fill_opacity: 1.0,
             stroke: None,
             pointer: None,
             clip: None,
@@ -270,8 +264,8 @@ impl Shape {
         }
     }
 
-    /// A box of some purpose, its corners rounded by a radius when it has one.
-    pub fn rect(purpose: Purpose, rect: Rect, radius: Option<f64>) -> Self {
+    /// A box of some purpose, its corners rounded by a radius; square at zero.
+    pub fn rect(purpose: Purpose, rect: Rect, radius: f64) -> Self {
         Shape::new(purpose, Geometry::Rect { rect, radius })
     }
 

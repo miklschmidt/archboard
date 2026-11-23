@@ -193,7 +193,7 @@ fn paint_column(
         shape(styles.halo(Shape::rect(
             Purpose::Halo,
             boxed(*bar),
-            Some(ACTIVATION_RADIUS),
+            ACTIVATION_RADIUS,
         )))
     }));
     vec![crate::scene::Item::Group(Group {
@@ -221,7 +221,7 @@ fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palet
             width: floor.width,
             height: card.height + HEAD_REACH + SHADOW_REACH,
         }),
-        None,
+        0.0,
     );
     let face = if standing == Some(Standing::Removed) {
         ghost_face(plate.clone(), palette)

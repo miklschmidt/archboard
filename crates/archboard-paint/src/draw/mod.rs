@@ -541,7 +541,7 @@ impl<C: Canvas> Walk<'_, C> {
             colour: Colour::Black,
         };
         let fill = shape.fill.as_ref().unwrap_or(&black);
-        let alpha = shape.fill_opacity.unwrap_or(1.0) * self.shown_with_members(shape);
+        let alpha = shape.fill_opacity * self.shown_with_members(shape);
         if let Some(ink) = self.ink(fill, alpha, bounds) {
             let ink = self.glowing(ink, inside.glow);
             self.canvas.fill(path, &ink, false);

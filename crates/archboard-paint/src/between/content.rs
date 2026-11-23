@@ -116,7 +116,7 @@ fn unplaced_geometry(geometry: &Geometry) -> Geometry {
             radius: *radius,
         },
         Geometry::Circle { radius, .. } => Geometry::Circle {
-            centre: None,
+            centre: ORIGIN,
             radius: *radius,
         },
         Geometry::Line { .. } => Geometry::Line {

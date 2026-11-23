@@ -53,8 +53,7 @@ impl<C: Canvas> Walk<'_, C> {
             }
             let (path, _) = outline_of(&shape.geometry);
             if shape.fill.as_ref().is_some_and(|fill| *fill != Paint::None) {
-                self.canvas
-                    .fill(&path, &black(shape.fill_opacity.unwrap_or(1.0)), false);
+                self.canvas.fill(&path, &black(shape.fill_opacity), false);
             }
             if let Some(stroke) = &shape.stroke {
                 self.canvas

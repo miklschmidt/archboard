@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn a_renamed_scene_refers_to_the_names_it_defines() {
-        let mut clipped = Shape::rect(archboard_scene::scene::Purpose::Plate, rect(), None);
+        let mut clipped = Shape::rect(archboard_scene::scene::Purpose::Plate, rect(), 0.0);
         clipped.clip = Some(ClipId { card: "a".into() });
         let mut group = Group::new(Role::Marks, vec![Item::Shape(clipped)]);
         group.mask = Some(MaskId { line: "a".into() });

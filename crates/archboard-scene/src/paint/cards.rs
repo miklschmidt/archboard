@@ -53,7 +53,7 @@ pub(super) fn halo(
                 width: round_coord(rect.width + inset * 2.0),
                 height: round_coord(rect.height + inset * 2.0),
             },
-            Some(round_coord(radius + inset)),
+            round_coord(radius + inset),
         )
         .unfilled()
         .stroked(styles.ring(HALO_WIDTH)),

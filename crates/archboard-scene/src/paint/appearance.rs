@@ -120,7 +120,7 @@ pub(super) fn type_chip(
     if standing == Some(Standing::Removed) {
         return concat(vec![
             shape(ghost_face(
-                Shape::rect(Purpose::Box, rect, Some(ICON_CHIP_RADIUS)),
+                Shape::rect(Purpose::Box, rect, ICON_CHIP_RADIUS),
                 palette,
             )),
             glyph,

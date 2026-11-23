@@ -135,7 +135,7 @@ impl Definitions {
                     clippy::cast_possible_truncation,
                     reason = "an offset is f32 in peniko"
                 )]
-                let offset = stop.offset.unwrap_or(0.0) as f32;
+                let offset = stop.offset as f32;
                 ColorStop {
                     offset,
                     color: palette.stop(stop, alpha).into(),

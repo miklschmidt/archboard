@@ -197,11 +197,11 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
             width: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
             height: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
         },
-        Some(LEGEND_CHIP_RADIUS),
+        LEGEND_CHIP_RADIUS,
     )
     .filled(&ink)
     .stroked(Stroke::new(&ink, LEGEND_CHIP_EDGE).at(LEGEND_CHIP_STROKE));
-    chip.fill_opacity = Some(LEGEND_CHIP_FACE);
+    chip.fill_opacity = LEGEND_CHIP_FACE;
     let icons = applied.icon.iter().map(|drawn| {
         Item::Icon(Icon {
             name: drawn.name.clone(),
@@ -283,9 +283,9 @@ fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Items {
         stops: PULSE_STOPS
             .iter()
             .map(|(offset, opacity)| Stop {
-                offset: Some(*offset),
+                offset: *offset,
                 colour: light.clone(),
-                opacity: Some(*opacity),
+                opacity: *opacity,
             })
             .collect(),
     };

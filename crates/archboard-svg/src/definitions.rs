@@ -14,7 +14,7 @@ use archboard_scene::scene::{
 
 use crate::css::{colour_id, css};
 use crate::path::{Spelling, path_data};
-use crate::shapes::write_shape;
+use crate::shapes::{stated, write_shape};
 use crate::xml::{Attributes, close, content_id, empty, open};
 
 /// The ids a document spells its definitions with.
@@ -150,10 +150,9 @@ fn clip_outline(clip: &Clip) -> String {
 /// A gradient's stop.
 fn write_stop(stop: &Stop, out: &mut String) {
     let mut attributes = Attributes::new();
-    attributes
-        .maybe("offset", stop.offset)
-        .set("stop-color", css(&stop.colour))
-        .maybe("stop-opacity", stop.opacity);
+    stated(&mut attributes, "offset", stop.offset);
+    attributes.set("stop-color", css(&stop.colour));
+    stated(&mut attributes, "stop-opacity", stop.opacity);
     empty("stop", &attributes, out);
 }
 

@@ -245,14 +245,14 @@ pub(super) fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette
         return Items::new();
     };
     shape(Shape {
-        fill_opacity: Some(ROW_TINT),
-        ..Shape::rect(Purpose::Box, boxed(rect), None).filled(ink)
+        fill_opacity: ROW_TINT,
+        ..Shape::rect(Purpose::Box, boxed(rect), 0.0).filled(ink)
     })
 }
 
 /// A rounded plate.
 fn plate_of(rect: Rect) -> Shape {
-    Shape::rect(Purpose::Box, boxed(rect), Some(PILL_RADIUS))
+    Shape::rect(Purpose::Box, boxed(rect), PILL_RADIUS)
 }
 
 /// One message's label, a line at a time, each centred, on a chip.

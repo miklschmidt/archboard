@@ -284,7 +284,7 @@ mod tests {
             Group::new(
                 Role::Label,
                 vec![Item::Shape(
-                    Shape::rect(Purpose::Plate, rect, None).filled(Token::SlabFace),
+                    Shape::rect(Purpose::Plate, rect, 0.0).filled(Token::SlabFace),
                 )],
             )
             .drawing(subject(id, SubjectKind::Node)),
@@ -401,7 +401,7 @@ mod tests {
             Group::new(
                 Role::Label,
                 vec![Item::Shape(
-                    Shape::rect(Purpose::Plate, rect, None)
+                    Shape::rect(Purpose::Plate, rect, 0.0)
                         .filled(Token::SlabFace)
                         .pointer(Pointer::None),
                 )],
@@ -430,7 +430,7 @@ mod tests {
                             width: 10.0,
                             height: 10.0,
                         },
-                        None,
+                        0.0,
                     )
                     .unfilled()
                     .pointer(Pointer::All),

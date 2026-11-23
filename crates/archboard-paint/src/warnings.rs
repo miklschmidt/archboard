@@ -219,7 +219,7 @@ mod tests {
         };
         Group::new(
             Role::Shape,
-            vec![Item::Shape(Shape::rect(Purpose::Plate, rect, None))],
+            vec![Item::Shape(Shape::rect(Purpose::Plate, rect, 0.0))],
         )
         .drawing(subject(SubjectKind::Node, "a"))
     }

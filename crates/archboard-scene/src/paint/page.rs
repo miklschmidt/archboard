@@ -159,7 +159,7 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
                 width: round_coord(width - 2.0 * PLANNED_FRAME_INSET),
                 height: round_coord(height - top - PLANNED_FRAME_INSET),
             },
-            Some(10.0),
+            10.0,
         )
         .unfilled()
         .stroked(Stroke::new(&palette.muted, 1.5).at(0.6).dashed(&[6.0, 4.0])),
@@ -173,7 +173,7 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
                 width: round_coord(label_width + 2.0 * LABEL_CLEARANCE),
                 height: LABEL_SIZE + 2.0,
             },
-            None,
+            0.0,
         )
         .filled(&palette.background),
     );

@@ -49,7 +49,7 @@ fn subject(kind: SubjectKind, id: &str) -> Subject {
 
 /// A card: its plate and its words.
 pub(super) fn card(id: &str, frame: Rect, content: &[&str]) -> Item {
-    let mut items = vec![Item::Shape(Shape::rect(Purpose::Plate, frame, Some(8.0)))];
+    let mut items = vec![Item::Shape(Shape::rect(Purpose::Plate, frame, 8.0))];
     for (row, line) in content.iter().enumerate() {
         items.push(words(frame.x + 10.0 + 4.0 * row as f64, line));
     }
@@ -58,7 +58,7 @@ pub(super) fn card(id: &str, frame: Rect, content: &[&str]) -> Item {
 
 /// The same card as a container's frame.
 pub(super) fn region(id: &str, frame: Rect) -> Item {
-    let items = vec![Item::Shape(Shape::rect(Purpose::Plate, frame, None))];
+    let items = vec![Item::Shape(Shape::rect(Purpose::Plate, frame, 0.0))];
     Item::Group(Group::new(Role::Frame(None), items).drawing(subject(SubjectKind::Region, id)))
 }
 
@@ -93,7 +93,7 @@ pub(super) fn line(id: &str, points: &[(f64, f64)]) -> Item {
         vec![Item::Shape(Shape::rect(
             Purpose::Port,
             rect(0.0, 0.0, 4.0, 4.0),
-            None,
+            0.0,
         ))],
     );
     let items = vec![Item::Shape(halo), Item::Shape(stroke), Item::Group(port)];
@@ -103,7 +103,7 @@ pub(super) fn line(id: &str, points: &[(f64, f64)]) -> Item {
 /// The words of a connection, on a plate.
 pub(super) fn label(id: &str, frame: Rect, text: &str) -> Item {
     let items = vec![
-        Item::Shape(Shape::rect(Purpose::Plate, frame, Some(4.0))),
+        Item::Shape(Shape::rect(Purpose::Plate, frame, 4.0)),
         words(frame.x + 4.0, text),
     ];
     Item::Group(Group::new(Role::Label, items).drawing(subject(SubjectKind::Edge, id)))
@@ -114,7 +114,7 @@ pub(super) fn shadow() -> Item {
     let items = vec![Item::Shape(Shape::rect(
         Purpose::Box,
         rect(0.0, 0.0, 9.0, 9.0),
-        None,
+        0.0,
     ))];
     Item::Group(Group::new(Role::Shadow(None), items).pointer(Pointer::None))
 }

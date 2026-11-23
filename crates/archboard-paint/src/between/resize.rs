@@ -244,7 +244,7 @@ impl Anchors {
                     height: (self.y(rect.y + rect.height) - y).max(0.0),
                 };
             }
-            Geometry::Circle { centre, .. } => *centre = centre.map(|at| self.point(at)),
+            Geometry::Circle { centre, .. } => *centre = self.point(*centre),
             Geometry::Line { from, to } => (*from, *to) = (self.point(*from), self.point(*to)),
             Geometry::Path { steps } => *steps = self.steps(steps),
         }

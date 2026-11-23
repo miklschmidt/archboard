@@ -190,7 +190,7 @@ pub(super) fn standing_pin_at(
                 Shape::new(
                     Purpose::Line,
                     Geometry::Circle {
-                        centre: None,
+                        centre: Point { x: 0.0, y: 0.0 },
                         radius: PIN_RADIUS,
                     },
                 )

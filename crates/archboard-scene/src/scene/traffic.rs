@@ -446,9 +446,9 @@ fn bounds_of(leg: &Leg, core: f64) -> Rect {
 fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> BeamGradient {
     let reach = PULSE_FRONT + PULSE_HEAD + tail;
     let stop = |behind: f64, colour: &Colour, light: f64| Stop {
-        offset: Some((span - behind) / span),
+        offset: (span - behind) / span,
         colour: colour.clone(),
-        opacity: Some(light),
+        opacity: light,
     };
     let mut stops = Vec::new();
     if tail >= 1.0 {

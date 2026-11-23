@@ -281,7 +281,7 @@ mod tests {
             removed_shapes
                 .iter()
                 .any(|shape| shape.fill == Some(Paint::from(&palette.slab_face))
-                    && shape.fill_opacity == Some(0.5))
+                    && shape.fill_opacity == 0.5)
         );
         assert!(removed_shapes.iter().any(|shape| {
             shape.purpose == Purpose::Solid
@@ -293,7 +293,7 @@ mod tests {
         assert!(
             shapes(&plain)
                 .iter()
-                .all(|shape| shape.fill_opacity.is_none())
+                .all(|shape| shape.fill_opacity == 1.0)
         );
     }
 }

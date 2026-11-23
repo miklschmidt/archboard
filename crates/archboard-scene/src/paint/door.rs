@@ -69,7 +69,7 @@ fn button(rect: Rect, color: Option<PaletteColor>, finish: &Finish) -> Items {
     let radius = DOOR_RADIUS - RIM / 2.0;
     lines(vec![
         shape(
-            Shape::rect(Purpose::Plate, boxed(rect), Some(DOOR_RADIUS))
+            Shape::rect(Purpose::Plate, boxed(rect), DOOR_RADIUS)
                 .pointer(Pointer::None)
                 .filled(Paint::Gradient {
                     id: GradientId::Door { color },

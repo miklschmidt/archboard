@@ -222,7 +222,7 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
                 Shape::new(
                     Purpose::Arrowhead,
                     Geometry::Circle {
-                        centre: Some(back(6.2, 0.0)),
+                        centre: back(6.2, 0.0),
                         radius: 0.95,
                     },
                 )
@@ -241,7 +241,7 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
             Shape::new(
                 Purpose::Arrowhead,
                 Geometry::Circle {
-                    centre: Some(at(MARK_BOX / 2.0, MARK_BOX / 2.0)),
+                    centre: at(MARK_BOX / 2.0, MARK_BOX / 2.0),
                     radius: RING_RADIUS,
                 },
             )

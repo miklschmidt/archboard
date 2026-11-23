@@ -485,9 +485,9 @@ pub(super) fn ends_in_port(curve: &Curve, ports: &[Port]) -> bool {
 }
 
 /// One stop of a port's gradient.
-fn stop(offset: f64, colour: &crate::scene::Colour, opacity: Option<f64>) -> Stop {
+fn stop(offset: f64, colour: &crate::scene::Colour, opacity: f64) -> Stop {
     Stop {
-        offset: Some(offset),
+        offset,
         colour: colour.clone(),
         opacity,
     }
@@ -504,9 +504,9 @@ pub(super) fn port_definitions(palette: &Palette) -> Vec<Definition> {
                 radius: 0.62,
             },
             stops: vec![
-                stop(0.0, deep, None),
-                stop(0.45, deep, None),
-                stop(1.0, &palette.port_wall, None),
+                stop(0.0, deep, 1.0),
+                stop(0.45, deep, 1.0),
+                stop(1.0, &palette.port_wall, 1.0),
             ],
         }),
         Definition::Gradient(Gradient {
@@ -516,9 +516,9 @@ pub(super) fn port_definitions(palette: &Palette) -> Vec<Definition> {
                 user_space: false,
             },
             stops: vec![
-                stop(0.0, deep, None),
-                stop(0.45, deep, Some(0.8)),
-                stop(0.85, deep, Some(0.0)),
+                stop(0.0, deep, 1.0),
+                stop(0.45, deep, 0.8),
+                stop(0.85, deep, 0.0),
             ],
         }),
     ]

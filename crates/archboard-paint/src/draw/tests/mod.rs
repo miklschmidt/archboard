@@ -100,7 +100,7 @@ fn plate(x: f64) -> Item {
         width: 100.0 - x,
         height: 40.0,
     };
-    Item::Shape(Shape::rect(Purpose::Plate, rect, None).filled(Token::Border))
+    Item::Shape(Shape::rect(Purpose::Plate, rect, 0.0).filled(Token::Border))
 }
 
 /// A route along a line, with its halo before it.
@@ -161,7 +161,7 @@ fn a_head_held_down_moves_shows_its_shade_and_draws_last() {
 /// A door with a control: a seat, the hidden light of the control, a glyph.
 fn door() -> Item {
     let light = Shape {
-        fill_opacity: Some(0.0),
+        fill_opacity: 0.0,
         ..Shape::rect(
             Purpose::Plate,
             Rect {
@@ -170,7 +170,7 @@ fn door() -> Item {
                 width: 9.0,
                 height: 9.0,
             },
-            Some(2.0),
+            2.0,
         )
         .filled(Token::Border)
     };
@@ -236,7 +236,7 @@ fn what_is_out_of_the_light_recedes_and_traffic_recedes_furthest() {
 /// A mark where some lines join: a dot, as `junction_marks` draws it.
 fn dot(x: f64, members: &[&str]) -> Item {
     let circle = Geometry::Circle {
-        centre: Some(Point { x, y: 0.0 }),
+        centre: Point { x, y: 0.0 },
         radius: 3.0,
     };
     Item::Shape(Shape {

@@ -116,16 +116,15 @@ pub(crate) fn outline_of(geometry: &Geometry) -> (BezPath, kurbo::Rect) {
     let (path, bounds) = match geometry {
         Geometry::Rect { rect, radius } => {
             let plain = rect_of(rect);
-            let path = match radius {
-                Some(radius) if *radius > 0.0 => {
-                    kurbo::RoundedRect::from_rect(plain, *radius).to_path(TOLERANCE)
-                }
-                _ => plain.to_path(TOLERANCE),
+            let path = if *radius > 0.0 {
+                kurbo::RoundedRect::from_rect(plain, *radius).to_path(TOLERANCE)
+            } else {
+                plain.to_path(TOLERANCE)
             };
             (path, Some(plain))
         }
         Geometry::Circle { centre, radius } => {
-            let centre = centre.map_or(kurbo::Point::ZERO, point_of);
+            let centre = point_of(*centre);
             let circle = kurbo::Circle::new(centre, *radius);
             (circle.to_path(TOLERANCE), Some(circle.bounding_box()))
         }
@@ -289,7 +288,7 @@ mod tests {
         };
         let (_, bounds) = outline_of(&Geometry::Rect {
             rect,
-            radius: Some(1.0),
+            radius: 1.0,
         });
         assert_eq!(bounds, kurbo::Rect::new(1.0, 2.0, 4.0, 6.0));
     }

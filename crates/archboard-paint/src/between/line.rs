@@ -131,7 +131,7 @@ pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
 /// A shape this much visible, under whatever visibility it states.
 fn dim(mut shape: Shape, visible: f64) -> Shape {
     if visible < 1.0 {
-        shape.fill_opacity = Some(shape.fill_opacity.unwrap_or(1.0) * visible);
+        shape.fill_opacity *= visible;
         if let Some(stroke) = &mut shape.stroke {
             stroke.opacity *= visible;
         }

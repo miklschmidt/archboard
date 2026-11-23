@@ -162,7 +162,7 @@ fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reache
 
 /// A participant's column: its bar stands in the middle of the picture, and its card at the top.
 fn column() -> Scene {
-    let bar = Shape::rect(Purpose::Halo, rect(195.0, 80.0, 10.0, 80.0), None);
+    let bar = Shape::rect(Purpose::Halo, rect(195.0, 80.0, 10.0, 80.0), 0.0);
     let lifeline = Group::new(Role::Lifeline, vec![Item::Shape(bar)]).drawing(Subject {
         kind: SubjectKind::Node,
         id: "p".to_owned(),

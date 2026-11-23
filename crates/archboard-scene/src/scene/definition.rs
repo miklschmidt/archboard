@@ -169,16 +169,12 @@ pub enum GradientForm {
 /// One stop of a gradient.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Stop {
-    /// Where it stands along the gradient, from 0 to 1; at the start when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub offset: Option<f64>,
+    /// Where it stands along the gradient, from 0 to 1.
+    pub offset: f64,
     /// Its colour.
     pub colour: Colour,
-    /// How solid it is; fully when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub opacity: Option<f64>,
+    /// How solid it is, from 0 to 1.
+    pub opacity: f64,
 }
 
 /// A gradient.

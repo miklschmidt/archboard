@@ -138,11 +138,11 @@ fn gradient_of(gradient: &BeamGradient) -> Defined {
         .map(|stop| {
             let mut attributes = Attributes::new();
             attributes
-                .set("offset", js::fixed_number(stop.offset.unwrap_or(0.0), 4))
+                .set("offset", js::fixed_number(stop.offset, 4))
                 .set("stop-color", css(&stop.colour))
                 .set(
                     "stop-opacity",
-                    js::fixed_number(stop.opacity.unwrap_or(1.0), 3),
+                    js::fixed_number(stop.opacity, 3),
                 );
             let mut markup = String::new();
             empty("stop", &attributes, &mut markup);

@@ -75,7 +75,7 @@ pub(super) fn corner_drill_mark(
                     Shape::new(
                         Purpose::Line,
                         Geometry::Circle {
-                            centre: None,
+                            centre: Point { x: 0.0, y: 0.0 },
                             radius: DRILL_MARK_RADIUS,
                         },
                     )

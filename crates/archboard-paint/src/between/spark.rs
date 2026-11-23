@@ -213,7 +213,7 @@ pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> 
                 width: card.width + RIM_ROOM * 2.0,
                 height: card.height + RIM_ROOM * 2.0,
             };
-            let mut shape = Shape::rect(Purpose::Plate, edge, Some(RIM_CORNER))
+            let mut shape = Shape::rect(Purpose::Plate, edge, RIM_CORNER)
                 .unfilled()
                 .stroked(Stroke::new(sparked(&paint, RIM_TOWARD_TEXT), 1.0));
             shape.members = vec![id.to_owned()];
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn a_line_inside_a_decision_lights_no_rim_round_its_frame() {
-        let outline = Shape::rect(Purpose::Box, rect(0.0, 0.0, 400.0, 300.0), None);
+        let outline = Shape::rect(Purpose::Box, rect(0.0, 0.0, 400.0, 300.0), 0.0);
         let decision = Group::new(Role::Fragment, vec![Item::Shape(outline)]).drawing(Subject {
             id: "alt".to_owned(),
             kind: SubjectKind::Step,
@@ -446,7 +446,7 @@ mod tests {
             width: 100.0,
             height: 50.0,
         };
-        let shape = Shape::rect(Purpose::Plate, card, Some(6.0))
+        let shape = Shape::rect(Purpose::Plate, card, 6.0)
             .unfilled()
             .stroked(Stroke::new(Token::DiagramText, 1.0));
         let (landed, edge) = along_outline(&shape.geometry, Point { x: 100.0, y: 25.0 });

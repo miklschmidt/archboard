@@ -40,7 +40,7 @@ fn tag(group: &GroupTag, at: Point, scale: f64) -> Items {
     };
     lines(vec![
         shape(
-            Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius)))
+            Shape::rect(Purpose::Plate, boxed(rect), round_coord(radius))
                 .pointer(Pointer::None)
                 .filled(Paint::Gradient {
                     id: GradientId::Door {
@@ -97,7 +97,7 @@ pub(super) fn tag_marks(tags: &[GroupTag], end: Point, scale: f64) -> Items {
         };
         let bright = Colour::Bright { color: group.color };
         shape(
-            Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(side / 2.0)))
+            Shape::rect(Purpose::Plate, boxed(rect), round_coord(side / 2.0))
                 .pointer(Pointer::None)
                 .filled(Paint::from(&bright)),
         )

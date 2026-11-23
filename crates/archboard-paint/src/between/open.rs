@@ -275,7 +275,7 @@ pub(super) fn edge(area: Rect, solid: f64) -> Item {
             ..Stroke::new(Token::DiagramText, width)
         };
         Item::Shape(
-            Shape::rect(Purpose::Plate, area, Some(EDGE_CORNER))
+            Shape::rect(Purpose::Plate, area, EDGE_CORNER)
                 .unfilled()
                 .stroked(stroke),
         )

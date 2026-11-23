@@ -30,7 +30,7 @@ fn gradient_of(palette: &Palette, gradient: &BeamGradient) -> Gradient {
                 clippy::cast_possible_truncation,
                 reason = "a gradient's offsets are f32"
             )]
-            let offset = stop.offset.unwrap_or(0.0) as f32;
+            let offset = stop.offset as f32;
             ColorStop {
                 offset,
                 color: palette.stop(stop, 1.0).into(),

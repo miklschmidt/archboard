@@ -163,7 +163,7 @@ pub(super) fn paint_fragment(
     let tab = frame.tab;
     let ink = full_line_colour(palette, standing);
     let words = standing_palette(palette, standing);
-    let outline = Shape::rect(Purpose::Box, boxed(rect), Some(FRAGMENT_RADIUS));
+    let outline = Shape::rect(Purpose::Box, boxed(rect), FRAGMENT_RADIUS);
     let mark_x = rect.x + rect.width - PIN_INSET;
     vec![Item::Group(Group {
         opacity: ghost_opacity(standing),
