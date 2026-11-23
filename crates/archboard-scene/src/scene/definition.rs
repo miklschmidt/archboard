@@ -22,7 +22,7 @@ pub enum Head {
     Open,
     /// A solid wedge: a mutation.
     Wedge,
-    /// An eye, with a rounded back, a clear centre and a sharp tip: a query.
+    /// An eye, with a rounded back, a dot at its centre and a sharp tip: a query.
     Eye,
     /// An "=" behind a small open point: a compute.
     Equals,
@@ -133,10 +133,8 @@ pub struct Marker {
     pub view: f64,
     /// The point of the square laid on the path's end.
     pub reference: Point,
-    /// The point of the square a viewer keeps in place when it draws the
-    /// marker larger than its size: a head's tip, a ring's centre.
-    pub hold: Point,
-    /// How big the square is drawn, in widths of the path's stroke.
+    /// How big the square is drawn, in the picture's units, whatever the
+    /// path's stroke.
     pub size: f64,
     /// What it draws in its square.
     pub shapes: Vec<Shape>,

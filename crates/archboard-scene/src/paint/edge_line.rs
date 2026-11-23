@@ -8,7 +8,10 @@ use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, point, route, shape};
 use crate::paint::cards::halo;
-use crate::paint::heads::{ECHELON, IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker};
+use crate::paint::colour::{light_dark, translucent};
+use crate::paint::heads::{
+    ECHELON, IMPRINT_GLOW, IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker,
+};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, at_port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -38,8 +41,8 @@ pub(super) fn arrowhead_reach(head: Head) -> f64 {
 }
 
 /// A mark in one ink as a marker for the end of a line of a weight.
-pub(super) fn arrowhead_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
-    mark_marker(id, head, weight, ink)
+pub(super) fn arrowhead_marker(id: MarkerId, head: Head, ink: &Colour) -> Marker {
+    mark_marker(id, head, ink)
 }
 
 /// The route with its body cut short of its marks: by `end` at its end and by
@@ -59,26 +62,42 @@ fn body_between(curve: &Curve, start: f64, end: f64) -> Curve {
     }
 }
 
-/// A mutation's imprint: a short bar along its target's edge, centred on the
-/// line's tip and across the way the line arrives, reaching `reach` to either
-/// side. A viewer that moves draws it fading at both ends with a soft glow;
-/// a document draws it flat.
-fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Option<Shape> {
+/// A mutation's imprint: a bar along its target's edge, across the way the
+/// line arrives, centred on the line's tip and reaching `reach` to either
+/// side. It lies just in front of the edge, the card drawn over the line, so
+/// the whole of its width shows, on a glow in its ink. A viewer that moves
+/// draws it fading at both ends; a document draws it flat.
+fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Vec<Shape> {
+    if reach <= 0.0 {
+        return Vec::new();
+    }
     let walk = Walk::of(curve);
     let end = walk.stand(walk.length());
-    (reach > 0.0).then(|| {
-        let from = end.turned(0.0, -reach);
-        let to = end.turned(0.0, reach);
+    let from = end.turned(-IMPRINT_WIDTH / 2.0, -reach);
+    let to = end.turned(-IMPRINT_WIDTH / 2.0, reach);
+    let along = |purpose: Purpose, stroke: Stroke| {
         Shape::new(
-            Purpose::Imprint,
+            purpose,
             Geometry::Line {
                 from: point(from.x, from.y),
                 to: point(to.x, to.y),
             },
         )
         .unfilled()
-        .stroked(Stroke::new(ink, IMPRINT_WIDTH).capped(Cap::Butt))
-    })
+        .stroked(stroke)
+    };
+    let (breadth, light, dark) = IMPRINT_GLOW;
+    let glow = light_dark(&translucent(ink, light), &translucent(ink, dark));
+    vec![
+        along(
+            Purpose::Glow,
+            Stroke::new(&glow, breadth).capped(Cap::Round),
+        ),
+        along(
+            Purpose::Imprint,
+            Stroke::new(ink, IMPRINT_WIDTH).capped(Cap::Butt),
+        ),
+    ]
 }
 
 /// The subject kind a drawn line is: a flow step drawn on the picture, or a relationship.
@@ -218,12 +237,7 @@ pub(super) fn paint_edge_line(
         if !defined.contains(&id) {
             defined.push(id.clone());
             parts.push(vec![Item::Definitions {
-                definitions: vec![Definition::Marker(arrowhead_marker(
-                    id.clone(),
-                    mark,
-                    weight,
-                    &ink,
-                ))],
+                definitions: vec![Definition::Marker(arrowhead_marker(id.clone(), mark, &ink))],
             }]);
         }
         id
@@ -231,7 +245,11 @@ pub(super) fn paint_edge_line(
     line.marker = head.map(&mut marker);
     line.start_marker = tail.map(&mut marker);
     if look.is_some_and(|look| look.imprint) && !step {
-        parts.extend(imprint(&routed.curve, imprint_reach, &ink).map(shape));
+        parts.extend(
+            imprint(&routed.curve, imprint_reach, &ink)
+                .into_iter()
+                .map(shape),
+        );
     }
     let ring_swipe = standing.and_then(|_| swipe_around_ring(routed, tail));
     parts.push(standing_swipe(

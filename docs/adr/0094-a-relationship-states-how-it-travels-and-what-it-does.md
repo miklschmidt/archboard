@@ -178,20 +178,28 @@ indigo. A kind no longer sets the arrowhead.
 | Effect        | Body                         | At the target                                      | At the caller |
 | ------------- | ---------------------------- | -------------------------------------------------- | ------------- |
 | Mutation      | solid                        | a solid wedge, and the write's imprint on the card | plain         |
-| Query         | solid                        | an eye: rounded back, clear center, sharp tip      | a hollow ring |
+| Query         | solid                        | an eye: rounded back, dot at center, sharp tip     | a hollow ring |
 | Compute       | solid                        | an "=" (two short bars) just behind a small point  | plain         |
 | Declared only | long broken strokes, thinner | a detached open chevron                            | plain         |
 
-The imprint of a mutation is a short stripe along the card's edge, centered on the tip, fading at
-both ends with a soft glow, and kept inside the port's share of the edge. An export draws it as a
-flat contact bar. The ring of a query sits on the caller's edge, where the answer lands. The body
+The imprint of a mutation is a short stripe along the card's edge, centered on the tip, on a soft
+glow in the kind's ink, and kept inside the port's share of the edge. It lies just in front of the
+edge: the card is drawn over its lines, and a stripe centered on the edge showed only half its
+width. The live reader fades the stripe at both ends; an export draws it flat over a blurred glow.
+The owner asked for a thicker stripe with a colored glow, and the advisors set it at 3.6, as thick
+as an emphasised line, so the wedge keeps its point, with a glow a lane (16) broad, 0.4 solid at
+its heart on the light ground and 0.6 on the dark one, where the inks are already dimmed. Exports
+glow too, because a still picture in a README is half of what readers see, and the export's
+colors already need the same modern CSS that its blur does. The ring of a query sits on the caller's edge, where the answer lands. The body
 of a compute stops before its bars.
 
 The body is solid for every effect but declared-only. The owner decided it: "Dashes / dots make
-busy diagrams harder to follow, so use sparsely." The ends carry the effect. A head, a ring and
-the bars keep a minimum size on screen, and the openings, the eye's center and the gap of the "=",
-keep at least 2 clear pixels, so that they survive the opening zoom of a wide scope. Every line
-draws thicker than before, and the weight of emphasis stands on top of that base.
+busy diagrams harder to follow, so use sparsely." The ends carry the effect. Every mark scales
+with the picture, as its line does, one size in picture units at every zoom, near or far. A viewer
+once grew the marks to a least size on screen when the picture was seen from far, and the far view
+grew them with its wider lines; the owner dropped both: "they barely change anyway so they only
+complicate things." Every line draws thicker than before, and the weight of emphasis stands on top
+of that base.
 
 Everything is drawn in the kind's ink. A comparison's standing color replaces the ink and keeps
 the shapes, so the effect still reads under a comparison. Emphasis thickens the body and keeps

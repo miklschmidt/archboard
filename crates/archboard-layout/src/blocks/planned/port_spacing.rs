@@ -1,11 +1,9 @@
-//! Reserve distinct lines across opposite walls before accepting a route.
+//! Keep ports apart across opposite walls and along a door's walls.
 
 use super::{model::Model, shape::Shape};
 use crate::{blocks::assembly::PlacedLine, geometry::Point, lanes::chains::LANE};
 
-/// How far apart two lines at opposite walls of one card must stand to read
-/// as two lines, not as one line behind the card: one lane, the gap between
-/// two parallel lines.
+/// The gap that keeps two distinct ports readable: one lane.
 const APART: f64 = LANE;
 
 const OFFSETS: [f64; 4] = [APART, -APART, 2.0 * APART, -2.0 * APART];
@@ -33,42 +31,27 @@ fn one_subject(model: &Model<'_>, one: usize, other: usize) -> bool {
         || model.endpoints[other].foot == Some(one)
 }
 
-fn opposite_offset((at, next): (Point, Point), (other, away): (Point, Point)) -> Option<f64> {
-    let horizontal = at.y == next.y && other.y == away.y;
-    let vertical = at.x == next.x && other.x == away.x;
-    if horizontal && (next.x - at.x) * (away.x - other.x) < 0.0 {
-        Some(other.y - at.y)
-    } else if vertical && (next.y - at.y) * (away.y - other.y) < 0.0 {
-        Some(other.x - at.x)
-    } else {
-        None
-    }
+#[derive(Clone, Copy)]
+enum WallPair {
+    Opposite,
+    DistinctDoorPorts,
 }
 
-fn conflicts_at(
-    model: &Model<'_>,
-    edge: usize,
-    points: &[Point],
-    source: bool,
-    old: &PlacedLine,
-) -> bool {
-    let other = model.edge_index[old.id.as_str()];
-    let apart = APART + model.half(edge) + model.half(other);
-    let near = [true, false].map(|os| {
-        opposite_offset(end(points, source), end(&old.points, os))
-            .is_some_and(|by| by.abs() < apart)
-    });
-    if near == [false, false] {
-        return false;
+impl WallPair {
+    fn offset(self, (at, next): (Point, Point), (other, away): (Point, Point)) -> Option<f64> {
+        let requires_gap = |on: f64, off: f64, their_on: f64, their_off: f64| {
+            (off - on) * (their_off - their_on) < 0.0
+                || matches!(self, Self::DistinctDoorPorts) && (on - their_on).abs() < 0.1
+        };
+        if at.y == next.y && other.y == away.y && requires_gap(at.x, next.x, other.x, away.x) {
+            Some(other.y - at.y)
+        } else if at.x == next.x && other.x == away.x && requires_gap(at.y, next.y, other.y, away.y)
+        {
+            Some(other.x - at.x)
+        } else {
+            None
+        }
     }
-    edge != other
-        && [true, false].into_iter().zip(near).any(|(os, near)| {
-            near && one_subject(
-                model,
-                endpoint(model, edge, source),
-                endpoint(model, other, os),
-            )
-        })
 }
 
 pub(super) fn conflicts(
@@ -77,9 +60,7 @@ pub(super) fn conflicts(
     points: &[Point],
     old: &PlacedLine,
 ) -> bool {
-    [true, false]
-        .into_iter()
-        .any(|source| conflicts_at(model, edge, points, source, old))
+    Peer::of(model, edge, old).is_some_and(|peer| peer.conflicts(points))
 }
 
 pub(super) fn clear(model: &Model<'_>, routes: &[PlacedLine]) -> bool {
@@ -106,16 +87,8 @@ fn offsets(
     let position = if horizontal { at.y } else { at.x };
     offsets.extend([lo - position, hi - position]);
     for peer in peers {
-        for (os, meets) in [true, false]
-            .into_iter()
-            .zip(peer.meets[usize::from(!source)])
-        {
-            if !meets {
-                continue;
-            }
-            if let Some(by) = opposite_offset(end(points, source), end(&peer.line.points, os)) {
-                offsets.extend([by + peer.apart, by - peer.apart]);
-            }
+        for by in peer.offsets(points, source) {
+            offsets.extend([by + peer.apart, by - peer.apart]);
         }
     }
     let mut seen = rustc_hash::FxHashSet::default();
@@ -129,22 +102,23 @@ pub(super) struct Peer<'a> {
     line: &'a PlacedLine,
     /// How far apart the two lines' ends stand at the least: a lane, and each cable's half.
     apart: f64,
-    /// For the line's source and its target, whether the peer's source and its target stand on
-    /// the same subject. A route of the line's own relationship stands on none.
-    meets: [[bool; 2]; 2],
+    /// For each of the line's ends, which walls its port must keep clear of at each peer end.
+    walls: [[Option<WallPair>; 2]; 2],
 }
 impl Peer<'_> {
-    /// `conflicts_at` with this peer.
-    fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
-        let meets = self.meets[usize::from(!source)];
-        [true, false].into_iter().zip(meets).any(|(os, meets)| {
-            meets
-                && opposite_offset(end(points, source), end(&self.line.points, os))
-                    .is_some_and(|by| by.abs() < self.apart)
-        })
+    fn offsets(&self, points: &[Point], source: bool) -> impl Iterator<Item = f64> {
+        [true, false]
+            .into_iter()
+            .zip(self.walls[usize::from(!source)])
+            .filter_map(move |(os, walls)| {
+                walls?.offset(end(points, source), end(&self.line.points, os))
+            })
     }
 
-    /// `conflicts` with this peer.
+    fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
+        self.offsets(points, source).any(|by| by.abs() < self.apart)
+    }
+
     pub(super) fn conflicts(&self, points: &[Point]) -> bool {
         [true, false]
             .into_iter()
@@ -155,18 +129,30 @@ impl Peer<'_> {
 impl<'a> Peer<'a> {
     /// A placed route as a peer of a line, if it is one.
     pub(super) fn of(model: &Model<'_>, edge: usize, line: &'a PlacedLine) -> Option<Self> {
-        let (from, to) = model.ends[edge];
         let other = model.edge_index[line.id.as_str()];
-        let (a, b) = model.ends[other];
-        let meets = [from, to].map(|at| [a, b].map(|end| one_subject(model, at, end)));
-        (meets != [[false; 2]; 2]).then_some(Self {
+        if edge == other {
+            return None;
+        }
+        let ends = |edge| {
+            let (from, to) = model.ends[edge];
+            [(from, true), (to, false)]
+        };
+        let walls = ends(edge).map(|(at, source)| {
+            ends(other).map(|(end, other_source)| {
+                if at == end
+                    && model.endpoints[at].door
+                    && (source != other_source || model.treatments[edge] != model.treatments[other])
+                {
+                    Some(WallPair::DistinctDoorPorts)
+                } else {
+                    one_subject(model, at, end).then_some(WallPair::Opposite)
+                }
+            })
+        });
+        walls.iter().flatten().any(Option::is_some).then_some(Self {
             line,
             apart: APART + model.half(edge) + model.half(other),
-            meets: if edge == other {
-                [[false; 2]; 2]
-            } else {
-                meets
-            },
+            walls,
         })
     }
 }

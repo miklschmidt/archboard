@@ -2,8 +2,6 @@
 //! clock, whether the frame looks as the last one did, and whether anything
 //! still moves.
 
-use archboard_scene::paint::design::mark_growth;
-
 use super::Stage;
 use crate::draw::play_at;
 use crate::presentation::{Camera, Playing, Presentation};
@@ -30,9 +28,6 @@ impl Stage {
         };
         self.swap_views(now);
         self.presentation.far = self.far.at(now);
-        self.presentation.mark_growth = self
-            .pixel_ratio
-            .map(|ratio| mark_growth(ratio, self.presentation.camera.scale));
         self.plays
             .retain(|(_, start)| play_at(*start, now).is_some());
         self.presentation.plays = self
