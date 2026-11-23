@@ -12,7 +12,7 @@
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { lapsed, ms } from "@archboard/timing";
+import { expiresAt, ms } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
@@ -319,8 +319,8 @@ class TalkCapture {
 	 * @returns Once it has, or once waiting longer would not help.
 	 */
 	async #drained(until: number): Promise<void> {
-		const started = performance.now();
-		while (!lapsed("recording.tapDrain", started, performance.now())) {
+		const deadline = expiresAt("recording.tapDrain", performance.now());
+		while (performance.now() < deadline) {
 			const last = this.#blocks.at(-1);
 			if (last !== undefined && last.frame + last.pcm.length >= until) return;
 			// oxlint-disable-next-line no-await-in-loop -- the tap's messages arrive between turns
