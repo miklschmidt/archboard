@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -134,9 +134,10 @@ describe("evaluation process ownership with local shell fakes", () => {
 	});
 });
 
-test("cancelled server readiness stops the exact fake server and its inherited child", async () => {
+test("cancellation during a successful health probe stops the server and its inherited child", async () => {
 	const root = mkdtempSync(path.join(tmpdir(), "skill-server-cancel-"));
 	const controller = new AbortController();
+	const cancelled = new Error("Cancelled during the health probe.");
 	const pids = path.join(root, "pids");
 	mkdirSync(path.join(root, "apps/server/src"), { recursive: true });
 	writeFileSync(
@@ -144,21 +145,32 @@ test("cancelled server readiness stops the exact fake server and its inherited c
 		`
 		const child = Bun.spawn(["sleep", "60"], { stdout: "ignore", stderr: "ignore" });
 		await Bun.write(${JSON.stringify(pids)}, JSON.stringify([process.pid, child.pid]));
-		Bun.serve({ port: Number(process.env.PORT), fetch() { return Response.json({ pid: 0 }); } });
+		Bun.serve({ port: Number(process.env.PORT), fetch() { return Response.json({ pid: process.pid }); } });
 	`,
 	);
-	let timer: ReturnType<typeof setInterval> | undefined;
+	const fetchHealth = globalThis.fetch;
+	const healthProbe = spyOn(globalThis, "fetch").mockImplementation(
+		Object.assign(
+			async (...args: Parameters<typeof fetchHealth>) => {
+				const response = await fetchHealth(...args);
+				if (response.ok) controller.abort(cancelled);
+				return response;
+			},
+			{ preconnect: fetchHealth.preconnect },
+		),
+	);
+	let server: Awaited<ReturnType<typeof startServer>> | undefined;
 	try {
-		timer = setInterval(() => {
-			if (existsSync(pids)) controller.abort();
-		}, TEST_POLL_MS);
 		await expect(
-			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal),
-		).rejects.toBeInstanceOf(Error);
+			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal).then(
+				(started) => (server = started),
+			),
+		).rejects.toBe(cancelled);
 		const identities: number[] = JSON.parse(readFileSync(pids, "utf8"));
 		identities.forEach(expectStopped);
 	} finally {
-		clearInterval(timer);
+		healthProbe.mockRestore();
+		await server?.stop();
 		rmSync(root, { recursive: true, force: true });
 	}
 });

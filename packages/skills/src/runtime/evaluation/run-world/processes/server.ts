@@ -80,7 +80,9 @@ async function awaitHealthy(
 						`the evaluation server died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
 					);
 				}
-				return (await healthPid(url)) === child.pid || undefined;
+				const pid = await healthPid(url);
+				signal.throwIfAborted();
+				return pid === child.pid ? true : undefined;
 			},
 			{ signal },
 		);
