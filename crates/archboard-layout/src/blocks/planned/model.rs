@@ -46,11 +46,22 @@ pub(super) struct Model<'a> {
     pub edge_index: rustc_hash::FxHashMap<&'a str, usize>,
     pub ends: Vec<(usize, usize)>,
     pub treatments: Vec<String>,
+    /// How wide each line is: a cable as wide as its strands stand apart, a lone line nothing.
+    pub girth: Vec<f64>,
     pub outgoing: Vec<Vec<usize>>,
     pub incoming: Vec<Vec<usize>>,
 }
 
+/// How far apart the strands of a cable stand: half a lane, so that a cable reads as one
+/// ribbon.
+pub(super) const STRAND: f64 = crate::lanes::chains::LANE / 2.0;
+
 impl<'a> Model<'a> {
+    /// How far a line's ink reaches to either side of its route.
+    pub(super) fn half(&self, edge: usize) -> f64 {
+        self.girth[edge] / 2.0
+    }
+
     pub(super) fn new(graph: &'a Node) -> Result<Self, String> {
         let captions: Vec<(String, f64, f64)> =
             serde_json::from_str(graph.option(GROUP_CAPTIONS).unwrap_or("[]"))
@@ -74,6 +85,7 @@ impl<'a> Model<'a> {
             edge_index: rustc_hash::FxHashMap::default(),
             ends: Vec::new(),
             treatments: Vec::new(),
+            girth: Vec::new(),
             outgoing: Vec::new(),
             incoming: Vec::new(),
         };
@@ -124,6 +136,14 @@ impl<'a> Model<'a> {
                         .unwrap_or(""),
                     edge.option(crate::graph::HELD_EFFECT).unwrap_or("")
                 )
+            })
+            .collect();
+        model.girth = (model.edges.iter())
+            .map(|edge| {
+                let strands = edge
+                    .option(crate::graph::CABLE)
+                    .map_or(1, |cable| cable.split(';').count());
+                (strands - 1) as f64 * STRAND
             })
             .collect();
         model.outgoing = vec![Vec::new(); model.endpoints.len()];

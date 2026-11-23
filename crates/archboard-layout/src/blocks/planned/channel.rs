@@ -39,6 +39,36 @@ struct FixedGeometry {
     foreign: super::clearance::Clearance,
 }
 
+impl FixedGeometry {
+    /// What the line at `index`, whose ink reaches `half` to either side, keeps clear of.
+    fn of(
+        model: &Model<'_>,
+        topology: &Topology,
+        (index, half): (usize, f64),
+        shape: &Shape,
+    ) -> Self {
+        let cards = shape
+            .endpoints
+            .keys()
+            .map(|&id| shape.clearance((model.ends[index], half), model.endpoints[id].foot, id))
+            .collect();
+        let captions = (shape.drawing.regions.iter())
+            .map(|r| inflate(r.caption, 16.0 + half))
+            .collect();
+        let foreign = shape
+            .scopes
+            .iter()
+            .filter(|(scope, _)| foreign(model, topology, index, **scope))
+            .map(|(_, placed)| inflate(placed.bounds, LINE_CLEAR + half))
+            .collect();
+        Self {
+            cards: super::clearance::Clearance::new(cards),
+            captions: super::clearance::Clearance::new(captions),
+            foreign: super::clearance::Clearance::new(foreign),
+        }
+    }
+}
+
 /// The guard borrows one immutable candidate set and indexes its fixed obstacles.
 pub(super) struct Probe<'a, 'g> {
     model: &'a Model<'g>,
@@ -88,35 +118,20 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .borrow_mut()
                 .entry(index)
                 .or_insert_with(|| {
-                    let (from, to) = model.ends[index];
-                    let cards = shape
-                        .endpoints
-                        .keys()
-                        .map(|&id| shape.clearance((from, to), model.endpoints[id].foot, id))
-                        .collect();
-                    let captions = shape
-                        .drawing
-                        .regions
-                        .iter()
-                        .map(|r| inflate(r.caption, 16.0))
-                        .collect();
-                    let foreign = shape
-                        .scopes
-                        .iter()
-                        .filter(|(scope, _)| foreign(model, topology, index, **scope))
-                        .map(|(_, placed)| inflate(placed.bounds, LINE_CLEAR))
-                        .collect();
-                    Rc::new(FixedGeometry {
-                        cards: super::clearance::Clearance::new(cards),
-                        captions: super::clearance::Clearance::new(captions),
-                        foreign: super::clearance::Clearance::new(foreign),
-                    })
+                    Rc::new(FixedGeometry::of(
+                        model,
+                        topology,
+                        (index, model.half(index)),
+                        shape,
+                    ))
                 }),
         );
-        let labels = (shape.labels.iter())
-            .filter(|(id, _)| words && **id != index)
-            .map(|(_, &r)| inflate(r, 12.01))
-            .collect();
+        let labels = super::clearance::Clearance::new(
+            (shape.labels.iter())
+                .filter(|(id, _)| words && **id != index)
+                .map(|(_, &r)| inflate(r, 12.01 + model.half(index)))
+                .collect(),
+        );
         Self {
             model,
             topology,
@@ -125,7 +140,7 @@ impl<'a, 'g> Probe<'a, 'g> {
             bounds,
             fixed,
             words,
-            labels: super::clearance::Clearance::new(labels),
+            labels,
             junctions: shape
                 .routes
                 .iter()
@@ -139,7 +154,7 @@ impl<'a, 'g> Probe<'a, 'g> {
         let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
         let (from, to) = model.ends[index];
         if let Some(reason) = basic(
-            points,
+            (points, model.girth[index]),
             shape.endpoints[&from],
             shape.endpoints[&to],
             self.bounds,
@@ -176,7 +191,7 @@ impl<'a, 'g> Probe<'a, 'g> {
         if !self.fixed.captions.clear(points) {
             return Some("caption");
         }
-        if hugs_wall(shape, points) {
+        if hugs_wall(shape, points, model.half(index)) {
             return Some("wall lane");
         }
         if !self.fixed.foreign.clear(points) {
@@ -218,6 +233,8 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
 
 struct Junction<'a> {
     line: &'a PlacedLine,
+    /// How much further the two lines' ink reaches between them than two lone lines'.
+    spread: f64,
     bounds: super::junctions::Envelope,
     /// The envelope of each run of the line, when a guard compares it with many candidates.
     runs: Vec<super::junctions::Envelope>,
@@ -241,6 +258,7 @@ impl<'a> Junction<'a> {
         let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
         Some(Self {
             line,
+            spread: model.half(index) + model.half(other),
             bounds: super::junctions::Envelope::new(&line.points),
             runs: Vec::new(),
             shared: topology.memberships[index]
@@ -252,7 +270,7 @@ impl<'a> Junction<'a> {
         })
     }
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
-        bounds.apart(self.bounds)
+        bounds.apart_by(self.bounds, self.spread)
             || ((!self.shared
                 || super::junctions::sharing(
                     points,
@@ -266,13 +284,13 @@ impl<'a> Junction<'a> {
                     self.arrows[1],
                 ))
                 && if self.runs.is_empty() {
-                    super::junctions::ordered(points, &self.line.points, self.shared)
+                    super::junctions::ordered(points, &self.line.points, (self.shared, self.spread))
                 } else {
                     super::junctions::ordered_runs(
                         points,
                         &self.line.points,
                         (self.bounds, &self.runs),
-                        self.shared,
+                        (self.shared, self.spread),
                     )
                 })
     }
@@ -342,7 +360,9 @@ pub(super) fn shared_junction(
 ) -> bool {
     let bounds = super::junctions::Envelope::new(points);
     // A line far from this one clears it whatever their fans and ends.
-    if bounds.apart(super::junctions::Envelope::new(&line.points)) {
+    let spread = model.half(index)
+        + (model.edge_index.get(line.id.as_str())).map_or(0.0, |&other| model.half(other));
+    if bounds.apart_by(super::junctions::Envelope::new(&line.points), spread) {
         return model.edge_index.contains_key(line.id.as_str());
     }
     Junction::new(model, topology, index, line).is_some_and(|pair| pair.clear(points, bounds))
@@ -364,15 +384,30 @@ pub(super) fn shared_fragment(
         && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
-/// Rounded corners must leave the complete arrow approach after painting. A
-/// line with no bend needs only the room its marks take.
-pub(super) fn approaches(points: &[Point]) -> bool {
+/// Rounded corners must leave the complete arrow approach after painting, on the inner strand
+/// of a cable too, which turns `half` sooner. A line with no bend needs only the room its
+/// marks take.
+pub(super) fn approaches(points: &[Point], half: f64) -> bool {
     let required = if points.len() > 2 {
-        APPROACH_STRAIGHT + BEND_RADIUS
+        APPROACH_STRAIGHT + BEND_RADIUS + half + if half > 0.0 { 24.0 } else { 0.0 }
     } else {
         STRAIGHT_RUN
     };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+}
+
+/// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
+/// that turn the same way, the inner strand's run is shorter by the girth, and still holds both
+/// rounded corners.
+fn turns_clear(points: &[Point], girth: f64) -> bool {
+    let turn = |at: usize| {
+        let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
+        ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)).signum()
+    };
+    girth == 0.0
+        || (1..points.len().saturating_sub(2)).all(|at| {
+            turn(at) != turn(at + 1) || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS
+        })
 }
 
 /// Whether a line keeps off a scope: it crosses no wall of it and ends on no frame of it.
@@ -415,7 +450,7 @@ pub(super) fn attached(at: Point, next: Point, bounds: Rect) -> bool {
     }
 }
 
-fn hugs_wall(shape: &Shape, points: &[Point]) -> bool {
+fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
     shape
         .scopes
         .iter()
@@ -444,19 +479,26 @@ fn hugs_wall(shape: &Shape, points: &[Point]) -> bool {
                     )
                 };
                 hi.min(end) - lo.max(start) > 16.0
-                    && walls.iter().any(|wall| (at - wall).abs() < 16.0 - 1e-6)
+                    && walls
+                        .iter()
+                        .any(|wall| (at - wall).abs() < 16.0 + half - 1e-6)
             })
         })
 }
 
-fn basic(points: &[Point], source: Rect, target: Rect, bounds: Rect) -> Option<&'static str> {
+fn basic(
+    (points, girth): (&[Point], f64),
+    source: Rect,
+    target: Rect,
+    bounds: Rect,
+) -> Option<&'static str> {
     if points
         .windows(2)
         .any(|p| p[0].x != p[1].x && p[0].y != p[1].y)
     {
         return Some("slanted");
     }
-    if points.len() < 2 || !approaches(points) {
+    if points.len() < 2 || !approaches(points, girth / 2.0) || !turns_clear(points, girth) {
         return Some("approach");
     }
     if meets_itself(points) {

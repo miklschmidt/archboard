@@ -45,28 +45,26 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
+    let half = model.half(edge);
     if model.endpoints[endpoint].door
-        && let Some((index, count)) = door_slot(model, edge, endpoint, source)
+        && let Some((index, widths)) = door_slot(model, edge, endpoint, source)
     {
-        if !room(at, side, count, DOOR_MARGIN, LANE) {
+        if !room(at, side, &widths, DOOR_MARGIN, LANE) {
             return None;
         }
-        return Some(on_wall(
-            at,
-            side,
-            fraction_of(at, index, count, DOOR_MARGIN),
-            DOOR_MARGIN,
-        ));
+        let point = slot_of(at, index, &widths, DOOR_MARGIN);
+        return Some(on_wall(at, side, point, DOOR_MARGIN + half));
     }
+    let widths = widths_of(model, incidents, &kinds);
     let (margin, spacing) = spacing(source, model.endpoints[endpoint].door);
-    if !room(at, side, kinds.len(), margin, spacing) {
+    if !room(at, side, &widths, margin, spacing) {
         return None;
     }
     let index = kinds
         .iter()
         .position(|kind| *kind == model.treatments[edge])?;
-    let point = distributed(at, index, kinds.len(), incidents.len(), toward, margin);
-    let selected = on_wall(at, side, point, margin);
+    let point = distributed(at, index, &widths, incidents.len(), toward, margin);
+    let selected = on_wall(at, side, point, margin + half);
     if kinds.len() != 1 {
         return Some(selected);
     }
@@ -76,29 +74,43 @@ fn choose_port(
 /// How far a door keeps its ports from its rounded corners.
 const DOOR_MARGIN: f64 = 12.0;
 
-/// The slot of a line's end on a door, and how many slots the door holds: one for each kind of
-/// line the door takes in, then one for each it sends out, a lane apart. A head and a tail then
-/// never stand within a lane of each other on opposite walls, where they would read as one line
-/// through the door. A door that joins one kind of line in one direction has no slots.
+/// The slot of a line's end on a door, and the width of each slot the door holds: one for each
+/// kind of line the door takes in, then one for each it sends out, a lane apart and each as wide
+/// as its cable. A head and a tail then never stand within a lane of each other on opposite
+/// walls, where they would read as one line through the door. A door that joins one kind of
+/// line in one direction has no slots.
 fn door_slot(
     model: &Model<'_>,
     edge: usize,
     endpoint: usize,
     source: bool,
-) -> Option<(usize, usize)> {
-    let heads = kinds_of(model, &model.incoming[endpoint]);
-    let tails = kinds_of(model, &model.outgoing[endpoint]);
-    let count = heads.len() + tails.len();
-    if count <= 1 {
+) -> Option<(usize, Vec<f64>)> {
+    let (incoming, outgoing) = (&model.incoming[endpoint], &model.outgoing[endpoint]);
+    let heads = kinds_of(model, incoming);
+    let tails = kinds_of(model, outgoing);
+    if heads.len() + tails.len() <= 1 {
         return None;
     }
+    let mut widths = widths_of(model, incoming, &heads);
+    widths.extend(widths_of(model, outgoing, &tails));
     let kind = model.treatments[edge].as_str();
     let index = if source {
         heads.len() + tails.iter().position(|&one| one == kind)?
     } else {
         heads.iter().position(|&one| one == kind)?
     };
-    Some((index, count))
+    Some((index, widths))
+}
+
+/// How wide each kind's port is: as wide as the cable of that kind, all of whose lines share it.
+fn widths_of(model: &Model<'_>, incidents: &[usize], kinds: &[&str]) -> Vec<f64> {
+    (kinds.iter())
+        .map(|&kind| {
+            (incidents.iter())
+                .find(|&&edge| model.treatments[edge] == kind)
+                .map_or(0.0, |&edge| model.girth[edge])
+        })
+        .collect()
 }
 
 fn separate_roles(
@@ -130,7 +142,7 @@ fn separate_roles(
     let primary = on_wall(
         at,
         side,
-        distributed(at, 0, 1, others.len(), toward, margin),
+        distributed(at, 0, &[0.0], others.len(), toward, margin),
         margin,
     );
     shifted_port(at, side, selected, primary, own_margin)
@@ -172,13 +184,13 @@ fn shifted_port(at: Rect, side: Side, selected: Port, primary: Port, margin: f64
 fn distributed(
     at: Rect,
     index: usize,
-    kinds: usize,
+    widths: &[f64],
     incidents: usize,
     toward: Point,
     margin: f64,
 ) -> Point {
-    if kinds > 1 {
-        fraction_of(at, index, kinds, margin)
+    if widths.len() > 1 {
+        slot_of(at, index, widths, margin)
     } else if incidents > 1 {
         center(at)
     } else {
@@ -186,11 +198,18 @@ fn distributed(
     }
 }
 
-fn fraction_of(at: Rect, index: usize, count: usize, margin: f64) -> Point {
-    let fraction = index as f64 / (count - 1) as f64;
+/// The middle of one of some slots of these widths along a box's wall, a margin in from each
+/// end, with the room the slots leave shared evenly between them.
+fn slot_of(at: Rect, index: usize, widths: &[f64], margin: f64) -> Point {
+    let gaps = widths.len().saturating_sub(1).max(1) as f64;
+    let before: f64 = widths[..index].iter().sum();
+    let along = |length: f64| {
+        let gap = (length - 2.0 * margin - widths.iter().sum::<f64>()) / gaps;
+        margin + before + index as f64 * gap + widths[index] / 2.0
+    };
     Point {
-        x: at.x + margin + (at.width - 2.0 * margin) * fraction,
-        y: at.y + margin + (at.height - 2.0 * margin) * fraction,
+        x: at.x + along(at.width),
+        y: at.y + along(at.height),
     }
 }
 
@@ -327,9 +346,12 @@ pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
             (model.endpoints.iter().enumerate())
                 .filter(|(_, end)| end.door)
                 .filter_map(|(at, end)| {
-                    let slots = kinds_of(&model, &model.incoming[at]).len()
-                        + kinds_of(&model, &model.outgoing[at]).len();
-                    let width = 2.0 * DOOR_MARGIN + slots.saturating_sub(1) as f64 * LANE;
+                    let (incoming, outgoing) = (&model.incoming[at], &model.outgoing[at]);
+                    let mut slots = widths_of(&model, incoming, &kinds_of(&model, incoming));
+                    slots.extend(widths_of(&model, outgoing, &kinds_of(&model, outgoing)));
+                    let width = 2.0 * DOOR_MARGIN
+                        + slots.iter().sum::<f64>()
+                        + slots.len().saturating_sub(1) as f64 * LANE;
                     (width > end.node.width.unwrap_or_default())
                         .then(|| (end.node.id.clone(), width))
                 })
@@ -353,13 +375,20 @@ fn widen(node: &mut Node, widths: &rustc_hash::FxHashMap<String, f64>) {
     }
 }
 
-fn room(at: Rect, side: Side, count: usize, margin: f64, spacing: f64) -> bool {
+/// Whether a wall holds slots of these widths, each `spacing` from the next and a margin in from
+/// each end.
+fn room(at: Rect, side: Side, widths: &[f64], margin: f64, spacing: f64) -> bool {
     let span = if matches!(side, Side::Top | Side::Bottom) {
         at.width
     } else {
         at.height
     };
-    count <= 1 || (span - 2.0 * margin) / ((count - 1) as f64) >= spacing
+    let taken: f64 = widths.iter().sum();
+    match widths.len() {
+        0 => true,
+        1 => span - 2.0 * margin >= taken,
+        count => (span - 2.0 * margin - taken) / ((count - 1) as f64) >= spacing,
+    }
 }
 
 #[cfg(test)]

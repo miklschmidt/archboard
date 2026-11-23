@@ -224,6 +224,8 @@ fn overlap(a: Rect, b: Rect) -> bool {
 /// which each placed route finds once.
 pub(super) struct Meeting<'a> {
     routes: Vec<Met<'a>>,
+    /// How far the line's ink reaches to either side of its route.
+    half: f64,
     junctions: super::channel::Junctions<'a>,
 }
 
@@ -236,6 +238,8 @@ struct Met<'a> {
     reach: Rect,
     /// The route's words, with the room a line keeps from them.
     kept: Option<Rect>,
+    /// How far the route's ink reaches to either side of it.
+    half: f64,
 }
 
 impl<'a> Meeting<'a> {
@@ -245,15 +249,20 @@ impl<'a> Meeting<'a> {
         edge: usize,
         routes: &'a [PlacedLine],
     ) -> Self {
-        let met = |line: &'a PlacedLine| Met {
-            edge: model.edge_index[line.id.as_str()],
-            line,
-            peer: super::port_spacing::Peer::of(model, edge, line),
-            reach: inflate(bounds(&line.points), 1.0),
-            kept: line.label.map(|r| inflate(r, 12.01)),
+        let met = |line: &'a PlacedLine| {
+            let other = model.edge_index[line.id.as_str()];
+            Met {
+                edge: other,
+                line,
+                peer: super::port_spacing::Peer::of(model, edge, line),
+                reach: inflate(bounds(&line.points), 1.0 + model.half(other)),
+                kept: line.label.map(|r| inflate(r, 12.01)),
+                half: model.half(other),
+            }
         };
         Self {
             routes: routes.iter().map(met).collect(),
+            half: model.half(edge),
             junctions: super::channel::Junctions::new(model, topology, edge, routes),
         }
     }
@@ -262,15 +271,17 @@ impl<'a> Meeting<'a> {
     /// its ends stand too close to theirs, its ink or words cover their words, or the two
     /// meet in a junction that does not read.
     pub(super) fn blocking(&self, line: &PlacedLine) -> impl Iterator<Item = usize> {
-        let reach = inflate(bounds(&line.points), 1.0);
-        let kept = line.label.map(|r| inflate(r, 12.01));
+        let reach = inflate(bounds(&line.points), 1.0 + self.half);
         let envelope = super::junctions::Envelope::new(&line.points);
         let compatible = move |at: usize, old: &Met<'_>| {
             if (old.peer.as_ref()).is_some_and(|peer| peer.conflicts(&line.points)) {
                 return false;
             }
-            if kept.is_some_and(|r| crosses_box(&old.line.points, r))
-                || old.kept.is_some_and(|r| crosses_box(&line.points, r))
+            let kept = line.label.map(|r| inflate(r, 12.01));
+            if kept.is_some_and(|r| crosses_box(&old.line.points, inflate(r, old.half)))
+                || old
+                    .kept
+                    .is_some_and(|r| crosses_box(&line.points, inflate(r, self.half)))
                 || (line.label.zip(old.line.label))
                     .is_some_and(|(a, b)| overlap(inflate(a, 8.0), b))
             {
