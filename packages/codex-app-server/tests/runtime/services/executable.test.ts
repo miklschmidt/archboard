@@ -55,6 +55,32 @@ function oversizedFixture(root: string): string {
 	return executable;
 }
 
+function releasePackage(nodeModules: string): string {
+	const root = path.join(nodeModules, "@archboard", "cli-test");
+	fs.mkdirSync(root, { recursive: true });
+	return fs.realpathSync(root);
+}
+
+function nativeBinaryPath(...head: string[]): string {
+	return path.join(
+		path.sep,
+		...head,
+		"node_modules",
+		"@openai",
+		"codex-linux-x64",
+		"vendor",
+		"t",
+		"bin",
+		"codex",
+	);
+}
+
+function managedEnvironmentKeys(executable: string): string[] {
+	return Object.keys(nativeCodexEnvironment(executable)).filter((key) =>
+		key.startsWith("CODEX_MANAGED_BY_"),
+	);
+}
+
 describe("Codex executable ownership", () => {
 	test("resolves and verifies the installed pinned executable inside the given checkout", () => {
 		const executable = resolveCodexExecutable({ installedIn: installation().root });
@@ -214,12 +240,6 @@ describe("Codex executable ownership", () => {
 			return fs.realpathSync(packageRoot);
 		}
 
-		function releasePackage(nodeModules: string): string {
-			const root = path.join(nodeModules, "@archboard", "cli-test");
-			fs.mkdirSync(root, { recursive: true });
-			return fs.realpathSync(root);
-		}
-
 		function foundIn(layout: (base: string) => { root: string; codexModules: string }): void {
 			const base = fs.realpathSync(temporaryRoot());
 			try {
@@ -272,24 +292,10 @@ describe("Codex executable ownership", () => {
 	});
 
 	test("sets the managed environment for a native binary only, naming the package manager", () => {
-		const native = (...head: string[]): string =>
-			path.join(
-				path.sep,
-				...head,
-				"node_modules",
-				"@openai",
-				"codex-linux-x64",
-				"vendor",
-				"t",
-				"bin",
-				"codex",
-			);
-		const managed = (executable: string): string[] =>
-			Object.keys(nativeCodexEnvironment(executable)).filter((key) =>
-				key.startsWith("CODEX_MANAGED_BY_"),
-			);
-		expect(managed(native("home", ".bun", "install", "global"))).toEqual(["CODEX_MANAGED_BY_BUN"]);
-		expect(managed(native("project"))).toEqual(["CODEX_MANAGED_BY_NPM"]);
+		expect(managedEnvironmentKeys(nativeBinaryPath("home", ".bun", "install", "global"))).toEqual([
+			"CODEX_MANAGED_BY_BUN",
+		]);
+		expect(managedEnvironmentKeys(nativeBinaryPath("project"))).toEqual(["CODEX_MANAGED_BY_NPM"]);
 		expect(
 			nativeCodexEnvironment(
 				path.join(path.sep, "project", "node_modules", "@openai", "codex", "bin", "codex.js"),
