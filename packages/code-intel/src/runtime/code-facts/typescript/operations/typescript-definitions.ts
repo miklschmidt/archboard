@@ -5,6 +5,7 @@
 // stands for it and it is not a definition of the file. A member is qualified
 // by the names that hold it: `Ledger.post`, `api.read`, `Color.Red`.
 
+import { typeScriptAsync } from "#runtime/code-facts/typescript/operations/typescript-timing.ts";
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
@@ -371,8 +372,8 @@ const CALLED_BY_LANGUAGE = new Set([
 /**
  * What a declaration's syntax says beside its kind: that it declares a type
  * and the keys it closes, the call it only passes on, the key it picks its
- * operation by, the name whose value it holds, that a call made it, and that
- * the language calls it.
+ * operation by, the name whose value it holds, that a call made it, that
+ * the language calls it, and whether a callable is async.
  * @param name The declared name.
  * @param declaration The declaration.
  * @returns Those that hold.
@@ -382,7 +383,7 @@ function traitsOf(
 	declaration: Node,
 ): Pick<
 	Definition,
-	"type" | "closes" | "passes" | "picks" | "aliases" | "madeByCall" | "calledByLanguage"
+	"type" | "closes" | "passes" | "picks" | "aliases" | "madeByCall" | "calledByLanguage" | "async"
 > {
 	const passes = passesTo(declaration);
 	const aliases = aliasOf(declaration);
@@ -394,7 +395,17 @@ function traitsOf(
 		...(aliases === undefined ? {} : { aliases }),
 		...madeByCall(declaration),
 		...(called ? { calledByLanguage: true as const } : {}),
+		...asyncOf(declaration),
 	};
+}
+
+/**
+ * Whether a callable declaration is async, where its syntax tells.
+ * @param declaration The declaration.
+ * @returns The mark, or nothing for a declaration that is no callable or does not tell.
+ */
+function asyncOf(declaration: Node): Pick<Definition, "async"> {
+	return kindOf(declaration) === "function" ? typeScriptAsync(heldValue(declaration)) : {};
 }
 
 /**

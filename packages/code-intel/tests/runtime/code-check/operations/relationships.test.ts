@@ -5,8 +5,9 @@
 // The checkout `mall` holds a store whose Read and Write both use the shared
 // `addressOf`, which uses `normalize` in the same file; a server that calls
 // the store through its index; a sender that a listener and a mailer call;
-// a list that only names a type; and limits that a checker uses only as values
-// and a guard constructs. Each relationship below says what the check should
+// a list that only names a type; limits that a checker uses only as values
+// and a guard constructs; and a courier that awaits the sender's post and
+// calls its send plainly. Each relationship below says what the check should
 // find about it.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -120,7 +121,14 @@ beforeAll(async () => {
 			'import { send } from "../../notify/sender";\nexport function probe(): void { send(); }\n',
 		"src/store/StoreTests/probe.ts":
 			'import { send } from "../../notify/sender";\nexport function probe(): void { send(); }\n',
-		"src/notify/sender.ts": "export function send(): void {}\n",
+		"src/notify/sender.ts":
+			"export function send(): void {}\nexport async function post(): Promise<void> {}\n",
+		"src/notify/courier.ts": [
+			'import { post, send } from "./sender";',
+			"export async function deliver(): Promise<void> { await post(); }",
+			"export function ring(): void { send(); }",
+			"",
+		].join("\n"),
 		"src/notify/listener.ts":
 			'import { send } from "./sender";\nexport function listen(): void { send(); }\n',
 		"src/notify/mailer.ts":
@@ -174,30 +182,43 @@ beforeAll(async () => {
 					part("pV", "Limits", { path: "src/shared/limits.ts" }),
 					part("pC", "Checker", { path: "src/notify/checker.ts" }),
 					part("pG", "Guard", { path: "src/notify/guard.ts" }),
+					part("pK", "Courier", { path: "src/notify/courier.ts" }),
 				],
 				edges: [
 					// Drawn to one part of the store, and the server's code reaches Write too.
 					// This relationship stands for that call, so it finds only information.
-					edge("e1", ["pS", "pR"], "call"),
-					edge("e2", ["pW", "pR"], "call"),
+					edge("e1", ["pS", "pR"], "sync"),
+					edge("e2", ["pW", "pR"], "sync"),
 					// Drawn from the sender, while the listener's code calls the sender.
 					edge("e3", ["pN", "pI"], "event"),
-					// A data relationship that only a type joins.
-					edge("e4", ["pL", "pB"], "data"),
+					// A storage relationship that only a type joins.
+					edge("e4", ["pL", "pB"], "storage"),
 					// A dependency accepts the import that only a type gives.
 					edge("e5", ["pW", "pB"], "dependency"),
 					// A kind without the evidence key accepts every evidence kind.
 					edge("e6", ["pR", "pB"], "other"),
 					// Nothing in the code joins these.
-					edge("e7", ["pS", "pI"], "call"),
+					edge("e7", ["pS", "pI"], "sync"),
 					// The same direction as e3, anchored: the anchor decides, and it supports it.
 					edge("e8", ["pN", "pM"], "event", ["src/notify/mailer.ts", "send"]),
 					// An anchor whose only use is as a type, on a kind that accepts only a call.
-					edge("e9", ["pS", "pB"], "call", ["src/server/routes.ts", "Shelf"]),
+					edge("e9", ["pS", "pB"], "sync", ["src/server/routes.ts", "Shelf"]),
 					// The store holds the list, so evidence never joins them.
-					edge("e10", ["pT", "pL"], "call"),
-					// Anchored on a name the checker passes on as a value, which is call evidence.
-					edge("e11", ["pC", "pN"], "call", ["src/notify/checker.ts", "send"]),
+					edge("e10", ["pT", "pL"], "sync"),
+					// Anchored on a name the checker passes on as a value, which is call evidence, to
+					// queueMicrotask, which starts it.
+					edge("e11", ["pC", "pN"], "async", ["src/notify/checker.ts", "send"]),
+					// Dependencies whose code runs the target: anchored on the mailer's call, and with
+					// no anchor where the listener calls the sender.
+					edge("e12", ["pM", "pN"], "dependency", ["src/notify/mailer.ts", "send"]),
+					edge("e13", ["pI", "pN"], "dependency"),
+					// A dependency anchored on a name the list uses only as a type.
+					edge("e14", ["pL", "pB"], "dependency", ["src/store/list.ts", "Shelf"]),
+					// The courier awaits the post and calls send plainly, against the kinds drawn.
+					edge("e15", ["pK", "pN"], "sync", ["src/notify/courier.ts", "post"]),
+					edge("e16", ["pK", "pN"], "async", ["src/notify/courier.ts", "send"]),
+					// The mailer's plain call of send, drawn sync.
+					edge("e17", ["pM", "pN"], "sync", ["src/notify/mailer.ts", "send"]),
 				],
 				flows: [
 					{
@@ -265,6 +286,10 @@ test("every finding of the relationship judgement, and nothing about a relations
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
 			"ANCHOR_MISMATCH e9 warning",
+			"CALL_TIMING_MISMATCH e15 information",
+			"CALL_TIMING_MISMATCH e16 information",
+			"DEPENDENCY_CALLED e12 information",
+			"DEPENDENCY_CALLED e13 information",
 		].toSorted(),
 	);
 });
@@ -356,6 +381,41 @@ test("an anchor whose uses are of an evidence kind its relationship kind does no
 		},
 	]);
 	expect(finding("ANCHOR_MISMATCH", "s1")).toBeUndefined();
+});
+
+test("a dependency whose anchor or evidence runs its target is information naming both ends and the call, and a type-only one is not", () => {
+	const anchored = finding("DEPENDENCY_CALLED", "e12");
+	expect(anchored?.message).toStartWith(
+		'The relationship "Mailer -> Sender" is a dependency, and its start runs "send" of its end',
+	);
+	expect(anchored?.evidence?.map((piece) => [piece.kind, piece.path, piece.symbol])).toEqual([
+		["call", "src/notify/mailer.ts", "send"],
+	]);
+	const unanchored = finding("DEPENDENCY_CALLED", "e13");
+	expect(unanchored?.message).toContain('"Listener -> Sender"');
+	expect(unanchored?.evidence?.map((piece) => [piece.from, piece.to, piece.kind])).toEqual([
+		["pI", "pN", "call"],
+	]);
+	expect(outcome.findings.filter((each) => ["e5", "e14"].includes(each.subject?.id ?? ""))).toEqual(
+		[],
+	);
+});
+
+test("a sync relationship whose anchored call is awaited, and an async one whose call is plain, are information naming the call's timing", () => {
+	const awaited = finding("CALL_TIMING_MISMATCH", "e15");
+	expect(awaited?.severity).toBe("information");
+	expect(awaited?.message).toStartWith(
+		'The relationship "Courier -> Sender" is sync, and its anchor\'s call of "post" in src/notify/courier.ts is awaited',
+	);
+	expect(awaited?.evidence?.map((piece) => [piece.line, piece.symbol, piece.timing])).toEqual([
+		[2, "post", "awaited"],
+	]);
+	const plain = finding("CALL_TIMING_MISMATCH", "e16");
+	expect(plain?.message).toContain('is async, and its anchor\'s call of "send"');
+	expect(plain?.evidence?.map((piece) => piece.timing)).toEqual(["plain"]);
+	expect(
+		outcome.findings.filter((each) => ["e11", "e17"].includes(each.subject?.id ?? "")),
+	).toEqual([]);
 });
 
 test("a relationship whose ends hold one another is listed as not judged", () => {

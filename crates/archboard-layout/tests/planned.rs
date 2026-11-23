@@ -372,8 +372,10 @@ fn reciprocal_labeled_calls_keep_the_short_gap_between_neighbors() {
                     + (pair[0]["y"].as_f64().unwrap() - pair[1]["y"].as_f64().unwrap()).abs()
             })
             .sum();
+        // A call that leaves its card's side and turns once onto its neighbour runs about
+        // 312 with a 30-unit approach; one that goes round a card runs past 400.
         assert!(
-            length < 300.0,
+            length < 330.0,
             "a neighboring call takes a perimeter detour: {edge}"
         );
         assert!(
@@ -397,8 +399,10 @@ fn boundary_calls_choose_a_clear_order_before_saving_area() {
             .as_array()
             .unwrap()
     };
-    assert_eq!(points("invoke").len(), 2);
-    assert!(points("work").len() <= 4);
+    // The approach a head needs (16 units) leaves the gateway's call one turn
+    // into its handler, and the work its turns round the frame's header.
+    assert!(points("invoke").len() <= 4);
+    assert!(points("work").len() <= 6);
     let arrival = points("invoke").last().unwrap();
     let x = arrival["x"].as_f64().unwrap();
     let y = arrival["y"].as_f64().unwrap();

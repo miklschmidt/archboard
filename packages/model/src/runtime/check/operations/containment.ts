@@ -9,7 +9,7 @@
 
 import { posix } from "node:path";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
-import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
+import type { VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 import { nodeSubject } from "#runtime/check/operations/subject.ts";
 
 type Module = ArchitectureModel["modules"][number];

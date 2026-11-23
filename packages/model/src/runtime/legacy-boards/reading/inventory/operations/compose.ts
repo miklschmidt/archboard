@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { predecessorNames } from "#shared/legacy-inventory/rules/names.ts";
 import { convertedReadings } from "#runtime/legacy-boards/reading/inventory/operations/readings.ts";
 import type {
@@ -110,7 +111,7 @@ function candidateInputs(
 		name: inventory.plan.origin,
 		current,
 	});
-	inputs.set(".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(policy)));
+	inputs.set(".archboard/config.yaml", configurationFile(policy));
 	put("legacy-source.json", inventory.source);
 	put("migration-plan.json", { plan: inventory.plan, revision: inventory.planRevision });
 	return inputs;

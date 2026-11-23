@@ -49,7 +49,7 @@ function git(...args: string[]): void {
 function module(id: string, order: number, path: string): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind: "module",

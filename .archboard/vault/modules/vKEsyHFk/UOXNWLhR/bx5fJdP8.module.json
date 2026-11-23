@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 54000,
   "name": "Model change feed",
   "kind": "module",
@@ -7,11 +8,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#bx5fJdP8",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "formerNames": [
     "Board change feed"
-  ],
-  "outgoing": []
+  ]
 }

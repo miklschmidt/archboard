@@ -1,22 +1,10 @@
 {
-  "order": 4000,
-  "name": "Raster session",
-  "kind": "function",
-  "responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
-  "groups": [
-    "drawing"
-  ],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/rasterizer/services/session.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
-  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
   "outgoing": [
     {
+      "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "mutation",
       "label": "launch, open a page, stop",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "hero",
@@ -29,12 +17,13 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "launchHeadlessChromium"
       },
-      "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
       "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
       "order": 6000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "mutation",
       "label": "one socket to the page",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "hero",
@@ -47,12 +36,13 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "DevTools.evaluate"
       },
-      "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "prove the page before shooting",
       "emphasis": "hero",
       "traffic": {
@@ -64,12 +54,13 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "checkedReadiness"
       },
-      "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
       "to": "vKEsyHFk/SMjRfwN3#FXGZhgKo"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
       "order": 9000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "the clip region",
       "emphasis": "normal",
       "anchor": {
@@ -77,12 +68,13 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "regionOf"
       },
-      "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
       "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "a page that would not open, as the browser's own failure",
       "emphasis": "muted",
       "anchor": {
@@ -90,8 +82,21 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "RasterSession"
       },
-      "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
       "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
     }
-  ]
+  ],
+  "order": 4000,
+  "name": "Raster session",
+  "kind": "function",
+  "responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/rasterizer/services/session.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6"
 }

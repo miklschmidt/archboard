@@ -52,15 +52,15 @@ fn conflicts_at(
     source: bool,
     old: &PlacedLine,
 ) -> bool {
-    // The ends' geometry is cheaper than the lookup of the other line, so it goes first.
+    let other = model.edge_index[old.id.as_str()];
+    let apart = APART + model.half(edge) + model.half(other);
     let near = [true, false].map(|os| {
         opposite_offset(end(points, source), end(&old.points, os))
-            .is_some_and(|by| by.abs() < APART)
+            .is_some_and(|by| by.abs() < apart)
     });
     if near == [false, false] {
         return false;
     }
-    let other = model.edge_index[old.id.as_str()];
     edge != other
         && [true, false].into_iter().zip(near).any(|(os, near)| {
             near && one_subject(
@@ -114,7 +114,7 @@ fn offsets(
                 continue;
             }
             if let Some(by) = opposite_offset(end(points, source), end(&peer.line.points, os)) {
-                offsets.extend([by + APART, by - APART]);
+                offsets.extend([by + peer.apart, by - peer.apart]);
             }
         }
     }
@@ -127,6 +127,8 @@ fn offsets(
 /// the line's ends can conflict with.
 pub(super) struct Peer<'a> {
     line: &'a PlacedLine,
+    /// How far apart the two lines' ends stand at the least: a lane, and each cable's half.
+    apart: f64,
     /// For the line's source and its target, whether the peer's source and its target stand on
     /// the same subject. A route of the line's own relationship stands on none.
     meets: [[bool; 2]; 2],
@@ -138,7 +140,7 @@ impl Peer<'_> {
         [true, false].into_iter().zip(meets).any(|(os, meets)| {
             meets
                 && opposite_offset(end(points, source), end(&self.line.points, os))
-                    .is_some_and(|by| by.abs() < APART)
+                    .is_some_and(|by| by.abs() < self.apart)
         })
     }
 
@@ -159,6 +161,7 @@ impl<'a> Peer<'a> {
         let meets = [from, to].map(|at| [a, b].map(|end| one_subject(model, at, end)));
         (meets != [[false; 2]; 2]).then_some(Self {
             line,
+            apart: APART + model.half(edge) + model.half(other),
             meets: if edge == other {
                 [[false; 2]; 2]
             } else {

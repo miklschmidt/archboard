@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#xZa3uuF9",
+      "order": 1000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "installs the CLI from npm and runs archboard check",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "actions/check/run.ts",
+        "symbol": "execute"
+      },
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ],
   "order": 5100,
   "name": "Check Action",
   "kind": "package",
@@ -8,21 +24,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "actions/check"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#oGHp8YGI",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "installs the CLI from npm and runs archboard check",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "actions/check/run.ts",
-        "symbol": "execute"
-      },
-      "id": "vKEsyHFk#xZa3uuF9",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#oGHp8YGI"
 }

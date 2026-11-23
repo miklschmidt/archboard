@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 31000,
   "name": "Pane messages",
   "kind": "module",
@@ -7,7 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/pane-session/rules/socket-messages.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#8yYKWsmB",
   "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "documents": [
@@ -23,6 +24,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

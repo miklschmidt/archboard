@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#chzSzpL4",
+      "order": 7000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "photograph a model, record a talk, draw its frames",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
+        "symbol": "spawnChromium"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+      "order": 44000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "own the Chromium process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
+      "order": 48000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the guard for its /json/version answer",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
+        "symbol": "isJsonRecord"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
+    }
+  ],
   "order": 12000,
   "name": "Chromium executable",
   "kind": "function",
@@ -7,48 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#ShT7QadJ",
-  "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
-  "outgoing": [
-    {
-      "order": 7000,
-      "kind": "call",
-      "label": "photograph a model, record a talk, draw its frames",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
-        "symbol": "spawnChromium"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#chzSzpL4",
-      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv"
-    },
-    {
-      "order": 44000,
-      "kind": "dependency",
-      "label": "own the Chromium process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
-      "to": "vKEsyHFk#R3jPedS8"
-    },
-    {
-      "order": 48000,
-      "kind": "dependency",
-      "label": "the guard for its /json/version answer",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
-        "symbol": "isJsonRecord"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
-      "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1"
 }

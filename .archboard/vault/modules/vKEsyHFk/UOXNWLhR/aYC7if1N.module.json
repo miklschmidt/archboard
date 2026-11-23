@@ -1,4 +1,202 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#MFYABYzc",
+      "order": 1500,
+      "kind": "render",
+      "effect": "compute",
+      "label": "the answer, the reading and its moves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "SemanticStageView"
+      },
+      "to": "vKEsyHFk#IiRpIrVu"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#ACKA5I1k",
+      "order": 2000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the picture of this reading",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "semanticRenderQuery"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#UubWA3xG",
+      "order": 21000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "fit until the camera is moved",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useAutoFit"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#IPiFENAY",
+      "order": 22500,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the pane's camera, kept across pictures",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "usePictureCamera"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#aZWI05I3",
+      "order": 23000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "open step, and any driven one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useWalkthrough"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#ReedyDWe",
+      "order": 24000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the step's focus, once its picture is up",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-settled-focus.ts",
+        "symbol": "beatFocus"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#zhpc5qbc",
+      "order": 27000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "what is on screen",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useReported"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#gT3UJ3yd"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#Kx7K0XLU",
+      "order": 29000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "hear the model on screen change",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useModelChanges"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#cKc7k19t",
+      "order": 55000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the pick, and the picture's atlas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useReveal"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#rywgYYWx",
+      "order": 58000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the card opened, and the model above",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useDrillMoves"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#teXwe1ys",
+      "order": 58500,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "mount the flight on the pane's camera",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useDive"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#hc77pwzB"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#mhEYDOOE",
+      "order": 101000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the vault of the reading it draws and listens to",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "usePaneVault"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#B0UbZ22U",
+      "order": 108000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the model on screen, and the trail behind it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "useDrillDown"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#XFDnxQCC",
+      "order": 129000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "does another pane share the centre",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
+        "symbol": "usePaneChrome"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
+    }
+  ],
   "order": 11000,
   "name": "Retained stage entry",
   "kind": "function",
@@ -8,194 +206,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#aYC7if1N",
   "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "formerNames": [
     "Viewer entry point"
-  ],
-  "outgoing": [
-    {
-      "order": 1500,
-      "kind": "render",
-      "label": "the answer, the reading and its moves",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "SemanticStageView"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#MFYABYzc",
-      "to": "vKEsyHFk#IiRpIrVu"
-    },
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "the picture of this reading",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "semanticRenderQuery"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#ACKA5I1k",
-      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
-    },
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "fit until the camera is moved",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useAutoFit"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#UubWA3xG",
-      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
-    },
-    {
-      "order": 22500,
-      "kind": "call",
-      "label": "the pane's camera, kept across pictures",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "usePictureCamera"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#IPiFENAY",
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
-    },
-    {
-      "order": 23000,
-      "kind": "call",
-      "label": "open step, and any driven one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useWalkthrough"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#aZWI05I3",
-      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
-    },
-    {
-      "order": 24000,
-      "kind": "call",
-      "label": "the step's focus, once its picture is up",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-settled-focus.ts",
-        "symbol": "beatFocus"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#ReedyDWe",
-      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt"
-    },
-    {
-      "order": 27000,
-      "kind": "call",
-      "label": "what is on screen",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useReported"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#zhpc5qbc",
-      "to": "vKEsyHFk/UOXNWLhR#gT3UJ3yd"
-    },
-    {
-      "order": 29000,
-      "kind": "call",
-      "label": "hear the model on screen change",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useModelChanges"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#Kx7K0XLU",
-      "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
-    },
-    {
-      "order": 55000,
-      "kind": "call",
-      "label": "the pick, and the picture's atlas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useReveal"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#cKc7k19t",
-      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7"
-    },
-    {
-      "order": 58000,
-      "kind": "call",
-      "label": "the card opened, and the model above",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useDrillMoves"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#rywgYYWx",
-      "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
-    },
-    {
-      "order": 58500,
-      "kind": "call",
-      "label": "mount the flight on the pane's camera",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useDive"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#teXwe1ys",
-      "to": "vKEsyHFk/UOXNWLhR#hc77pwzB"
-    },
-    {
-      "order": 101000,
-      "kind": "call",
-      "label": "the vault of the reading it draws and listens to",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "usePaneVault"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#mhEYDOOE",
-      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
-    },
-    {
-      "order": 108000,
-      "kind": "call",
-      "label": "the model on screen, and the trail behind it",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "useDrillDown"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#B0UbZ22U",
-      "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
-    },
-    {
-      "order": 129000,
-      "kind": "call",
-      "label": "does another pane share the centre",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
-        "symbol": "usePaneChrome"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#XFDnxQCC",
-      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
-    }
   ]
 }

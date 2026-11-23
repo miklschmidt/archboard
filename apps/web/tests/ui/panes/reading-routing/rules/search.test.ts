@@ -146,6 +146,21 @@ test("an empty focus or filter is left out, so it never reads back as one empty 
 	expect(search).toEqual({ modelA: "model" });
 });
 
+test("a pane's hidden kinds and effects survive the address bar beside its lens", () => {
+	const search = validateWorkspaceSearch(
+		parseWorkspaceSearchString(
+			"?modelA=Shop&lensA=main&hideKindsA=http&hideEffectsA=query,compute",
+		),
+	);
+	const model = addressFromSearch(search).panes[0]?.model;
+	expect(model?.lens).toBe("main");
+	expect(model?.hideKinds).toEqual(["http"]);
+	expect(model?.hideEffects).toEqual(["query", "compute"]);
+	expect(
+		addressFromSearch(validateWorkspaceSearch(searchFromAddress(addressFromSearch(search)))),
+	).toEqual(addressFromSearch(search));
+});
+
 test("the whole variant is the absence of a view, not a view called nothing", () => {
 	expect(
 		searchFromAddress({

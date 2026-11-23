@@ -59,7 +59,7 @@ test("an explicit private archive retains exact architecture without creating a 
 	});
 	expect(readArchitectureModel(vault)).toEqual(current);
 	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(
-		readFileSync(resolve("examples/canonical-model/.archboard/vault/gateway.module.json")),
+		readFileSync(resolve("tests/fixtures/current-format-vault/gateway.module.json")),
 	);
 	expect(existsSync(join(root, ".git"))).toBe(false);
 	expect(existsSync(join(vault, ".git"))).toBe(false);

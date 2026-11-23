@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";
@@ -194,7 +195,7 @@ function lifecycleInputs(
 	};
 	const inputs = candidateInputs(captured, current, model);
 	if (!isDeepStrictEqual(current.policy, selected.policy))
-		inputs.set(".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(selected.policy)));
+		inputs.set(".archboard/config.yaml", configurationFile(selected.policy));
 	return { inputs, subjects: affectedSubjects(current, model, proposal) };
 }
 

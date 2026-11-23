@@ -3,7 +3,7 @@ import { diagramGrammarSchema } from "@archboard/model/views";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import type { Model } from "@archboard/model/content";
+import { readingLens, type Model } from "@archboard/model/content";
 import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
 import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hooks/use-comparison-saved-at.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
@@ -70,6 +70,7 @@ function useModelExplanation(
 				scope: scope ?? undefined,
 				focus: focus ?? [],
 				expand,
+				lens: readingLens(model.policy, filters.lens).id,
 				relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
 					(kind) => !filters.hideKinds.includes(kind),
 				),

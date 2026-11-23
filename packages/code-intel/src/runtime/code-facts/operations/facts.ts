@@ -1,4 +1,5 @@
 import type { evidenceKindSchema } from "@archboard/model/policy";
+import type { CallSite } from "#runtime/code-facts/operations/call-timing.ts";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
@@ -133,6 +134,15 @@ interface Definition {
 	 * code there reads with what the declaration sets (TASK-367.23).
 	 */
 	readonly runs?: string;
+	/**
+	 * Whether a callable returns before its work is done: true for an async
+	 * one (TypeScript's `async` or a declared `Promise`, Python's `async def`,
+	 * Rust's `async fn` or a returned `Future`, C#'s `async` or a returned
+	 * `Task`), false for one known to be synchronous. Absent where the
+	 * declaration does not tell, or the language decides a call without it
+	 * (call-timing.ts, TASK-663.09).
+	 */
+	readonly async?: boolean;
 }
 
 /** One operation a switchboard picks: the keys that pick it, and the line its first arm starts. */
@@ -229,6 +239,12 @@ interface Reference {
 	readonly asValue?: true;
 	/** The name is passed as an argument; a function definition may run later. */
 	readonly passed?: true;
+	/**
+	 * How the use's call site runs the name, on a call and on a name passed
+	 * on: awaited, started as a task, plain, unknown, or unawaited where the
+	 * callee's `async` mark decides (call-timing.ts, TASK-663.09).
+	 */
+	readonly timing?: CallSite;
 }
 
 /** What one import names: `default`, `*` for the whole module, or an exported name. */

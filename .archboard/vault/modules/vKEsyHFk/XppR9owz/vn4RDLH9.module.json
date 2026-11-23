@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#b7q8WlCg",
+      "order": 19000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "browser operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/pane/operations/pane.ts",
+        "symbol": "openPane"
+      },
+      "to": "vKEsyHFk/XppR9owz#dt6chxIP"
+    }
+  ],
   "order": 14000,
   "name": "Panes",
   "kind": "module",
@@ -11,7 +27,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/pane/operations/pane.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#vn4RDLH9",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -33,21 +49,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 19000,
-      "kind": "call",
-      "label": "browser operation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/pane/operations/pane.ts",
-        "symbol": "openPane"
-      },
-      "id": "vKEsyHFk/XppR9owz#b7q8WlCg",
-      "to": "vKEsyHFk/XppR9owz#dt6chxIP"
     }
   ]
 }

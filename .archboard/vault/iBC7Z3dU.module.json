@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#13Ba8GhC",
+      "order": 1000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the version",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/store/package-version.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 90000,
   "name": "CLI version",
   "kind": "function",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing/store/package-version.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#iBC7Z3dU",
-  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "the version",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/store/package-version.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#13Ba8GhC",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
 }

@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
+      "order": 40000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "retain the shared link reasons and refusal order",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
+        "symbol": "additionalContextPolicy"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
+      "order": 45000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "domain instructions for each role's profile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/host/services/archboard.ts",
+        "symbol": "COORDINATOR_DOMAIN_INSTRUCTIONS"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
+      "order": 46000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "build domain turns through the shared input contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/instructions/rules/bodies.ts",
+        "symbol": "createTextUserInput"
+      },
+      "to": "vKEsyHFk#92V2PmcS"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
+      "order": 57000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "interpret selected model subjects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
+        "symbol": "semanticSubjectKindSchema"
+      },
+      "to": "vKEsyHFk#qOrTIIKT"
+    }
+  ],
   "order": 30000,
   "name": "Authored role instructions",
   "kind": "module",
@@ -8,7 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/instructions/rules/authored.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SJ2JMVyz#624ETIsk",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "formerNames": [
@@ -19,60 +77,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 40000,
-      "kind": "dependency",
-      "label": "retain the shared link reasons and refusal order",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
-        "symbol": "additionalContextPolicy"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
-      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
-    },
-    {
-      "order": 45000,
-      "kind": "dependency",
-      "label": "domain instructions for each role's profile",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/host/services/archboard.ts",
-        "symbol": "COORDINATOR_DOMAIN_INSTRUCTIONS"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
-      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 46000,
-      "kind": "dependency",
-      "label": "build domain turns through the shared input contract",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/instructions/rules/bodies.ts",
-        "symbol": "createTextUserInput"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
-      "to": "vKEsyHFk#92V2PmcS"
-    },
-    {
-      "order": 57000,
-      "kind": "dependency",
-      "label": "interpret selected model subjects",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
-        "symbol": "semanticSubjectKindSchema"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
-      "to": "vKEsyHFk#qOrTIIKT"
     }
   ]
 }

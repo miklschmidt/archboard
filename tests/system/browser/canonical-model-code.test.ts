@@ -67,7 +67,7 @@ test("canonical code controls follow current draft and exact readings while miss
 	const fixtureRoot = join(browserTestRoots().ownerRoot, "code-model");
 	const root = join(fixtureRoot, "checkout");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	mkdirSync(join(root, "src"), { recursive: true });
@@ -285,7 +285,7 @@ test("a code export on the About page opens its own source, at the line that def
 	const fixtureRoot = join(browserTestRoots().ownerRoot, "code-exports");
 	const root = join(fixtureRoot, "checkout");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	// The gateway is bound to its directory, as a module of its own code is.

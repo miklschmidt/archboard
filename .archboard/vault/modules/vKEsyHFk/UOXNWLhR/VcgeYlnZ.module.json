@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#yMDD4Gv0",
+      "order": 22000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "fit and glide",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
+        "symbol": "glide"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    }
+  ],
   "order": 17000,
   "name": "Keep fitted",
   "kind": "function",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 22000,
-      "kind": "call",
-      "label": "fit and glide",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
-        "symbol": "glide"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#yMDD4Gv0",
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

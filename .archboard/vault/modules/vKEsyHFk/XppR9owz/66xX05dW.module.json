@@ -1,4 +1,19 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#TeLAhdej",
+      "order": 92000,
+      "kind": "async",
+      "effect": "query",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/read.ts",
+        "symbol": "readArchitectureModelOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    }
+  ],
   "order": 53000,
   "name": "Model read",
   "kind": "module",
@@ -8,7 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/read.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#66xX05dW",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -30,20 +45,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 92000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/read.ts",
-        "symbol": "readArchitectureModelOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#TeLAhdej",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
     }
   ]
 }

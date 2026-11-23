@@ -93,7 +93,7 @@ function repository(root: string, identity: string): void {
  */
 function moduleText(name: string, repo: string, path: string): string {
 	return JSON.stringify({
-		schemaVersion: 1,
+		schemaVersion: 2,
 		id: `Shop#${name}`,
 		name,
 		kind: "module",

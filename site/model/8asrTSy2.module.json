@@ -3,7 +3,7 @@
   "name": "Your repository",
   "kind": "system",
   "responsibility": "Holds the code and the architecture that describes it",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#8asrTSy2",
   "outgoing": []
 }

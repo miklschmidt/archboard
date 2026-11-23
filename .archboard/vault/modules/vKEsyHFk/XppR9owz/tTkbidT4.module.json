@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 39000,
   "name": "Repository setup",
   "kind": "function",
@@ -9,7 +10,7 @@
     "path": "apps/cli/src/cli/commands/init/operations/repo-setup.ts",
     "symbol": "setUpRepository"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#tTkbidT4",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -32,6 +33,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

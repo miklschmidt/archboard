@@ -53,6 +53,7 @@ const model = {
 		emphasis: "normal",
 	})),
 	collections: [],
+	policy,
 } as unknown as Model;
 
 /**

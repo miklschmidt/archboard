@@ -24,7 +24,7 @@ function git(...args: string[]): string {
 }
 
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	git("init", "--quiet");
 	git("config", "user.name", "Branch Author");
 	git("config", "user.email", "branch@example.test");

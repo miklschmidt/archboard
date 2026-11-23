@@ -12,7 +12,6 @@
 //! morphs with the stroke, fading in or out.
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::rail_gap;
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
@@ -35,8 +34,6 @@ const SAME_SHAPE: f64 = 10.0;
 
 /// Where the cuts of the last picture are gone, as a share of the move.
 const OLD_CUTS_GONE_BY: f64 = 0.1;
-/// How far a mask reaches past its line.
-const MASK_ROOM: f64 = 18.0;
 
 /// How far something that moves this far recedes in a move.
 pub(super) fn depth_of_travel(reach: f64) -> f64 {
@@ -222,70 +219,44 @@ struct Ghost {
     morph: Option<Morph>,
 }
 
-/// Whether a shape of a mask is the core of a double line.
-fn is_core(shape: &Shape) -> bool {
-    shape.purpose == Purpose::Cutout
-        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(rail_gap())
-}
-
 /// A cut this much of the way in.
 fn cut_at(shape: &Shape, strength: f64) -> Shape {
     dim(shape.clone(), strength)
 }
 
-/// What a line's masks do through a move. The core of a double line travels with
-/// it. The rest of the cuts belong to where a line stands: the old ones go as it
-/// sets off, and the new ones come once it is in place.
+/// What a line's masks do through a move. The cuts belong to where a line
+/// stands: the old ones go as it sets off, and the new ones come once it is in place.
 #[derive(Clone, Debug)]
 struct Cuts {
     id: MaskId,
-    /// The core of the line, and how it gets from one route to the other.
-    core: Option<(Shape, Option<Morph>)>,
-    /// How the core stands at each end of the move, when it does not at both.
-    core_shown: (f64, f64),
     old: Vec<Shape>,
     next: Vec<Shape>,
-    /// The next mask's box, for a moment when the line stands still.
+    /// The next mask's box.
     bounds: Rect,
 }
 
 impl Cuts {
     /// The cuts of a line, from its masks in the two pictures.
     fn of(old: Option<&Mask>, next: Option<&Mask>) -> Option<Cuts> {
-        let cuts = |mask: Option<&Mask>, core: bool| -> Vec<Shape> {
+        let cuts = |mask: Option<&Mask>| -> Vec<Shape> {
             mask.map_or_else(Vec::new, |mask| {
                 mask.shapes
                     .iter()
-                    .filter(|shape| shape.fill != Some(white()) && is_core(shape) == core)
+                    .filter(|shape| shape.fill != Some(white()))
                     .cloned()
                     .collect()
             })
         };
-        let (old_core, next_core) = (cuts(old, true), cuts(next, true));
-        let (from, to) = (old_core.first(), next_core.first());
-        let core = to.or(from).map(|shape| {
-            let morph = from
-                .zip(to)
-                .and_then(|(a, b)| Morph::new(&route(Some(a)), &route(Some(b))));
-            (shape.clone(), morph)
-        });
-        let (old_cuts, next_cuts) = (cuts(old, false), cuts(next, false));
-        let bounds = next.or(old)?.bounds;
         Some(Cuts {
             id: next.or(old)?.id.clone(),
-            core,
-            core_shown: (
-                f64::from(u8::from(from.is_some())),
-                f64::from(u8::from(to.is_some())),
-            ),
-            old: old_cuts,
-            next: next_cuts,
-            bounds,
+            old: cuts(old),
+            next: cuts(next),
+            bounds: next.or(old)?.bounds,
         })
     }
 
     /// The mask at a moment of the move, or none while nothing is cut.
-    fn at(&self, progress: f64, along: f64, swapped: f64, t: &Transition) -> Option<Mask> {
+    fn at(&self, progress: f64, t: &Transition) -> Option<Mask> {
         let mut shapes = Vec::new();
         let leaving = 1.0 - ease_in_out(phase(progress, 0.0, OLD_CUTS_GONE_BY));
         if leaving > 0.0 {
@@ -295,30 +266,9 @@ impl Cuts {
         if landing > 0.0 {
             shapes.extend(self.next.iter().map(|shape| cut_at(shape, landing)));
         }
-        let mut bounds = self.bounds;
-        if let Some((shape, morph)) = &self.core {
-            let (from, to) = self.core_shown;
-            let strength = from + (to - from) * swapped;
-            let shape = match morph {
-                Some(morph) => {
-                    let held = morph.bounds_at(along).inflate(MASK_ROOM, MASK_ROOM);
-                    bounds = Rect {
-                        x: held.x0,
-                        y: held.y0,
-                        width: held.width(),
-                        height: held.height(),
-                    };
-                    on_route(shape.clone(), morph.at(along))
-                }
-                None => shape.clone(),
-            };
-            if strength > 0.0 {
-                shapes.push(cut_at(&shape, strength));
-            }
-        }
         (!shapes.is_empty()).then(|| Mask {
             id: self.id.clone(),
-            bounds,
+            bounds: self.bounds,
             shapes,
         })
     }
@@ -474,10 +424,7 @@ impl LineCarry {
 
     /// What the line's mask cuts at a moment of the move.
     pub(super) fn mask_at(&self, progress: f64) -> Option<Mask> {
-        let t = &self.phases;
-        let along = emphasised(phase(progress, t.move_start, t.move_end));
-        let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
-        self.cuts.as_ref()?.at(progress, along, swapped, t)
+        self.cuts.as_ref()?.at(progress, &self.phases)
     }
 
     /// The line at a moment of the move.

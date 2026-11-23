@@ -107,6 +107,29 @@ describe("declared parameter facts", () => {
 		expect(JSON.parse((await executePublic(contract, [])).stdout)).toEqual({});
 	});
 
+	test("an appending option with choices collects one value or many, and refuses one outside them", async () => {
+		const contract = echoing(
+			[
+				{
+					kind: "option",
+					key: "hide",
+					spellings: ["--hide"],
+					value: "required",
+					occurrences: "append",
+					choices: ["query", "compute"],
+					description: "which",
+				},
+			],
+			{ hide: z.array(z.string()).optional() },
+		);
+		const once = await executePublic(contract, ["--hide", "query"]);
+		expect(JSON.parse(once.stdout)).toEqual({ hide: ["query"] });
+		const twice = await executePublic(contract, ["--hide", "query", "--hide", "compute"]);
+		expect(JSON.parse(twice.stdout)).toEqual({ hide: ["query", "compute"] });
+		const rejected = await executePublic(contract, ["--hide", "mutation"]);
+		expect((rejected.error as Error).message).toContain("compute");
+	});
+
 	test("a required positional is refused when missing, and a hidden tail still parses", async () => {
 		const contract = echoing(
 			[

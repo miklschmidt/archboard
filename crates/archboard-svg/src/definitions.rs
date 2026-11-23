@@ -234,7 +234,8 @@ fn write_marker(marker: &Marker, names: &Names, out: &mut String) {
         .set("refY", marker.reference.y)
         .set("markerWidth", marker.size)
         .set("markerHeight", marker.size)
-        .set("orient", "auto-start-reverse");
+        .set("orient", "auto-start-reverse")
+        .set("overflow", "visible");
     open("marker", &attributes, out);
     for shape in &marker.shapes {
         write_shape(shape, names, Spelling::Marker, out);

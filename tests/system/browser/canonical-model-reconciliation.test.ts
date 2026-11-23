@@ -96,7 +96,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "reconciliation-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);

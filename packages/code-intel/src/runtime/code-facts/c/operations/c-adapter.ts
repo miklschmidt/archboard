@@ -39,7 +39,8 @@ import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { C_MATH } from "#runtime/code-facts/c/operations/c-math.ts";
 import { cUnparsedOf } from "#runtime/code-facts/c/operations/c-unparsed.ts";
 import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
-import { type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { C_TIMING } from "#runtime/code-facts/c/operations/c-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 
 /** The captures of one file, by what the query calls them. */
@@ -408,6 +409,7 @@ const RUN_SYNTAX: RunSyntax = {
 			message.childForFieldName("receiver")?.id !== name.id &&
 			!message.childrenForFieldName("method").some((method) => method.id === name.id),
 	},
+	timing: C_TIMING,
 };
 
 /** One name, as the file writes it and where. */
@@ -497,7 +499,7 @@ function useOf(named: Named, locals: ReadonlySet<string>): Reference | undefined
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(top, RUN_SYNTAX, typeOnly),
+		...markUse(top, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -528,7 +530,7 @@ function runtimeUses(named: readonly Named[], locals: ReadonlySet<string>): Node
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}\0${String(reference.timing)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

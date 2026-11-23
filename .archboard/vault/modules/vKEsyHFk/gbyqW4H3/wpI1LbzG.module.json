@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#7pBgojOh",
+      "order": 60100,
+      "kind": "async",
+      "effect": "compute",
+      "label": "draw the reading in the core",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
+        "symbol": "render"
+      },
+      "to": "vKEsyHFk#6sGFjsRQ"
+    },
+    {
+      "id": "vKEsyHFk#b5O0WPQs",
+      "order": 60200,
+      "kind": "sync",
+      "effect": "query",
+      "label": "what this host gives the core",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
+        "symbol": "rendererHost"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    }
+  ],
   "order": 2000,
   "name": "Diagram rendering",
   "kind": "function",
@@ -8,38 +38,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render/rules/diagram.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
   "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
   "formerNames": [
     "View dispatcher"
-  ],
-  "outgoing": [
-    {
-      "order": 60100,
-      "kind": "call",
-      "label": "draw the reading in the core",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
-        "symbol": "render"
-      },
-      "id": "vKEsyHFk#7pBgojOh",
-      "to": "vKEsyHFk#6sGFjsRQ"
-    },
-    {
-      "order": 60200,
-      "kind": "dependency",
-      "label": "what this host gives the core",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
-        "symbol": "rendererHost"
-      },
-      "id": "vKEsyHFk#b5O0WPQs",
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
-    }
   ]
 }

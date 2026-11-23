@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 914000,
   "name": "Binding contract",
   "kind": "module",
@@ -8,7 +9,6 @@
     "path": "packages/code-binding/src/shared"
   },
   "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#NVlMWCWO",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#NVlMWCWO"
 }

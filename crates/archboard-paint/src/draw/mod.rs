@@ -1,18 +1,14 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
-use archboard_scene::paint::design::{far_line_scale, widens_far};
-use archboard_scene::scene::{
-    Colour, Geometry, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
-    Transform, Viewport,
-};
-use kurbo::{Affine, BezPath, Rect, Shape as _};
+use archboard_scene::scene::{Group, Icon, Item, Paint, Role, Scene, Transform, Viewport};
+use kurbo::{Affine, Rect, Shape as _};
 
 use crate::canvas::{Canvas, Ink, PartKey};
 use crate::definitions::Definitions;
 use crate::outlines::Outlines;
 use crate::palette::Palette;
-use crate::path::{end_of, outline_of, path_of, placed, rect_of, straightened, stroke_of};
+use crate::path::{placed, rect_of};
 use crate::presentation::{Presentation, Recede};
 use crate::raise::drawn_in_order;
 use crate::sweep::{holds_lines, is_part, only_moves};
@@ -24,8 +20,13 @@ const ICON_VIEW: f64 = 24.0;
 /// How finely a straight-edged box stands in as a path.
 const BOX_TOLERANCE: f64 = 0.1;
 
+mod imprint;
 mod kept;
 mod masked;
+mod play;
+mod shape;
+
+pub(crate) use play::{play_at, playable};
 #[cfg(test)]
 mod tests;
 mod viewer;
@@ -85,6 +86,10 @@ struct Inside {
     top: bool,
     /// How much of what a card says shows, while a flight goes into the card.
     words: f64,
+    /// The play that runs on the line this is part of.
+    play: Option<play::Play>,
+    /// How far toward the text this is drawn, while a play lights it.
+    glow: f64,
 }
 
 /// One frame's walk.
@@ -152,6 +157,8 @@ pub(crate) fn draw_items<C: Canvas>(
         hovered: false,
         top: true,
         words: 1.0,
+        play: None,
+        glow: 0.0,
     };
     walk.items(items, inside);
 }
@@ -215,7 +222,10 @@ impl<C: Canvas> Walk<'_, C> {
                 self.sweep(inside);
                 swept = true;
             }
-            match self.still.filter(|_| inside.top && stands_still(item)) {
+            match self
+                .still
+                .filter(|_| inside.top && stands_still(item) && !self.holds_play(item))
+            {
                 Some(still) => {
                     let key = PartKey::Item {
                         look: still,
@@ -314,18 +324,6 @@ impl<C: Canvas> Walk<'_, C> {
         }
     }
 
-    /// How much of a mark shows that stands with its members: as much as the
-    /// brightest of them. Any other shape shows as its group does.
-    fn shown_with_members(&self, shape: &Shape) -> f64 {
-        let recede = &self.presentation.recede;
-        shape
-            .members
-            .iter()
-            .map(|member| *recede.subjects.get(member).unwrap_or(&recede.rest))
-            .reduce(f64::max)
-            .unwrap_or(1.0)
-    }
-
     /// Draw a group, with its layer when it needs one.
     fn group(&mut self, group: &Group, inside: Inside) {
         if matches!(group.role, Role::HeadShade) && !inside.stuck {
@@ -384,6 +382,8 @@ impl<C: Canvas> Walk<'_, C> {
             hovered: self.hovers(group, inside),
             top: inside.top && only_moves(&group.role),
             words: self.words_of(group, inside),
+            play: self.play_of(group).or(inside.play),
+            glow: inside.glow,
         }
     }
 
@@ -458,112 +458,6 @@ impl<C: Canvas> Walk<'_, C> {
             Paint::None => None,
             Paint::Colour { colour } => Some(Ink::Solid(self.palette.colour(colour, alpha))),
             Paint::Gradient { id } => self.definitions.gradient(*id, self.palette, alpha, bounds),
-        }
-    }
-
-    /// The width a line's direct stroke grows by in the far view.
-    fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
-        let grows = inside.line
-            && matches!(geometry, Geometry::Path { .. })
-            && stroke.width.is_some_and(widens_far);
-        if grows {
-            far_line_scale(self.presentation.far)
-        } else {
-            1.0
-        }
-    }
-
-    /// Draw a shape, its markers with it.
-    fn shape(&mut self, shape: &Shape, inside: Inside) {
-        let ring = matches!(
-            shape.purpose,
-            Purpose::Halo | Purpose::Ring | Purpose::LitLine
-        );
-        // A relationship's label wears the ring; its line keeps its own ink.
-        if ring && (!inside.selected || inside.line) {
-            return;
-        }
-        let (path, bounds) = outline_of(&shape.geometry);
-        self.canvas.set_transform(inside.transform);
-        let clip = self.clip_of(shape, bounds);
-        if let Some(clip) = &clip {
-            self.canvas.push(Some((clip, true)), 1.0);
-        }
-        self.paint(shape, &path, bounds, ring, inside);
-        if clip.is_some() {
-            self.canvas.pop();
-        }
-    }
-
-    /// The clip a shape names, laid over the shape's own box.
-    fn clip_of(&self, shape: &Shape, bounds: Rect) -> Option<BezPath> {
-        let clip = self.definitions.clip(&shape.clip.as_ref()?.card)?;
-        let unit = Affine::translate(bounds.origin().to_vec2())
-            * Affine::scale_non_uniform(bounds.width(), bounds.height());
-        Some(unit * path_of(&clip.outline))
-    }
-
-    /// Fill a shape, then stroke it.
-    fn paint(&mut self, shape: &Shape, path: &BezPath, bounds: Rect, ring: bool, inside: Inside) {
-        let black = Paint::Colour {
-            colour: Colour::Black,
-        };
-        let fill = shape.fill.as_ref().unwrap_or(&black);
-        let alpha = shape.fill_opacity.unwrap_or(1.0) * self.shown_with_members(shape);
-        if let Some(ink) = self.ink(fill, alpha, bounds) {
-            self.canvas.fill(path, &ink, false);
-        }
-        if let Some(stroke) = &shape.stroke {
-            self.outline(shape, stroke, path, bounds, ring, inside);
-        }
-    }
-
-    /// Stroke a shape and draw what its stroke ends in.
-    fn outline(
-        &mut self,
-        shape: &Shape,
-        stroke: &Stroke,
-        path: &BezPath,
-        bounds: Rect,
-        ring: bool,
-        inside: Inside,
-    ) {
-        let selection = Paint::from(Token::DiagramSelection);
-        let paint = if ring { &selection } else { &stroke.paint };
-        let alpha = stroke.opacity.unwrap_or(1.0) * self.shown_with_members(shape);
-        let Some(ink) = self.ink(paint, alpha, bounds) else {
-            return;
-        };
-        let grown = self.far_scale(stroke, &shape.geometry, inside);
-        let straight = (!stroke.dashes.is_empty()).then(|| straightened(path));
-        self.canvas.stroke(
-            straight.as_ref().unwrap_or(path),
-            &stroke_of(stroke, grown),
-            &ink,
-        );
-        let width = stroke.width.unwrap_or(1.0) * grown;
-        let ends = [(&shape.marker, false), (&shape.start_marker, true)];
-        for (marker, start) in ends {
-            let marker = marker
-                .as_ref()
-                .and_then(|marker| self.definitions.marker(marker));
-            let Some((marker, (at, angle))) = marker.zip(end_of(path, start)) else {
-                continue;
-            };
-            let scale = marker.size * width / marker.view;
-            let transform = inside.transform
-                * Affine::translate(at.to_vec2())
-                * Affine::rotate(angle)
-                * Affine::scale(scale)
-                * Affine::translate((-marker.reference.x, -marker.reference.y));
-            let held = Inside {
-                transform,
-                line: false,
-                ..inside
-            };
-            for head in &marker.shapes {
-                self.shape(head, held);
-            }
         }
     }
 

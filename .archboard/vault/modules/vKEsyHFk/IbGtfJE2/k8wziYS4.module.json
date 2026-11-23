@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ",
+      "order": 2000,
+      "kind": "storage",
+      "effect": "query",
+      "label": "scenarios, fixtures, pins, graders, rubric",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
+        "symbol": "readJson"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#IOCRa8GO"
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
+      "order": 25000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "every citation lands",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
+        "symbol": "citationProblem"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
+    }
+  ],
   "order": 2000,
   "name": "Suite loader",
   "kind": "module",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#k8wziYS4",
-  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
-  "outgoing": [
-    {
-      "order": 2000,
-      "kind": "data",
-      "label": "scenarios, fixtures, pins, graders, rubric",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
-        "symbol": "readJson"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ",
-      "to": "vKEsyHFk/IbGtfJE2#IOCRa8GO"
-    },
-    {
-      "order": 25000,
-      "kind": "call",
-      "label": "every citation lands",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
-        "symbol": "citationProblem"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
-      "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW"
 }

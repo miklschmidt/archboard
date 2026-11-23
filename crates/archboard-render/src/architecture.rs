@@ -10,12 +10,12 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use archboard_flows::{Step, every_step};
-use archboard_layout::{LineLook, Measured, Node, Standings, draw};
+use archboard_layout::{Edge, Measured, Node, Standings, draw};
 use archboard_scene::drawing::Painted;
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
 use archboard_scene::{CardWords, measure_label, measure_node, narrow_label};
 
-use crate::appearance::{line_appearance, line_look, node_appearances, tags_of};
+use crate::appearance::{label_words, line_appearance, line_look, node_appearances, tags_of};
 use crate::memo::Layouts;
 use crate::request::{Policy, Reading, RenderRequest};
 use crate::steps::with_step_lines;
@@ -50,34 +50,31 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
             )
         })
         .collect();
-    let words = || {
-        laid.edges.iter().filter_map(|edge| {
-            let words = edge.label.as_deref().filter(|words| !words.is_empty())?;
-            Some((edge.id.clone(), words))
-        })
-    };
-    let labels = words()
-        .map(|(id, words)| (id, measure_label(words)))
+    let step = |edge: &Edge| steps.contains(edge.id.as_str());
+    let words: Vec<(String, String)> = laid
+        .edges
+        .iter()
+        .filter_map(|edge| Some((edge.id.clone(), label_words(edge, policy, step(edge))?)))
         .collect();
-    let narrow_labels = words()
-        .filter_map(|(id, words)| Some((id, narrow_label(words)?)))
+    let labels = words
+        .iter()
+        .map(|(id, words)| (id.clone(), measure_label(words)))
+        .collect();
+    let narrow_labels = words
+        .iter()
+        .filter_map(|(id, words)| Some((id.clone(), narrow_label(words)?)))
         .collect();
     let lines = laid
         .edges
         .iter()
-        .map(|edge| {
-            (
-                edge.id.clone(),
-                line_look(&edge.kind, policy, steps.contains(edge.id.as_str())),
-            )
-        })
+        .map(|edge| (edge.id.clone(), line_look(edge, policy, step(edge))))
         .collect();
     Measured {
         nodes,
         labels,
         narrow_labels,
         lines,
-        held_kinds: BTreeMap::new(),
+        held_lines: BTreeMap::new(),
     }
 }
 
@@ -119,15 +116,6 @@ fn layout_key(
         .iter()
         .map(|(id, look)| (id, &look.name))
         .collect();
-    let looks: Vec<(&String, LineLook)> = request
-        .policy
-        .relationship_kinds
-        .iter()
-        .map(|(kind, look)| {
-            let (dash, arrowhead) = (look.dash, look.arrowhead);
-            (kind, LineLook { dash, arrowhead })
-        })
-        .collect();
     serde_json::to_string(&(
         request.layout,
         &laid.nodes,
@@ -135,12 +123,12 @@ fn layout_key(
         steps,
         standings,
         names,
-        looks,
+        &request.policy.relationship_kinds,
         request
             .held()
             .edges
             .iter()
-            .map(|edge| (&edge.id, &edge.kind))
+            .map(|edge| (&edge.id, &edge.kind, edge.effect))
             .collect::<Vec<_>>(),
     ))
     .expect("what a layout is laid out from always writes as JSON")
@@ -199,11 +187,11 @@ async fn laid_out<H: Host>(
     let stepping: HashSet<&str> = steps.iter().map(String::as_str).collect();
     let standings = standings_of(request, laid);
     let mut measure = measured(laid, &request.policy, &stepping);
-    measure.held_kinds = request
+    measure.held_lines = request
         .held()
         .edges
         .iter()
-        .map(|edge| (edge.id.clone(), edge.kind.clone()))
+        .map(|edge| (edge.id.clone(), (edge.kind.clone(), edge.effect)))
         .collect();
     let key = layout_key(request, laid, steps, standings.as_ref());
     let content = laid.content();
@@ -241,7 +229,7 @@ fn paint_request<H: Host>(
         .iter()
         .map(|edge| {
             let step = steps.contains(&edge.edge.id);
-            let look = line_appearance(&edge.edge.kind, policy, step);
+            let look = line_appearance(&edge.edge.kind, edge.edge.effect, policy, step);
             (edge.edge.id.clone(), look)
         })
         .collect();

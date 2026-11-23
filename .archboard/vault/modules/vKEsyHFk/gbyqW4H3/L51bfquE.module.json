@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 5000,
   "name": "Edge geometry",
   "kind": "function",
@@ -8,8 +9,7 @@
     "path": "crates/archboard-scene/src/geometry.rs",
     "symbol": "curve_through"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#L51bfquE",
-  "parent": "vKEsyHFk#9gGvxWHp",
-  "outgoing": []
+  "parent": "vKEsyHFk#9gGvxWHp"
 }

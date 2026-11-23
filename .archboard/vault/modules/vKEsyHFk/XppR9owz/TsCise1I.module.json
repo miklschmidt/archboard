@@ -1,4 +1,79 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
+      "order": 1000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "semantic commands, on its own checkout's port",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "fetch"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
+      "order": 96000,
+      "kind": "async",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
+      "order": 100000,
+      "kind": "http",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#idpOv420",
+      "order": 112000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "HTTP edits, claims and recovery",
+      "description": "The CLI model edit contract calls editArchitectureModuleOnServer, which posts the explicit path mounted here.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
+        "symbol": "mountArchitectureEditRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ"
+    },
+    {
+      "id": "vKEsyHFk#hbm71jgF",
+      "order": 1008040,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "read an answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    }
+  ],
   "order": 57000,
   "name": "Canonical model client",
   "kind": "module",
@@ -8,7 +83,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#TsCise1I",
   "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
   "documents": [
@@ -30,76 +105,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "http",
-      "label": "semantic commands, on its own checkout's port",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "fetch"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
-      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
-    },
-    {
-      "order": 96000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 100000,
-      "kind": "http",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
-        "symbol": "mountArchitectureModelRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
-    },
-    {
-      "order": 112000,
-      "kind": "http",
-      "label": "HTTP edits, claims and recovery",
-      "description": "The CLI model edit contract calls editArchitectureModuleOnServer, which posts the explicit path mounted here.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
-        "symbol": "mountArchitectureEditRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#idpOv420",
-      "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ"
-    },
-    {
-      "order": 1008040,
-      "kind": "call",
-      "label": "read an answer",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
-        "symbol": "isRecord"
-      },
-      "id": "vKEsyHFk#hbm71jgF",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

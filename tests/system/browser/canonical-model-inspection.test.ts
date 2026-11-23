@@ -59,7 +59,7 @@ const WAIT = { timeoutMs: 8_000 } as const;
 test("module search finds hidden modules and opens them in their scope", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "module-inspection"));
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });

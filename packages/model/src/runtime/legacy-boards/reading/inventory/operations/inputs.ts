@@ -1,6 +1,6 @@
 import { errorMessage } from "@archboard/diagnostics/errno";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
-import { VaultConfigurationSchema } from "#runtime/store/configuration.ts";
+import { parseVaultPolicy } from "#runtime/store/configuration.ts";
 import { decodeLegacyBoard } from "#runtime/legacy-boards/reading/format/store/decode.ts";
 import { unknownVocabularyReferences } from "#runtime/check/operations/vocabulary.ts";
 import { migrationConflict } from "#shared/legacy-inventory/rules/conflict.ts";
@@ -40,9 +40,11 @@ function decodeLegacyPolicy(
 	diagnostics: LegacyInventory["diagnostics"],
 ): LegacyInventory["policy"] {
 	try {
-		return VaultConfigurationSchema.parse(
+		const parsed = parseVaultPolicy(
 			Bun.YAML.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
 		);
+		if (!parsed.success) throw parsed.error;
+		return parsed.policy;
 	} catch (error) {
 		diagnostics.push({
 			code: "INVALID_POLICY",

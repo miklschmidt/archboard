@@ -9,16 +9,21 @@ use crate::sizes::{
     CARD_TITLE_FONT, DIAGRAM_MARGIN, DRILL_MARK_ROOM, FAR_SCALE, FLOW_HEADING,
     FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
     FRAME_TAB_PADDING, HERO_LINE_WIDTH, ICON_CHIP_GAP, ICON_CHIP_SIZE, LINE_WIDTH,
-    MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, RAIL_GAP, RAILS,
-    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER, TITLE_SIZE,
+    MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, SELF_LOOP_CORNER,
+    SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, STEP_NOTE_PADDING_X,
+    STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER, THIN_BODY, TITLE_SIZE,
 };
 
 pub use super::sequence_messages::arrow_standoff;
 
-/// The line widths a far view draws wider: a line of normal weight, of hero
-/// weight, and a double line's rails.
-const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
+/// The line widths a far view draws wider: a line of normal weight and of hero
+/// weight, and each as a thinner broken body.
+const FAR_WIDENED: [f64; 4] = [
+    LINE_WIDTH,
+    HERO_LINE_WIDTH,
+    LINE_WIDTH * THIN_BODY,
+    HERO_LINE_WIDTH * THIN_BODY,
+];
 
 /// A card's name, and a container's or a flow's on its tab.
 pub const fn card_title_font() -> DiagramFont {
@@ -197,11 +202,6 @@ pub const fn shadow_reach() -> f64 {
     super::shadow::SHADOW_REACH
 }
 
-/// The gap a double line's rails leave down its middle.
-pub const fn rail_gap() -> f64 {
-    RAIL_GAP
-}
-
 /// Whether a far view draws a line of this stroke width wider.
 pub fn widens_far(width: f64) -> bool {
     FAR_WIDENED.contains(&width)
@@ -214,8 +214,43 @@ pub fn far_line_scale(far: f64) -> f64 {
 }
 
 /// Each line width a far view widens, with the width it draws it at there.
-pub fn far_line_widths() -> [(f64, f64); 3] {
+pub fn far_line_widths() -> [(f64, f64); 4] {
     FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
+}
+
+/// How far back from its ends a strand in echelon stands its marks.
+pub const fn echelon() -> f64 {
+    super::heads::ECHELON
+}
+
+/// The straight run a line needs after its last bend, so the mark at its end
+/// lies along it: the longest mark and a little body before it.
+pub const fn approach_straight() -> f64 {
+    super::heads::APPROACH
+}
+
+/// The least length of a line with no bend: room for the marks at its ends
+/// and a little body. With no bend, a head needs no approach.
+pub const fn straight_run() -> f64 {
+    super::heads::STRAIGHT_RUN
+}
+
+/// How many steps an octave of the camera's scale holds for a mark's growth.
+const GROWTH_STEPS: f64 = 8.0;
+
+/// How much larger a viewer draws every mark at the ends of a line, from a
+/// camera at some scale in canvas pixels to a unit on a page of some pixel
+/// ratio: the share that keeps a relationship mark's square at its least size
+/// on screen, and one near enough. It rises in steps of an eighth of an octave
+/// of the camera's scale, so a zoom draws kept parts again a few times an
+/// octave rather than every frame.
+pub fn mark_growth(pixel_ratio: f64, scale: f64) -> f64 {
+    let floor = crate::sizes::HEAD_FLOOR * pixel_ratio / scale;
+    if !floor.is_finite() || floor <= 0.0 {
+        return 1.0;
+    }
+    let stepped = ((floor.log2() * GROWTH_STEPS).ceil() / GROWTH_STEPS).exp2();
+    (stepped / super::heads::mark_side()).max(1.0)
 }
 
 /// The icon a part without a known icon is drawn with.
@@ -231,4 +266,26 @@ pub const fn flow_icon() -> &'static str {
 /// Every icon a picture can draw, whatever its policy says.
 pub const fn own_icons() -> [&'static str; 2] {
     super::icons::OWN_ICONS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::mark_growth;
+    use crate::paint::heads::mark_side;
+    use crate::sizes::HEAD_FLOOR;
+
+    #[test]
+    fn a_mark_keeps_its_least_size_on_screen_and_its_own_size_near() {
+        for (ratio, scale) in [(1.0, 0.1), (2.0, 0.2), (1.5, 0.3)] {
+            let on_screen = mark_side() * mark_growth(ratio, scale) * scale / ratio;
+            assert!(
+                on_screen >= HEAD_FLOOR - 1e-9,
+                "{ratio} {scale}: {on_screen}"
+            );
+            assert!(on_screen < HEAD_FLOOR * 1.1, "{ratio} {scale}: {on_screen}");
+        }
+        // At the opening zoom of a large picture and nearer, marks keep their size.
+        assert_eq!(mark_growth(1.0, 0.4), 1.0);
+        assert_eq!(mark_growth(2.0, 0.8), 1.0);
+    }
 }

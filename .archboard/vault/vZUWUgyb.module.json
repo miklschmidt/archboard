@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
+      "order": 26000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "binding and anchor schemas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/shared/schemas/content.ts",
+        "symbol": "codeBindingSchema"
+      },
+      "to": "vKEsyHFk#NVlMWCWO"
+    }
+  ],
   "order": 960120,
   "name": "Legacy board schema",
   "kind": "module",
@@ -7,25 +23,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/shared/schemas/legacy-board.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#vZUWUgyb",
   "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "formerNames": [
     "Board document schema"
-  ],
-  "outgoing": [
-    {
-      "order": 26000,
-      "kind": "dependency",
-      "label": "binding and anchor schemas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/content.ts",
-        "symbol": "codeBindingSchema"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
-      "to": "vKEsyHFk#NVlMWCWO"
-    }
   ]
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 5000,
   "name": "Tool contract",
   "kind": "module",
@@ -8,7 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/tool-contract/protocol"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
   "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
   "documents": [
@@ -16,6 +17,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

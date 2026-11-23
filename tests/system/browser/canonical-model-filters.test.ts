@@ -15,8 +15,8 @@ import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
-/** The switch that draws the lines of the `call` kind or leaves them out. */
-const CALLS = '[data-filter-kind="call"]';
+/** The switch that draws the lines of the `sync` kind or leaves them out. */
+const SYNC = '[data-filter-kind="sync"]';
 
 /** The button that clears the selection in the right panel. */
 const CLEAR = '[data-slot="semantic-selection-clear"]';
@@ -25,7 +25,7 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "filtered-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const workerPath = join(vault, "worker.module.json");
@@ -52,11 +52,11 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 		WAIT,
 	);
 	await pick(browser, "Shop#Dispatch");
-	await browser.run(["click", CALLS]);
+	await browser.run(["click", SYNC]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('${CALLS}')?.getAttribute('aria-checked') === 'false'`,
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('${SYNC}')?.getAttribute('aria-checked') === 'false'`,
 			),
 		Boolean,
 		"the hidden selected connection, and the switch that hid it",
@@ -89,7 +89,7 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	);
 	expect(
 		await browser.eval<string | null>(
-			`document.querySelector('${CALLS}').getAttribute('aria-checked')`,
+			`document.querySelector('${SYNC}').getAttribute('aria-checked')`,
 		),
 	).toBe("true");
 	await browser.eval("window.history.back()");
@@ -107,18 +107,18 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('${CALLS}')?.getAttribute('aria-checked') === 'false' && document.querySelector('${CALLS}')?.checkVisibility() === true && document.querySelector('[data-slot="model-empty-diagram"]') !== null`,
+				`document.querySelector('${SYNC}')?.getAttribute('aria-checked') === 'false' && document.querySelector('${SYNC}')?.checkVisibility() === true && document.querySelector('[data-slot="model-empty-diagram"]') !== null`,
 			),
 		Boolean,
 		"the switch still visible in the narrow empty reading after reload",
 		WAIT,
 	);
-	await browser.run(["focus", CALLS]);
+	await browser.run(["focus", SYNC]);
 	await browser.run(["press", "Space"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('${CALLS}')?.getAttribute('aria-checked') === 'true' && document.querySelector('${CALLS}')?.checkVisibility() === false && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') !== null`,
+				`document.querySelector('${SYNC}')?.getAttribute('aria-checked') === 'true' && document.querySelector('${SYNC}')?.checkVisibility() === false && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') !== null`,
 			),
 		Boolean,
 		"the hidden kind drawn again and the panel hidden",
@@ -126,7 +126,7 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	);
 	expect(await focusedSlot()).toBe("model-diagram");
 	await pick(browser, "Shop#Dispatch");
-	await browser.run(["click", CALLS]);
+	await browser.run(["click", SYNC]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -141,7 +141,7 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('${CLEAR}') === null && document.querySelector('${CALLS}')?.checkVisibility() === true`,
+				`document.querySelector('${CLEAR}') === null && document.querySelector('${SYNC}')?.checkVisibility() === true`,
 			),
 		Boolean,
 		"the selection cleared and the Legend still visible",

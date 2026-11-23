@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 8003,
   "name": "Atomic file replacement",
   "kind": "function",
@@ -11,7 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/store/atomic-write.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#qTv7HuBw",
   "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "documents": [
@@ -34,6 +35,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

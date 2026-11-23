@@ -2,6 +2,7 @@
 
 import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { cablesOf, plateReach } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	boxesOverlap,
 	distanceToRoute,
@@ -11,32 +12,43 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 
 /**
- * How far each pill sits from the route it names.
+ * How far each pill sits from the route it names, or a cable's plate from the
+ * nearest of its strands, past the half of the cable it stands beside.
  * @param drawn The rendered picture.
  * @returns One "id: distance" per pill.
  */
 function detached(drawn: RenderedDiagram): string[] {
 	const routes = routePoints(drawn.svg);
+	const cables = cablesOf(drawn);
 	return [...routeLabels(drawn.svg)].flatMap(([id, pill]) => {
-		const points = routes.get(id);
-		if (points === undefined) {
+		const strands = cables.get(id) ?? [id];
+		const distances = strands.flatMap((strand) => {
+			const points = routes.get(strand);
+			return points === undefined ? [] : [distanceToRoute(pill, points)];
+		});
+		if (distances.length === 0) {
 			return [];
 		}
-		const away = distanceToRoute(pill, points);
+		const away = Math.min(...distances) - plateReach(strands);
 		return away > 0 ? [`${id} sits ${away.toFixed(1)} off its line`] : [];
 	});
 }
 
 /**
- * Every pill lying across a route other than the one it names.
+ * Every pill lying across a route other than the ones it names: its own, and
+ * the other strands of its cable.
  * @param drawn The rendered picture.
  * @returns One "pill over route" per covering.
  */
 function covering(drawn: RenderedDiagram): string[] {
 	const routes = [...routePoints(drawn.svg)];
+	const cables = cablesOf(drawn);
 	return [...routeLabels(drawn.svg)].flatMap(([id, pill]) =>
 		routes
-			.filter(([other, points]) => other !== id && routeCrosses(points, pill))
+			.filter(
+				([other, points]) =>
+					!(cables.get(id) ?? [id]).includes(other) && routeCrosses(points, pill),
+			)
 			.map(([other]) => `${id} over ${other}`),
 	);
 }

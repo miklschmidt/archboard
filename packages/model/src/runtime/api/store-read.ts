@@ -14,3 +14,4 @@ export { readRetainedModule } from "#runtime/canonical/history/retained-reading/
 export { readLegacyInventory } from "#runtime/legacy-boards/reading/inventory/operations/inventory.ts";
 export { readArchitectureClaims } from "#runtime/canonical/edit/operations/claims.ts";
 export { watchArchitectureModel } from "#runtime/canonical/read/operations/model-watch.ts";
+export { readUpgradeInventory } from "#runtime/upgrade/operations/inventory.ts";

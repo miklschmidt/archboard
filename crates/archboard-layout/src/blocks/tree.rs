@@ -216,11 +216,9 @@ pub(crate) struct BlockTree {
     pub exits: Map<String, Side>,
     /// Whether this candidate compares all wraps and geometric packings.
     pub expanded: bool,
-    /// Whether this layout is the drawing itself, not a candidate the planner routes again: its
-    /// channels pack their tracks a lane apart, and a door widens for the heads of its lines.
-    pub packed: bool,
-    /// Whether this layout is a Lanes drawing, which rides its lanes everywhere: the cards beside
-    /// a block are ranked with it (`nested.rs`). Blocks' own fallback keeps them apart.
+    /// Whether this layout is a Lanes drawing, which Lanes lays out its own way: its cycles turn
+    /// the fewest lines, its page holds every line, and its parent ranks each container by its
+    /// ports (`fields.rs`). Blocks' own fallback keeps the Blocks way.
     pub lanes: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
@@ -234,8 +232,6 @@ pub(crate) struct BlockTree {
 pub(crate) struct Kept {
     /// Try the wider packing and axial frame approaches as a complete candidate.
     pub expanded: bool,
-    /// The layout is the drawing itself (`BlockTree::packed`).
-    pub packed: bool,
     /// The layout is a Lanes drawing (`BlockTree::lanes`).
     pub lanes: bool,
     /// The wall each port moves to, keyed by `exit_key` (`sides.rs`).
@@ -323,7 +319,6 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             expanded: kept.expanded,
-            packed: kept.packed,
             lanes: kept.lanes,
             feedback: Set::default(),
             fanouts: Set::default(),

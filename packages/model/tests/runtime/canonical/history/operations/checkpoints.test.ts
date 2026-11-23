@@ -8,7 +8,11 @@ import {
 	readRetainedModule,
 	listArchitectureCheckpoints,
 } from "@archboard/model/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
+import {
+	claimArchitectureSubjects,
+	editArchitectureModule,
+	retainArchitectureCheckpoint,
+} from "@archboard/model/store-write";
 import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 
 const homes: string[] = [];
@@ -24,12 +28,12 @@ function git(root: string, ...args: string[]): string {
 	return result.stdout.toString().trim();
 }
 
-function fixture() {
+function fixture(source = "tests/fixtures/current-format-vault") {
 	const home = temporaryHome("archboard-checkpoint-");
 	homes.push(home);
 	const root = join(home, "repo");
 	const vault = join(root, ".archboard/vault");
-	cpSync(resolvePath("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolvePath(source), vault, { recursive: true });
 	git(root, "init", "--quiet", "--initial-branch=main");
 	git(root, "config", "user.name", "Checkpoint Author");
 	git(root, "config", "user.email", "checkpoint@example.test");
@@ -85,6 +89,51 @@ test("retained architecture reopens exact bytes without reading damaged current 
 		success: true,
 		checkpoints: [{ id: retained.checkpoint.id, model: "Shop" }],
 	});
+});
+
+test("a vault in the old format reads once as read-only, refuses writes, and its history keeps its own policy", async () => {
+	const { vault } = fixture("tests/fixtures/old-format-vault");
+	const old = readArchitectureModel(vault);
+	if (!old.success) throw new Error(JSON.stringify(old));
+	expect(old.readOnly).toMatchObject({ code: "UPGRADE_REQUIRED" });
+	expect(Object.keys(old.policy.relationshipKinds)).toEqual(["call", "data"]);
+	const claimed = await claimArchitectureSubjects(vault, {
+		target: { model: old.manifest.id, state: old.selectedState!.id },
+		writer: "test-agent",
+		reason: "explaining the gateway",
+		subjects: ["Shop#Gateway"],
+	});
+	if (!claimed.success) throw new Error(JSON.stringify(claimed));
+	const gateway = readFileSync(join(vault, "gateway.module.json"));
+	const write = await editArchitectureModule(vault, {
+		target: { model: old.manifest.id, state: old.selectedState!.id },
+		subject: "Shop#Gateway",
+		expectedRevision: old.revision,
+		operationId: "write-old",
+		writer: "test-agent",
+		doing: "explaining request routing",
+		claim: claimed.claim.id,
+		description: "Routes requests.",
+	});
+	expect(write).toMatchObject({
+		success: false,
+		code: "UPGRADE_REQUIRED",
+		diagnostics: [{ code: "UPGRADE_REQUIRED" }],
+	});
+	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(gateway);
+	const retained = await retainArchitectureCheckpoint(vault, request(vault));
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	// The live vault moves to the current format; the retained reading stays as it was written.
+	cpSync(resolvePath("tests/fixtures/current-format-vault"), vault, { recursive: true });
+	const upgraded = readArchitectureModel(vault);
+	if (!upgraded.success) throw new Error(JSON.stringify(upgraded));
+	expect(upgraded.readOnly).toBeUndefined();
+	const exact = await readArchitectureCheckpoint(vault, retained.checkpoint.id);
+	if (!exact.success) throw new Error(JSON.stringify(exact));
+	expect(exact.readOnly).toBeUndefined();
+	expect(exact.policy.relationshipKinds).toEqual(old.policy.relationshipKinds);
+	expect(exact.modules.map((module) => module.schemaVersion)).toEqual([1, 1, 1]);
+	expect(exact.relationships).toEqual(old.relationships);
 });
 
 test("a removed module leads to the newest retained reading that holds it", async () => {
@@ -220,7 +269,7 @@ process.exit(await child.exited);
 	);
 	const sync = git(root, "rev-parse", "refs/heads/archboard-history");
 	expect(JSON.parse(git(root, "show", `${sync}:record.json`))).toEqual({
-		schemaVersion: 1,
+		schemaVersion: 2,
 		kind: "synchronization",
 	});
 	expect(git(root, "cat-file", "-p", sync)).toContain("gpgsig -----BEGIN SSH SIGNATURE-----");
@@ -391,7 +440,7 @@ test("retention preserves 656 modules, exact UTF-8 inputs and Git-sensitive file
 		writeFileSync(
 			join(directory, `scale-${index}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#Scale${index}`,
 				name: `Scale ${index}`,
 				kind: "service",

@@ -429,6 +429,7 @@ const browserShowContract = defineCommand({
 				"checkpoint",
 				"flow",
 				"walkthrough",
+				"lens",
 				"preview",
 				"bookmark",
 				"legacyAddress",

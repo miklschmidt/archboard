@@ -24,3 +24,5 @@ export {
 export { migrateArchitectureModel } from "#runtime/legacy-boards/reading/inventory/operations/apply.ts";
 
 export { initializeArchitectureModel } from "#runtime/canonical/history/operations/initialize-model.ts";
+
+export { upgradeArchitectureModel } from "#runtime/upgrade/operations/install.ts";

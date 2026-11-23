@@ -1,23 +1,10 @@
 {
-  "order": 12000,
-  "name": "Engine selection",
-  "kind": "module",
-  "responsibility": "Lays one measured graph out the way its root options name",
-  "description": "Nothing outside this seam knows which engine drew. A solve's answer carries the drawing in its root options. A graph that names lanes in its root options takes the lanes' placement. Any other graph is Blocks, which plans first and takes the lanes' placement where no plan routes. A Blocks graph that takes a dense placement is solved in parts (ADR 0078); a Lanes graph never is (ADR 0096).",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-layout/src/blocks/place.rs"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/OjRLKb74#mHYMkWdE",
-  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
-  "formerNames": [
-    "Layout engines"
-  ],
   "outgoing": [
     {
+      "id": "vKEsyHFk/OjRLKb74#Gejk3C1W",
       "order": 20000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "lay out every block",
       "emphasis": "normal",
       "anchor": {
@@ -25,8 +12,22 @@
         "path": "crates/archboard-layout/src/blocks/place.rs",
         "symbol": "place"
       },
-      "id": "vKEsyHFk/OjRLKb74#Gejk3C1W",
       "to": "vKEsyHFk/OjRLKb74#qtwaBhit"
     }
+  ],
+  "order": 12000,
+  "name": "Engine selection",
+  "kind": "module",
+  "responsibility": "Lays one measured graph out the way its root options name",
+  "description": "Nothing outside this seam knows which engine drew. A solve's answer carries the drawing in its root options. A graph that names lanes in its root options takes the lanes' placement. Any other graph is Blocks, which plans first and takes the lanes' placement, without its lines' words, where no plan routes. Either engine widens each door until the heads of its lines stand a lane apart. A Blocks graph that takes a dense placement is solved in parts (ADR 0078); a Lanes graph never is (ADR 0096).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout/src/blocks/place.rs"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+  "formerNames": [
+    "Layout engines"
   ]
 }

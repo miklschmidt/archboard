@@ -44,7 +44,7 @@ test("empty-canvas dragging selects while middle and Space dragging pan", async 
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "gesture-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
@@ -137,7 +137,7 @@ test("a double click opens a card", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "double-click-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });

@@ -1,4 +1,29 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#F6bCh9SD",
+      "order": 78000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "resolve source and references",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
+      "order": 79000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "activate selected code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/components/ModuleNavigation.tsx",
+        "symbol": "activateCodeTarget"
+      },
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    }
+  ],
   "order": 72000,
   "name": "Navigation reads",
   "kind": "module",
@@ -8,30 +33,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-model-navigation.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#KtBdeME1",
-  "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF",
-  "outgoing": [
-    {
-      "order": 78000,
-      "kind": "call",
-      "label": "resolve source and references",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#F6bCh9SD",
-      "to": "vKEsyHFk#guvtYApo"
-    },
-    {
-      "order": 79000,
-      "kind": "call",
-      "label": "activate selected code",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/components/ModuleNavigation.tsx",
-        "symbol": "activateCodeTarget"
-      },
-      "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF"
 }

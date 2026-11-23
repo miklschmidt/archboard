@@ -4,6 +4,7 @@ import {
 	architectureRenderResultSchema,
 } from "@archboard/model/contract";
 import { layoutEngineSchema, standaloneThemeSchema } from "@archboard/model/render-reply";
+import { lineEffectSchema, retiredCallAdvice } from "@archboard/model/policy";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
@@ -13,16 +14,42 @@ const InputSchema = architectureRenderRequestSchema().extend({
 	theme: standaloneThemeSchema().default("auto"),
 });
 /**
- * Refuse a flow that the architecture grammar would silently ignore.
+ * Refuse a hidden kind that names call, which names neither of the kinds that replace it.
+ * @param hideKinds The kinds hidden, when any are.
+ * @throws {CliUsageError} When one of them is call.
+ */
+function refuseRetiredKind(hideKinds: readonly string[] | undefined): void {
+	const retired = hideKinds?.map(retiredCallAdvice).find((advice) => advice !== undefined);
+	if (retired !== undefined)
+		throw new CliUsageError(
+			`--hide-kind call: ${retired}. Pass --hide-kind sync, --hide-kind async, or both.`,
+		);
+}
+/**
+ * Refuse a selector that the grammar would silently ignore: a flow in the architecture grammar, and
+ * a lens in a behavioral one, which draws every message of its flow. Refuse the retired kind call
+ * too.
  * @param request The selected reading.
  * @param request.flow The named flow, when there is one.
+ * @param request.lens The named lens, when there is one.
  * @param request.grammar The grammar the reading draws.
- * @throws {CliUsageError} When a flow is named without a behavioral grammar.
+ * @param request.hideKinds The kinds hidden, when any are.
+ * @throws {CliUsageError} When a selector does not fit the grammar or names call.
  */
-function requireGrammarForFlow(request: { flow?: string | undefined; grammar: string }): void {
+function requireGrammarForFlow(request: {
+	flow?: string | undefined;
+	lens?: string | undefined;
+	grammar: string;
+	hideKinds?: readonly string[] | undefined;
+}): void {
+	refuseRetiredKind(request.hideKinds);
 	if (request.flow !== undefined && request.grammar === "architecture")
 		throw new CliUsageError(
 			`--flow ${request.flow} needs a behavioral grammar: add --grammar sequence or --grammar flowchart.`,
+		);
+	if (request.lens !== undefined && request.grammar !== "architecture")
+		throw new CliUsageError(
+			`--lens ${request.lens} reads a structural picture: a ${request.grammar} draws every message of its flow. Leave out --lens.`,
 		);
 }
 const modelRenderContract = defineCommand({
@@ -38,6 +65,10 @@ const modelRenderContract = defineCommand({
 				["module", "Select a module by identity or unique name"],
 				["state", "Select an explicit architectural state"],
 				["scope", "Open an exact module scope"],
+				[
+					"lens",
+					"Show the relationships this lens selects, by id. Without it, the vault's default lens",
+				],
 			] as const
 		).map(([key, description]) => ({
 			kind: "option" as const,
@@ -50,7 +81,7 @@ const modelRenderContract = defineCommand({
 		...(
 			[
 				["focus", "--focus", "Focus these identities"],
-				["hideKinds", "--hide-kind", "Hide these relationship kinds"],
+				["hideKinds", "--hide-kind", "Also hide this relationship kind. Repeat to hide more kinds"],
 				["expand", "--expand", "Open these modules beside the scope"],
 			] as const
 		).map(([key, spelling, description]) => ({
@@ -62,6 +93,17 @@ const modelRenderContract = defineCommand({
 			placeholder: "id",
 			description,
 		})),
+		{
+			kind: "option",
+			key: "hideEffects",
+			spellings: ["--hide-effect"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "effect",
+			choices: lineEffectSchema().options,
+			description:
+				"Also hide relationships with this effect; `declared` is a dependency that states none. Repeat to hide more effects",
+		},
 		{
 			kind: "option",
 			key: "flow",
@@ -178,9 +220,9 @@ const modelRenderContract = defineCommand({
 	 * @returns A file receipt or an explicit refusal.
 	 */
 	async handler(input, context) {
-		await context.require("server", "model render");
 		const { out, ...request } = input;
 		requireGrammarForFlow(request);
+		await context.require("server", "model render");
 		const result = await renderArchitectureFlowOnServer(request);
 		if (!result.success)
 			return {

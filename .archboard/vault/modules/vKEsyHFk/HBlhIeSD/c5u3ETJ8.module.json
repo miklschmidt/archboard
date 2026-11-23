@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
+      "order": 2000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "admits writes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/middleware/mutation-work.ts",
+        "symbol": "admit"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    }
+  ],
   "order": 39000,
   "name": "Mutation work",
   "kind": "module",
@@ -10,7 +26,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/middleware/mutation-work.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
   "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
   "documents": [
@@ -32,21 +48,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 2000,
-      "kind": "dependency",
-      "label": "admits writes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/middleware/mutation-work.ts",
-        "symbol": "admit"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
-      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
     }
   ]
 }

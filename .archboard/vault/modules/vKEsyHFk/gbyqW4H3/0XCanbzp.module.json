@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 10001,
   "name": "Bun renderer",
   "kind": "module",
@@ -8,11 +9,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/bun-renderer"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#0XCanbzp",
   "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
   "formerNames": [
     "Bun host"
-  ],
-  "outgoing": []
+  ]
 }

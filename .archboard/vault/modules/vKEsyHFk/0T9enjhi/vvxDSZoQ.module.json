@@ -1,4 +1,104 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/0T9enjhi#aEqCF5VY",
+      "order": 203000,
+      "kind": "async",
+      "effect": "query",
+      "label": "resolveModelReferences",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "resolveModelReferences"
+      },
+      "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#wlWo6SPu",
+      "order": 204000,
+      "kind": "async",
+      "effect": "query",
+      "label": "modelCodeTarget",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "modelCodeTarget"
+      },
+      "to": "vKEsyHFk/0T9enjhi#jQ671Dxs"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#gcijTSIS",
+      "order": 205000,
+      "kind": "async",
+      "effect": "query",
+      "label": "readSelectedState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readSelectedState"
+      },
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#AjGkFCES",
+      "order": 212000,
+      "kind": "async",
+      "effect": "query",
+      "label": "readCheckpointModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readCheckpointModel"
+      },
+      "to": "vKEsyHFk#v5jpAVBo"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#WdOzlOvq",
+      "order": 226000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "build read diagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "failure"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#YU9IQsiJ",
+      "order": 228000,
+      "kind": "async",
+      "effect": "query",
+      "label": "Read the explicit migration preview",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readMigrationPreview"
+      },
+      "to": "vKEsyHFk/0T9enjhi#7mTerd6Y"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",
+      "order": 235000,
+      "kind": "async",
+      "effect": "query",
+      "label": "readPlayback",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readPlayback"
+      },
+      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
+    }
+  ],
   "order": 66000,
   "name": "Canonical navigation",
   "kind": "function",
@@ -8,7 +108,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
   "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
   "documents": [
@@ -30,99 +130,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 203000,
-      "kind": "call",
-      "label": "resolveModelReferences",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "resolveModelReferences"
-      },
-      "id": "vKEsyHFk/0T9enjhi#aEqCF5VY",
-      "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
-    },
-    {
-      "order": 204000,
-      "kind": "call",
-      "label": "modelCodeTarget",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "modelCodeTarget"
-      },
-      "id": "vKEsyHFk/0T9enjhi#wlWo6SPu",
-      "to": "vKEsyHFk/0T9enjhi#jQ671Dxs"
-    },
-    {
-      "order": 205000,
-      "kind": "call",
-      "label": "readSelectedState",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "readSelectedState"
-      },
-      "id": "vKEsyHFk/0T9enjhi#gcijTSIS",
-      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
-    },
-    {
-      "order": 212000,
-      "kind": "call",
-      "label": "readCheckpointModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "readCheckpointModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#AjGkFCES",
-      "to": "vKEsyHFk#v5jpAVBo"
-    },
-    {
-      "order": 226000,
-      "kind": "call",
-      "label": "build read diagnostics",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "failure"
-      },
-      "id": "vKEsyHFk/0T9enjhi#WdOzlOvq",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 228000,
-      "kind": "call",
-      "label": "Read the explicit migration preview",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "readMigrationPreview"
-      },
-      "id": "vKEsyHFk/0T9enjhi#YU9IQsiJ",
-      "to": "vKEsyHFk/0T9enjhi#7mTerd6Y"
-    },
-    {
-      "order": 235000,
-      "kind": "call",
-      "label": "readPlayback",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
-        "symbol": "readPlayback"
-      },
-      "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",
-      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
     }
   ]
 }

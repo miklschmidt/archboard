@@ -1,21 +1,26 @@
 //! The marks a viewer draws beside a picture, as the painter draws them in it:
 //! the weight of a line, its arrowhead, its ink and its pulse's ink by its
-//! colour, a standing's pin, and the warning on a subject nobody has decided.
+//! colour, its dash, the effect key with each effect's line type, head and
+//! sample, a standing's pin, and the
+//! warning on a subject nobody has decided.
 //! A frontend that draws a key, a pin or a warning of its own reads them here,
 //! so it never holds a copy of the painter's rules.
 
 use crate::drawing::Emphasis;
-use crate::paint::edge_line::OPEN_ARM;
+use crate::paint::heads::OPEN_ARM;
+use crate::paint::legend::effect_sample;
 use crate::paint::palette::Palette;
 use crate::paint::standing::{PIN_INSET, standing_pin_at, warning_glyph};
-use crate::paint::styles::{HEAD_LENGTH, WEIGHTS, drawn_ink, quietened, stroke_width};
+use crate::paint::styles::{
+    HEAD_LENGTH, WEIGHTS, dash_array, drawn_ink, effect_look, quietened, stroke_width,
+};
 use crate::paint::traffic::pulse_look;
-use crate::request::{PaletteColor, Standing};
+use crate::request::{Arrowhead, Dash, LineEffect, PaletteColor, Standing};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{Colour, Item};
 
 /// Every colour a relationship kind can be drawn in: none, for the neutral line, then the palette's.
-const COLOURS: [Option<PaletteColor>; 18] = [
+const COLOURS: [Option<PaletteColor>; 19] = [
     None,
     Some(PaletteColor::Red),
     Some(PaletteColor::Orange),
@@ -25,6 +30,7 @@ const COLOURS: [Option<PaletteColor>; 18] = [
     Some(PaletteColor::Green),
     Some(PaletteColor::Emerald),
     Some(PaletteColor::Teal),
+    Some(PaletteColor::Slate),
     Some(PaletteColor::Cyan),
     Some(PaletteColor::Sky),
     Some(PaletteColor::Blue),
@@ -57,6 +63,28 @@ pub struct ViewerMarks {
     pub warning: Vec<Item>,
     /// How far in from a box's corner its pin and its warning stand.
     pub corner_inset: f64,
+    /// How a line of each dash is broken: lengths drawn and left, in turn.
+    pub dashes: Vec<(Dash, &'static [f64])>,
+    /// The effect key, in the key's order.
+    pub effects: Vec<EffectKey>,
+    /// The width and height of the box each effect's sample is drawn in.
+    pub sample_size: (f64, f64),
+}
+
+/// One row of the effect key: what an effect is called, its line type and its
+/// head, and its sample drawn as the legend of an export draws it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EffectKey {
+    /// The effect.
+    pub effect: LineEffect,
+    /// What the key calls it.
+    pub words: &'static str,
+    /// The line type its lines take.
+    pub dash: Dash,
+    /// The head its lines end in.
+    pub head: Arrowhead,
+    /// Its sample in the neutral ink, in a box of `sample_size` with its top left at the origin.
+    pub sample: Vec<Item>,
 }
 
 /// The marks a viewer draws beside a picture, from the painter's own rules.
@@ -101,6 +129,24 @@ pub fn viewer_marks() -> ViewerMarks {
         pulse_breadth: pulse_breadth(stroke_width(Emphasis::Normal)),
         line_inks,
         pulse_inks,
+        dashes: [Dash::Solid, Dash::Dashed, Dash::Dotted, Dash::Declared]
+            .into_iter()
+            .map(|dash| (dash, dash_array(dash)))
+            .collect(),
+        effects: LineEffect::ALL
+            .into_iter()
+            .map(|effect| {
+                let look = effect_look(effect);
+                EffectKey {
+                    effect,
+                    words: effect.words(),
+                    dash: look.dash,
+                    head: look.head,
+                    sample: effect_sample(effect, &palette).0,
+                }
+            })
+            .collect(),
+        sample_size: effect_sample(LineEffect::Mutation, &palette).1,
         pins,
         warning: warning_glyph(&palette),
         corner_inset: PIN_INSET,

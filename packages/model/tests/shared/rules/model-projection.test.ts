@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { projectModel, type Model } from "#shared/rules/model-projection.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
 
 type Module = Partial<Model["modules"][number]> & { id: string };
 type Relationship = Pick<Model["relationships"][number], "id" | "from" | "to"> &
@@ -20,12 +21,13 @@ function modelOf(modules: Module[], relationships: Relationship[]): Model {
 			...module,
 		})),
 		relationships: relationships.map((edge, order) => ({
-			kind: "call",
+			kind: "sync",
 			emphasis: "normal",
 			order,
 			...edge,
 		})),
 		collections: [],
+		policy: DEFAULT_SEMANTIC_POLICY,
 	} as unknown as Model;
 }
 
@@ -41,69 +43,6 @@ const toggleOf = (reading: ReturnType<typeof projectModel>, id: string) =>
 function lines(projection: ReturnType<typeof projectModel>): string[] {
 	return projection.content.edges.map((edge) => `${edge.from}>${edge.to}`);
 }
-
-describe("lines", () => {
-	const model = modelOf(
-		[{ id: "a" }, { id: "b" }],
-		[
-			{ id: "one", from: "a", to: "b", kind: "http", label: "ask" },
-			{ id: "two", from: "a", to: "b", kind: "event", label: "tell" },
-			{ id: "back", from: "b", to: "a", kind: "http", label: "answer" },
-		],
-	);
-
-	test("a pair with relationships in both directions draws one line with an arrow at each end", () => {
-		const reading = projectModel(model);
-		expect(lines(reading)).toEqual(["a>b"]);
-		expect(reading.content.edges[0]?.twoWay).toBe(true);
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
-	});
-
-	test("a line of one kind wears it, and a line of mixed kinds names neither", () => {
-		const [joined] = projectModel(model).content.edges;
-		expect(joined?.kind).not.toBe("http");
-		expect(joined?.kind).not.toBe("event");
-		const [shared] = projectModel(model, null, null, { hideKinds: ["event"] }).content.edges;
-		expect(shared?.kind).toBe("http");
-	});
-
-	test("hiding a kind leaves the relationships of every other kind on their line", () => {
-		const reading = projectModel(model, null, null, { hideKinds: ["http"] });
-		expect(reading.content.edges[0]).toMatchObject({ id: "two", kind: "event", label: "tell" });
-		expect(reading.content.edges[0]).not.toHaveProperty("twoWay");
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["two"]);
-		expect(reading.allConnections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
-	});
-});
-
-describe("a hidden kind", () => {
-	const model = modelOf(
-		[
-			{ id: "system" },
-			{ id: "a", parent: "system" },
-			{ id: "b", parent: "system" },
-			{ id: "c", parent: "system" },
-			{ id: "alone", parent: "system" },
-		],
-		[
-			{ id: "ask", from: "a", to: "b", kind: "http" },
-			{ id: "tell", from: "b", to: "c", kind: "event" },
-		],
-	);
-	const cards = (reading: ReturnType<typeof projectModel>) =>
-		reading.content.nodes.map((node) => node.id);
-
-	test("takes off the cards that drew only its lines, and keeps a card that never drew one", () => {
-		const reading = projectModel(model, "system", null, { hideKinds: ["event"] });
-		expect(cards(reading)).toEqual(["system", "a", "b", "alone"]);
-		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "alone"]);
-	});
-
-	test("leaves the subjects of a focus, which the reader named", () => {
-		const reading = projectModel(model, "system", ["a", "b", "c"], { hideKinds: ["event"] });
-		expect(cards(reading)).toEqual(["a", "b", "c"]);
-	});
-});
 
 describe("a relationship between a module and a part that it holds", () => {
 	const modules = [
@@ -180,11 +119,17 @@ describe("two-way lines", () => {
 	});
 });
 
+/**
+ * A closed card and the parts it holds.
+ * @param card The card.
+ * @param parts Its parts.
+ * @returns Its modules.
+ */
+function closed(card: string, parts: string[]): Module[] {
+	return [{ id: card }, ...parts.map((id) => ({ id, name: `the ${id}`, parent: card }))];
+}
+
 describe("the words on a joined line", () => {
-	const closed = (card: string, parts: string[]) => [
-		{ id: card },
-		...parts.map((id) => ({ id, name: `the ${id}`, parent: card })),
-	];
 	const model = modelOf(
 		[
 			...closed("user", []),
@@ -253,6 +198,28 @@ describe("the words on a joined line", () => {
 			),
 		);
 		expect(reading.connections.map(({ line }) => line.id)).toEqual(["known", "gone"]);
+	});
+});
+
+describe("a cable of lines between one pair of cards", () => {
+	const model = modelOf(
+		[...closed("loud", []), ...closed("quiet", [])],
+		[
+			{ id: "calls", from: "loud", to: "quiet", kind: "sync", label: "first" },
+			{ id: "tells", from: "loud", to: "quiet", kind: "event", label: "second" },
+			{ id: "asks", from: "loud", to: "quiet", kind: "rpc", label: "third" },
+			{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
+		],
+	);
+
+	test("keeps a line of each kind, and wears one plate on its first line", () => {
+		const edges = projectModel(model).content.edges;
+		expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+			["calls", "sync", "first +2"],
+			["tells", "event", undefined],
+			["asks", "rpc", undefined],
+			["back", "storage", "back"],
+		]);
 	});
 });
 

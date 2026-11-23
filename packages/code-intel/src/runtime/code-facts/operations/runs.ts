@@ -11,10 +11,17 @@
 // name as a value: it reads a constant, passes the name on, or tests a value
 // against a class, as `instanceof` and a catch do. A passed argument also
 // records that use, so the check can count a known function as running code
-// and keep a constant as a value (TASK-436.15).
+// and keep a constant as a value (TASK-436.15). A call, and a name passed on,
+// also says how its site runs the name: awaited, started or plain
+// (call-timing.ts, TASK-663.09).
 
 import type { Node } from "web-tree-sitter";
 import type { Definition, Reference } from "#runtime/code-facts/operations/facts.ts";
+import {
+	callSiteOf,
+	timingMark,
+	type TimingSyntax,
+} from "#runtime/code-facts/operations/call-timing.ts";
 
 /**
  * Where a name stands in syntax that runs it: the field that holds it, or a
@@ -34,6 +41,8 @@ interface RunSyntax {
 	readonly chains: Readonly<Record<string, readonly string[]>>;
 	/** Argument syntax, and where a name passed to a call stands in it. */
 	readonly arguments: Readonly<Record<string, Stand>>;
+	/** How the grammar awaits and starts a call. */
+	readonly timing: TimingSyntax;
 }
 
 /**
@@ -97,22 +106,26 @@ function standsAt(whole: Node, positions: Readonly<Record<string, Stand>>): bool
 }
 
 /**
- * The mark of a use at run time that runs none of what its name spells.
+ * The marks of a use at run time: as a value when it runs none of what its
+ * name spells, with `passed` for an argument, and the timing of a call or of
+ * a name passed on.
  * @param name The name.
  * @param syntax The grammar's syntax.
  * @param typeOnly Whether the use is only as a type, which is never a use as a value.
- * @returns `asValue` for a value use, with `passed` for an argument, else nothing.
+ * @returns The marks that hold.
  */
-function valueMark(
+function markUse(
 	name: Node,
 	syntax: RunSyntax,
 	typeOnly: boolean,
-): Pick<Reference, "asValue" | "passed"> {
+): Pick<Reference, "asValue" | "passed" | "timing"> {
 	if (typeOnly) return {};
 	const whole = wholeName(name, syntax);
-	if (standsAt(whole, syntax.runners)) return {};
-	const passed = standsAt(whole, syntax.arguments);
-	return passed ? { asValue: true, passed: true } : { asValue: true };
+	if (standsAt(whole, syntax.runners)) {
+		return timingMark(callSiteOf(whole.parent!, true, syntax.timing));
+	}
+	if (!standsAt(whole, syntax.arguments)) return { asValue: true };
+	return { asValue: true, passed: true, ...timingMark(callSiteOf(whole, false, syntax.timing)) };
 }
 
 /**
@@ -131,4 +144,4 @@ function runsDefinition(
 	);
 }
 
-export { ANY, type RunSyntax, runsDefinition, valueMark };
+export { ANY, type RunSyntax, runsDefinition, markUse };

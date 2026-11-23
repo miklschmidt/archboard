@@ -3,12 +3,13 @@
   "name": "Claude Code",
   "kind": "agent",
   "responsibility": "Reads your code and states what the system is",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#EbTyUXWM",
   "outgoing": [
     {
       "order": 10,
-      "kind": "call",
+      "kind": "spawn",
+      "effect": "mutation",
       "label": "states meaning",
       "emphasis": "hero",
       "traffic": {
@@ -20,7 +21,8 @@
     },
     {
       "order": 30,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "writes",
       "emphasis": "normal",
       "traffic": {

@@ -111,6 +111,7 @@
 	--semantic-green: oklch(0.598 0.172 147);
 	--semantic-emerald: oklch(0.6 0.13 161);
 	--semantic-teal: oklch(0.603 0.104 184);
+	--semantic-slate: oklch(0.61 0.055 198);
 	--semantic-cyan: oklch(0.607 0.107 220);
 	--semantic-sky: oklch(0.612 0.136 241);
 	--semantic-blue: oklch(62.3% 0.214 259.815);
@@ -205,6 +206,7 @@
 	--bright-green: oklch(0.80034877 0.18206039 151.711031);
 	--bright-emerald: oklch(0.77294438 0.15349041 163.223075);
 	--bright-teal: oklch(0.78451984 0.13252856 181.911977);
+	--bright-slate: oklch(0.73 0.06 198);
 	--bright-cyan: oklch(0.79711582 0.13388753 211.530189);
 	--bright-sky: oklch(0.75351288 0.13898886 232.66148);
 	--bright-blue: oklch(0.71374005 0.14338051 254.624021);
@@ -228,6 +230,7 @@
 	--semantic-green: oklch(0.80034877 0.18206039 151.711031);
 	--semantic-emerald: oklch(0.77294438 0.15349041 163.223075);
 	--semantic-teal: oklch(0.78451984 0.13252856 181.911977);
+	--semantic-slate: oklch(0.73 0.06 198);
 	--semantic-cyan: oklch(0.79711582 0.13388753 211.530189);
 	--semantic-sky: oklch(0.75351288 0.13898886 232.66148);
 	--semantic-blue: oklch(0.71374005 0.14338051 254.624021);

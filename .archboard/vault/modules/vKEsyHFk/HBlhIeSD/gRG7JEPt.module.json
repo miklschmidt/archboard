@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#5eMr0hkn",
+      "order": 120000,
+      "kind": "async",
+      "effect": "compute",
+      "label": "renderArchitecture with grammar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "flowPicture"
+      },
+      "to": "vKEsyHFk#jAl99x56"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#WpbKgDdF",
+      "order": 121000,
+      "kind": "async",
+      "effect": "query",
+      "label": "readArchitectureModel and readArchitectureCheckpoint",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "flowReading"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
+      "order": 122000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "requireVault and vaultOfRequest",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "mountArchitectureFlowRoutes"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "order": 184000,
+      "kind": "async",
+      "effect": "compute",
+      "label": "ArchitectureFlowRenderRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "flowPicture"
+      },
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
+      "id": "vKEsyHFk#OFwD2rtg",
+      "order": 1008030,
+      "kind": "sync",
+      "effect": "query",
+      "label": "name the vault of a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "vaultIdentity"
+      },
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    }
+  ],
   "order": 41000,
   "name": "Canonical flow render routes",
   "kind": "module",
@@ -8,7 +80,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#gRG7JEPt",
   "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
   "documents": [
@@ -30,73 +102,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 120000,
-      "kind": "call",
-      "label": "renderArchitecture with grammar",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "flowPicture"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#5eMr0hkn",
-      "to": "vKEsyHFk#jAl99x56"
-    },
-    {
-      "order": 121000,
-      "kind": "call",
-      "label": "readArchitectureModel and readArchitectureCheckpoint",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "flowReading"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#WpbKgDdF",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 122000,
-      "kind": "call",
-      "label": "requireVault and vaultOfRequest",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "mountArchitectureFlowRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 184000,
-      "kind": "call",
-      "label": "ArchitectureFlowRenderRequestSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "flowPicture"
-      },
-      "id": "vKEsyHFk/0T9enjhi#txWnt33L",
-      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
-    },
-    {
-      "order": 1008030,
-      "kind": "call",
-      "label": "name the vault of a checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "vaultIdentity"
-      },
-      "id": "vKEsyHFk#OFwD2rtg",
-      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     }
   ]
 }

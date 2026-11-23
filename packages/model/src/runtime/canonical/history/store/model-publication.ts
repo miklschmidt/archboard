@@ -324,6 +324,7 @@ async function requireCompleteArchive(
 		git(context.root, ["rev-parse", "--path-format=absolute", "--git-path", "shallow"]),
 	]);
 	const records = await archiveRecords(context, [tip]).catch((error: unknown) => {
+		if (error instanceof ArchiveError && error.code === "ARCHIVE_NEWER") throw error;
 		throw new ArchiveError(
 			"ARCHIVE_UNREADABLE",
 			error instanceof Error ? error.message : String(error),

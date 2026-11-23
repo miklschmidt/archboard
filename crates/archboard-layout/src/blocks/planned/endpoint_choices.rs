@@ -26,6 +26,7 @@ pub(super) fn ends(
         .into_iter()
         .filter_map(|side| port(model, edge, source, side, shape, if source { b } else { a }))
         .collect();
+    ports.extend(turns(model, edge, source, shape));
     if search == Search::Ports {
         ports.extend(extra(model, edge, source, shape));
     }
@@ -153,6 +154,48 @@ fn wall_slot(
     }
 }
 
+/// The places on this end's walls square with the turn out of each port of the other end, so
+/// that a line can leave that port, turn once and land, rather than go round. Only a line that
+/// holds this end alone moves its port: lines that share an end share its port as a fan.
+fn turns(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<super::ports::Port> {
+    let (from, to) = model.ends[edge];
+    let (endpoint, far) = if source { (from, to) } else { (to, from) };
+    let sharing = if source {
+        &model.outgoing[from]
+    } else {
+        &model.incoming[to]
+    };
+    if sharing.len() > 1 {
+        return Vec::new();
+    }
+    let (mine, theirs) = (
+        center(shape.endpoints[&endpoint]),
+        center(shape.endpoints[&far]),
+    );
+    let margin = if source { 12.0 } else { 20.0 };
+    let sides = [Side::Bottom, Side::Right, Side::Top, Side::Left];
+    let upright = |side: Side| matches!(side, Side::Top | Side::Bottom);
+    let turns: Vec<_> = (sides.into_iter())
+        .filter_map(|side| {
+            Some((
+                side,
+                port(model, edge, !source, side, shape, mine)?.approach,
+            ))
+        })
+        .collect();
+    (sides.into_iter())
+        .filter(|&side| port(model, edge, source, side, shape, theirs).is_some())
+        .flat_map(|side| {
+            let at = shape.wall(endpoint, side);
+            (turns.iter())
+                .filter(move |(far, _)| upright(*far) != upright(side))
+                .map(move |&(_, turn)| {
+                    super::ports::on_wall(at, side, turn, margin).reaching(model.half(edge))
+                })
+        })
+        .collect()
+}
+
 fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<super::ports::Port> {
     let (from, to) = model.ends[edge];
     let a = center(shape.endpoints[&from]);
@@ -170,9 +213,10 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     for side in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
         if walls.contains(&side) {
             let at = shape.wall(endpoint, side);
-            ports.push(super::ports::on_wall(at, side, toward, margin));
+            let half = model.half(edge);
+            ports.push(super::ports::on_wall(at, side, toward, margin).reaching(half));
             let slot = wall_slot(model, shape, &incidents, (edge, source), (side, at));
-            ports.push(super::ports::on_wall(at, side, slot, 20.0));
+            ports.push(super::ports::on_wall(at, side, slot, 20.0).reaching(half));
         }
     }
     ports

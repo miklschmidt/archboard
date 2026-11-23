@@ -141,8 +141,6 @@ pub(crate) struct Router<'s> {
     pub chains: Vec<Chain>,
     pub nets: Vec<Net>,
     pub trunks: Vec<Trunk>,
-    /// Whether the channels pack their tracks a lane apart (`assign_tracks`).
-    pub packed: bool,
     /// Whether the ends on each card face gather into one group a lane apart, a bus, as Lanes
     /// draws them (`place_ports`).
     pub bus: bool,
@@ -157,7 +155,6 @@ impl<'s> Router<'s> {
             chains: Vec::new(),
             nets: Vec::new(),
             trunks: Vec::new(),
-            packed: false,
             bus: false,
         }
     }

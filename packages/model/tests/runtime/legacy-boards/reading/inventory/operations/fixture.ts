@@ -71,7 +71,7 @@ function previewFixture() {
 							id: "Save",
 							from: "Api",
 							to: "Db",
-							kind: "call",
+							kind: "sync",
 							label: "Stores purchases",
 							description: "Durable write",
 							emphasis: "hero",

@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#zd3E41io",
+      "order": 60000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "say which checkout the person activated",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/clients/shown-conversation.ts",
+        "symbol": "showConversation"
+      },
+      "to": "vKEsyHFk#ERy2jAwu"
+    }
+  ],
   "order": 23000,
   "name": "Shown conversation",
   "kind": "function",
@@ -12,7 +28,7 @@
     "path": "apps/web/src/ui/application/clients/shown-conversation.ts",
     "symbol": "conversationActivation"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#cLeaiTWy",
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "documents": [
@@ -27,21 +43,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 60000,
-      "kind": "call",
-      "label": "say which checkout the person activated",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/clients/shown-conversation.ts",
-        "symbol": "showConversation"
-      },
-      "id": "vKEsyHFk/yejBBUFY#zd3E41io",
-      "to": "vKEsyHFk#ERy2jAwu"
     }
   ]
 }

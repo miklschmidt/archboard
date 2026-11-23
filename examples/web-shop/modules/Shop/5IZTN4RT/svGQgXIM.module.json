@@ -1,19 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "Shop/5IZTN4RT#y1iIj3Xn",
+      "order": 5000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "put the order's items back",
+      "emphasis": "normal",
+      "to": "Shop/5IZTN4RT#SN2ShpE5"
+    }
+  ],
   "order": 6000,
   "name": "Release route",
   "kind": "route",
   "responsibility": "DELETE /reservations/{order}: puts a cancelled order's items back",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/5IZTN4RT#svGQgXIM",
-  "parent": "Shop/5IZTN4RT#1tJdSOqs",
-  "outgoing": [
-    {
-      "order": 5000,
-      "kind": "call",
-      "label": "put the order's items back",
-      "emphasis": "normal",
-      "id": "Shop/5IZTN4RT#y1iIj3Xn",
-      "to": "Shop/5IZTN4RT#SN2ShpE5"
-    }
-  ]
+  "parent": "Shop/5IZTN4RT#1tJdSOqs"
 }

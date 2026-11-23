@@ -44,7 +44,7 @@ let server: OwnedServer | undefined;
 let source: ReturnType<typeof destination> | undefined;
 beforeAll(async () => {
 	source = destination();
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), source.vault, {
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), source.vault, {
 		recursive: true,
 	});
 	server = await startOwnedServer({

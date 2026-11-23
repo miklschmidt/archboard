@@ -1,4 +1,150 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#0BYKx4Tg",
+      "order": 900,
+      "kind": "async",
+      "effect": "query",
+      "label": "judge exposure, resolved uses, coverage and caller owners",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#ds3DX618"
+    },
+    {
+      "id": "vKEsyHFk#BBrO3vfV",
+      "order": 920,
+      "kind": "async",
+      "effect": "query",
+      "label": "modules touched since the base, working tree included",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
+      "order": 43000,
+      "kind": "async",
+      "effect": "query",
+      "label": "read the selected canonical states and their predecessor",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#osnkOhpk",
+      "order": 69000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the facts of each file, and what each module exposes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
+        "symbol": "createCodeFacts"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    },
+    {
+      "id": "vKEsyHFk#inAwwoLx",
+      "order": 70018,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "apply source-reading policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
+        "symbol": "neverRead"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "id": "vKEsyHFk#o6iMuevP",
+      "order": 70053,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "report source inspection failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
+        "symbol": "errorMessage"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "id": "vKEsyHFk#zAB848k7",
+      "order": 70054,
+      "kind": "async",
+      "effect": "query",
+      "label": "measure source inspection work",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
+        "symbol": "createElapsedClock"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "id": "vKEsyHFk#73DTR15V",
+      "order": 70055,
+      "kind": "sync",
+      "effect": "query",
+      "label": "read each checkout's language server files",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
+        "symbol": "passServers"
+      },
+      "to": "vKEsyHFk#fEJJNr2X"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
+      "order": 71000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "where a use no import resolves is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
+        "symbol": "openLanguageServers"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
+      "order": 87000,
+      "kind": "async",
+      "effect": "query",
+      "label": "read each draft's bound parts at its own ref",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "id": "vKEsyHFk#7Zm6sJS7",
+      "order": 123000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "which server each language starts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
+        "symbol": "languageServerOf"
+      },
+      "to": "vKEsyHFk#FMiMVZ28"
+    }
+  ],
   "order": 21000,
   "name": "Code check",
   "kind": "module",
@@ -8,7 +154,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-check"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#5SMX69gS",
   "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "documents": [
@@ -30,141 +176,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "call",
-      "label": "judge exposure, resolved uses, coverage and caller owners",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#0BYKx4Tg",
-      "to": "vKEsyHFk#ds3DX618"
-    },
-    {
-      "order": 920,
-      "kind": "call",
-      "label": "modules touched since the base, working tree included",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#BBrO3vfV",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 43000,
-      "kind": "call",
-      "label": "read the selected canonical states and their predecessor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 69000,
-      "kind": "call",
-      "label": "the facts of each file, and what each module exposes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
-        "symbol": "createCodeFacts"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#osnkOhpk",
-      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
-    },
-    {
-      "order": 70018,
-      "kind": "call",
-      "label": "apply source-reading policy",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
-        "symbol": "neverRead"
-      },
-      "id": "vKEsyHFk#inAwwoLx",
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 70053,
-      "kind": "call",
-      "label": "report source inspection failures",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
-        "symbol": "errorMessage"
-      },
-      "id": "vKEsyHFk#o6iMuevP",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 70054,
-      "kind": "call",
-      "label": "measure source inspection work",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
-        "symbol": "createElapsedClock"
-      },
-      "id": "vKEsyHFk#zAB848k7",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    },
-    {
-      "order": 70055,
-      "kind": "call",
-      "label": "read each checkout's language server files",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
-        "symbol": "passServers"
-      },
-      "id": "vKEsyHFk#73DTR15V",
-      "to": "vKEsyHFk#fEJJNr2X"
-    },
-    {
-      "order": 71000,
-      "kind": "call",
-      "label": "where a use no import resolves is defined",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
-        "symbol": "openLanguageServers"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
-      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
-    },
-    {
-      "order": 87000,
-      "kind": "call",
-      "label": "read each draft's bound parts at its own ref",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
-        "symbol": "nodesAtOwnRef"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 123000,
-      "kind": "call",
-      "label": "which server each language starts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
-        "symbol": "languageServerOf"
-      },
-      "id": "vKEsyHFk#7Zm6sJS7",
-      "to": "vKEsyHFk#FMiMVZ28"
     }
   ]
 }

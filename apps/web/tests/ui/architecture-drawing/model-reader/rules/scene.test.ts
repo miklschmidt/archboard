@@ -121,7 +121,9 @@ test("a picture stays while the next reading of its subject is drawn", () => {
 test("a state, comparison or filter is carried on one model, and a focus starts afresh", () => {
 	const scope = reading({ scope: "Shop#Gateway" });
 	expect(sceneModel({ ...scope, state: "Draft", against: "Current" })).toBe(sceneModel(scope));
-	expect(sceneView({ ...scope, filters: { hideKinds: ["call"] } })).toBeNull();
+	expect(
+		sceneView({ ...scope, filters: { lens: undefined, hideKinds: [], hideEffects: ["query"] } }),
+	).toBeNull();
 	expect(sceneView({ ...scope, focus: ["Shop#Handler"] })).toEqual({ id: "Shop#Handler" });
 	expect(sceneModel({ ...scope, scope: "Shop#Worker" })).not.toBe(sceneModel(scope));
 	expect(sceneModel({ ...scope, grammar: "sequence", flow: "Shop#Flow" })).not.toBe(

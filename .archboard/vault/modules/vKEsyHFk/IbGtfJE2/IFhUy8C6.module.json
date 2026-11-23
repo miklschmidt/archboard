@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#oc71QCiH",
+      "order": 21000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "register the run's checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/install.ts",
+        "symbol": "archboardOk"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    }
+  ],
   "order": 7000,
   "name": "Skill install",
   "kind": "module",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/operations/install.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "register the run's checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-world/operations/install.ts",
-        "symbol": "archboardOk"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#oc71QCiH",
-      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

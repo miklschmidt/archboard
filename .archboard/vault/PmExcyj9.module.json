@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#o56610zg",
+      "order": 54000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the model addresses of panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/rules/panes.ts",
+        "symbol": "paneAddressKey"
+      },
+      "to": "vKEsyHFk#9VahN2IU"
+    }
+  ],
   "order": 960270,
   "name": "Pane rules",
   "kind": "function",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/rules"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#PmExcyj9",
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
-  "outgoing": [
-    {
-      "order": 54000,
-      "kind": "dependency",
-      "label": "the model addresses of panes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/rules/panes.ts",
-        "symbol": "paneAddressKey"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#o56610zg",
-      "to": "vKEsyHFk#9VahN2IU"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih"
 }

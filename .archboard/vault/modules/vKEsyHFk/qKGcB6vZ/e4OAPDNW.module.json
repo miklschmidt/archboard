@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 21000,
   "name": "Workhorse links",
   "kind": "function",
@@ -7,7 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/rules/workhorse-links.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/qKGcB6vZ#e4OAPDNW",
   "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
   "documents": [
@@ -15,6 +16,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

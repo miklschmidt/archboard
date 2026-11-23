@@ -4,6 +4,7 @@
 
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	type DrawnPoint,
 	bodyShift,
@@ -52,16 +53,21 @@ function runsUnder(pill: DiagramBox, points: readonly DrawnPoint[]): number {
 }
 
 /**
- * Every straight run of one route through another relationship's label, where
- * a reader would take the route to end at the label it vanishes under.
+ * Every straight run of one route through another cable's label, where a
+ * reader would take the route to end at the label it vanishes under. A
+ * cable's strands run under its own plate.
  * @param drawing The rendered document.
  * @returns Each such route and label, named.
  */
 function runsUnderLabels(drawing: RenderedDiagram): string[] {
 	const routes = [...corridorPoints(drawing.svg)];
+	const cables = cablesOf(drawing);
 	return [...routeLabels(drawing.svg)].flatMap(([id, pill]) =>
 		routes
-			.filter(([other, points]) => other !== id && runsUnder(pill, points) > 0)
+			.filter(
+				([other, points]) =>
+					!(cables.get(id) ?? [id]).includes(other) && runsUnder(pill, points) > 0,
+			)
 			.map(([other]) => `${other} under ${id}`),
 	);
 }

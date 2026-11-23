@@ -7,6 +7,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
+import { labelsOffRuns } from "#tests/runtime/support/drawn-ink.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("a flank label clears an unrelated corridor without bending away from its route", async () => {
@@ -83,8 +84,10 @@ test("a flank label clears an unrelated corridor without bending away from its r
 	// not fixed to a flank for it; what a reader needs is the label on a
 	// straight run of its own route, no card crossed, and the drawing's turns
 	// within the wide-picture bound. Bridges are removed before counting bends.
+	// The route draws as a cable with "placed architecture", so its plate stands
+	// on the middle of the two strands.
 	const corridors = corridorPoints(drawing.svg);
-	expect(onStraightRun(corridors.get("6zcjVgzh")!, drawing, "6zcjVgzh")).toBe(true);
+	expect(labelsOffRuns(drawing)).not.toContain("6zcjVgzh");
 	const turns = [...corridors.values()].reduce((total, route) => total + bendsOf(route), 0);
 	expect(turns / corridors.size, "bends per route").toBeLessThanOrEqual(3);
 	for (const card of Object.values(drawing.atlas.nodes))

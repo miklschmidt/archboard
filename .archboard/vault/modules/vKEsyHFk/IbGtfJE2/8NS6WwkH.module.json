@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 5000,
   "name": "Pinned checkout",
   "kind": "module",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/processes/flask.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

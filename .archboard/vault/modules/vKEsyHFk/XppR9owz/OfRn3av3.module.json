@@ -1,4 +1,38 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
+      "order": 23000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "check code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "answerCodeCheck"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
+      "order": 23000,
+      "kind": "async",
+      "effect": "query",
+      "label": "requestJson",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    }
+  ],
   "order": 6000,
   "name": "Vault inspection client",
   "kind": "module",
@@ -9,7 +43,7 @@
     "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
     "symbol": "checkSemanticVaultOnServer"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#OfRn3av3",
   "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
   "formerNames": [
@@ -34,38 +68,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 23000,
-      "kind": "http",
-      "label": "check code",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
-        "symbol": "answerCodeCheck"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
-      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
-    },
-    {
-      "order": 23000,
-      "kind": "call",
-      "label": "requestJson",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     }
   ]
 }

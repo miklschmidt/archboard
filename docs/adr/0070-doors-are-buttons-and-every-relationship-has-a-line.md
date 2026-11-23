@@ -59,3 +59,14 @@ reading that opens the module draws no line for it.
 
 A retained reading or a draft can still hold a frame end, and the reader draws it
 as it stands, because those readings are exact.
+
+## Amendment of 2026-11-22: a lens chooses the lines
+
+[ADR 0095](0095-a-picture-is-read-through-a-lens.md) reads every picture through a lens, and by
+default through `main`, which leaves out declared dependencies and the queries and computes in
+process. Every relationship that the lens and the filter keep has a line. The `all` lens draws
+every relationship, as this record decided.
+
+This is not rule 6 again. Rule 6 claimed that a path through a third part stated what a dropped
+line stated. A lens claims nothing about the lines it leaves out: the picture names the lens and
+says how many lines it left out, and `Show all` draws them.

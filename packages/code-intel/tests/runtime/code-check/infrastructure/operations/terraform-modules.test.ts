@@ -216,7 +216,7 @@ beforeAll(async () => {
 					part("Topic", "modules/topic", "Topics", "aws_sns_topic.this"),
 				],
 				edges: [
-					{ id: "e1", order: 10, from: "API", to: "Bucket", kind: "data" },
+					{ id: "e1", order: 10, from: "API", to: "Bucket", kind: "storage" },
 					{ id: "e2", order: 20, from: "API", to: "Queue", kind: "queue" },
 				],
 				flows: [],

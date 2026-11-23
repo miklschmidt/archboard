@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#OanwxJtd",
+      "order": 110000,
+      "kind": "async",
+      "effect": "query",
+      "label": "renderArchitectureFlowOnServer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/render.ts",
+        "symbol": "modelRenderContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    }
+  ],
   "order": 63000,
   "name": "Model render commands",
   "kind": "module",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/render.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#255ksC3D",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -30,21 +46,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 110000,
-      "kind": "call",
-      "label": "renderArchitectureFlowOnServer",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/render.ts",
-        "symbol": "modelRenderContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#OanwxJtd",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
     }
   ]
 }

@@ -121,10 +121,10 @@ test("attention lights canonical connections without hiding labels or cutting sh
 			...["Hub", ...FAN].map((name) => ({ name, kind: "module", parent: "Fanout" })),
 		],
 		edges: [
-			{ from: "Writer", to: "Renderer", kind: "call", label: "draws" },
-			{ from: "Renderer", to: "Viewer", kind: "call", label: "shows" },
-			{ from: "Archive", to: "Viewer", kind: "data", label: "replays" },
-			...FAN.map((to) => ({ from: "Hub", to, kind: "call" })),
+			{ from: "Writer", to: "Renderer", kind: "sync", label: "draws" },
+			{ from: "Renderer", to: "Viewer", kind: "sync", label: "shows" },
+			{ from: "Archive", to: "Viewer", kind: "storage", label: "replays" },
+			...FAN.map((to) => ({ from: "Hub", to, kind: "sync" })),
 		],
 	});
 	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
@@ -145,18 +145,22 @@ test("attention lights canonical connections without hiding labels or cutting sh
 		WAIT,
 	);
 	await pick(browser, id("Renderer"));
+	// A coloured line names its kind on its label.
+	const REPLAYS = "Storage · replays";
 	const looks = await pollUntil(
 		() => labelLooks(browser),
 		(labels) =>
 			labels.every((label) => label.opacity === 1) &&
-			labels.some((label) => label.words === "replays" && label.filtered < 1),
+			labels.some((label) => label.words === REPLAYS && label.filtered < 1),
 		"the entrance to end and the unrelated relationship label to recede",
 		WAIT,
 	);
-	expect(looks.map((label) => label.words).toSorted()).toEqual(["draws", "replays", "shows"]);
+	expect(looks.map((label) => label.words).toSorted()).toEqual(
+		["draws", "shows", REPLAYS].toSorted(),
+	);
 	for (const look of looks) {
 		expect(look.drawn).toBe(true);
-		expect(look.filtered < 1).toBe(look.words === "replays");
+		expect(look.filtered < 1).toBe(look.words === REPLAYS);
 	}
 	await browser.run(["focus", '[data-slot="model-diagram"]']);
 	await browser.run(["press", "Escape"]);

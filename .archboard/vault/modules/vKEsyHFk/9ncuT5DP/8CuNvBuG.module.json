@@ -1,4 +1,50 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
+      "order": 12000,
+      "kind": "event",
+      "effect": "mutation",
+      "label": "operation events; only an unknown outcome is told",
+      "description": "The callback queue subscribes to the operations and host-context ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
+        "symbol": "subscribe"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
+      "order": 15000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "stage the operation, then commit or roll it back",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/services/events.ts",
+        "symbol": "stageOperation"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "id": "vKEsyHFk#9NUdYN6K",
+      "order": 77000,
+      "kind": "event",
+      "effect": "mutation",
+      "label": "a delegate's workhorse turn started",
+      "description": "Each tab session subscribes the recorder to its workhorse operations once. The started event of a delegate_to_workhorse operation names the workhorse turn and the coordinator turn that asked, and the recorder keeps that pair.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/delegations.ts",
+        "symbol": "recordDelegations"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+    }
+  ],
   "order": 39000,
   "name": "Operation lifecycle",
   "kind": "module",
@@ -10,56 +56,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/services/events.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#8CuNvBuG",
   "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "event",
-      "label": "operation events; only an unknown outcome is told",
-      "description": "The callback queue subscribes to the operations and host-context ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
-        "symbol": "subscribe"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
-      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
-    },
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "stage the operation, then commit or roll it back",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/services/events.ts",
-        "symbol": "stageOperation"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
-      "order": 77000,
-      "kind": "event",
-      "label": "a delegate's workhorse turn started",
-      "description": "Each tab session subscribes the recorder to its workhorse operations once. The started event of a delegate_to_workhorse operation names the workhorse turn and the coordinator turn that asked, and the recorder keeps that pair.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/sessions/services/delegations.ts",
-        "symbol": "recordDelegations"
-      },
-      "id": "vKEsyHFk#9NUdYN6K",
-      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
     }
   ]
 }

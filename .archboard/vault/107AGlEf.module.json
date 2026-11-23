@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 4000,
   "name": "Scene picking",
   "kind": "function",
@@ -11,8 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/pick.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#107AGlEf",
-  "parent": "vKEsyHFk#NFwqWgrm",
-  "outgoing": []
+  "parent": "vKEsyHFk#NFwqWgrm"
 }

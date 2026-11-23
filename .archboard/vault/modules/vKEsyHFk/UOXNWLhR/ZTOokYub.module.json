@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#JtOygu0b",
+      "order": 47000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the time, and a frame at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#cWcMSCKs",
+      "order": 97000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "camera transforms when easing is disabled",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
+        "symbol": "zoomCameraAbout"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    }
+  ],
   "order": 27000,
   "name": "Camera motion",
   "kind": "function",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#ZTOokYub",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 47000,
-      "kind": "call",
-      "label": "the time, and a frame at a time",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#JtOygu0b",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 97000,
-      "kind": "call",
-      "label": "camera transforms when easing is disabled",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
-        "symbol": "zoomCameraAbout"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#cWcMSCKs",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

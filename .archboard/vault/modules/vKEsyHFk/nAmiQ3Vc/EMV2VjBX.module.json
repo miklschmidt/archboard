@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 9000,
   "name": "Command routing",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
-  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
 }

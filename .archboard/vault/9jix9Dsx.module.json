@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 2000,
   "name": "Picture motion",
   "kind": "function",
@@ -11,8 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/between/mod.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#9jix9Dsx",
-  "parent": "vKEsyHFk#NFwqWgrm",
-  "outgoing": []
+  "parent": "vKEsyHFk#NFwqWgrm"
 }

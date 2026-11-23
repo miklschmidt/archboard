@@ -1,9 +1,10 @@
 {
+  "outgoing": [],
   "order": 39000,
   "name": "Start and stop",
   "kind": "module",
   "responsibility": "Starts the server from the entry that archboard start spawns and stops it in order: the pidfile, the listener and the admitted writes that a stop waits for.",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
   "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
   "documents": [
@@ -22,7 +23,6 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/start-stop"

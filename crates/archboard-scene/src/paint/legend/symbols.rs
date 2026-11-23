@@ -1,30 +1,34 @@
 //! The symbol a legend entry stands beside: a comparison's pin, a part kind's
-//! chip, a relationship's line and head, and the two things a line says beside
-//! its kind, its emphasis and its traffic, each drawn as the picture draws it.
+//! chip, a relationship kind's line in its ink, and the three things a line
+//! says beside its kind, its effect with its line type and head, its emphasis
+//! and its traffic, each drawn as the picture draws it.
 
 use crate::drawing::Emphasis;
-use crate::geometry::{Point, Rect, round_coord};
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
-use crate::paint::edge_line::arrowhead;
+use crate::paint::edge_line::body;
+use crate::paint::heads::{
+    IMPRINT_REACH, IMPRINT_WIDTH, body_short_of, mark_length, mark_shapes, place_of, ring_reach,
+};
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
-use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, dash_array, drawn_ink, head_of, stroke_width};
+use crate::paint::styles::{HEAD_LENGTH, drawn_ink, effect_look, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
-use crate::request::{Arrowhead, Dash};
+use crate::request::{Arrowhead, Dash, LineEffect};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
     Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,
 };
 use crate::sizes::ICON_CHIP_SIZE;
-use crate::sizes::RAILS;
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;
-/// The width of the symbol at the start of a legend row.
-pub(super) const GLYPH: f64 = 30.0;
+/// The width of the symbol at the start of a legend row: room for a ring, a
+/// little body and the longest head, so a query's sample shows its line.
+pub(super) const GLYPH: f64 = 36.0;
 const PULSE_STOPS: [(f64, f64); 6] = [
     (0.0, 0.0),
     (0.35, 0.05),
@@ -63,8 +67,91 @@ fn line_at(x: f64, y: f64, stroke: Stroke, end: f64) -> Items {
     )
 }
 
-/// A relationship kind's symbol: a short line in its ink and dash, with the
-/// arrowhead its lines end in.
+/// How a symbol's line is drawn: its line type, how thick its body is as a
+/// share of its weight's width, its head, the mark at its start, and whether
+/// it leaves an imprint.
+struct Sample {
+    dash: Dash,
+    body: f64,
+    head: Arrowhead,
+    tail: Option<Head>,
+    imprint: bool,
+}
+
+/// A mark drawn at its own size with its hold on a point, facing along the
+/// row. The one mark a start wears, a ring, reads the same either way.
+fn mark_at(mark: Head, ink: &Colour, hold: Point) -> Items {
+    let place = place_of(mark);
+    let length = mark_length(mark);
+    let unit = length / place.view;
+    vec![Item::Viewport(Viewport {
+        frame: Rect {
+            x: round_coord(hold.x - place.hold.x * unit),
+            y: round_coord(hold.y - place.hold.y * unit),
+            width: length,
+            height: length,
+        },
+        view: Rect {
+            x: 0.0,
+            y: 0.0,
+            width: place.view,
+            height: place.view,
+        },
+        items: mark_shapes(mark, ink).into_iter().flat_map(shape).collect(),
+    })]
+}
+
+/// A short line across a symbol's row in an ink, drawn as the picture draws a
+/// line of its look: its body, its head at the right, its mark at the left
+/// and its imprint.
+fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
+    let across = y + ROW / 2.0;
+    let tip = point(x + GLYPH - 1.0, across);
+    let head = head_of(sample.head);
+    let tail = sample.tail;
+    let short = |mark: Option<Head>| mark.map_or(0.0, body_short_of);
+    let start = point(x + 1.0 + tail.map_or(0.0, |_| ring_reach()), across);
+    let end = if head == Some(Head::Filled) {
+        x + GLYPH - 1.0 - HEAD_LENGTH / 2.0
+    } else {
+        tip.x - short(head)
+    };
+    let run = Curve {
+        from: point(start.x + short(tail), across),
+        segments: vec![Segment::Line {
+            to: point(end, across),
+        }],
+    };
+    let stroke = Stroke::new(ink, stroke_width(Emphasis::Normal) * sample.body).capped(Cap::Round);
+    let mut items: Items = shape(body(&run, sample.dash, &stroke, Purpose::Sample));
+    if let Some(tail) = tail {
+        items.extend(mark_at(tail, ink, start));
+    }
+    if let Some(head) = head {
+        items.extend(mark_at(head, ink, tip));
+    }
+    if sample.imprint {
+        items.extend(shape(
+            Shape::path(
+                Purpose::Sample,
+                vec![
+                    PathStep::Move {
+                        to: point(tip.x, across - IMPRINT_REACH),
+                    },
+                    PathStep::Line {
+                        to: point(tip.x, across + IMPRINT_REACH),
+                    },
+                ],
+            )
+            .unfilled()
+            .stroked(Stroke::new(ink, IMPRINT_WIDTH)),
+        ));
+    }
+    items
+}
+
+/// A relationship kind's symbol: a short line in its ink, solid and headless
+/// where its lines say their effects, else in its dash with its head.
 fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
     let (color, dash, ends) = match &applied.drawn {
         Drawn::Line(facts) => (
@@ -80,47 +167,14 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
         palette,
         Emphasis::Normal,
     );
-    let head = HEAD_LENGTH;
-    let tip = x + GLYPH - 1.0;
-    let shown = head_of(ends);
-    let sample = Stroke::new(&ink, stroke_width(Emphasis::Normal)).dashed(dash_array(dash));
-    let stop = if shown == Some(Head::Filled) {
-        1.0 + head / 2.0
-    } else {
-        1.0
+    let sample = Sample {
+        dash,
+        body: 1.0,
+        head: ends,
+        tail: None,
+        imprint: false,
     };
-    let rail = (RAILS - RAIL_GAP) / 2.0;
-    let run = if dash == Dash::Mixed {
-        let beside = f64::midpoint(RAIL_GAP, rail);
-        let stroke = Stroke::new(&ink, rail);
-        lines(vec![
-            line_at(x, y - beside, stroke.clone(), stop),
-            line_at(x, y + beside, stroke, stop),
-        ])
-    } else {
-        line_at(x, y, sample, stop)
-    };
-    lines(vec![
-        run,
-        match shown {
-            None => Items::new(),
-            Some(shown) => vec![Item::Viewport(Viewport {
-                frame: Rect {
-                    x: round_coord(tip - head),
-                    y: round_coord(y + ROW / 2.0 - head / 2.0),
-                    width: head,
-                    height: head,
-                },
-                view: Rect {
-                    x: 0.0,
-                    y: 0.0,
-                    width: 10.0,
-                    height: 10.0,
-                },
-                items: shape(arrowhead(shown, &ink)),
-            })],
-        },
-    ])
+    line_symbol(&ink, &sample, x, y)
 }
 
 /// A part kind's symbol: the flat chip the reading panel keys a kind with, a
@@ -165,6 +219,30 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
     let mut symbol = shape(chip);
     symbol.extend(glyph);
     symbol
+}
+
+/// What a line says it does: a short line in the neutral ink, drawn as the
+/// effect's line type draws it, with the effect's head.
+fn effect_symbol(effect: LineEffect, palette: &Palette, x: f64, y: f64) -> Items {
+    let ink = drawn_ink(&palette.edge, palette, Emphasis::Normal);
+    let look = effect_look(effect);
+    let sample = Sample {
+        dash: look.dash,
+        body: look.body,
+        head: look.head,
+        tail: look.tail,
+        imprint: look.imprint,
+    };
+    line_symbol(&ink, &sample, x, y)
+}
+
+/// What an effect's row of a legend draws beside its words, in the neutral
+/// ink, with its top left at the origin, and the width and height of its box.
+pub(in crate::paint) fn effect_sample(
+    effect: LineEffect,
+    palette: &Palette,
+) -> (Items, (f64, f64)) {
+    (effect_symbol(effect, palette, 0.0, 0.0), (GLYPH, ROW))
 }
 
 /// A line drawn with more emphasis.
@@ -252,6 +330,7 @@ pub(super) fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Ite
         }
         Keys::Kind(applied) => kind_symbol(applied, palette, x, y),
         Keys::Relationship(applied) => relationship_symbol(applied, palette, x, y),
+        Keys::Effect(effect) => effect_symbol(*effect, palette, x, y),
         Keys::Emphasis => emphasis_symbol(palette, x, y),
         Keys::Traffic => traffic_symbol(palette, x, y),
     }

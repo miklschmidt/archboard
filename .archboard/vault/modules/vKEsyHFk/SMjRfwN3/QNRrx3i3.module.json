@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
+      "order": 39000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
+        "symbol": "NIX_ARGV"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
+    }
+  ],
   "order": 37000,
   "name": "Encoder availability",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#QNRrx3i3",
-  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R",
-  "outgoing": [
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
-        "symbol": "NIX_ARGV"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
-      "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
 }

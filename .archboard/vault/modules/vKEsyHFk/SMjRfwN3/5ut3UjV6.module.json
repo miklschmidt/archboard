@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SMjRfwN3#Kiapa8dj",
+      "order": 52000,
+      "kind": "sync",
+      "effect": "compute",
+      "description": "Reads captured picture dimensions when grading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/store/grading-images.ts",
+        "symbol": "readPngDimensions"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
+    },
+    {
+      "id": "vKEsyHFk#0teCdOOO",
+      "order": 70025,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "inspect captured image regions",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/store/grading-images.ts",
+        "symbol": "tileRegions"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK"
+    }
+  ],
   "order": 31002,
   "name": "Grader image delivery",
   "kind": "module",
@@ -7,38 +37,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/grading/store/grading-images.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
   "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
   "formerNames": [
     "Skill evaluation"
-  ],
-  "outgoing": [
-    {
-      "order": 52000,
-      "kind": "call",
-      "description": "Reads captured picture dimensions when grading",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/store/grading-images.ts",
-        "symbol": "readPngDimensions"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#Kiapa8dj",
-      "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
-    },
-    {
-      "order": 70025,
-      "kind": "call",
-      "label": "inspect captured image regions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/store/grading-images.ts",
-        "symbol": "tileRegions"
-      },
-      "id": "vKEsyHFk#0teCdOOO",
-      "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK"
-    }
   ]
 }

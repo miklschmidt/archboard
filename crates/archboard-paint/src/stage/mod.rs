@@ -9,6 +9,7 @@ mod frame;
 mod interrupted;
 mod lens;
 mod lighting;
+mod moment;
 #[cfg(test)]
 mod tests;
 
@@ -21,6 +22,7 @@ use crate::between::{Entrance, Heading, Phases};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
+use crate::draw::playable;
 use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
@@ -95,6 +97,11 @@ pub struct Stage {
     settled: bool,
     /// Whether a frame of a picture was drawn yet.
     drawn: bool,
+    /// Canvas pixels to one CSS pixel, once the page says it; until then
+    /// every head is drawn at its own size.
+    pixel_ratio: Option<f64>,
+    /// The lines whose effect plays once, each with the moment it started.
+    plays: Vec<(String, f64)>,
 }
 
 impl Stage {
@@ -128,6 +135,8 @@ impl Stage {
             look: Presentation::default(),
             looks: 0,
             settled: false,
+            pixel_ratio: None,
+            plays: Vec::new(),
             drawn: false,
         }
     }
@@ -151,6 +160,7 @@ impl Stage {
         self.behind.clear();
         self.dive = None;
         self.presentation.sweep = None;
+        self.plays.clear();
         self.drawn = false;
         self.looks += 1;
         self.find_warnings();
@@ -236,6 +246,7 @@ impl Stage {
     /// Take the picture off the stage.
     pub fn clear(&mut self) {
         self.shown = None;
+        self.plays.clear();
         self.presentation.sweep = None;
         self.find_warnings();
     }
@@ -260,6 +271,28 @@ impl Stage {
             y: move_to(&self.glide.y, camera.y),
             scale: move_to(&self.glide.scale, camera.scale),
         };
+    }
+
+    /// Play the effect of some lines once, from a moment in milliseconds: what
+    /// a reader sees when it points at a line, or at a card for each of its
+    /// lines. A line already playing starts again. A line with traffic of its
+    /// own, and a declared requirement, stay as they are. A page that wants
+    /// reduced motion does not ask.
+    pub fn play(&mut self, ids: Vec<String>, now: f64) {
+        let Some(shown) = &self.shown else {
+            return;
+        };
+        let now = now.max(self.now);
+        for id in playable(&shown.picture.scene.body, ids) {
+            self.plays.retain(|(playing, _)| *playing != id);
+            self.plays.push((id, now));
+        }
+    }
+
+    /// Say how many canvas pixels one CSS pixel is, so a head keeps its least
+    /// size on screen.
+    pub fn set_pixel_ratio(&mut self, ratio: f64) {
+        self.pixel_ratio = (ratio > 0.0).then_some(ratio);
     }
 
     /// Say at which scale of the camera the far view begins, in canvas pixels
@@ -394,123 +427,6 @@ impl Stage {
     pub fn set_light(&mut self, light: &Light, now: f64) {
         self.now = now;
         self.lighting.set(light, now);
-    }
-
-    /// Start a flight's clock, and tell it where the last picture stands.
-    fn take_off(&mut self, now: f64) {
-        let Some(flight) = &mut self.flight else {
-            return;
-        };
-        flight.begin(now);
-        if let Some(ghost) = &self.ghost {
-            flight.rebase(ghost.camera, self.presentation.camera);
-        }
-    }
-
-    /// Bring every changing value to a moment.
-    fn advance(&mut self, now: f64) {
-        self.now = now;
-        self.presentation.camera = Camera {
-            x: self.glide.x.at(now),
-            y: self.glide.y.at(now),
-            scale: self.glide.scale.at(now),
-        };
-        self.swap_views(now);
-        self.presentation.far = self.far.at(now);
-        self.take_off(now);
-        if std::mem::take(&mut self.lit_afresh) {
-            self.lighting.stand();
-        }
-        if let Some(ghost) = &mut self.ghost {
-            ghost.time.begin(now);
-        }
-        if self
-            .flight
-            .as_ref()
-            .is_some_and(|flight| flight.landed(now))
-        {
-            self.land();
-        }
-        self.ghost = self.ghost.take().filter(|ghost| !ghost.gone(now));
-        self.behind.retain(|ghost| !ghost.gone(now));
-        self.presentation.fading_words = self
-            .dive
-            .as_ref()
-            .map(|dive| (dive.card.clone(), dive.fades(now).words));
-        self.clock.advance(now);
-        self.presentation.traffic = self.clock.shown_seconds();
-        self.presentation.sweep = self
-            .presentation
-            .sweep
-            .take()
-            .filter(|sweep| !sweep.over(now));
-        if let Some(sweep) = &mut self.presentation.sweep {
-            sweep.advance(now);
-        }
-        self.presentation.recede = self.lighting.recede_at(now);
-        self.presentation.awaited = self.awaited.at(now);
-        self.settle();
-    }
-
-    /// Say whether this frame looks as the last one did.
-    fn settle(&mut self) {
-        let look = Presentation {
-            camera: Camera::default(),
-            traffic: None,
-            ..self.presentation.clone()
-        };
-        self.settled = look == self.look;
-        if !self.settled {
-            self.look = look;
-            self.looks += 1;
-        }
-    }
-
-    /// Whether traffic runs on the picture, so that every frame differs.
-    fn moving_traffic(&self) -> bool {
-        self.clock.runs()
-            && self
-                .shown
-                .as_ref()
-                .is_some_and(|shown| shown.picture.traffic)
-    }
-
-    /// Whether a value is still changing at a moment.
-    fn changing(&self, now: f64) -> bool {
-        self.moving_traffic() || self.moving(now)
-    }
-
-    /// Whether traffic is all that moves at a moment.
-    #[must_use]
-    pub fn traffic_alone(&self, now: f64) -> bool {
-        self.moving_traffic() && !self.moving(now)
-    }
-
-    /// Whether anything but traffic moves at a moment.
-    fn moving(&self, now: f64) -> bool {
-        self.flying(now)
-            || self.presentation.sweep.is_some()
-            || self.lighting.moving(now)
-            || ![
-                self.glide.x,
-                self.glide.y,
-                self.glide.scale,
-                self.far,
-                self.awaited,
-            ]
-            .iter()
-            .all(|fade| fade.done(now))
-    }
-
-    /// Whether a whole picture is on the move at a moment.
-    fn flying(&self, now: f64) -> bool {
-        self.flight.is_some()
-            || self.ghost.is_some()
-            || self
-                .leaving
-                .as_ref()
-                .is_some_and(|leaving| leaving.progress(now) < 1.0)
-            || self.dive.as_ref().is_some_and(|dive| !dive.ended(now))
     }
 
     /// Draw the frame of a moment, in milliseconds. A stage with no picture

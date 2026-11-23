@@ -1,4 +1,24 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#HknvbW9e",
+      "order": 10,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "decode the inputs at the ref",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk#7QUw7diG",
+      "order": 20,
+      "kind": "async",
+      "effect": "query",
+      "label": "read the vault's blobs at the commit",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    }
+  ],
   "order": 90,
   "name": "Branch reading",
   "kind": "module",
@@ -8,25 +28,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/read/operations/model-at-ref.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#zxEUtLI7",
-  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "call",
-      "label": "decode the inputs at the ref",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#HknvbW9e",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 20,
-      "kind": "call",
-      "label": "read the vault's blobs at the commit",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#7QUw7diG",
-      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
-    }
-  ]
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
 }

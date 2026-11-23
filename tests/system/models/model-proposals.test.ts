@@ -22,7 +22,7 @@ const home = mkdtempSync(join(tmpdir(), "archboard-proposal-surface-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Proposal Author"],

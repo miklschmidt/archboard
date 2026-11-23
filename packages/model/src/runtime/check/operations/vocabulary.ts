@@ -1,6 +1,7 @@
 import type { LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import type { DiagnosticSubject, SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
+import type { SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
+import type { DiagnosticSubject } from "#shared/schemas/vault-diagnostic.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";
 
 interface Reference {

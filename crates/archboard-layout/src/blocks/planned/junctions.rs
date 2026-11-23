@@ -19,7 +19,13 @@ impl Envelope {
     }
     /// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
     pub(super) fn apart(self, b: Self) -> bool {
-        b.0 - self.2 >= 12.0 || self.0 - b.2 >= 12.0 || b.1 - self.3 >= 12.0 || self.1 - b.3 >= 12.0
+        self.apart_by(b, 0.0)
+    }
+    /// `apart` for two lines whose ink reaches `spread` further between them than a lone
+    /// line's: the sum of their halves.
+    pub(super) fn apart_by(self, b: Self, spread: f64) -> bool {
+        let gap = 12.0 + spread;
+        b.0 - self.2 >= gap || self.0 - b.2 >= gap || b.1 - self.3 >= gap || self.1 - b.3 >= gap
     }
 }
 
@@ -105,9 +111,11 @@ pub(super) fn readable(a: &[Point], b: &[Point], start: bool, target: bool) -> b
     (!start || clear(common_prefix(a, b))) && (!target || clear(common_suffix(a, b)))
 }
 
-pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
+/// Whether two routes, whose ink reaches `spread` further between them than two lone lines',
+/// cross only clear of their bends and run nowhere close beside each other.
+pub(super) fn ordered(a: &[Point], b: &[Point], (sharing, spread): (bool, f64)) -> bool {
     let run = |at: usize| Envelope::new(&b[at..at + 2]);
-    ordered_by(a, b, Envelope::new(b), run, sharing)
+    ordered_by(a, b, Envelope::new(b), run, (sharing, spread))
 }
 
 /// The envelope of each run of a route, which `ordered_runs` reads for the route that a
@@ -121,7 +129,7 @@ pub(super) fn ordered_runs(
     a: &[Point],
     b: &[Point],
     (around, runs): (Envelope, &[Envelope]),
-    sharing: bool,
+    sharing: (bool, f64),
 ) -> bool {
     ordered_by(a, b, around, |at| runs[at], sharing)
 }
@@ -131,19 +139,19 @@ fn ordered_by(
     b: &[Point],
     around: Envelope,
     run: impl Fn(usize) -> Envelope + Copy,
-    sharing: bool,
+    (sharing, spread): (bool, f64),
 ) -> bool {
     // Runs twelve or more apart neither cross, share ink nor run close beside each other, so
     // only the runs of one route that come near the other route are compared.
     let near = || {
         a.windows(2)
             .map(|p| (p, Envelope::new(p)))
-            .filter(move |&(_, at)| !at.apart(around))
+            .filter(move |&(_, at)| !at.apart_by(around, spread))
     };
     let beside = move |at: Envelope| {
         b.windows(2)
             .enumerate()
-            .filter(move |&(index, _)| !run(index).apart(at))
+            .filter(move |&(index, _)| !run(index).apart_by(at, spread))
             .map(|(_, q)| q)
     };
     let shared: Vec<_> = if sharing {
@@ -159,7 +167,8 @@ fn ordered_by(
             let ph = p[0].y == p[1].y;
             let qh = q[0].y == q[1].y;
             if ph == qh {
-                return (sharing || shared_ends(p, q).is_none()) && !near_parallel(p, q, ph);
+                return (sharing || shared_ends(p, q).is_none())
+                    && !near_parallel(p, q, (ph, spread));
             }
             let (h, v) = if ph { (p, q) } else { (q, p) };
             let point = Point {
@@ -167,15 +176,16 @@ fn ordered_by(
                 y: h[0].y,
             };
             let crosses = within(point.x, h[0].x, h[1].x) && within(point.y, v[0].y, v[1].y);
-            !crosses || shared.contains(&point) || clear_crossing(h, v)
+            !crosses || shared.contains(&point) || clear_crossing(h, v, spread)
         })
     })
 }
 
-/// Crossings use straight room on both paths, clear of bends and arrow approaches. Contraction
-/// stands a crossing exactly that far from a bend, so floating noise must not refuse it.
-fn clear_crossing(h: &[Point], v: &[Point]) -> bool {
-    let room = 16.0 - 1e-6;
+/// Crossings use straight room on both paths, clear of bends and arrow approaches, and of the
+/// strands of a cable, which reach `spread` further together. Contraction stands a crossing
+/// exactly that far from a bend, so floating noise must not refuse it.
+fn clear_crossing(h: &[Point], v: &[Point], spread: f64) -> bool {
+    let room = 16.0 + spread - 1e-6;
     v[0].x >= h[0].x.min(h[1].x) + room
         && v[0].x <= h[0].x.max(h[1].x) - room
         && h[0].y >= v[0].y.min(v[1].y) + room
@@ -190,7 +200,7 @@ pub(super) fn crossings(a: &[Point], b: &[Point]) -> usize {
                 return false;
             }
             let (h, v) = if p[0].y == p[1].y { (p, q) } else { (q, p) };
-            clear_crossing(h, v)
+            clear_crossing(h, v, 0.0)
         })
         .count()
 }
@@ -233,7 +243,7 @@ fn shared_ends(one: &[Point], other: &[Point]) -> Option<[Point; 2]> {
     })
 }
 
-fn near_parallel(one: &[Point], other: &[Point], horizontal: bool) -> bool {
+fn near_parallel(one: &[Point], other: &[Point], (horizontal, spread): (bool, f64)) -> bool {
     let (a, b, c, d, gap) = if horizontal {
         (
             one[0].x,
@@ -253,7 +263,7 @@ fn near_parallel(one: &[Point], other: &[Point], horizontal: bool) -> bool {
     };
     gap > 0.0
         && ((gap <= 1.01 && a.max(b).min(c.max(d)) > a.min(b).max(c.min(d)))
-            || (gap < 12.0 && a.max(b).min(c.max(d)) - a.min(b).max(c.min(d)) > 16.0))
+            || (gap < 12.0 + spread && a.max(b).min(c.max(d)) - a.min(b).max(c.min(d)) > 16.0))
 }
 
 #[cfg(test)]
@@ -262,6 +272,15 @@ mod tests {
 
     fn path(points: &[(f64, f64)]) -> Vec<Point> {
         points.iter().map(|&(x, y)| Point { x, y }).collect()
+    }
+
+    /// Two runs fourteen apart read as two lone lines, but a cable's strands reach between them.
+    #[test]
+    fn a_cable_keeps_its_strands_a_lane_gap_from_a_line_beside_it() {
+        let one = path(&[(0.0, 0.0), (200.0, 0.0)]);
+        let other = path(&[(0.0, 14.0), (200.0, 14.0)]);
+        assert!(ordered(&one, &other, (false, 0.0)));
+        assert!(!ordered(&one, &other, (false, 8.0)));
     }
 
     /// The owner's knot on the card `renderer`: callers from above and below met

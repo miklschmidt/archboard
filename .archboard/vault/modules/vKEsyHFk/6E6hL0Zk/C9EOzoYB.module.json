@@ -1,4 +1,21 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
+      "order": 104000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "capture the exact model reading",
+      "description": "read that model for the agent's brief",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/semantic-context/projections/canonical-context.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    }
+  ],
   "order": 42000,
   "name": "Canonical context capture",
   "kind": "module",
@@ -9,7 +26,7 @@
     "path": "packages/workbench/src/server/semantic-context/projections/canonical-context.ts",
     "symbol": "canonicalContext"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "formerNames": [
@@ -30,22 +47,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 104000,
-      "kind": "call",
-      "label": "capture the exact model reading",
-      "description": "read that model for the agent's brief",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/semantic-context/projections/canonical-context.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
-      "to": "vKEsyHFk#ZGONZKxj"
     }
   ]
 }

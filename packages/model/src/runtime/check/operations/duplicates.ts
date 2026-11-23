@@ -4,7 +4,7 @@
 // copy stays, so these are warnings that name the copies, and no write reads them.
 
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
-import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
+import type { VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 import { pathOf } from "#runtime/check/operations/containment.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";
 

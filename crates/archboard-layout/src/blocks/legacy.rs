@@ -185,8 +185,7 @@ fn lay_all(
         graph,
         Kept {
             expanded: way.expanded,
-            packed: way.drawing != Drawing::Candidate,
-            lanes: way.drawing == Drawing::Lanes,
+            lanes: way.lanes,
             ..earlier.kept.clone()
         },
     )?;
@@ -290,11 +289,7 @@ pub(super) fn place(
         graph,
         &Way {
             expanded: false,
-            drawing: if lanes {
-                Drawing::Lanes
-            } else {
-                Drawing::Fallback
-            },
+            lanes,
             room: Vec::new(),
             extra: 0.0,
             complete_repair: false,
@@ -379,7 +374,7 @@ pub(super) fn candidates<'g>(
     let mut gv = Engine::new(host);
     let way = Way {
         expanded: false,
-        drawing: Drawing::Candidate,
+        lanes: false,
         room: room.to_vec(),
         extra,
         complete_repair,
@@ -471,19 +466,11 @@ fn expanded_candidates(
     Ok(candidates)
 }
 
-/// What a layout is: a candidate the planner routes again, Blocks' own fallback drawing, or a
-/// Lanes drawing (`BlockTree::packed`, `BlockTree::lanes`).
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Drawing {
-    Candidate,
-    Fallback,
-    Lanes,
-}
-
 #[derive(Clone)]
 struct Way {
     expanded: bool,
-    drawing: Drawing,
+    /// The layout is a Lanes drawing (`BlockTree::lanes`).
+    lanes: bool,
     room: Vec<String>,
     extra: f64,
     complete_repair: bool,

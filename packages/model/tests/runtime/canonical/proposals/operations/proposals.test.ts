@@ -199,7 +199,7 @@ test("retained comparisons identify the live base revision independently of the 
 		subjects: ["Shop#Gateway"],
 		reading: {
 			focus: [],
-			relationshipKinds: ["call"],
+			relationshipKinds: ["sync"],
 			grammar: "sequence" as const,
 			flow: "Shop#Checkout",
 		},

@@ -17,6 +17,7 @@ import {
 	fitPainter,
 	headingJson,
 	marksJson,
+	pageIsDark,
 	sizeCanvas,
 	type Held,
 	type StageCamera,
@@ -37,14 +38,6 @@ const PICKED = "[data-semantic-id],[data-toggle]";
 
 /** Each surface's stage. */
 const stages = new WeakMap<Element, PictureStage>();
-
-/**
- * Whether the page is dark.
- * @returns True on the dark theme.
- */
-function pageIsDark(): boolean {
-	return document.documentElement.dataset["theme"] === "dark";
-}
 
 /** The painter's own interface. */
 type Painter = StartedPainter["painter"];
@@ -239,6 +232,17 @@ class PictureStage {
 	sweep(delays: Readonly<Record<string, number>>, shortest: number, longest: number): void {
 		this.#tell((painter) => {
 			painter.sweep(JSON.stringify(delays), shortest, longest, frameClock().now());
+		});
+	}
+
+	/**
+	 * Play the effect of some lines once, as a reader points at them.
+	 * @param ids The lines.
+	 */
+	playEffects(ids: readonly string[]): void {
+		if (ids.length === 0) return;
+		this.#tell((painter) => {
+			painter.playEffects([...ids], frameClock().now());
 		});
 	}
 

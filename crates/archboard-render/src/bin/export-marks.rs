@@ -1,6 +1,7 @@
 //! Print the marks a viewer draws beside a picture as TypeScript constants:
 //! line widths, the arrowhead's length, each line's and pulse's ink, each
-//! standing's pin and the warning, as the painter draws them in a picture.
+//! dash, the effect key, each standing's pin and the warning, as the painter
+//! draws them in a picture.
 //! `scripts/build-core.ts` writes them beside the WebAssembly build, so a pane
 //! that draws a key, a pin or a warning holds no copy of the painter's rules.
 
@@ -14,7 +15,12 @@ use archboard_svg::{colour, markup};
 
 /// A string as a TypeScript literal.
 fn quoted(text: &str) -> String {
-    format!("\"{}\"", text.replace('\\', "\\\\").replace('"', "\\\""))
+    format!(
+        "\"{}\"",
+        text.replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('\n', "\\n")
+    )
 }
 
 /// An object literal of some entries, each a key and a literal value.
@@ -24,6 +30,11 @@ fn object(entries: impl IntoIterator<Item = (&'static str, String)>) -> String {
         .map(|(key, value)| format!("\t{key}: {value},"))
         .collect();
     format!("{{\n{}\n}} as const", fields.join("\n"))
+}
+
+/// An array literal of some rows, each already written.
+fn listed(rows: impl Iterator<Item = String>) -> String {
+    format!("[\n{}\n] as const", rows.collect::<Vec<_>>().join("\n"))
 }
 
 /// Inks by the colour of their line, the neutral line's first.
@@ -78,6 +89,36 @@ fn main() {
             "The ink of the body of a pulse on a line of each colour.",
             "PULSE_INK",
             inks(&marks.pulse_inks),
+        ),
+        (
+            "How a line of each dash is broken: lengths drawn and left, in turn; none for a solid line.",
+            "LINE_DASH",
+            object(marks.dashes.iter().map(|(dash, lengths)| {
+                let listed: Vec<String> = lengths.iter().map(|one| js::number(*one)).collect();
+                (word(dash), format!("[{}]", listed.join(", ")))
+            })),
+        ),
+        (
+            "The effect key, in the key's order: what each line effect is called, the line type and the head that say it, and its sample as the picture's legend draws it, in a box of EFFECT_SAMPLE_SIZE.",
+            "EFFECT_KEY",
+            listed(marks.effects.iter().map(|key| {
+                format!(
+                    "\t{{ effect: {}, word: {}, dash: {}, head: {}, sample: {} }},",
+                    quoted(word(&key.effect)),
+                    quoted(key.words),
+                    quoted(word(&key.dash)),
+                    quoted(word(&key.head)),
+                    quoted(&markup(&key.sample))
+                )
+            })),
+        ),
+        (
+            "The width and height of the box each effect's sample is drawn in.",
+            "EFFECT_SAMPLE_SIZE",
+            object([
+                ("width", js::number(marks.sample_size.0)),
+                ("height", js::number(marks.sample_size.1)),
+            ]),
         ),
         (
             "The pin each standing wears, centred on the origin; none for unchanged.",

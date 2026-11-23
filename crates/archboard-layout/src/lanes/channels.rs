@@ -433,30 +433,54 @@ impl Router<'_> {
         }
     }
 
-    /// Assign the tracks of one channel, and answer how many lanes they take. A packed
-    /// router's rows of tracks pack a lane apart, two where a row holds a detour, which turns on
-    /// the track under its own. Two lines that read as one, the first turning off a column where
-    /// the second turns onto it, keep a hand-off apart, so the gap between their turns parts
-    /// them. Otherwise every row of a channel stands as far apart as its widest gap needs.
+    /// Assign the tracks of one channel, and answer how many lanes they take. The rows of
+    /// tracks pack a lane apart, two where a row holds a detour, which turns on the track
+    /// under its own. Two lines that read as one, the first turning off a column where the
+    /// second turns onto it, keep a hand-off apart, so the gap between their turns parts them.
     pub(crate) fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
-        let lanes = if self.packed {
-            self.lanes_of(&units, &tracks)
-        } else {
-            self.spread(nets, &tracks)
-        };
+        let wide = self.wide_of(&units, &tracks);
+        let lanes = self.lanes_of(&units, &tracks, &wide);
         for &(unit, row) in &tracks {
             for &net in &units[unit].1 {
-                self.net_mut(net).track = lanes[row];
+                self.net_mut(net).track = lanes[row] + wide[row];
             }
         }
         lanes.last().copied().unwrap_or(0)
     }
 
-    /// The lane each row of tracks stands on, and last how many lanes the rows take.
-    fn lanes_of(&self, units: &[(Unit, Vec<NetId>)], tracks: &[(usize, usize)]) -> Vec<usize> {
+    /// How many lanes each row's widest cable reaches to either side of its track: a cable's
+    /// strands stand half a lane apart about its route, so a row keeps a lane each side for
+    /// each lane of its half-width.
+    fn wide_of(&self, units: &[(Unit, Vec<NetId>)], tracks: &[(usize, usize)]) -> Vec<usize> {
+        let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
+        let mut wide = vec![0; rows];
+        for &(unit, row) in tracks {
+            for &net in &units[unit].1 {
+                let strands = self.net(net).kind.split(';').count();
+                let half = (strands - 1) as f64 * crate::constants::STRAND / 2.0;
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    clippy::cast_sign_loss,
+                    reason = "a whole count of lanes, never negative"
+                )]
+                let lanes = (half / LANE).ceil() as usize;
+                wide[row] = wide[row].max(lanes);
+            }
+        }
+        wide
+    }
+
+    /// The lane each row of tracks starts on, and last how many lanes the rows take: a row as
+    /// many as its line needs, and a lane each side for each lane its widest cable reaches.
+    fn lanes_of(
+        &self,
+        units: &[(Unit, Vec<NetId>)],
+        tracks: &[(usize, usize)],
+        wide: &[usize],
+    ) -> Vec<usize> {
         let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
         let mut takes = vec![1; rows];
         for &(unit, row) in tracks {
@@ -478,29 +502,8 @@ impl Router<'_> {
                 })
                 .map(|(.., at)| lanes[at] + HAND_OFF);
             lanes[row] = handed.fold(lanes[row], usize::max);
-            lanes.push(lanes[row] + takes[row]);
+            lanes.push(lanes[row] + takes[row] + 2 * wide[row]);
         }
-        lanes
-    }
-
-    /// The lane each row of tracks stands on, every row as far from the next as the channel's
-    /// widest gap needs, and last how many lanes the rows take.
-    fn spread(&self, nets: &[NetId], tracks: &[(usize, usize)]) -> Vec<usize> {
-        let detours = nets.iter().any(|&id| self.net(id).detour_x().is_some());
-        let handed = nets
-            .iter()
-            .any(|&one| nets.iter().any(|&other| self.collinear(one, other)));
-        let spacing = if handed {
-            4
-        } else if detours {
-            3
-        } else {
-            1
-        };
-        let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
-        let mut lanes: Vec<usize> = (0..rows).map(|row| row * spacing).collect();
-        let taken = if detours { 2 } else { 1 };
-        lanes.push(rows.checked_sub(1).map_or(0, |last| last * spacing + taken));
         lanes
     }
 
@@ -518,25 +521,10 @@ mod tests {
 
     #[test]
     fn only_two_lines_that_read_as_one_keep_a_hand_off_apart() {
-        let [one, other, third] = three_lines(true);
-        assert!(one.abs_diff(other) >= HAND_OFF);
-        assert_eq!(third.abs_diff(one).min(third.abs_diff(other)), 1);
-    }
-
-    #[test]
-    fn a_router_that_does_not_pack_keeps_every_row_a_hand_off_apart() {
-        let mut lanes = three_lines(false);
-        lanes.sort_unstable();
-        assert_eq!(lanes, [0, HAND_OFF, 2 * HAND_OFF]);
-    }
-
-    /// The track of each of three lines in one channel, laid by a router that packs or not.
-    /// One line comes down at 0 and turns right; the next turns down at 5, within a lane of
-    /// it; the third crosses both and reads as neither.
-    fn three_lines(packed: bool) -> [usize; 3] {
         let mut scene = Placement::default();
         let mut track = Router::new(&mut scene);
-        track.packed = packed;
+        // One line comes down at 0 and turns right; the next turns down at 5, within a lane of
+        // it; the third crosses both and reads as neither.
         let nets: Vec<NetId> = [(0.0, 100.0), (200.0, 5.0), (50.0, 150.0)]
             .into_iter()
             .enumerate()
@@ -561,6 +549,48 @@ mod tests {
             .collect();
         assert!(track.collinear(nets[0], nets[1]));
         track.assign_tracks(&nets);
-        [0, 1, 2].map(|net| track.net(nets[net]).track)
+        let at = |net: usize| track.net(nets[net]).track;
+        assert!(at(0).abs_diff(at(1)) >= HAND_OFF);
+        assert_eq!(at(2).abs_diff(at(0)).min(at(2).abs_diff(at(1))), 1);
+    }
+
+    /// Two lines crossing one channel side by side: a lone line and a cable of `strands`.
+    /// Answers how many lanes apart their tracks stand, and how many lanes the channel takes.
+    fn beside_a_cable(strands: usize) -> (usize, usize) {
+        let mut scene = Placement::default();
+        let mut track = Router::new(&mut scene);
+        let cable = vec!["call|"; strands].join(";");
+        let nets: Vec<NetId> = [("call", 0.0, 100.0), (cable.as_str(), 40.0, 140.0)]
+            .into_iter()
+            .enumerate()
+            .map(|(at, (kind, top_x, bottom_x))| {
+                let top = track.add(Station::new(Kind::Lane, 0, None, top_x));
+                let bottom = track.add(Station::new(Kind::Lane, 1, None, bottom_x));
+                track.nets.push(Net {
+                    edge: format!("e{at}").into(),
+                    order: 0.0,
+                    channel: 0,
+                    kind: kind.into(),
+                    top,
+                    bottom,
+                    top_x,
+                    bottom_x,
+                    track: 0,
+                    trunk: None,
+                    wall: None,
+                });
+                NetId(at)
+            })
+            .collect();
+        let taken = track.assign_tracks(&nets);
+        let apart = track.net(nets[0]).track.abs_diff(track.net(nets[1]).track);
+        (apart, taken)
+    }
+
+    #[test]
+    fn a_cable_keeps_a_lane_each_side_for_each_lane_of_its_half_width() {
+        assert_eq!(beside_a_cable(1), (1, 2));
+        // Three strands half a lane apart reach half a lane each side: a lane more each side.
+        assert_eq!(beside_a_cable(3), (2, 4));
     }
 }

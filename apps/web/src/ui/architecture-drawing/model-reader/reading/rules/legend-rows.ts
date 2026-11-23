@@ -1,10 +1,19 @@
-// What the legend lists. Its rows come from the whole reading, not from what the picture draws at
-// this moment: a hidden kind takes its lines off the picture, and the cards and doors that only
-// those lines reached, with their part kinds and groups. Each list keeps one order, the policy's,
-// so hiding a kind or showing it again moves no row.
+// What the legend lists. Its rows come from the whole scope, not from what the picture draws at
+// this moment: a hidden kind or effect takes its lines off the picture, and the cards and doors that
+// only those lines reached, with their part kinds and their groups. Each list keeps one order, the
+// policy's or the effect key's, so hiding a row or showing it again moves no row. A relationship
+// row that the lens leaves out stands apart, with no switch, because only another lens draws it.
 
-import { lineMarks, type LineMarkEntry } from "@archboard/renderer/picture";
-import type { Model, projectModel } from "@archboard/model/content";
+import {
+	effectKey,
+	lineMarks,
+	markCounts,
+	type EffectKeyEntry,
+	type LineMarkEntry,
+	type SubjectStanding,
+} from "@archboard/renderer/picture";
+import { readingLens, type Model, type projectModel } from "@archboard/model/content";
+import { drawnEffect, hiddenKinds } from "@archboard/model/policy";
 import type {
 	AppliedAppearance,
 	PictureLegend,
@@ -14,36 +23,72 @@ import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-l
 
 type Projection = ReturnType<typeof projectModel>;
 type Connection = Projection["connections"][number];
+type Edge = Connection["joins"][number];
 type Module = Projection["children"][number];
 
 /** How a kind looks when the vault's policy no longer names it. */
 const UNKNOWN_KIND = { color: "neutral", dash: "solid", arrowhead: "filled" } as const;
 
-/** What the legend reads. */
+/** What the legend reads of a reading's parts. */
 interface LegendReading {
 	readonly model: Model;
 	readonly projection: Projection;
 	readonly picture: PictureLegend;
-	readonly hideKinds: readonly string[] | undefined;
 }
 
-/** A row that keys a mark. */
+/** What the legend reads of a reading's relationships, and what a reader hid besides the lens. */
+interface RelationshipReading {
+	readonly model: Model;
+	readonly projection: Projection;
+	readonly hideKinds?: readonly string[] | undefined;
+	readonly hideEffects?: readonly string[] | undefined;
+}
+
+/** A row that keys a part kind. */
 interface LegendRow {
 	readonly item: AppliedAppearance;
 	/** Whether the picture leaves it out for now. */
 	readonly dimmed: boolean;
 }
 
-/** One line type. */
-interface LegendLine extends LegendRow {
-	/** Whether a reader left it out. */
+/** A relationship row: a kind or an effect. */
+interface LegendSwitch {
+	/** The kind's id, or the effect's token. */
+	readonly id: string;
+	readonly name: string;
+	/** Whether a reader hid it. */
 	readonly hidden: boolean;
-	/** Whether a reader can leave it out: a mixed line is no kind of relationship. */
-	readonly hideable: boolean;
+	/** Whether the picture draws none of it now. */
+	readonly dimmed: boolean;
+	/** Whether the lens leaves out every relationship of it in the scope, so no switch brings it back. */
+	readonly leftOut: boolean;
+}
+
+/** A relationship kind, sampled in its own ink. */
+interface LegendKind extends LegendSwitch {
+	/** The palette colour its lines are drawn in. */
+	readonly color: string;
+	/** Its dash: solid, or what a reading from before effects recorded. */
+	readonly dash: string;
+}
+
+/** An effect, sampled in neutral ink with its head. */
+type LegendEffect = LegendSwitch & { readonly entry: EffectKeyEntry };
+
+/** The relationship rows of a reading. */
+interface RelationshipRows {
+	readonly kinds: readonly LegendKind[];
+	readonly effects: readonly LegendEffect[];
 }
 
 /** One mark that lines wear beside their kinds. */
 type LegendMark = LineMarkEntry & { readonly dimmed: boolean };
+
+/** One standing a comparison colours lines with. */
+interface LegendStanding {
+	readonly standing: SubjectStanding;
+	readonly word: string;
+}
 
 /** One group of the reading. */
 interface LegendGroup {
@@ -104,28 +149,7 @@ function policyPart(model: Model, id: string): AppliedAppearance {
 		lineColor: UNKNOWN_KIND.color,
 		dash: UNKNOWN_KIND.dash,
 		arrowhead: UNKNOWN_KIND.arrowhead,
-	};
-}
-
-/**
- * How a relationship kind looks according to the vault's policy, because the picture has no sample
- * of what it does not draw.
- * @param model The reading.
- * @param id The kind.
- * @returns Its appearance.
- */
-function policyLine(model: Model, id: string): AppliedAppearance {
-	const look = { ...UNKNOWN_KIND, ...model.policy.relationshipKinds[id] };
-	return {
-		id,
-		typeName: kindLookOf(model.policy, new Map()).relationship(id).name,
-		typeKind: id,
-		iconSvg: "",
-		depiction: "",
-		typeColor: UNKNOWN_KIND.color,
-		lineColor: look.color ?? UNKNOWN_KIND.color,
-		dash: look.dash,
-		arrowhead: look.arrowhead,
+		effect: "",
 	};
 }
 
@@ -144,36 +168,6 @@ function kindRows(reading: LegendReading): readonly LegendRow[] {
 	return [...kinds].toSorted(policyOrder(model.policy.nodeKinds)).map((id) => ({
 		item: drawn.get(id) ?? policyPart(model, id),
 		dimmed: !drawn.has(id),
-	}));
-}
-
-/**
- * Each kind that lines carry, a mixed line's kinds among them.
- * @param connections The lines.
- * @returns Their relationship kinds.
- */
-function joinedKinds(connections: readonly Connection[]): readonly string[] {
-	return connections.flatMap(({ joins }) => joins.map((edge) => edge.kind));
-}
-
-/**
- * The line types of the reading. A kind can lie inside a mixed line without a line of its own.
- * @param reading The reading.
- * @returns One row for each, in the policy's order, with the mixed line after them.
- */
-function lineRows(reading: LegendReading): readonly LegendLine[] {
-	const { model, projection, picture } = reading;
-	const hide = new Set(reading.hideKinds);
-	const drawn = new Map(picture.relationships.map((item) => [item.typeKind, item]));
-	const hideable = new Set(joinedKinds(projection.allConnections));
-	const shown = new Set([...drawn.keys(), ...joinedKinds(projection.connections)]);
-	const lines = projection.allConnections.map(({ line }) => line.kind);
-	const kinds = new Set([...drawn.keys(), ...hideable, ...lines]);
-	return [...kinds].toSorted(policyOrder(model.policy.relationshipKinds)).map((id) => ({
-		item: drawn.get(id) ?? policyLine(model, id),
-		hidden: hide.has(id),
-		hideable: hideable.has(id),
-		dimmed: hide.has(id) || !shown.has(id),
 	}));
 }
 
@@ -202,6 +196,108 @@ function markRows(projection: Projection): readonly LegendMark[] {
 }
 
 /**
+ * Every relationship of the scope, whatever the lens and the reader hide.
+ * @param projection The reading.
+ * @returns The relationships.
+ */
+function scopeEdges(projection: Projection): readonly Edge[] {
+	return projection.allConnections.flatMap(({ joins }) => joins);
+}
+
+/**
+ * The relationship rows of a reading: its kinds in the policy's order, and the effects its lines
+ * say in the key's order. A reading whose kinds record their dash says no effect.
+ * @param reading The reading and what a reader hid.
+ * @returns The kinds and the effects.
+ */
+function relationshipRows(reading: RelationshipReading): RelationshipRows {
+	const { model, projection } = reading;
+	const { policy } = model;
+	const every = scopeEdges(projection);
+	const drawn = projection.connections.flatMap(({ joins }) => joins);
+	const lens = readingLens(policy, projection.lens.id);
+	const look = kindLookOf(policy, new Map());
+	const hidden = new Set(hiddenKinds(reading.hideKinds, policy));
+	const muted = new Set(reading.hideEffects);
+	/**
+	 * How a row of some relationships stands.
+	 * @param of Whether a relationship belongs to the row.
+	 * @param off Whether a reader hid the row.
+	 * @returns Its standing.
+	 */
+	const standing = (of: (edge: Edge) => boolean, off: boolean) => ({
+		hidden: off,
+		dimmed: off || !drawn.some(of),
+		leftOut: !every.some((edge) => of(edge) && lens.draws(edge)),
+	});
+	const kinds = [...new Set(every.map((edge) => edge.kind))]
+		.toSorted(policyOrder(policy.relationshipKinds))
+		.map((id) => ({
+			id,
+			name: look.relationship(id).name,
+			color: policy.relationshipKinds[id]?.color ?? UNKNOWN_KIND.color,
+			dash: policy.relationshipKinds[id]?.dash ?? UNKNOWN_KIND.dash,
+			...standing((edge) => edge.kind === id, hidden.has(id)),
+		}));
+	/**
+	 * What a relationship's line says it does under the policy.
+	 * @param edge The relationship.
+	 * @returns Its effect, or undefined.
+	 */
+	const said = (edge: Edge) => drawnEffect(edge, policy);
+	const effects = effectKey()
+		.filter((entry) => every.some((edge) => said(edge) === entry.effect))
+		.map((entry) => ({
+			id: entry.effect,
+			name: entry.word,
+			entry,
+			...standing((edge) => said(edge) === entry.effect, muted.has(entry.effect)),
+		}));
+	return { kinds, effects };
+}
+
+/**
+ * What a row's eye hides next: the row joins the list, or leaves it.
+ * @param rows The rows of one list, kinds or effects.
+ * @param id The row.
+ * @returns The ids hidden next.
+ */
+function toggled(rows: readonly LegendSwitch[], id: string): readonly string[] {
+	const hidden = rows.filter((row) => row.hidden).map((row) => row.id);
+	return hidden.includes(id) ? hidden.filter((one) => one !== id) : [...hidden, id];
+}
+
+/**
+ * What a row's name hides next: every other row a reader can switch, so the picture draws that row
+ * alone. A row already drawn alone shows every row again.
+ * @param rows The rows of one list, kinds or effects.
+ * @param id The row.
+ * @returns The ids hidden next.
+ */
+function soloed(rows: readonly LegendSwitch[], id: string): readonly string[] {
+	const switchable = rows.filter((row) => !row.leftOut);
+	const alone = switchable.every((row) => row.hidden === (row.id !== id));
+	return alone ? [] : switchable.filter((row) => row.id !== id).map((row) => row.id);
+}
+
+/**
+ * The standings a comparison colours the scope's lines with.
+ * @param projection The reading.
+ * @returns One row for each, in the order a reader is told them.
+ */
+function comparisonRows(projection: Projection): readonly LegendStanding[] {
+	const { standing } = projection;
+	if (standing === undefined) return [];
+	const lines = Object.fromEntries(
+		scopeEdges(projection).flatMap((edge) => {
+			const one = standing[edge.id];
+			return one === undefined ? [] : [[edge.id, one]];
+		}),
+	);
+	return markCounts(lines).map(({ standing: one, word }) => ({ standing: one, word }));
+}
+
+/**
  * The groups of the reading.
  * @param model The reading, whose policy names them.
  * @param projection What it draws.
@@ -222,12 +318,19 @@ function groupRows(model: Model, projection: Projection): readonly LegendGroup[]
 }
 
 export {
+	comparisonRows,
 	groupRows,
 	kindRows,
-	lineRows,
 	markRows,
+	relationshipRows,
+	soloed,
+	toggled,
+	type LegendEffect,
 	type LegendGroup,
-	type LegendLine,
+	type LegendKind,
 	type LegendMark,
 	type LegendRow,
+	type LegendStanding,
+	type LegendSwitch,
+	type RelationshipRows,
 };

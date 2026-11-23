@@ -1,4 +1,19 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#0PBRM9B2",
+      "order": 94000,
+      "kind": "async",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/checkpoints.ts",
+        "symbol": "retainArchitectureCheckpointOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    }
+  ],
   "order": 55000,
   "name": "Model checkpoint commands",
   "kind": "module",
@@ -8,7 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/checkpoints.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#XfxA8lUl",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -30,20 +45,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 94000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/checkpoints.ts",
-        "symbol": "retainArchitectureCheckpointOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#0PBRM9B2",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
     }
   ]
 }

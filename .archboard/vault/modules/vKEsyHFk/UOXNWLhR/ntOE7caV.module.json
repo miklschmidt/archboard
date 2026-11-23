@@ -1,4 +1,33 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#axWdg78p",
+      "order": 5000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "inspection and standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
+        "symbol": "subjectOf"
+      },
+      "to": "vKEsyHFk#zrv2H09S"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#55kjuelE",
+      "order": 49000,
+      "kind": "dependency",
+      "label": "the variant's parts and relationships",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
+        "symbol": "LightingInputs"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
+    }
+  ],
   "order": 4000,
   "name": "Resolve reading meaning",
   "kind": "function",
@@ -8,38 +37,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/rules/document.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#ntOE7caV",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "formerNames": [
     "Resolve board meaning"
-  ],
-  "outgoing": [
-    {
-      "order": 5000,
-      "kind": "data",
-      "label": "inspection and standing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
-        "symbol": "subjectOf"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#axWdg78p",
-      "to": "vKEsyHFk#zrv2H09S"
-    },
-    {
-      "order": 49000,
-      "kind": "data",
-      "label": "the variant's parts and relationships",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
-        "symbol": "LightingInputs"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#55kjuelE",
-      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
-    }
   ]
 }

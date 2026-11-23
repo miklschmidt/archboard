@@ -1,0 +1,7 @@
+nodeKinds:
+  service: { name: Service, icon: RiServerLine }
+  module: { name: Module, icon: RiCodeBoxLine }
+relationshipKinds:
+  sync: { name: Sync calls }
+groups:
+  public: { name: Public interface, color: blue }

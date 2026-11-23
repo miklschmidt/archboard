@@ -1,10 +1,10 @@
 // The lines a reading draws.
 //
-// One line joins a pair of drawn parts, with an arrow at each end when its
-// relationships run both ways. Every relationship has a line, except one between
-// an open module and a part that it holds, which the nesting already shows
-// (ADR 0052). A door's line ends on the part that owns it, and wears its words
-// beside that part.
+// One line joins the relationships of one kind and one effect between a pair
+// of drawn parts, with an arrow at each end when they run both ways. Every
+// relationship has a line, except one between an open module and a part that
+// it holds, which the nesting already shows (ADR 0052). A door's line ends on
+// the part that owns it, and wears its words beside that part.
 
 import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import { containersOf, overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
@@ -24,7 +24,10 @@ function drawnEnds(edge: Edge, drawnAs: ReadonlyMap<string, string>): readonly [
 }
 
 /**
- * One line joins a pair of drawn parts, and distinct comparison states stay separate lines.
+ * One line joins the relationships between a pair of drawn parts that share their kind, their
+ * effect and their comparison state. Relationships that differ in any of these draw as separate
+ * lines between the same parts, so a line's ink, dash and head say what each of its
+ * relationships is.
  * @param complete The full model content.
  * @param edges Relationships included by this reading.
  * @param endsOf Where each relationship's line runs.
@@ -41,7 +44,7 @@ function joinedLines(
 ): OverviewLine[] {
 	const groups = new Map<string, Edge[]>();
 	for (const edge of edges) {
-		const key = standing[edge.id] ?? "unchanged";
+		const key = [standing[edge.id] ?? "unchanged", edge.kind, edge.effect ?? ""].join("\u0000");
 		groups.set(key, [...(groups.get(key) ?? []), edge]);
 	}
 	return [...groups.values()]

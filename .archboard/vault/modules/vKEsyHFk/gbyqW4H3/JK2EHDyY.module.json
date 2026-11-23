@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 28001,
   "name": "Render entry",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm"
 }

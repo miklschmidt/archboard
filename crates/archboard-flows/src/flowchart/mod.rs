@@ -223,6 +223,7 @@ fn drawing_of(
         color: None,
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
+        effect: None,
     };
     let joining = LineAppearance {
         arrowhead: Arrowhead::None,
@@ -261,11 +262,13 @@ fn drawing_of(
         .into_iter()
         .enumerate()
         .map(|(order, run)| DrawingEdge {
+            echelon: false,
             edge: EdgeFacts {
                 id: edge_id(&run, order),
                 from: run.from,
                 to: run.to,
                 kind: NEXT_KIND.to_owned(),
+                effect: None,
                 emphasis: Emphasis::Normal,
                 traffic: None,
                 two_way: false,

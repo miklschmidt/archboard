@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#FCRYdY4h",
+      "order": 15000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "encode the frames and the voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
+        "symbol": "spawn"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
+    }
+  ],
   "order": 960250,
   "name": "Frame encoding",
   "kind": "function",
@@ -8,22 +24,7 @@
     "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
     "symbol": "openVideoEncoder"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#MTb0ypow",
-  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R",
-  "outgoing": [
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "encode the frames and the voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
-        "symbol": "spawn"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#FCRYdY4h",
-      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
 }

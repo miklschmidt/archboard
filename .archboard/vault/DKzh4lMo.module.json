@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 62000,
   "name": "Module interface",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/shared/inspect/rules/container-interface.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#DKzh4lMo",
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU"
 }

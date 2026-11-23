@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#swrDHbj6",
+      "order": 89000,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "present retained canonical beats",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/components/RecordedModelStage.tsx",
+        "symbol": "ModelWalkthrough"
+      },
+      "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
+    }
+  ],
   "order": 68000,
   "name": "Captured recording",
   "kind": "module",
@@ -7,7 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/walkthroughs/recording/components/RecordedModelStage.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#Dobe4vE1",
   "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "documents": [
@@ -22,21 +38,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 89000,
-      "kind": "call",
-      "label": "present retained canonical beats",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/recording/components/RecordedModelStage.tsx",
-        "symbol": "ModelWalkthrough"
-      },
-      "id": "vKEsyHFk/yejBBUFY#swrDHbj6",
-      "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
     }
   ]
 }

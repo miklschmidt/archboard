@@ -70,15 +70,17 @@ function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
 	const picture = legendOf(scene);
+	const structural = location.grammar === "architecture";
 	return (
 		<ModelLegend
 			model={shown.model}
 			projection={shown.projection}
 			picture={picture}
 			look={props.look}
-			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
-			onToggle={location.toggleFilter}
-			onShowAll={location.showAllKinds}
+			filters={structural ? location.filters : NO_FILTERS}
+			onHide={location.setHidden}
+			onLens={structural ? location.selectLens : undefined}
+			onShowAll={location.showAll}
 			selection={selection}
 		/>
 	);

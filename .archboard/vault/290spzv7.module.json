@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 3000,
   "name": "Canvas drawing",
   "kind": "function",
@@ -11,8 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/draw/mod.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#290spzv7",
-  "parent": "vKEsyHFk#NFwqWgrm",
-  "outgoing": []
+  "parent": "vKEsyHFk#NFwqWgrm"
 }

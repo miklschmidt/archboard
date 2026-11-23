@@ -54,7 +54,8 @@ import {
 import { tokenUses } from "#runtime/code-facts/rust/operations/rust-tokens.ts";
 import { RUST_MATH } from "#runtime/code-facts/rust/operations/rust-depth.ts";
 import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { RUST_TIMING } from "#runtime/code-facts/rust/operations/rust-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -116,6 +117,7 @@ const RUN_SYNTAX: RunSyntax = {
 		field_expression: ["value", "field"],
 	},
 	arguments: { arguments: ANY },
+	timing: RUST_TIMING,
 };
 
 /**
@@ -289,7 +291,7 @@ function use(symbol: string, node: Node, typeOnly: boolean): WrittenUse {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 }
 

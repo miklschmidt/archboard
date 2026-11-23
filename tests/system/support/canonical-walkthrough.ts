@@ -9,7 +9,7 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 /** Capture a narrative through public retention, optionally against an older target. */
 async function captureCanonicalWalkthrough(source: string, olderTarget = false) {
 	const vault = vaultIn(source);
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Replay fixture"],

@@ -12,7 +12,11 @@ import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/
 import { moduleOrder } from "#ui/architecture-drawing/model-reader/rules/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type ReadingFilters = { readonly hideKinds: NonNullable<ModelFilters["hideKinds"]> };
+type ReadingFilters = {
+	readonly lens: ModelFilters["lens"];
+	readonly hideKinds: NonNullable<ModelFilters["hideKinds"]>;
+	readonly hideEffects: NonNullable<ModelFilters["hideEffects"]>;
+};
 
 /** The fields of an address that decide what a reading draws and what an agent is told about it. */
 interface SceneReading {
@@ -227,12 +231,21 @@ function destinationName(to: SceneRequest): string {
 }
 
 /**
+ * Whether a reader hid a kind or an effect besides the lens.
+ * @param filters What the reader chose.
+ * @returns True when either list names something.
+ */
+function hidesAny(filters: ReadingFilters): boolean {
+	return filters.hideKinds.length > 0 || filters.hideEffects.length > 0;
+}
+
+/**
  * Whether a reading narrows its scope, so that it can come up empty while the scope is not.
  * @param reading The address fields.
  * @returns True with a focus or a filter.
  */
 function isNarrowed(reading: SceneReading): boolean {
-	return reading.focus !== null || reading.filters.hideKinds.length > 0;
+	return reading.focus !== null || hidesAny(reading.filters) || reading.filters.lens !== undefined;
 }
 
 /**
@@ -244,7 +257,7 @@ function emptyWithFilters(scene: AcceptedScene | null): boolean {
 	return (
 		scene?.grammar === "architecture" &&
 		scene.picture.svg === "" &&
-		scene.reading.filters.hideKinds.length > 0 &&
+		(hidesAny(scene.reading.filters) || scene.projection.leftOut > 0) &&
 		scene.projection.allConnections.length > 0
 	);
 }

@@ -81,6 +81,21 @@ pub(crate) struct Presentation {
     pub sweep: Option<Sweep>,
     /// The marks of the code check's warnings.
     pub warnings: Warnings,
+    /// How much larger every mark at a line's end is drawn, so it keeps its
+    /// least size on screen at this camera; none draws each at its own size.
+    pub mark_growth: Option<f64>,
+    /// The lines whose effect plays once now, each with how far through its
+    /// play it is.
+    pub plays: Vec<Playing>,
+}
+
+/// One line's effect, playing once.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct Playing {
+    /// The relationship whose line plays.
+    pub id: String,
+    /// How far through its play it is, from 0 to 1.
+    pub at: f64,
 }
 
 impl Presentation {

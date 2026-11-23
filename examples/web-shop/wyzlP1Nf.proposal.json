@@ -6,8 +6,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T03:54:15.200Z",
   "predecessor": "dAg7XGx2",
-  "predecessorRevision": "270908fb81a0d0c9f62bd7e0676656488ec21b1309f0ed4abc5b776ed805b6ca",
-  "baseline": "796567886a73389b63120202a3a0762862e841a1",
+  "predecessorRevision": "3cf5ba13c4b5a71ae9f9ad81b8fa59bdfd392451a328b1195a989b94d0582611",
+  "baseline": "0bfc3461e80f06a5c03634df1e2f980f5080596d",
   "changes": [
     {
       "type": "remove",
@@ -72,6 +72,7 @@
       "value": {
         "order": 34000,
         "kind": "event",
+        "effect": "mutation",
         "label": "payment succeeded",
         "emphasis": "hero",
         "traffic": {
@@ -119,7 +120,7 @@
         "groups": [
           "payments"
         ],
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop#rgSpkJC0"
       }
     },
@@ -136,7 +137,8 @@
       "kind": "relationship",
       "value": {
         "order": 35000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "mutation",
         "label": "mark the order paid",
         "emphasis": "normal",
         "id": "Shop#mYpaWsYD",
@@ -157,6 +159,7 @@
       "value": {
         "order": 36000,
         "kind": "queue",
+        "effect": "mutation",
         "label": "publish order paid",
         "emphasis": "hero",
         "traffic": {
@@ -186,7 +189,7 @@
         "groups": [
           "fulfilment"
         ],
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop#iGJ1cXkG"
       }
     },
@@ -204,6 +207,7 @@
       "value": {
         "order": 37000,
         "kind": "queue",
+        "effect": "mutation",
         "label": "deliver order paid",
         "emphasis": "normal",
         "traffic": {
@@ -233,7 +237,7 @@
         "groups": [
           "fulfilment"
         ],
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop#hBnH2Vg6"
       }
     },

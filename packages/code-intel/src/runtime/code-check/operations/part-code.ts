@@ -125,6 +125,24 @@ interface UnreadPart {
 
 type PartCode = ReadPart | SkippedPart | UnreadPart;
 
+/**
+ * Whether the pass skipped a part, with the reason it gives.
+ * @param code The part's code.
+ * @returns True when it did.
+ */
+function isSkipped(code: PartCode | undefined): code is SkippedPart {
+	return code?.status === "skipped";
+}
+
+/**
+ * Whether the pass read a part's code.
+ * @param code The part's code.
+ * @returns True when it did.
+ */
+function isRead(code: PartCode | undefined): code is ReadPart {
+	return code?.status === "read";
+}
+
 /** What reading the bound code of parts needs. */
 interface PartReading {
 	readonly snapshot: CheckoutSnapshot;
@@ -374,6 +392,8 @@ export {
 	type SkippedPart,
 	definitionsIn,
 	differingCode,
+	isRead,
+	isSkipped,
 	isTestPath,
 	pairsOf,
 	partCodesOf,

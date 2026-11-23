@@ -6,6 +6,9 @@ use archboard_scene::paint::design::card_radius;
 
 /// The radius of every bend a route takes.
 pub(crate) const BEND_RADIUS: f64 = bend_radius();
+/// How far apart the strands of a cable stand: half a lane, so that a cable reads as one
+/// ribbon.
+pub(crate) const STRAND: f64 = crate::lanes::chains::LANE / 2.0;
 /// How round a card's corner is, which keeps a line's port clear of it.
 pub(crate) const CARD_RADIUS: f64 = card_radius();
 /// How close two points must be to be one, and the least a turn may move.
@@ -37,8 +40,14 @@ pub(crate) const CONTAINER_INSET: f64 = 20.0;
 pub(crate) const LABEL_CARD_CLEARANCE: f64 = 16.0;
 /// Whitespace between separate label boxes.
 pub(crate) const LABEL_LABEL_CLEARANCE: f64 = 24.0;
-/// Required straight run after the final bend, for every arrow.
-pub(crate) const APPROACH_STRAIGHT: f64 = 12.0;
+/// Required straight run after the final bend, for every arrow: as long as the
+/// painter's longest mark needs.
+pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approach_straight();
+/// The least length of an arrow with no bend: the painter's marks at its ends
+/// and a little body. With no bend, a head needs no approach.
+pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_run();
+/// How far back from its ends a strand of a cable in echelon stands its marks.
+pub(crate) const ECHELON: f64 = archboard_scene::paint::design::echelon();
 
 /// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;

@@ -73,7 +73,7 @@ test("removing most inherited modules requires deliberate proposal confirmation"
 	writeFileSync(
 		join(vault, "spare.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Spare",
 			name: "Spare",
 			kind: "service",

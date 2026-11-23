@@ -26,7 +26,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "proposal-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	writeFileSync(

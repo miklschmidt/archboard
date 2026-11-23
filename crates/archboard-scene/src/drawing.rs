@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::geometry::{Curve, Rect};
+use crate::request::Effect;
 
 /// Which of the two families a piece of text is set in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -137,6 +138,10 @@ pub struct DrawingEdge<E> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub label: Option<PlacedLabel>,
+    /// Whether the marks at its ends stand a mark's length back from them, in echelon with the
+    /// marks of the strand beside it in its cable, so that the marks of a cable never overlap.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub echelon: bool,
 }
 
 /// Which way content reads on the page: architecture diagrams read top to bottom.
@@ -290,6 +295,10 @@ pub struct EdgeFacts {
     pub to: String,
     /// The key of its kind in the vault's policy.
     pub kind: String,
+    /// What it does at its target; absent where it states none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub effect: Option<Effect>,
     /// How loudly it speaks.
     pub emphasis: Emphasis,
     /// The traffic it carries; absent for a line with none.

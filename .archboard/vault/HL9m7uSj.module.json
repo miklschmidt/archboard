@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#9MKtlnoC",
+      "order": 4000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the warning mark on a warned subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/warnings.rs",
+        "symbol": "find"
+      },
+      "to": "vKEsyHFk#GqMdZbTF"
+    }
+  ],
   "order": 6000,
   "name": "Viewer warnings",
   "kind": "function",
@@ -9,21 +25,6 @@
     "path": "crates/archboard-paint/src/warnings.rs"
   },
   "parent": "vKEsyHFk#NFwqWgrm",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#HL9m7uSj",
-  "outgoing": [
-    {
-      "order": 4000,
-      "kind": "call",
-      "label": "the warning mark on a warned subject",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-paint/src/warnings.rs",
-        "symbol": "find"
-      },
-      "id": "vKEsyHFk#9MKtlnoC",
-      "to": "vKEsyHFk#GqMdZbTF"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#HL9m7uSj"
 }

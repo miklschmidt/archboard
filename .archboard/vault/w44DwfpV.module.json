@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 500,
   "name": "Design constants",
   "kind": "module",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/design.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#w44DwfpV",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
 }

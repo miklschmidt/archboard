@@ -25,10 +25,12 @@ const FINDING_NAMES: Readonly<Record<string, string>> = {
 	ANCHOR_MISMATCH: "Anchor mismatch",
 	ANCHOR_PATH_MISSING: "Missing anchor file",
 	ANCHOR_SYMBOL_MISSING: "Missing anchor symbol",
+	CALL_TIMING_MISMATCH: "Sync or async mismatch",
 	BINDING_PATH_MISSING: "Missing bound file",
 	BINDING_SYMBOL_MISSING: "Missing bound symbol",
 	CALLER_UNDRAWN: "Missing caller",
 	CODE_PASS_THROUGH: "Pass-through",
+	DEPENDENCY_CALLED: "Dependency called",
 	DOCUMENT_PATH_MISSING: "Missing document",
 	ENTRY_POINT_UNEXPOSED: "Entry point not exposed",
 	EXPOSED_UNUSED: "Exposed and unused",
@@ -43,6 +45,13 @@ const FINDING_NAMES: Readonly<Record<string, string>> = {
 	RELATIONSHIP_UNSUPPORTED: "Unsupported relationship",
 	TEST_IMPORT_UNEXPOSED: "Test reaches inside",
 	VARIABLE_PASSED_THROUGH: "Variable passed through",
+};
+
+/** How a call runs its callee, in words, where the code facts could tell. */
+const TIMING_WORDS: Readonly<Record<string, string>> = {
+	awaited: "awaited",
+	started: "started as a task",
+	plain: "plain call",
 };
 
 /** How sure a piece of evidence is, in words, with its mark. */
@@ -276,6 +285,11 @@ function EvidencePiece(props: {
 			<span data-resolution={evidence.resolution} className="shrink-0">
 				{words}
 			</span>
+			{evidence.timing !== undefined && TIMING_WORDS[evidence.timing] !== undefined && (
+				<span data-timing={evidence.timing} className="shrink-0">
+					· {TIMING_WORDS[evidence.timing]}
+				</span>
+			)}
 			{choosable && (
 				<span
 					className="text-technical ml-auto min-w-0 truncate font-mono"

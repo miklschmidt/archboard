@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#fSU3kDAR",
+      "order": 1000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "run the installed archboard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/smoke.ts",
+        "symbol": "smoke"
+      },
+      "to": "vKEsyHFk#xurdJU8F"
+    }
+  ],
   "order": 4000,
   "name": "Release smoke test",
   "kind": "test",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/release/smoke.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#A0Nn7Ejh",
-  "parent": "vKEsyHFk#02jxKSM1",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "run the installed archboard",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/release/smoke.ts",
-        "symbol": "smoke"
-      },
-      "id": "vKEsyHFk#fSU3kDAR",
-      "to": "vKEsyHFk#xurdJU8F"
-    }
-  ]
+  "parent": "vKEsyHFk#02jxKSM1"
 }

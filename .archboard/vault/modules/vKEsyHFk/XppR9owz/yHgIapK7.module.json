@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#WxUHKpD6",
+      "order": 63000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the running root, to refuse another's server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "id": "vKEsyHFk#PlQAGfVL",
+      "order": 70042,
+      "kind": "sync",
+      "effect": "query",
+      "label": "retain invocation claims",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "withWriteClaims"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    },
+    {
+      "id": "vKEsyHFk#V2ti26xJ",
+      "order": 70056,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "report local request failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "id": "vKEsyHFk#bLHIqSzi",
+      "order": 77000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the warning for a server of another version",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "otherVersionWarning"
+      },
+      "to": "vKEsyHFk#hcmla1Wa"
+    }
+  ],
   "order": 45000,
   "name": "Request transport",
   "kind": "module",
@@ -8,7 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#yHgIapK7",
   "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "documents": [
@@ -30,60 +88,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 63000,
-      "kind": "dependency",
-      "label": "the running root, to refuse another's server",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk/XppR9owz#WxUHKpD6",
-      "to": "vKEsyHFk#4FdKQJqK"
-    },
-    {
-      "order": 70042,
-      "kind": "call",
-      "label": "retain invocation claims",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "withWriteClaims"
-      },
-      "id": "vKEsyHFk#PlQAGfVL",
-      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
-    },
-    {
-      "order": 70056,
-      "kind": "call",
-      "label": "report local request failures",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "isRecord"
-      },
-      "id": "vKEsyHFk#V2ti26xJ",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 77000,
-      "kind": "call",
-      "label": "the warning for a server of another version",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "otherVersionWarning"
-      },
-      "id": "vKEsyHFk#bLHIqSzi",
-      "to": "vKEsyHFk#hcmla1Wa"
     }
   ]
 }

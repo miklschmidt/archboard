@@ -1,19 +1,10 @@
 {
-  "order": 68000,
-  "name": "Thread tool dispatch",
-  "kind": "module",
-  "responsibility": "Routes reviewed thread operations and returns one answer for each request",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/runtime/dynamic-tools/dispatch"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#iPnxvJWp",
-  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
   "outgoing": [
     {
+      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "the generation that may act",
       "emphasis": "normal",
       "anchor": {
@@ -21,10 +12,10 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
         "symbol": "stageOperation"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
       "order": 19000,
       "kind": "dependency",
       "label": "the archboard_app tools it answers",
@@ -34,12 +25,13 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/operations/dispatch-support.ts",
         "symbol": "GeneralThreadToolName"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
       "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#VOPbBx8O",
       "order": 20000,
-      "kind": "dependency",
+      "kind": "sync",
+      "effect": "compute",
       "label": "the workhorse instructions, by digest",
       "emphasis": "muted",
       "anchor": {
@@ -47,12 +39,13 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
         "symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#VOPbBx8O",
       "to": "vKEsyHFk/SJ2JMVyz#624ETIsk"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
       "order": 23000,
       "kind": "rpc",
+      "effect": "mutation",
       "label": "thread/start, fork and turn/start for a tool call",
       "emphasis": "normal",
       "anchor": {
@@ -60,12 +53,13 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutations.ts",
         "symbol": "threadStart"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
       "order": 32000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "query",
       "label": "the calling thread's tab session",
       "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
       "emphasis": "normal",
@@ -74,10 +68,10 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/authority/rules/authority-classification.ts",
         "symbol": "resolveExactLogicalCaller"
       },
-      "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",
       "order": 59000,
       "kind": "dependency",
       "label": "the private session's tool requests and identities",
@@ -87,8 +81,18 @@
         "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/operations/dispatch-mutations.ts",
         "symbol": "DynamicServerRequest"
       },
-      "id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",
       "to": "vKEsyHFk#Q2Jc26oO"
     }
-  ]
+  ],
+  "order": 68000,
+  "name": "Thread tool dispatch",
+  "kind": "module",
+  "responsibility": "Routes reviewed thread operations and returns one answer for each request",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/dynamic-tools/dispatch"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#iPnxvJWp",
+  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
 }

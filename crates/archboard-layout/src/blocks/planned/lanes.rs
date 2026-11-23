@@ -158,8 +158,13 @@ pub(super) fn corridors(
     let mut hints = std::collections::BTreeMap::new();
     for ((horizontal, low, high), requests) in bands(model, topology, scope, shape) {
         let assigned = lanes(&requests);
+        // Lanes stand as far apart as the widest cable in the band needs.
+        let pitch = LANE
+            + (requests.iter().flat_map(|request| &request.edges))
+                .map(|&edge| model.girth[edge])
+                .fold(0.0, f64::max);
         for (request, lane) in requests.into_iter().zip(assigned) {
-            let at = f64::from_bits(low) + super::shape::CLEAR + lane as f64 * LANE;
+            let at = f64::from_bits(low) + super::shape::CLEAR + lane as f64 * pitch;
             if at <= f64::from_bits(high) - super::shape::CLEAR {
                 hints.extend(
                     request

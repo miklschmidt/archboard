@@ -1,20 +1,10 @@
 {
-  "order": 3000,
-  "name": "Fetch semantic reads",
-  "kind": "function",
-  "responsibility": "Decode the listing, a model, a render, the vault check, the code findings and a model's locality, and ask for one code pass",
-  "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "outgoing": [
     {
+      "id": "vKEsyHFk/yejBBUFY#pqG9kqlF",
       "order": 5000,
       "kind": "http",
+      "effect": "query",
       "label": "legacy boards, listing, policy",
       "emphasis": "hero",
       "traffic": {
@@ -26,12 +16,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "fetch"
       },
-      "id": "vKEsyHFk/yejBBUFY#pqG9kqlF",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
+      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
       "order": 33000,
       "kind": "http",
+      "effect": "mutation",
       "label": "what the last code pass found",
       "emphasis": "normal",
       "anchor": {
@@ -39,12 +30,13 @@
         "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "mountCodeCheckRoute"
       },
-      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
       "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "names the pane's vault on each read",
       "emphasis": "normal",
       "anchor": {
@@ -52,12 +44,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "inVault"
       },
-      "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
     },
     {
+      "id": "vKEsyHFk#aFx2toJd",
       "order": 1008080,
-      "kind": "call",
+      "kind": "async",
+      "effect": "compute",
       "label": "read remembered findings",
       "emphasis": "normal",
       "anchor": {
@@ -65,8 +58,19 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "fetchCodeFindings"
       },
-      "id": "vKEsyHFk#aFx2toJd",
       "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     }
-  ]
+  ],
+  "order": 3000,
+  "name": "Fetch semantic reads",
+  "kind": "function",
+  "responsibility": "Decode the listing, a model, a render, the vault check, the code findings and a model's locality, and ask for one code pass",
+  "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

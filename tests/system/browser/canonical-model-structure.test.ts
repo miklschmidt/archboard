@@ -44,7 +44,7 @@ test("structural writes refresh current modules while exact history and selected
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "structural-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);
@@ -111,7 +111,13 @@ test("structural writes refresh current modules while exact history and selected
 		{
 			type: "add-relationship",
 			source: "Cache",
-			relationship: { to: "Shop#Worker", kind: "call", label: "Read cached result", order: 20 },
+			relationship: {
+				to: "Shop#Worker",
+				kind: "sync",
+				effect: "mutation",
+				label: "Read cached result",
+				order: 20,
+			},
 		},
 	]);
 	await browser.run(["click", '[data-slot="model-reading-selector"]']);

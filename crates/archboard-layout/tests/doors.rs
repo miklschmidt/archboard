@@ -1,6 +1,5 @@
-//! A door keeps its measured size through ranking on both engines and through Blocks' planned
-//! port allocation. In Lanes it widens only as far as the heads of its lines need to stand a
-//! lane apart.
+//! A door keeps its measured size through ranking on both engines, and widens only as far as
+//! the heads of its lines need to stand a lane apart.
 
 use std::future::{Future, Ready, ready};
 use std::task::{Context, Poll, Waker};
@@ -161,14 +160,100 @@ fn a_lane_apart(points: &[Point]) -> bool {
 }
 
 #[test]
-fn a_planned_door_fits_its_ports_and_a_lanes_door_widens_until_its_heads_stand_a_lane_apart() {
-    for incoming in [false, true] {
-        let planned = fan(incoming, Engine::Blocks);
-        assert_eq!(planned.drawing.edges.len(), 8);
-        assert_door_size(&planned, Engine::Blocks);
-        let lanes = fan(incoming, Engine::Lanes);
-        assert_eq!(lanes.drawing.edges.len(), 8);
-        let ends = door_ends(&lanes, Engine::Lanes, incoming);
-        assert!(!incoming || a_lane_apart(&ends), "{ends:?}");
+fn a_door_widens_until_the_heads_of_its_lines_stand_a_lane_apart() {
+    for engine in [Engine::Blocks, Engine::Lanes] {
+        for incoming in [false, true] {
+            let drawn = fan(incoming, engine);
+            assert_eq!(drawn.drawing.edges.len(), 8);
+            let ends = door_ends(&drawn, engine, incoming);
+            assert!(!incoming || a_lane_apart(&ends), "{engine:?}: {ends:?}");
+        }
+    }
+}
+
+#[test]
+fn a_door_holds_a_port_for_each_kind_of_line_it_joins_both_ways_a_lane_apart() {
+    let nodes: Vec<Value> = std::iter::once(json!({"id":"door","name":"Door",
+        "kind":"service","door":"across"}))
+    .chain((0..8).map(|i| json!({"id":format!("card{i}"),"name":"Card","kind":"service"})))
+    .collect();
+    let edges: Vec<Value> = (0..8)
+        .map(|i| {
+            let (from, to) = if i < 4 {
+                (format!("card{i}"), "door".to_owned())
+            } else {
+                ("door".to_owned(), format!("card{i}"))
+            };
+            json!({"id":format!("line{i}"),"from":from,"to":to,"order":i,"kind":format!("kind{i}")})
+        })
+        .collect();
+    let mut sizes = vec![(200.0, 100.0); nodes.len()];
+    sizes[0] = (120.0, 34.0);
+    let drawn = drawing(json!({"nodes":nodes,"edges":edges}), &sizes, Engine::Blocks);
+    let door = (drawn.drawing.cards.iter())
+        .find(|card| card.measured.node.id == "door")
+        .expect("the door is drawn")
+        .bounds;
+    // Eight ports a lane apart, kept twelve from each corner.
+    assert_eq!(door.width, 2.0 * 12.0 + 7.0 * 16.0);
+    // Each end on the door's long walls, along them: a head and a tail on opposite walls
+    // within a lane of each other would read as one line through the door.
+    let long_wall =
+        |end: &Point| (end.y - door.y).abs() < 0.05 || (end.y - door.y - door.height).abs() < 0.05;
+    let heads: Vec<f64> = (drawn.drawing.edges.iter())
+        .filter(|line| line.edge.to == "door")
+        .map(|line| line.curve.end())
+        .filter(long_wall)
+        .map(|end| end.x)
+        .collect();
+    let tails: Vec<f64> = (drawn.drawing.edges.iter())
+        .filter(|line| line.edge.from == "door")
+        .map(|line| line.curve.from)
+        .filter(long_wall)
+        .map(|end| end.x)
+        .collect();
+    assert!(heads.len() >= 3 && tails.len() >= 3, "{heads:?} {tails:?}");
+    let along = [heads, tails].concat();
+    for (at, one) in along.iter().enumerate() {
+        for other in &along[at + 1..] {
+            assert!((one - other).abs() >= 16.0 - 0.05, "{along:?}");
+        }
+    }
+}
+
+#[test]
+fn a_doors_heads_stand_on_its_wall_in_the_order_their_far_cards_stand() {
+    // The lines come in the reverse of their cards' order, so an order by line is wrong.
+    let nodes: Vec<Value> = std::iter::once(json!({"id":"door","name":"Door",
+        "kind":"service","door":"across"}))
+    .chain((0..8).map(|i| json!({"id":format!("card{i}"),"name":"Card","kind":"service"})))
+    .collect();
+    let edges: Vec<Value> = (0..8)
+        .map(|i| {
+            json!({"id":format!("line{i}"),"from":format!("card{i}"),"to":"door",
+                "order":7 - i,"kind":format!("kind{i}")})
+        })
+        .collect();
+    let mut sizes = vec![(200.0, 100.0); nodes.len()];
+    sizes[0] = (120.0, 34.0);
+    let drawn = drawing(json!({"nodes":nodes,"edges":edges}), &sizes, Engine::Blocks);
+    let door = (drawn.drawing.cards.iter())
+        .find(|card| card.measured.node.id == "door")
+        .expect("the door is drawn")
+        .bounds;
+    let centre = |id: &str| {
+        (drawn.drawing.cards.iter())
+            .find(|card| card.measured.node.id == id)
+            .map(|card| card.bounds.x + card.bounds.width / 2.0)
+            .expect("the card is drawn")
+    };
+    for wall in [door.y, door.y + door.height] {
+        let mut heads: Vec<(f64, f64)> = (drawn.drawing.edges.iter())
+            .filter(|line| (line.curve.end().y - wall).abs() < 0.05)
+            .map(|line| (line.curve.end().x, centre(&line.edge.from)))
+            .collect();
+        heads.sort_by(|one, other| one.0.total_cmp(&other.0));
+        let far: Vec<f64> = heads.iter().map(|&(_, far)| far).collect();
+        assert!(far.is_sorted(), "{heads:?}");
     }
 }

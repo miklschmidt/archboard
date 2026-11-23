@@ -116,10 +116,19 @@ function fitPainter(started: StartedPainter): void {
 	}
 }
 
+/**
+ * Whether the page is dark.
+ * @returns True on the dark theme.
+ */
+function pageIsDark(): boolean {
+	return document.documentElement.dataset["theme"] === "dark";
+}
+
 export {
 	fitPainter,
 	headingJson,
 	marksJson,
+	pageIsDark,
 	sizeCanvas,
 	type Held,
 	type PictureHand,

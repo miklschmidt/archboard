@@ -12,6 +12,13 @@ Partly superseded by [ADR 0038](0038-groups-gather-and-colour-their-cards.md): a
 group now has a required color from the curated palette, and that color places
 and colors its cards. Configuration ownership and the curated palette stand.
 
+Amended by [ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) and
+[ADR 0095](0095-a-picture-is-read-through-a-lens.md) on 2026-11-22. Archboard now ships built-in
+relationship kinds, which sit under a vault's own, and a kind that a vault adds must name its
+color. A relationship's effect has three values that the product fixes, not the vault. The product draws
+each effect with its own marks. The vault no longer sets a kind's dash. The vault configuration also owns the lenses
+that a picture is read through, and the default lens.
+
 Dogfooding exposed missing board levels and visual styles whose meaning readers
 were unable to explain. Each vault will own one version-controlled YAML
 configuration that defines its vocabulary and visual policy. So consumers can

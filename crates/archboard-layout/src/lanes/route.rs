@@ -47,10 +47,15 @@ struct Routed {
     upward: bool,
 }
 
-/// The relationship kind, standing, emphasis, and traffic required to share a trunk.
+/// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk:
+/// a cable's every strand (`graph::CABLE`).
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
+    if let Some(cable) = edge.option(crate::graph::CABLE) {
+        return cable.to_owned();
+    }
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
+        edge.option(crate::graph::EFFECT).unwrap_or(""),
         edge.option("archboard.relationship.standing")
             .unwrap_or("unchanged"),
         edge.option("archboard.relationship.emphasis")
@@ -500,17 +505,16 @@ fn routed_of(
 /// moves, `top` where the first band starts, and `rim` the room the block
 /// keeps at its edge rows where no line turns. Answers each line's points,
 /// from its source to its target. With `reserve`, a crowded card stops the
-/// routing before anything settles, and the answer is the widths it needs. With `packed`, the
-/// channels pack their tracks a lane apart, and with `bus` the ends on each face gather.
+/// routing before anything settles, and the answer is the widths it needs. With `bus`, the ends
+/// on each face gather into one group a lane apart, as Lanes draws them.
 pub(crate) fn route_scene(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
     (margin, top): (f64, f64),
     rim: Option<Rim>,
-    (reserve, packed, bus): (bool, bool, bool),
+    (reserve, bus): (bool, bool),
 ) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
     let mut track = Router::new(scene);
-    track.packed = packed;
     track.bus = bus;
     let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
     let chains: Map<String, ChainId> = inner

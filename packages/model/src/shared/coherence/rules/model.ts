@@ -1,3 +1,4 @@
+import { retiredCallAdvice } from "#shared/schemas/built-in-vocabulary.ts";
 import { everyStep, messagesOf } from "#shared/rules/flow-steps.ts";
 import type {
 	ArchitectureModel,
@@ -90,14 +91,23 @@ function vocabularyDiagnostics(
 	];
 	return references
 		.filter((reference) => !Object.hasOwn(reference.configured, reference.value))
-		.map((reference) => ({
-			code: "UNKNOWN_VOCABULARY",
-			file: module.file,
-			path: reference.path,
-			subjects: [module.id],
-			message: `The policy does not define ${reference.value}.`,
-			recovery: "Use a configured vocabulary key or define it in .archboard/config.yaml.",
-		}));
+		.map((reference) => {
+			const retired =
+				reference.configured === policy.relationshipKinds
+					? retiredCallAdvice(reference.value)
+					: undefined;
+			return {
+				code: "UNKNOWN_VOCABULARY",
+				file: module.file,
+				path: reference.path,
+				subjects: [module.id],
+				message: `The policy does not define ${reference.value}.`,
+				recovery:
+					retired === undefined
+						? "Use a configured vocabulary key or define it in .archboard/config.yaml."
+						: `${retired}.`,
+			};
+		});
 }
 
 /**

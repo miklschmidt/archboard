@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 12002,
   "name": "Skill evaluation",
   "kind": "module",
@@ -8,7 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "parent": "vKEsyHFk/vKEsyHFk#LDqRcaY1",
   "documents": [
@@ -16,6 +17,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

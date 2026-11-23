@@ -306,7 +306,7 @@ describe.serial("the repositories of the navigator", () => {
 		const mainVault = vaultOf(main);
 		const worktreeVault = vaultOf(worktree);
 		for (const vault of [mainVault, worktreeVault]) {
-			cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, {
+			cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, {
 				recursive: true,
 			});
 		}
@@ -322,7 +322,7 @@ describe.serial("the repositories of the navigator", () => {
 			state: "Current",
 			scope: "Shop#Gateway",
 			focus: ["Shop#Gateway"],
-			hideKinds: ["call"],
+			hideKinds: ["sync"],
 		};
 		const shown = await inMain("/api/panes/show", {
 			method: "POST",
@@ -349,7 +349,10 @@ describe.serial("the repositories of the navigator", () => {
 					reading: {
 						...capture.reading,
 						scope: reading.scope,
-						relationshipKinds: [],
+						// The kinds the reading shows: every kind but the one it hides.
+						relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
+							(kind) => !reading.hideKinds.includes(kind),
+						),
 					},
 				},
 			},

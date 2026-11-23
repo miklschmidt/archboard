@@ -1,18 +1,21 @@
 {
-  "order": 19000,
-  "name": "Slab surfaces",
-  "kind": "function",
-  "responsibility": "Draws raised slabs and their shadows, selection seats and standing borders",
-  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. An edge tab and a door take their selection seats here. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/slab.rs"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
     {
+      "id": "vKEsyHFk#prq41gkQ",
+      "order": 100,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "round a corner as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/slab.rs",
+        "symbol": "js_max"
+      },
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#lW0CBEfj",
       "order": 38000,
       "kind": "dependency",
       "label": "the palette type its functions consume",
@@ -22,12 +25,13 @@
         "path": "crates/archboard-scene/src/paint/slab.rs",
         "symbol": "Palette"
       },
-      "id": "vKEsyHFk/gbyqW4H3#lW0CBEfj",
       "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#OVkwk7CO",
       "order": 71000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "color the standing outline",
       "emphasis": "normal",
       "anchor": {
@@ -35,21 +39,19 @@
         "path": "crates/archboard-scene/src/paint/slab.rs",
         "symbol": "ink_of"
       },
-      "id": "vKEsyHFk/gbyqW4H3#OVkwk7CO",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    },
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "round a corner as JavaScript does",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/slab.rs",
-        "symbol": "js_max"
-      },
-      "to": "vKEsyHFk#1UxryIji",
-      "id": "vKEsyHFk#prq41gkQ"
     }
-  ]
+  ],
+  "order": 19000,
+  "name": "Slab surfaces",
+  "kind": "function",
+  "responsibility": "Draws raised slabs and their shadows, selection seats and standing borders",
+  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. An edge tab and a door take their selection seats here. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/slab.rs"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
 }

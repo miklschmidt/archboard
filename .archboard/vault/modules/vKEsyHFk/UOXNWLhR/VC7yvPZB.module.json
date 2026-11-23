@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#xpOUXS7t",
+      "order": 12000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "one changed model, in this vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-model-changes.ts",
+        "symbol": "modelChanged"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#rHkIhwXz",
+      "order": 116000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "hear which model moved",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-model-changes.ts",
+        "symbol": "onModelChange"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
+    }
+  ],
   "order": 10000,
   "name": "Refresh changed models",
   "kind": "function",
@@ -11,38 +41,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-model-changes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#VC7yvPZB",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "formerNames": [
     "Refresh changed boards"
-  ],
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "call",
-      "label": "one changed model, in this vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-model-changes.ts",
-        "symbol": "modelChanged"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#xpOUXS7t",
-      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
-    },
-    {
-      "order": 116000,
-      "kind": "call",
-      "label": "hear which model moved",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-model-changes.ts",
-        "symbol": "onModelChange"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#rHkIhwXz",
-      "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
-    }
   ]
 }

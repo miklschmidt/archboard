@@ -152,14 +152,15 @@ test("cutover installs separate compact drafts and retained baselines without im
 				},
 			],
 		});
-		if (!edited.success) throw new Error(JSON.stringify(edited));
+		// A migrated vault holds the old module format, so every write waits for the upgrade (TASK-663).
+		expect(edited).toMatchObject({ success: false, code: "UPGRADE_REQUIRED" });
 		const reopened = await readArchitectureModel(vault, undefined, undefined, {
 			state: proposal.id,
 			compare: false,
 		});
 		if (!reopened.success) throw new Error(JSON.stringify(reopened));
 		expect(reopened.modules.find((module) => module.id === "Shop/System#Api")?.responsibility).toBe(
-			"Routes confirmed purchases",
+			"Routes purchases",
 		);
 	} finally {
 		expect(

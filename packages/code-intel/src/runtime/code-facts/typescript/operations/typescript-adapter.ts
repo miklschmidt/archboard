@@ -19,7 +19,8 @@ import type {
 	ReferenceVia,
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { TYPESCRIPT_TIMING } from "#runtime/code-facts/typescript/operations/typescript-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import {
 	definitionsOf,
@@ -97,6 +98,7 @@ const RUN_SYNTAX: RunSyntax = {
 		non_null_expression: [""],
 	},
 	arguments: { arguments: ANY },
+	timing: TYPESCRIPT_TIMING,
 };
 
 /** The syntax in which each kind of name is part of a qualified spelling. */
@@ -206,7 +208,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -294,7 +296,7 @@ function distinct(
 	);
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}\0${String(reference.passed)}\0${String(reference.timing)}`;
 		if (seen.has(key)) continue;
 		const through = throughImport(reference, imported);
 		seen.set(key, through === undefined ? reference : { ...reference, through });

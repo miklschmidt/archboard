@@ -1,4 +1,15 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#sfvQPYux",
+      "order": 10,
+      "kind": "http",
+      "effect": "query",
+      "label": "list and read files with their owners",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#fCXk4gkF"
+    }
+  ],
   "order": 970000,
   "name": "Code browser",
   "kind": "module",
@@ -7,17 +18,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/code-browser"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#2EpLFgGU",
-  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "http",
-      "label": "list and read files with their owners",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#sfvQPYux",
-      "to": "vKEsyHFk#fCXk4gkF"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3"
 }

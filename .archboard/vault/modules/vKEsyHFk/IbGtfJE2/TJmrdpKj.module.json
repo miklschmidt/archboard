@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 9500,
   "name": "Command classifier",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-checks/audit/rules/classify.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
-  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
-  "outgoing": []
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG"
 }

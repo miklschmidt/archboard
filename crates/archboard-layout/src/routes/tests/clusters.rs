@@ -16,16 +16,13 @@ fn hops_of(bridges: &[DrawingBridge]) -> Vec<&DrawingBridge> {
 // line each hopped it cleanly, and became one long brace on the line they cross.
 #[test]
 fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
-    // Whether the crossed line is painted first or between the two.
+    // Whether the crossed line is painted first or between the two. Every
+    // line runs straight well past its approaches, so each has a hop's room.
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
     for (routes, line) in [
-        (
-            [down_from(50.0, 0.0, 150.0), across(50.0), across(66.0)],
-            "0",
-        ),
-        (
-            [across(50.0), down_from(50.0, 0.0, 150.0), across(66.0)],
-            "1",
-        ),
+        ([crossed(), crosser(50.0), crosser(66.0)], "0"),
+        ([crosser(50.0), crossed(), crosser(66.0)], "1"),
     ] {
         let result = bridged(&drawing(&routes));
         assert_eq!(result.bridges.len(), 2);
@@ -34,6 +31,29 @@ fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
             assert_eq!(bridge.under, [line]);
         }
     }
+}
+
+// Kinds layer: where a ribbon of strands crossed a line, every strand hopped the
+// line on its own, and a crossing of two ribbons drew a hop at every pair.
+#[test]
+fn the_strands_of_one_cable_crossing_a_line_are_hopped_as_one_ribbon() {
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
+    let mut cable = drawing(&[crossed(), crosser(50.0), crosser(66.0)]);
+    let (from, to) = (
+        cable.edges[1].edge.from.clone(),
+        cable.edges[1].edge.to.clone(),
+    );
+    cable.edges[2].edge.from = from;
+    cable.edges[2].edge.to = to;
+    let result = bridged(&cable);
+    assert_eq!(result.bridges.len(), 1);
+    let bridge = &result.bridges[0];
+    assert_eq!(bridge.edge_id, "0");
+    assert!(hops(bridge));
+    let mut under = bridge.under.clone();
+    under.sort();
+    assert_eq!(under, ["1", "2"]);
 }
 
 // Code review: a hop on one of two close lines stood first, and left the

@@ -12,7 +12,6 @@ import { readModelFiles } from "#runtime/store/model-files.ts";
 import { readArchitectureModel } from "#runtime/canonical/read/operations/model-read.ts";
 import {
 	ArchiveError,
-	CheckpointRecordSchema,
 	archiveContext,
 	archiveTip,
 	retainOperation,
@@ -25,6 +24,10 @@ import {
 	settledValues,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import {
+	CheckpointRecordSchema,
+	RECORD_FORMAT,
+} from "#runtime/canonical/archive/store/model-archive-record.ts";
 import { readArchitectureCheckpoint } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	historyResult,
@@ -59,7 +62,7 @@ async function prepareCheckpoint(
 	const narrativeDependencies = await walkthroughDependencies(context, current);
 	const references = await captureReferencePins(vault, current, request);
 	const record = CheckpointRecordSchema.parse({
-		schemaVersion: 1,
+		schemaVersion: RECORD_FORMAT,
 		kind: "checkpoint",
 		vault: context.vault,
 		model: current.manifest.id,

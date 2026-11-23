@@ -212,7 +212,7 @@ test("the right column follows what a reader looks at, and the left column holds
 		writeFileSync(
 			join(vault, "queue.module.json"),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: "Shop#Queue",
 				name: "Queue",
 				kind: "module",

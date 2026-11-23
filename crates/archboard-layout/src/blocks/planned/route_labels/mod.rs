@@ -296,7 +296,7 @@ fn spots_for(
         .get_or_init(|| super::label_space::Protection::new(shape));
     geometry.nearby(horizontal, across, across_half, &mut protect);
     for &r in shape.labels.values() {
-        protect(inflate(r, 8.02));
+        protect(inflate(r, super::label_space::LABEL_ROOM + 0.01));
     }
     for stretch in own.others(span) {
         protect(inflate(stretch, own.keep(12.02)));
@@ -379,6 +379,15 @@ pub(super) fn seated(
 ) -> Option<()> {
     debug_assert!(shape.labels.is_empty());
     let mut labels = super::label_space::Labels::default();
+    // The words with the least room choose first: the longest run their line has to itself,
+    // then the larger words.
+    let room: Vec<f64> = (shape.routes.iter().zip(indices))
+        .map(|(line, &edge)| {
+            (spans(edge, &line.points, shape, strokes).iter())
+                .map(|span| length(&[span.a, span.b]))
+                .fold(0.0, f64::max)
+        })
+        .collect();
     let mut order: Vec<_> = (0..shape.routes.len()).collect();
     order.sort_by(|&a, &b| {
         let area = |index: usize| {
@@ -386,7 +395,9 @@ pub(super) fn seated(
                 .label()
                 .map_or(0.0, |l| l.width.unwrap_or(0.0) * l.height.unwrap_or(0.0))
         };
-        area(b).total_cmp(&area(a)).then(a.cmp(&b))
+        (room[a].total_cmp(&room[b]))
+            .then(area(b).total_cmp(&area(a)))
+            .then(a.cmp(&b))
     });
     seed(shape, indices, &order, strokes, &mut labels);
     let mut moves = Moves {

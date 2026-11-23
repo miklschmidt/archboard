@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#iaq6pG14",
+      "order": 56000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "keep model and rendering schemas in a talk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/shared/protocol/talk.ts",
+        "symbol": "addressedVariant"
+      },
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ],
   "order": 960280,
   "name": "Talk contract",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/shared"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#6RJ25ejV",
-  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
-  "outgoing": [
-    {
-      "order": 56000,
-      "kind": "dependency",
-      "label": "keep model and rendering schemas in a talk",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/shared/protocol/talk.ts",
-        "symbol": "addressedVariant"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#iaq6pG14",
-      "to": "vKEsyHFk#vZUWUgyb"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
 }

@@ -7,13 +7,14 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/marks.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#GqMdZbTF",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
     {
       "order": 1000,
-      "kind": "dependency",
+      "kind": "sync",
+      "effect": "compute",
       "label": "the page's colours",
       "emphasis": "normal",
       "anchor": {
@@ -26,7 +27,8 @@
     },
     {
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "a standing's pin and the warning glyph",
       "emphasis": "normal",
       "anchor": {
@@ -36,6 +38,20 @@
       },
       "id": "vKEsyHFk#Hb3narYc",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 3000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "each effect's sample",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/marks.rs",
+        "symbol": "effect_sample"
+      },
+      "to": "vKEsyHFk#euTVEapk",
+      "id": "vKEsyHFk#prdX6FXw"
     }
   ]
 }

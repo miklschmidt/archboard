@@ -154,9 +154,9 @@ const modelRasterizeContract = defineCommand({
 	 * @returns The measured PNG receipt or structured reading refusal.
 	 */
 	async handler(input, context) {
-		await context.require("server", "model rasterize");
 		const { out, scale, region, ...request } = input;
 		requireGrammarForFlow(request);
+		await context.require("server", "model rasterize");
 		const picture = await renderArchitectureFlowOnServer(request);
 		if (!picture.success)
 			return {

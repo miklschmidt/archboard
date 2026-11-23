@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#CBwiWYsr",
+      "order": 50000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "argv and the checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/evaluate-skill.ts",
+        "symbol": "runEvaluationCommand"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#JaLEafPa"
+    }
+  ],
   "order": 29002,
   "name": "Eval script",
   "kind": "module",
@@ -7,21 +23,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/evaluate-skill.ts"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#I1uPm6KX",
-  "outgoing": [
-    {
-      "order": 50000,
-      "kind": "call",
-      "label": "argv and the checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/evaluate-skill.ts",
-        "symbol": "runEvaluationCommand"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#CBwiWYsr",
-      "to": "vKEsyHFk/IbGtfJE2#JaLEafPa"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/IbGtfJE2#I1uPm6KX"
 }

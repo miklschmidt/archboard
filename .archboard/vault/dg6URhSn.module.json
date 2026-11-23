@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#4gojuhlc",
+      "order": 100,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "lay out each graph with dot",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/lib.rs",
+        "symbol": "render_as"
+      },
+      "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"
+    },
+    {
+      "id": "vKEsyHFk#fydOT1rP",
+      "order": 200,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "spell each attribute number as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/graph.rs",
+        "symbol": "number"
+      },
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "id": "vKEsyHFk#dontbmL6",
+      "order": 91013,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "write each graph statement by statement",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/dot.rs",
+        "symbol": "Statements"
+      },
+      "to": "vKEsyHFk#hBkjiO4k"
+    },
+    {
+      "id": "vKEsyHFk#jsgdn0M9",
+      "order": 91014,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "set the y axis of each run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/lib.rs",
+        "symbol": "set_y_invert"
+      },
+      "to": "vKEsyHFk#7yGUY6ta"
+    }
+  ],
   "order": 40500,
   "name": "archboard-graphviz",
   "kind": "package",
@@ -7,61 +65,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-graphviz"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#dg6URhSn",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "lay out each graph with dot",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-graphviz/src/lib.rs",
-        "symbol": "render_as"
-      },
-      "id": "vKEsyHFk#4gojuhlc",
-      "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"
-    },
-    {
-      "order": 200,
-      "kind": "call",
-      "label": "spell each attribute number as JavaScript does",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-graphviz/src/graph.rs",
-        "symbol": "number"
-      },
-      "id": "vKEsyHFk#fydOT1rP",
-      "to": "vKEsyHFk#1UxryIji"
-    },
-    {
-      "order": 91013,
-      "kind": "dependency",
-      "label": "write each graph statement by statement",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-graphviz/src/dot.rs",
-        "symbol": "Statements"
-      },
-      "id": "vKEsyHFk#dontbmL6",
-      "to": "vKEsyHFk#hBkjiO4k"
-    },
-    {
-      "order": 91014,
-      "kind": "dependency",
-      "label": "set the y axis of each run",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-graphviz/src/lib.rs",
-        "symbol": "set_y_invert"
-      },
-      "id": "vKEsyHFk#jsgdn0M9",
-      "to": "vKEsyHFk#7yGUY6ta"
-    }
-  ],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

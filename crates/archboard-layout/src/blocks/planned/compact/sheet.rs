@@ -45,6 +45,11 @@ pub(super) enum Kind {
     Tab,
 }
 
+/// How the lines of a drawing look to its compaction: the lines with an arrowhead at their
+/// start, and each cable's half-width, by line id.
+pub(in crate::blocks::planned) type Looks<'a> =
+    (&'a [&'a str], &'a rustc_hash::FxHashMap<&'a str, f64>);
+
 /// Something that holds room on one axis, and the slab across that axis where it holds it.
 #[derive(Clone)]
 pub(super) struct Piece {
@@ -57,6 +62,8 @@ pub(super) struct Piece {
     pub(super) to: f64,
     /// For a run where lines join or part beside a card they share, those cards' movers.
     pub(super) joins: Vec<usize>,
+    /// How far a run's ink reaches to either side of it: a cable's half-width, else nothing.
+    pub(super) ink: f64,
 }
 
 /// A stretch of one line that stands still on this axis: the place of its points in the line.
@@ -186,6 +193,7 @@ impl Sheet {
             from,
             to,
             joins: Vec::new(),
+            ink: 0.0,
         });
     }
 
@@ -218,14 +226,16 @@ impl Sheet {
     }
 
     /// A mover and a piece for a run that shares no ink with a run before it.
-    fn run(&mut self, run: &Run) -> usize {
+    fn run(&mut self, run: &Run, ink: f64) -> usize {
         let mover = self.mover();
         self.hold(mover, Kind::Line, (run.at, run.at), (run.from, run.to));
-        self.pieces.len() - 1
+        let piece = self.pieces.len() - 1;
+        self.pieces[piece].ink = ink;
+        piece
     }
 
     /// One mover for each run of the drawing's lines. Runs that share ink share a mover.
-    fn runs(&mut self, drawing: &Placed, axis: Axis, two_way: &[&str]) {
+    fn runs(&mut self, drawing: &Placed, axis: Axis, (two_way, inks): Looks<'_>) {
         let joined: Vec<[Option<usize>; 2]> = (0..drawing.edges.len())
             .map(|line| [true, false].map(|start| joined_card(drawing, line, start, two_way)))
             .collect();
@@ -235,7 +245,12 @@ impl Sheet {
                 let piece = &self.pieces[at];
                 piece.low == run.at && run.from <= piece.to
             });
-            let piece = shared.unwrap_or_else(|| self.run(&run));
+            let ink = inks
+                .get(drawing.edges[run.line].id.as_str())
+                .copied()
+                .unwrap_or(0.0);
+            let piece = shared.unwrap_or_else(|| self.run(&run, ink));
+            self.pieces[piece].ink = self.pieces[piece].ink.max(ink);
             self.pieces[piece].to = self.pieces[piece].to.max(run.to);
             // The run that turns off the first stretch or onto the last, where a line that
             // shares that stretch parts from or joins the other.
@@ -298,7 +313,7 @@ impl Sheet {
         }
     }
 
-    fn lines(&mut self, drawing: &Placed, axis: Axis, two_way: &[&str]) {
+    fn lines(&mut self, drawing: &Placed, axis: Axis, looks: Looks<'_>) {
         for line in &drawing.edges {
             if let Some(label) = line.label {
                 let mover = self.mover();
@@ -307,15 +322,15 @@ impl Sheet {
             }
             self.lines.push(vec![0; line.points.len()]);
         }
-        self.runs(drawing, axis, two_way);
+        self.runs(drawing, axis, looks);
     }
 
-    pub(super) fn of(drawing: &Placed, axis: Axis, two_way: &[&str]) -> Sheet {
+    pub(super) fn of(drawing: &Placed, axis: Axis, looks: Looks<'_>) -> Sheet {
         let mut sheet = Sheet::default();
         sheet.cards(drawing, axis);
         sheet.frames(drawing, axis);
         sheet.titles(drawing, axis);
-        sheet.lines(drawing, axis, two_way);
+        sheet.lines(drawing, axis, looks);
         sheet
     }
 

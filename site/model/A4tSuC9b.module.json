@@ -3,13 +3,14 @@
   "name": "Painter",
   "kind": "engine",
   "responsibility": "Draws each picture on the GPU",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#A4tSuC9b",
   "parent": "q9TUBeZT#CXLlEMBM",
   "outgoing": [
     {
       "order": 140,
       "kind": "render",
+      "effect": "mutation",
       "label": "draws",
       "emphasis": "normal",
       "traffic": {

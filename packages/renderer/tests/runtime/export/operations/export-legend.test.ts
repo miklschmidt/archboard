@@ -94,6 +94,7 @@ function statedBy(group: Queried): AppliedAppearance {
 		lineColor: fact("data-line-color", "neutral"),
 		dash: fact("data-line-dash", "solid"),
 		arrowhead: fact("data-arrowhead", "filled"),
+		effect: fact("data-line-effect", ""),
 	};
 }
 

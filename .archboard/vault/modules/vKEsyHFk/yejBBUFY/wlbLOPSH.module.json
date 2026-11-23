@@ -1,10 +1,11 @@
 {
+  "outgoing": [],
   "order": 25003,
   "name": "Panes and workspace",
   "kind": "module",
   "responsibility": "Owns pane sessions, repository discovery, reading addresses, and local source navigation",
   "description": "The tab restores each reading from its address and keeps pane ownership separate from architecture. Model discovery uses the canonical catalogue. Moving architecture ownership between models is unavailable.",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#wlbLOPSH",
   "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
@@ -21,7 +22,6 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes"

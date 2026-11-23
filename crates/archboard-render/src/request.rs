@@ -12,7 +12,7 @@ use archboard_scene::request::{
     Arrowhead, Dash, ExportFrame, PaletteColor, Relief, StandaloneTheme, Standing, ThemeColors,
 };
 use indexmap::IndexMap;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Which picture a view asks for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -60,17 +60,21 @@ pub(crate) struct GroupLook {
 }
 
 /// One relationship kind of the vault's policy.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct RelationshipLook {
     /// What a reader sees it called.
     pub(crate) name: String,
     /// Its line's colour, when it has one.
     #[serde(default)]
     pub(crate) color: Option<PaletteColor>,
-    /// How its line is dashed.
-    pub(crate) dash: Dash,
-    /// Which arrowhead its line ends in.
-    pub(crate) arrowhead: Arrowhead,
+    /// How its lines were dashed, on a reading from before effects (ADR 0065);
+    /// absent where each line's effect says its dash.
+    #[serde(default)]
+    pub(crate) dash: Option<Dash>,
+    /// Which arrowhead its lines ended in, on a reading from before effects
+    /// (ADR 0065); absent where each line's effect says its head.
+    #[serde(default)]
+    pub(crate) arrowhead: Option<Arrowhead>,
 }
 
 /// The vault's presentation policy, shared by every variant.

@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
+      "order": 34000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "read models from the talk, in place of the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
+        "symbol": "readRetainedFrom"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "order": 35000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "install the stepped clock; step it each frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
+        "symbol": "driveFramesFrom"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
+      "order": 45000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "a model cache of its own, under the tab's defaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
+        "symbol": "createModelQueryClient"
+      },
+      "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
+      "order": 120000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "draw every picture against the talk's variant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
+        "symbol": "drawAgainst"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
+    },
+    {
+      "id": "vKEsyHFk#9m54YaTh",
+      "order": 990100,
+      "kind": "sync",
+      "effect": "query",
+      "label": "wait for the painter to start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
+        "symbol": "stageOf"
+      },
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ],
   "order": 24000,
   "name": "Replay page",
   "kind": "ui",
@@ -11,74 +83,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/walkthroughs/replay/clients"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#Kek84WN9",
-  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
-  "outgoing": [
-    {
-      "order": 34000,
-      "kind": "call",
-      "label": "read models from the talk, in place of the server",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
-        "symbol": "readRetainedFrom"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
-      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
-    },
-    {
-      "order": 35000,
-      "kind": "call",
-      "label": "install the stepped clock; step it each frame",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
-        "symbol": "driveFramesFrom"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 45000,
-      "kind": "call",
-      "label": "a model cache of its own, under the tab's defaults",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
-        "symbol": "createModelQueryClient"
-      },
-      "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
-      "to": "vKEsyHFk#dneK7oM5"
-    },
-    {
-      "order": 120000,
-      "kind": "call",
-      "label": "draw every picture against the talk's variant",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
-        "symbol": "drawAgainst"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
-      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "wait for the painter to start",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#9m54YaTh",
-      "to": "vKEsyHFk#9FxduWoO"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe"
 }

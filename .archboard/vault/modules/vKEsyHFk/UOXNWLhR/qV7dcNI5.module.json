@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#vOEGQ4ga",
+      "order": 70009,
+      "kind": "sync",
+      "effect": "query",
+      "label": "read retained content and refusals",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts",
+        "symbol": "ReadingError"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ],
   "order": 23000,
   "name": "Canvas reads",
   "kind": "function",
@@ -11,25 +27,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "formerNames": [
     "Board reads"
-  ],
-  "outgoing": [
-    {
-      "order": 70009,
-      "kind": "call",
-      "label": "read retained content and refusals",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts",
-        "symbol": "ReadingError"
-      },
-      "id": "vKEsyHFk#vOEGQ4ga",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    }
   ]
 }

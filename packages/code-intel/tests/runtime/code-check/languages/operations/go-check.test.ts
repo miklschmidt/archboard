@@ -116,13 +116,13 @@ beforeAll(async () => {
 				],
 				edges: [
 					// The anchor holds: the aliased import leads to the ledger's `New`.
-					edge("e1", ["pMain", "pBook"], "call", [MAIN, "books.New"]),
+					edge("e1", ["pMain", "pBook"], "sync", [MAIN, "books.New"]),
 					// The name is nowhere in the file.
-					edge("e2", ["pBook", "pMoney"], "call", [LEDGER, "Nope"]),
+					edge("e2", ["pBook", "pMoney"], "sync", [LEDGER, "Nope"]),
 					// Drawn from the money, while the book adds money.
-					edge("e3", ["pMoney", "pBook"], "call"),
+					edge("e3", ["pMoney", "pBook"], "sync"),
 					// A method called through a value, which only gopls resolves.
-					edge("e4", ["pMain", "pBook"], "call", [MAIN, "book.Post"]),
+					edge("e4", ["pMain", "pBook"], "sync", [MAIN, "book.Post"]),
 				],
 			},
 		},

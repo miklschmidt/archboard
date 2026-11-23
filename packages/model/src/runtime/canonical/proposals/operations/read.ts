@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
+import { configurationFile } from "#runtime/store/configuration.ts";
 import type { z } from "zod";
-import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { SelectedStateSchema, StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import type {
 	ArchitectureModel,
@@ -42,27 +42,6 @@ type Proposal = z.infer<typeof import("#shared/schemas/model-proposals.ts").Prop
 	file?: string;
 };
 type Selection = z.input<typeof StateSelectionSchema>;
-/**
- * Identify complete predecessor meaning independently of sibling files.
- * @param model The coherent predecessor.
- * @returns A stable fingerprint of meaning and metadata.
- */
-function predecessorRevision(model: ArchitectureModel): string {
-	const state =
-		model.selectedState === null ? null : StateMetadataSchema.strip().parse(model.selectedState);
-	return createHash("sha256")
-		.update(
-			JSON.stringify({
-				manifest: { ...model.manifest, retiredIds: model.manifest.retiredIds ?? [] },
-				state,
-				policy: model.policy,
-				modules: model.modules,
-				collections: model.collections,
-				...(model.walkthroughs.length === 0 ? {} : { walkthroughs: model.walkthroughs }),
-			}),
-		)
-		.digest("hex");
-}
 /**
  * Produce complete canonical files without active sibling proposals.
  * @param model The selected architecture.
@@ -241,7 +220,7 @@ function decodeSubjects(
 	selection: ArchitectureModel["selectedState"],
 ): ArchitectureModelRead {
 	const definitions = materializedDefinitions(baseline, subjects);
-	const inputs = materializedInputs(baseline, Buffer.from(Bun.YAML.stringify(baseline.policy)));
+	const inputs = materializedInputs(baseline, configurationFile(baseline.policy));
 	for (const file of inputs.keys())
 		if (/\.(module|flows|walkthrough)\.json$/u.test(file)) inputs.delete(file);
 	for (const { file, ...definition } of [
@@ -585,7 +564,6 @@ function selectModuleResult(model: ArchitectureModelRead, module: string | undef
 	return model.success ? selectModule(model, module) : model;
 }
 export {
-	predecessorRevision,
 	materializedInputs,
 	readingArchive,
 	materializeProposal,

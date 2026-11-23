@@ -11,8 +11,8 @@ import {
 	requireModel,
 	resolveState,
 	decodeSubjects,
-	predecessorRevision,
 } from "#runtime/canonical/proposals/operations/read.ts";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
 import {
 	subjectsOf,
 	heldSubjects,

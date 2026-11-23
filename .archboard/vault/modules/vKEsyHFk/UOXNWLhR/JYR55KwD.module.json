@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 43000,
   "name": "Camera store",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/state/camera-store.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#JYR55KwD",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

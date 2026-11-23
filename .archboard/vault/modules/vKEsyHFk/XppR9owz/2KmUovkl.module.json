@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
+      "order": 12000,
+      "kind": "http",
+      "effect": "query",
+      "label": "health: is this the server of this checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "healthRoute"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#iDjPNIJS",
+      "order": 59000,
+      "kind": "async",
+      "effect": "query",
+      "label": "what answers at its address",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/server-control/operations/status.ts",
+        "symbol": "serverStatus"
+      },
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    }
+  ],
   "order": 25000,
   "name": "Status",
   "kind": "module",
@@ -7,7 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/server-control/operations/status.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#2KmUovkl",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -29,34 +59,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "http",
-      "label": "health: is this the server of this checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "healthRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
-      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
-    },
-    {
-      "order": 59000,
-      "kind": "call",
-      "label": "what answers at its address",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/server-control/operations/status.ts",
-        "symbol": "serverStatus"
-      },
-      "id": "vKEsyHFk/XppR9owz#iDjPNIJS",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
     }
   ]
 }

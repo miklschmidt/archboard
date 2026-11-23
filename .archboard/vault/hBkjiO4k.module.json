@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#Q6d5hgEY",
+      "order": 91007,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "build the graph it reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-parser/src/parser.rs",
+        "symbol": "ensure_node_html"
+      },
+      "to": "vKEsyHFk#FLnwES7I"
+    }
+  ],
   "order": 90003,
   "name": "graphviz-pure-parser",
   "kind": "external",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure-parser"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#hBkjiO4k",
-  "outgoing": [
-    {
-      "order": 91007,
-      "kind": "dependency",
-      "label": "build the graph it reads",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-parser/src/lib.rs",
-        "symbol": "Graph"
-      },
-      "id": "vKEsyHFk#Q6d5hgEY",
-      "to": "vKEsyHFk#FLnwES7I"
-    }
-  ],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

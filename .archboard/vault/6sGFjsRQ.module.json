@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#80dwcLyq",
+      "order": 100,
+      "kind": "async",
+      "effect": "query",
+      "label": "one render, its picture and its key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/render.rs",
+        "symbol": "Renderer"
+      },
+      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+    },
+    {
+      "id": "vKEsyHFk#3LA3rFOo",
+      "order": 200,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "one solve of a measured graph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/layout.rs",
+        "symbol": "lay_out_picture"
+      },
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+    },
+    {
+      "id": "vKEsyHFk#bSDPUhGh",
+      "order": 300,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the Graphviz of each solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/layout.rs",
+        "symbol": "InCore"
+      },
+      "to": "vKEsyHFk#dg6URhSn"
+    }
+  ],
   "order": 41000,
   "name": "archboard-renderer-wasm",
   "kind": "package",
@@ -7,48 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-renderer-wasm"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#6sGFjsRQ",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "one render, its picture and its key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-renderer-wasm/src/render.rs",
-        "symbol": "Renderer"
-      },
-      "id": "vKEsyHFk#80dwcLyq",
-      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO"
-    },
-    {
-      "order": 200,
-      "kind": "call",
-      "label": "one solve of a measured graph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-renderer-wasm/src/layout.rs",
-        "symbol": "lay_out_picture"
-      },
-      "id": "vKEsyHFk#3LA3rFOo",
-      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
-    },
-    {
-      "order": 300,
-      "kind": "call",
-      "label": "the Graphviz of each solve",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-renderer-wasm/src/layout.rs",
-        "symbol": "InCore"
-      },
-      "id": "vKEsyHFk#bSDPUhGh",
-      "to": "vKEsyHFk#dg6URhSn"
-    }
-  ],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

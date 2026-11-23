@@ -27,7 +27,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "ffe2c3bf7eeba0d20ee2b1ed30c4670e0031d4fed6f11c7ba2797db520a19570"
+			"hash": "17349f7cec7c5305c13fe4afd4d4f701c2f9229450238f35c46564d8c8b42822"
 		},
 		{
 			"name": "hero",
@@ -207,7 +207,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "176bb6e64d18355cc72e48d5bf4a9b7c4c4226be44eed2ebbe0aae4c05bb2cc1"
+			"hash": "3a721555b23db4287a3796ef16591147e9c6dcc817812dd56f41642b481fd84d"
 		},
 		{
 			"name": "newcomer",
@@ -354,7 +354,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "76a350e8809353d5cb5850ab4e67139c047d7125836a97c32507e356674e0b7e"
+			"hash": "3a721555b23db4287a3796ef16591147e9c6dcc817812dd56f41642b481fd84d"
 		},
 		{
 			"name": "architecture",
@@ -363,7 +363,7 @@
 			"command": "bun run readme:assets architecture",
 			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
 			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
-			"hash": "922cb84732d0945f000f2a2a0767c15a9979d7e8a9cfce1ddbea4e387f627766"
+			"hash": "d22e7c0b09d9974c1e8188c0b4da888df06b5f5851e876029ea1f78d0c44aa1d"
 		},
 		{
 			"name": "code-evidence",

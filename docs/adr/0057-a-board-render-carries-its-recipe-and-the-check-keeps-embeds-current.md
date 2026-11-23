@@ -44,6 +44,10 @@ The recipe names the board, the variant, the view and the drawing choices. It al
 - a fingerprint of what the renderer was given
 - a hash of the picture as drawn, without the recipe
 
+The drawing choices include the lens that the picture is read through, by its id
+([ADR 0095](0095-a-picture-is-read-through-a-lens.md)). A recipe from before lenses names none and
+draws through `all`, as it did. The fingerprint reads no lens definition.
+
 The recipe holds no output path and no board version. An edit of a variant that the picture neither
 draws nor is drawn against raises the version and changes nothing that the picture draws.
 

@@ -3,6 +3,7 @@ import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { across, along, breadth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { cablesOf, plateReach } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	corridorPoints,
 	routeCrosses,
@@ -192,12 +193,14 @@ function inkOf(drawing: RenderedDiagram): Ink {
 function onStraightRun(
 	points: readonly DrawnPoint[],
 	label: { x: number; y: number; width: number; height: number },
+	beside = 0,
 ): boolean {
 	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
 	// The engine centres an inline label at a rounded width and snaps routes to
 	// whole units, so a label on its run can sit up to about a unit off it
-	// (0.88 on Archboard server): invisible, and not a label off its line.
-	const snap = 1;
+	// (0.88 on Archboard server): invisible, and not a label off its line. A
+	// cable's plate stands `beside` its strands, on the cable's middle.
+	const snap = 1 + beside;
 	return points.slice(1).some((end, index) => {
 		const start = points[index]!;
 		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < snap;
@@ -215,16 +218,22 @@ function onStraightRun(
 
 /**
  * The labelled relationships whose label does not sit on a straight run of
- * its own route.
+ * its own route, or, for a cable's plate, on the middle of its strands.
  * @param drawing The rendered document.
  * @returns Their ids.
  */
 function labelsOffRuns(drawing: RenderedDiagram): string[] {
 	const routes = corridorPoints(drawing.svg);
+	const cables = cablesOf(drawing);
 	const found: string[] = [];
 	for (const [id, label] of routeLabels(drawing.svg)) {
-		const route = routes.get(id);
-		if (route !== undefined && !onStraightRun(route, label)) found.push(id);
+		const strands = cables.get(id) ?? [id];
+		const reach = plateReach(strands);
+		const on = strands.some((strand) => {
+			const route = routes.get(strand);
+			return route === undefined || onStraightRun(route, label, reach);
+		});
+		if (!on) found.push(id);
 	}
 	return found;
 }
@@ -340,10 +349,10 @@ function bundleAt(run: Run, runs: readonly Run[]): number {
  * and the share of all route ink that has another route beside it. A reader
  * can follow one line out of such a corridor only by counting lines across it.
  * @param drawing The rendered document.
+ * @param runs The runs to measure: every route's, unless the caller names fewer.
  * @returns The longest shared stretch, the widest bundle and the share of ink drawn beside another route.
  */
-function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
-	const runs = runsOf(drawing);
+function sharedCorridorOf(drawing: RenderedDiagram, runs: readonly Run[] = runsOf(drawing)): Corridor {
 	let total = 0,
 		beside = 0,
 		longest = 0,
