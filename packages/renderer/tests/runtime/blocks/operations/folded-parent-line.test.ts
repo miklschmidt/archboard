@@ -34,8 +34,7 @@ test("a parent that a line enters draws when its children could fold into column
 	const drawing = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content,
-		layout: "blocks",
 		theme: "light",
 	});
-	expectDrawingIntact(drawing, content, "blocks");
+	expectDrawingIntact(drawing, content);
 });

@@ -13,7 +13,7 @@ mod port_room;
 mod slides;
 mod trunks;
 
-pub(crate) use open_edge::{Span, nearest_free, open_stretch};
+pub(crate) use open_edge::{Span, open_stretch};
 pub(crate) use pack::{PACK_GAP, PackLayout};
 pub(crate) use packings::Packing;
 pub(crate) use port_columns::{separate_facing_ports, spread};

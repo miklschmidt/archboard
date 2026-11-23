@@ -22,7 +22,9 @@ import {
 import { sidebarMs } from "@archboard/timing";
 import { cn, IconButton } from "@archboard/ui-kit/components";
 import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
+import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
+import { useSectionFold } from "#ui/shell/hooks/use-section-fold.ts";
 import { GROUP_LINE, rowTone, type RowState } from "#ui/shell/rules/row-tone.ts";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules/section-runs.ts";
@@ -319,14 +321,16 @@ function Head(props: {
 
 /**
  * One list of the panel, under its icon, its title and its count, or a section of facts that is no
- * list.
+ * list. Its head folds it, as a head of the left column does.
  * @param props The list.
  * @param props.icon What kind of thing it lists.
  * @param props.title What it lists.
  * @param props.count How many it lists.
  * @param props.slot Where a test finds it.
- * @param props.action What acts on the list, at the end of its heading.
+ * @param props.action What acts on the list, at the end of its heading before the chevron.
  * @param props.list Whether it holds rows, which is the default, or other content.
+ * @param props.folded Whether it asks to stand folded, as a list that a reader seldom needs does. It
+ * unfolds when it stops asking.
  * @param props.children Its rows.
  * @returns The section.
  */
@@ -337,21 +341,25 @@ function Section(props: {
 	readonly slot: string;
 	readonly action?: ReactNode;
 	readonly list?: boolean;
+	readonly folded?: boolean;
 	readonly children: ReactNode;
 }): JSX.Element {
+	const fold = useSectionFold(props.folded === true);
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className={SECTION}>
-			<div className="flex min-h-6 items-center justify-between gap-2">
-				<h4 className="m-0 min-w-0">
-					<SectionLabel icon={props.icon} title={props.title} count={props.count} />
-				</h4>
-				{props.action}
-			</div>
-			{props.list === false ? (
-				<div className="pt-1">{props.children}</div>
-			) : (
-				<ul className="flex flex-col">{props.children}</ul>
-			)}
+			<SectionHead level={4} action={props.action} {...fold} className="-mx-2 min-h-6 px-2">
+				<SectionLabel icon={props.icon} title={props.title} count={props.count} />
+			</SectionHead>
+			{!fold.folded &&
+				(props.list === false ? (
+					<div id={fold.controls} className="pt-1">
+						{props.children}
+					</div>
+				) : (
+					<ul id={fold.controls} className="flex flex-col">
+						{props.children}
+					</ul>
+				))}
 		</section>
 	);
 }

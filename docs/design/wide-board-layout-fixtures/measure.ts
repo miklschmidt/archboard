@@ -13,7 +13,7 @@
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every document, not only the current one
-// ENGINE=track       lay every document out with this engine, not the default one
+// ENGINE=lanes       lay every document out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then

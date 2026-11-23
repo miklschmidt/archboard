@@ -1,6 +1,6 @@
 //! A corridor consumes peak interval occupancy, not one lane per relationship.
 
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 pub(super) struct Interval {
     pub start: f64,

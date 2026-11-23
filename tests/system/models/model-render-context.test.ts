@@ -315,6 +315,18 @@ test("canonical exports retain default comparison and unresolved subject marks t
 	expect(nextRecipe.recipe.fingerprint).not.toBe(recipe.recipe.fingerprint);
 }, 30000);
 
+test("a picture drawn with Lanes records Lanes in its recipe, and its recipe draws it again with Lanes", async () => {
+	const lanes = await render({ layout: "lanes" });
+	const recipe = readRenderRecipe(Buffer.from(lanes.svg));
+	if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
+		throw new Error(JSON.stringify(recipe));
+	expect(recipe.recipe.reading.layout).toBe("lanes");
+	expect((await render(recipe.recipe.reading)).svg).toBe(lanes.svg);
+	const plain = readRenderRecipe(Buffer.from((await render()).svg));
+	if (plain.kind !== "recipe" || plain.recipe.recipe !== 2) throw new Error(JSON.stringify(plain));
+	expect(plain.recipe.reading.layout).toBe("blocks");
+}, 30000);
+
 test("a file the CLI renders stands alone, in a directory it creates, and refuses a flow without a grammar", () => {
 	const run = (...args: string[]) =>
 		runServerCli({

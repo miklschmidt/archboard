@@ -77,11 +77,11 @@ The six normal native lanes are:
 It reads the current canonical model in this checkout's `.archboard/vault` through `readArchitectureModel`.
 It renders the root and every module with children through the shared `projectModel` rule.
 Each reading carries the complete model for container interface context.
-It also renders three fixed wide fixtures on both registered layout engines.
+It also renders three fixed wide fixtures.
 It retains the drawing assertions and first-layout speed limits.
 Unreadable canonical inputs or an absent current state stop the benchmark.
 It reads no other repository, historical state, or proposal selection.
-The normal gate also renders three fixed fixtures on both engines in
+The normal gate also renders three fixed fixtures in
 `packages/renderer/tests/runtime/blocks/operations/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
 Shared assertions detect missing parts, routes through cards, misplaced labels,
@@ -91,10 +91,9 @@ These six cases read no vault and enforce no speed limit.
 Focused renderer tests and process cancellation deadlines also remain in the normal gate.
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
-Blocks is the default layout engine (ADR 0064).
-A test of Track behavior names `layout: "track"` explicitly.
-An engine-independent contract uses the default unless it already tests both engines.
-Changing the default must preserve the assertions of each Track regression.
+Blocks is the default layout engine (ADR 0064), and Lanes the other ([ADR 0096](../adr/0096-track-is-replaced-by-lanes.md)).
+Renderer tests use the default unless the case needs an explicit engine.
+Engine comparisons name `layout: "blocks"` and `layout: "lanes"` explicitly.
 
 `bun run check` is the complete normal gate.
 It runs lint, formatting, both TypeScript projects, the architecture check, and the normal test chain.
@@ -266,10 +265,10 @@ default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
 The opt-in benchmark corpus in `packages/renderer/tests/runtime/blocks/operations/wide-pictures.test.ts`
-uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also gets
-60 seconds for a first render. GitHub Actions recorded first renders up to
+uses a 60-second case deadline when `CI=true`. It also gives
+a first render 60 seconds. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
-3-second first-render limit. Both engines keep all picture correctness assertions.
+3-second first-render limit. Every case keeps all picture correctness assertions.
 The preload still applies its 60-second wall-clock ceiling to every case.
 The former per-document Blocks exceptions no longer apply to the recursive canonical corpus,
 because the core's router routes its trunks (TASK-520.02).

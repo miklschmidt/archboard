@@ -159,9 +159,11 @@ describe("a talk", () => {
 		);
 	});
 
-	test("keeps an explicit recorded engine and defaults an omitted engine to Blocks", () => {
+	test("keeps an explicit recorded engine, reads a recorded Track as Lanes, and defaults an omitted engine to Blocks", () => {
 		expect(TalkSchema.parse(talk({ layout: "blocks" })).layout).toBe("blocks");
-		expect(TalkSchema.parse(talk({ layout: "track" })).layout).toBe("track");
+		expect(TalkSchema.parse(talk({ layout: "lanes" })).layout).toBe("lanes");
+		expect(TalkSchema.parse(talk({ layout: "track" })).layout).toBe("lanes");
+		expect(TalkSchema.safeParse(talk({ layout: "graphviz" })).success).toBe(false);
 		expect(TalkSchema.parse(talk()).layout).toBe("blocks");
 	});
 

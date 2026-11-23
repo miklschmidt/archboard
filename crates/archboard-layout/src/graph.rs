@@ -129,8 +129,6 @@ pub(crate) const PLACING_GROUP: &str = "archboard.group";
 pub(crate) const GROUPS: &str = "archboard.groups";
 /// The root option carrying each placing group's caption size.
 pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
-/// The option marking a child an entry point of its container.
-pub(crate) const ENTRY_POINT: &str = "archboard.entry";
 /// The option marking a card a door, which keeps its measured size in any cell.
 pub(crate) const DOOR: &str = "archboard.door";
 /// The option naming what a relationship does, where it states it: lines of

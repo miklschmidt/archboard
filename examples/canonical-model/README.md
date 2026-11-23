@@ -312,7 +312,6 @@ bun scripts/build-pipeline-example.ts "$example_dir/.archboard/vault"
 archboard model read --state 'Initial pipeline' -C "$example_dir"
 archboard model render --state 'Initial pipeline' --out "$example_dir/pipeline.svg" -C "$example_dir"
 archboard model rasterize --state 'Initial pipeline' --out "$example_dir/pipeline.png" -C "$example_dir"
-bun scripts/engine-gallery.ts "$example_dir/.archboard/vault" "$example_dir/gallery" track 'Initial pipeline'
 ```
 
 The builder calls public canonical initialization, claims, and edit operations.

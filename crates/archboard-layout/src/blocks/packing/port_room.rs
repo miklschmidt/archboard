@@ -4,8 +4,8 @@ use super::packings::Packing;
 use super::trunks::TRUNK_CLEARANCE;
 use crate::ecma::js_max;
 use crate::geometry::Side;
-use crate::track::chains::LANE;
-use crate::track::scene::Set;
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::Set;
 
 impl PackLayout<'_> {
     /// Space for the distinct trunks between an own face and the packed items.
@@ -91,7 +91,7 @@ impl PackLayout<'_> {
                 format!(
                     "{}|{}",
                     line.source.as_deref().unwrap_or(&line.key),
-                    crate::track::route::trunk_kind(&line.edge)
+                    crate::lanes::route::trunk_kind(&line.edge)
                 )
             })
             .collect();
@@ -101,7 +101,7 @@ impl PackLayout<'_> {
                 format!(
                     "{}|{}",
                     line.target.as_deref().unwrap_or(&line.key),
-                    crate::track::route::trunk_kind(&line.edge)
+                    crate::lanes::route::trunk_kind(&line.edge)
                 )
             })
             .collect();

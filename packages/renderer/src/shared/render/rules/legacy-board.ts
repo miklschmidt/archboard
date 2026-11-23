@@ -244,7 +244,7 @@ async function drawnReply(
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
 	// The core draws only the variant's own reading when comparison is off.
-	// Blocks lays out that visible content; Track keeps comparison positions.
+	// Blocks and Lanes lay out that visible content.
 	const proposal = drawingOf(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -277,7 +277,6 @@ async function drawnReply(
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			paintStanding: how.comparison,
 			held: scopedContent(variant.content, reading.scope),
-			variant: variant.content,
 			grammar: reading.grammar,
 			theme: how.theme,
 			layout: how.layout,

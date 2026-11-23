@@ -3,21 +3,19 @@
 //! left undrawn, and the drawing handed to the painter with the look the
 //! vault's policy gives each subject.
 //!
-//! Plain Blocks lays out only the visible reading, so removed comparison
-//! subjects reserve no space. Track keeps the comparison layout and omits
-//! hidden subjects at painting, preserving shared positions and page bounds.
+//! A picture without its comparison lays out only the visible reading, so
+//! removed comparison subjects reserve no space.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use archboard_flows::{Step, every_step};
-use archboard_layout::{Edge, Engine, Measured, Node, Standings, draw, shown_drawing};
+use archboard_layout::{Edge, Measured, Node, Standings, draw};
 use archboard_scene::drawing::Painted;
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
 use archboard_scene::{CardWords, measure_label, measure_node, narrow_label};
 
 use crate::appearance::{label_words, line_appearance, line_look, node_appearances, tags_of};
-use crate::entries::entry_points_of;
 use crate::memo::Layouts;
 use crate::request::{Policy, Reading, RenderRequest};
 use crate::steps::with_step_lines;
@@ -111,7 +109,6 @@ fn layout_key(
     laid: &Reading,
     steps: &[String],
     standings: Option<&Standings>,
-    entries: &BTreeMap<String, bool>,
 ) -> String {
     let names: Vec<(&String, &String)> = request
         .policy
@@ -127,7 +124,6 @@ fn layout_key(
         standings,
         names,
         &request.policy.relationship_kinds,
-        entries,
         request
             .held()
             .edges
@@ -179,18 +175,17 @@ fn standings_of(request: &RenderRequest, laid: &Reading) -> Option<Standings> {
     )
 }
 
-/// What a reading is laid out as: its words measured, and the drawing the
-/// engine it names laid out, remembered by everything it was laid out from.
+/// The drawing the engine named lays a reading out as, its words measured first,
+/// remembered by everything it was laid out from.
 async fn laid_out<H: Host>(
     request: &RenderRequest,
     laid: &Reading,
     steps: &[String],
     layouts: &Layouts,
     host: &H,
-) -> Result<(Measured, Rc<Painted>), String> {
+) -> Result<Rc<Painted>, String> {
     let stepping: HashSet<&str> = steps.iter().map(String::as_str).collect();
     let standings = standings_of(request, laid);
-    let entries = entry_points_of(laid, request.variant());
     let mut measure = measured(laid, &request.policy, &stepping);
     measure.held_lines = request
         .held()
@@ -198,38 +193,10 @@ async fn laid_out<H: Host>(
         .iter()
         .map(|edge| (edge.id.clone(), (edge.kind.clone(), edge.effect)))
         .collect();
-    let key = layout_key(request, laid, steps, standings.as_ref(), &entries);
+    let key = layout_key(request, laid, steps, standings.as_ref());
     let content = laid.content();
-    let solving = draw(
-        &content,
-        &measure,
-        standings.as_ref(),
-        &entries,
-        request.layout,
-        host,
-    );
-    let drawing = layouts.laid(&key, solving).await?;
-    Ok((measure, drawing))
-}
-
-/// What a picture draws of its layout, and the whole layout when that is
-/// more: without its comparison, what the variant's own reading holds.
-fn shown_of(
-    request: &RenderRequest,
-    laid: &Reading,
-    drawing: &Painted,
-    measure: &Measured,
-) -> (Painted, Option<Painted>) {
-    let unshown = if request.plain() {
-        unshown_of(laid, request.held())
-    } else {
-        HashSet::new()
-    };
-    if unshown.is_empty() {
-        return (drawing.clone(), None);
-    }
-    let shown = shown_drawing(drawing, &unshown, &measure.lines);
-    (shown, Some(drawing.clone()))
+    let solving = draw(&content, &measure, standings.as_ref(), request.layout, host);
+    layouts.laid(&key, solving).await
 }
 
 /// The painter's request for a drawing: the look the policy gives each part
@@ -238,13 +205,11 @@ fn paint_request<H: Host>(
     request: &RenderRequest,
     laid: &Reading,
     steps: Vec<String>,
-    (shown, whole): (Painted, Option<Painted>),
+    shown: Painted,
     host: &H,
 ) -> Result<PaintRequest, String> {
     let policy = &request.policy;
-    let drawn = whole.as_ref().unwrap_or(&shown);
-    // Every part the page lays out, drawn or not, so leaving some out changes
-    // no kept card's colour or whether it draws as a container.
+    let drawn = &shown;
     let by_id: HashMap<&str, &Node> = laid
         .nodes
         .iter()
@@ -276,7 +241,6 @@ fn paint_request<H: Host>(
     let icons = icons_of(host, &named)?;
     let picture = ArchitecturePicture {
         drawing: shown,
-        whole,
         appearances,
         lines,
         steps,
@@ -304,13 +268,12 @@ pub(crate) async fn picture<H: Host>(
         return Ok(Outline::Nothing);
     }
     let (mut laid, steps) = with_step_lines(&request.content, request.held());
-    if request.layout == Engine::Blocks && request.plain() {
+    if request.plain() {
         let unshown = unshown_of(&laid, request.held());
         laid.nodes.retain(|node| !unshown.contains(&node.id));
         laid.edges.retain(|edge| !unshown.contains(&edge.id));
     }
-    let (measure, drawing) = laid_out(request, &laid, &steps, layouts, host).await?;
-    let shown = shown_of(request, &laid, &drawing, &measure);
-    let paint = paint_request(request, &laid, steps, shown, host)?;
+    let drawing = laid_out(request, &laid, &steps, layouts, host).await?;
+    let paint = paint_request(request, &laid, steps, Painted::clone(&drawing), host)?;
     Ok(Outline::Paint(Box::new(paint)))
 }

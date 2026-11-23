@@ -6,15 +6,11 @@
 //! box and the region drawn round it; a line that stopped on the region's wall
 //! is carried on to the card's face.
 
-use archboard_scene::paint::design::header_words_width;
-
 use crate::constants::REGION_INSET;
 use crate::ecma::{abs, js_max, js_min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::graph::{DOOR, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
-use crate::placed::FrameRow;
-use crate::track::containers::FrameShape;
-use crate::track::scene::Map;
+use crate::lanes::scene::Map;
 
 use super::headers::{Header, steps_of};
 use super::laid::{CAPTION_INSET, Insets, Size};
@@ -230,59 +226,6 @@ pub(crate) fn side_room(width: f64, lone: &Lone) -> f64 {
 /// How far in from each side of its region a container stands.
 pub(crate) fn room_of(lone: &Lone) -> f64 {
     lone.room.unwrap_or(REGION_INSET)
-}
-
-/// What a container's title's centre, height and words are, as its title row reads them.
-pub(crate) struct Head<'a> {
-    pub width: f64,
-    pub centre: f64,
-    pub height: f64,
-    pub words: f64,
-    pub steps: Option<&'a [Size]>,
-}
-
-/// The title row a container drawn inline gives the track scene, and the room
-/// it keeps below what it holds. Alone in its region, the scene reads it as
-/// the region.
-pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> FrameRow {
-    FrameRow {
-        title: [
-            bounds.x,
-            head.centre - head.height / 2.0,
-            head.width + 2.0 * lone.map_or(0.0, room_of),
-            head.height,
-            head.words + 2.0 * lone.map_or(0.0, room_of),
-        ],
-        steps: head.steps.map(|steps| {
-            steps
-                .iter()
-                .map(|step| (header_words_width(step.width), step.height))
-                .collect()
-        }),
-        above: lone.map_or(0.0, band_of),
-        below: lone.map(|_| REGION_INSET),
-        wide: lone.map(caption_width),
-    }
-}
-
-/// A container drawn inline, laid out as the region it is alone in: its own
-/// box inside the box the scene fitted round what it holds.
-pub(crate) fn frame_shape(shape: FrameShape, lone: Option<&Lone>) -> FrameShape {
-    match lone {
-        None => shape,
-        Some(lone) => FrameShape {
-            bx: card_in(shape.bx, lone),
-            ..shape
-        },
-    }
-}
-
-/// How wide a block drawing a container inline lays its title row out.
-pub(crate) fn title_width(header: &Header, lone: Option<&Lone>, inset: f64) -> f64 {
-    match lone {
-        None => header.width,
-        Some(lone) => js_max(header.width, caption_width(lone) - 2.0 * inset),
-    }
 }
 
 /// Whether two coordinates are one wall's.

@@ -116,7 +116,7 @@ impl<'a> Model<'a> {
             .map(|edge| {
                 format!(
                     "{}|{}|{}",
-                    crate::track::route::trunk_kind(edge),
+                    crate::lanes::route::trunk_kind(edge),
                     edge.option("archboard.relationship.held-kind")
                         .unwrap_or(""),
                     edge.option(crate::graph::HELD_EFFECT).unwrap_or("")

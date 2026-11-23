@@ -21,6 +21,7 @@ import {
 	defaultLayoutEngine,
 	diagramThemeSchema,
 	layoutEngineSchema,
+	savedLayoutEngineSchema,
 } from "@archboard/model/render-reply";
 import {
 	addressedVariant,
@@ -141,9 +142,10 @@ const TalkSchema = z
 		theme: diagramThemeSchema(),
 		/**
 		 * The layout engine the talk is rendered with unless another is asked for (TASK-469). A talk
-		 * kept before it was stated was drawn with the default engine, and reads as that.
+		 * kept before it was stated was drawn with the default engine, and reads as that. A saved
+		 * `track` reads as `lanes`.
 		 */
-		layout: layoutEngineSchema().default(defaultLayoutEngine()),
+		layout: savedLayoutEngineSchema().default(defaultLayoutEngine()),
 		board: TalkBoardSchema,
 		/** The voice, beside `talk.json`: mono 16-bit PCM at the talk's sample rate. */
 		audio: z

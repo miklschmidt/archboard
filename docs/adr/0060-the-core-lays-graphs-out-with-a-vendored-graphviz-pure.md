@@ -10,7 +10,9 @@ section "Graphviz stays with the host for now" of
 
 ## Context
 
-Track and Blocks rank and order the cards of each block with Graphviz `dot`.
+The layout engines rank and order cards with Graphviz `dot`. At the time of
+this decision the engines were Track and Blocks.
+[ADR 0096](0096-track-is-replaced-by-lanes.md) replaced Track with Lanes.
 ADR 0059 kept Graphviz with the host: the WebAssembly core called
 `@viz-js/viz`, Graphviz's C code compiled with Emscripten, through an import,
 and a native build was to link the C library. It left open whether the core

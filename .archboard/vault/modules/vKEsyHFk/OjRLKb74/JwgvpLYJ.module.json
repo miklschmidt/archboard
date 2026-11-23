@@ -36,7 +36,7 @@
   "order": 8000,
   "name": "Layout engine",
   "kind": "function",
-  "responsibility": "Lays one graph out as Track or Blocks inside a layout worker",
+  "responsibility": "Lays one graph out as Blocks or Lanes inside a layout worker",
   "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutPicture, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

@@ -9,6 +9,7 @@ import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import {
 	StandaloneThemeSchema,
 	DiagramAtlasSchema,
+	LayoutEngineSchema,
 	LegendLayoutSchema,
 } from "#shared/protocol/render-reply.ts";
 import {
@@ -47,6 +48,8 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	theme: StandaloneThemeSchema.optional(),
 	/** Where the legend is drawn: under the picture, beside it, or `none` to leave it out. */
 	legend: z.enum([...LegendLayoutSchema.options, "none"]).default("horizontal"),
+	/** The engine that lays the picture out. A reading kept before it was stated was drawn with Blocks. */
+	layout: LayoutEngineSchema.default("blocks"),
 });
 const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({

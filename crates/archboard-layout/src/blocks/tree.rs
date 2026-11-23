@@ -1,11 +1,7 @@
-//! Drawn as blocks (the Blocks engine), the picture, every container and every
-//! group region round more than one node is a block, laid out on its own from
+//! The picture, every container and every group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
 //! block into a cluster, so each block holds cards alone or blocks alone.
-//! Drawn inline (the Track engine), only the picture and every group region
-//! packed as a block of its own (`groups`) are blocks, and every container and
-//! every other region is a cluster of the block that lays it out (TASK-349).
 //! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
@@ -18,48 +14,20 @@
 //! between two blocks is drawn once, as a trunk.
 //!
 //! This file holds the blocks and what they hold. Filling them from the
-//! hierarchy is `inline.rs`, drawing the relationships through them is
+//! hierarchy is `nested.rs`, drawing the relationships through them is
 //! `projection.rs`, and the cycles those find are `cycles.rs`.
 
 use std::rc::Rc;
 
 use crate::geometry::Side;
 use crate::graph::{Edge, Node};
-use crate::track::chains::LANE;
-use crate::track::scene::{Map, Set};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{Map, Set};
 
 use super::headers::Header;
 use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
 use super::projection::labels_before_joins;
-
-/// How a picture's containers and group regions are drawn: each packed as a
-/// block of its own, every one inline as a cluster of the picture's layout, or
-/// containers inline with each group's region packed as a block.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Nesting {
-    Blocks,
-    Inline,
-    Groups,
-}
-
-impl Nesting {
-    /// The way a solve's options name: `blocks`, `inline` or `groups`.
-    ///
-    /// # Errors
-    ///
-    /// When it names another.
-    pub(crate) fn named(name: &str) -> Result<Nesting, String> {
-        match name {
-            "blocks" => Ok(Nesting::Blocks),
-            "inline" => Ok(Nesting::Inline),
-            "groups" => Ok(Nesting::Groups),
-            other => Err(format!(
-                "A picture is drawn as blocks, inline or with its groups packed (blocks, inline or groups); not {other}."
-            )),
-        }
-    }
-}
 
 /// A block's place in the tree.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -75,30 +43,6 @@ pub(crate) enum Kind {
     Region,
     Cluster,
     Column,
-}
-
-/// Whether a cluster is a container or a group region.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ClusterKind {
-    Frame,
-    Region,
-}
-
-/// A container or group region a block of cards draws inline: a cluster of the
-/// block's own Graphviz layout rather than a block of its own.
-#[derive(Clone, Debug)]
-pub(crate) struct Cluster {
-    pub id: String,
-    pub kind: ClusterKind,
-    /// The cluster it sits in, if any.
-    pub parent: Option<String>,
-    /// The group, for a region.
-    pub group: Option<String>,
-    /// A frame's title row or a region's caption; a container alone in its
-    /// group's region heads the region's caption band too.
-    pub header: Header,
-    /// The region round a container alone in it, laid out as the container.
-    pub lone: Option<Lone>,
 }
 
 /// A line inside one block, between two of the block's items.
@@ -153,10 +97,6 @@ pub(crate) struct Block {
     pub lines: Map<String, Line>,
     /// Its ports, by id, with the edge each crosses.
     pub ports: Map<String, Side>,
-    /// The containers and regions it draws inline, outermost first.
-    pub clusters: Map<String, Cluster>,
-    /// The innermost inline cluster around each of its items and clusters.
-    pub cluster_of: Map<String, String>,
 }
 
 impl Block {
@@ -208,34 +148,6 @@ impl Block {
             .iter()
             .any(|(id, &side)| side == Side::Bottom && !self.header_entry(id))
     }
-
-    /// The innermost container a block draws inline around one of its items,
-    /// passing over regions, starting from a cluster.
-    pub(crate) fn frame_around(&self, start: Option<&str>) -> Option<String> {
-        let mut at = start;
-        while let Some(id) = at {
-            let cluster = &self.clusters[id];
-            if cluster.kind != ClusterKind::Region {
-                return Some(id.to_owned());
-            }
-            at = cluster.parent.as_deref();
-        }
-        None
-    }
-
-    /// The clusters around an id, innermost first, starting from the one it stands in.
-    pub(crate) fn clusters_from<'b>(&'b self, start: Option<&'b str>) -> Vec<&'b str> {
-        let mut chain = Vec::new();
-        let mut at = start;
-        while let Some(id) = at {
-            chain.push(id);
-            at = self
-                .clusters
-                .get(id)
-                .and_then(|cluster| cluster.parent.as_deref());
-        }
-        chain
-    }
 }
 
 /// Where one relationship is drawn: its block, and the blocks it leaves and enters.
@@ -285,7 +197,7 @@ pub(crate) fn exit_key(block: &str, way: &str, face: Side, along: &str) -> Strin
 pub(crate) struct BlockTree {
     pub arena: Vec<Block>,
     pub blocks: Map<String, BlockId>,
-    /// The block holding each card, and each container drawn inline, as an item.
+    /// The block holding each card as an item.
     pub holder: Map<String, BlockId>,
     pub root: BlockId,
     pub captions: Map<String, Size>,
@@ -293,8 +205,6 @@ pub(crate) struct BlockTree {
     pub cards: Map<String, Card>,
     /// Every card alone in its group's region, by id.
     pub lone: Map<String, Lone>,
-    /// Nodes drawn inline that are entry points of their container, each true when first.
-    pub entries: Map<String, bool>,
     /// Every relationship's projection, in the picture's order.
     pub projections: Vec<Projection>,
     /// How each relationship is drawn, by id.
@@ -303,14 +213,11 @@ pub(crate) struct BlockTree {
     pub pins: Map<String, Pin>,
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
-    pub nesting: Nesting,
     /// Whether this candidate compares all wraps and geometric packings.
     pub expanded: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
     pub(super) fanouts: Set<(BlockId, String)>,
-    /// Parents whose graph calls for a local composition.
-    pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
     pub orders: Map<String, Vec<String>>,
 }
@@ -330,12 +237,7 @@ impl BlockTree {
     /// A loose sink served only from one parent belongs beside its caller.
     fn loose_owner(&self, id: &str) -> Option<BlockId> {
         self.cards.contains_key(id).then_some(())?;
-        let owner = *self.holder.get(id)?;
-        let outer = self.get(owner);
-        outer
-            .frame_around(outer.cluster_of.get(id).map(String::as_str))
-            .is_none()
-            .then_some(owner)
+        self.holder.get(id).copied()
     }
 
     fn peer_candidate(&self, id: &str) -> Option<(BlockId, String)> {
@@ -396,7 +298,7 @@ impl BlockTree {
     ///
     /// When the hierarchy's measured options are unreadable, or a relationship
     /// names a node the hierarchy does not hold.
-    pub(crate) fn new(graph: &Node, kept: Kept, nesting: Nesting) -> Result<BlockTree, String> {
+    pub(crate) fn new(graph: &Node, kept: Kept) -> Result<BlockTree, String> {
         let mut tree = BlockTree {
             arena: Vec::new(),
             blocks: Map::default(),
@@ -405,16 +307,13 @@ impl BlockTree {
             captions: captions_of(graph)?,
             cards: Map::default(),
             lone: Map::default(),
-            entries: Map::default(),
             projections: Vec::new(),
             routes: Map::default(),
             pins: Map::default(),
             exits: kept.exits,
-            nesting,
             expanded: kept.expanded,
             feedback: Set::default(),
             fanouts: Set::default(),
-            local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
@@ -481,8 +380,6 @@ impl BlockTree {
             items: Vec::new(),
             lines: Map::default(),
             ports: Map::default(),
-            clusters: Map::default(),
-            cluster_of: Map::default(),
         });
         self.blocks.insert(id.clone(), made);
         if let Some(parent) = parent {
@@ -518,16 +415,4 @@ impl BlockTree {
         all.push(block);
         all
     }
-}
-
-/// Whether a container or region a block draws inline holds an item, however deep.
-pub(crate) fn holds(block: &Block, cluster: &str, item: &str) -> bool {
-    let mut at = block.cluster_of.get(item);
-    while let Some(around) = at {
-        if around == cluster {
-            return true;
-        }
-        at = block.cluster_of.get(around.as_str());
-    }
-    false
 }

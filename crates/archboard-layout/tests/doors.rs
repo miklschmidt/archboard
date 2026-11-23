@@ -1,7 +1,6 @@
 //! A door keeps its measured size through ranking on both engines, and widens only as far as
 //! the heads of its lines need to stand a lane apart.
 
-use std::collections::BTreeMap;
 use std::future::{Future, Ready, ready};
 use std::task::{Context, Poll, Waker};
 
@@ -38,8 +37,7 @@ fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
             },
         );
     }
-    let entries = BTreeMap::new();
-    let mut drawing = std::pin::pin!(draw(&content, &measured, None, &entries, engine, &Here));
+    let mut drawing = std::pin::pin!(draw(&content, &measured, None, engine, &Here));
     let Poll::Ready(answer) = drawing
         .as_mut()
         .poll(&mut Context::from_waker(Waker::noop()))
@@ -88,7 +86,7 @@ fn on_edge(point: Point, at: Rect) -> bool {
 
 #[test]
 fn a_door_keeps_its_width_when_a_joined_card_is_slightly_wider() {
-    for engine in [Engine::Track, Engine::Blocks] {
+    for engine in [Engine::Blocks, Engine::Lanes] {
         let drawn = drawing(
             json!({
             "nodes":[{"id":"card","name":"Card","kind":"service"},
@@ -163,7 +161,7 @@ fn a_lane_apart(points: &[Point]) -> bool {
 
 #[test]
 fn a_door_widens_until_the_heads_of_its_lines_stand_a_lane_apart() {
-    for engine in [Engine::Track, Engine::Blocks] {
+    for engine in [Engine::Blocks, Engine::Lanes] {
         for incoming in [false, true] {
             let drawn = fan(incoming, engine);
             assert_eq!(drawn.drawing.edges.len(), 8);

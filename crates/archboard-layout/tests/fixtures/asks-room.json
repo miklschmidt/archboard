@@ -1,6 +1,6 @@
 {
 	"id": "architecture:root",
-	"layoutOptions": { "archboard.blocks.nesting": "blocks" },
+	"layoutOptions": {},
 	"children": [
 		{
 			"id": "vKEsyHFk/9ncuT5DP#jylkTBp7",

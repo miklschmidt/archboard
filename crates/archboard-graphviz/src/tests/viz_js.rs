@@ -40,7 +40,7 @@ fn each_graph_is_answered_as_viz_js_answered_it_whatever_was_laid_out_before() {
     }
 }
 
-/// The ordered geometry read by Track and Blocks, without json0's drawing attributes.
+/// The ordered geometry Blocks reads, without json0's drawing attributes.
 fn consumed(answer: &str) -> Value {
     let value: Value = serde_json::from_str(answer).expect("Graphviz answers JSON");
     let objects: Vec<_> = value["objects"]

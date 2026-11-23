@@ -1,8 +1,7 @@
 {
 	"id": "architecture:root",
 	"layoutOptions": {
-		"archboard.group.captions": "[[\"workhorse\",127.36000061035156,42]]",
-		"archboard.blocks.nesting": "blocks"
+		"archboard.group.captions": "[[\"workhorse\",127.36000061035156,42]]"
 	},
 	"children": [
 		{

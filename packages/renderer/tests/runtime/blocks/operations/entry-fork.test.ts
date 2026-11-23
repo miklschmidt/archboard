@@ -60,9 +60,8 @@ test.each([
 		content,
 		policy: defaultSemanticPolicy(),
 		theme: "light",
-		layout: "blocks",
 	});
-	expectDrawingIntact(drawing, content, "blocks");
+	expectDrawingIntact(drawing, content);
 });
 
 // Reduced from Archboard server. A top port inside the router's header
@@ -73,7 +72,6 @@ test("settled top ports keep the header clear at the router clearance", async ()
 		content,
 		policy: defaultSemanticPolicy(),
 		theme: "light",
-		layout: "blocks",
 	});
-	expectDrawingIntact(drawing, content, "blocks");
+	expectDrawingIntact(drawing, content);
 });

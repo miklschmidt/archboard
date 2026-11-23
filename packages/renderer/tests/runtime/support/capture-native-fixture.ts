@@ -94,13 +94,11 @@ async function recommendations(): Promise<Fixture> {
 	const reading = projectModel(model);
 	const drawn = await renderArchitecture({
 		content: reading.content,
-		variant: reading.complete,
 		policy: model.policy,
 		theme: "light",
-		layout: "track",
 	});
 	return {
-		drawing: `${VAULT} | ${model.manifest.name} | ${STATE} | (whole model) | track | light | plain`,
+		drawing: `${VAULT} | ${model.manifest.name} | ${STATE} | (whole model) | light | plain`,
 		request: kept.request,
 		icons: kept.icons,
 		svg: drawn.svg,

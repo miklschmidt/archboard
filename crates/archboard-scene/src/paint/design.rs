@@ -5,10 +5,10 @@
 
 use crate::drawing::DiagramFont;
 use crate::sizes::{
-    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_NOTE_FONT,
-    CARD_PADDING_X, CARD_RADIUS, CARD_TITLE_FONT, DIAGRAM_MARGIN, DRILL_MARK_ROOM, FAR_SCALE,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
-    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, ICON_CHIP_GAP, ICON_CHIP_SIZE, LINE_WIDTH,
+    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, CARD_NOTE_FONT, CARD_PADDING_X, CARD_RADIUS,
+    CARD_TITLE_FONT, DIAGRAM_MARGIN, DRILL_MARK_ROOM, FAR_SCALE, FLOW_HEADING,
+    FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
+    FRAME_TAB_PADDING, HERO_LINE_WIDTH, ICON_CHIP_GAP, ICON_CHIP_SIZE, LINE_WIDTH,
     MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, SELF_LOOP_CORNER,
     SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, STEP_NOTE_PADDING_X,
     STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER, THIN_BODY, TITLE_SIZE,
@@ -64,17 +64,6 @@ pub fn tab_width(frame_width: f64) -> f64 {
 /// The room inside a frame's edge tab, on either side of its words.
 pub const fn tab_padding() -> f64 {
     TAB_PADDING
-}
-
-/// The room a container's words have in a header of some width: its words
-/// stand in from both sides of its box.
-pub fn header_words_width(header_width: f64) -> f64 {
-    header_width - ARCHITECTURE_HEADER_PADDING
-}
-
-/// The narrowest a container's header is that holds words of some width.
-pub fn header_width_for(words_width: f64) -> f64 {
-    words_width + ARCHITECTURE_HEADER_PADDING
 }
 
 /// The room between an architecture card's edge and its chip and words.

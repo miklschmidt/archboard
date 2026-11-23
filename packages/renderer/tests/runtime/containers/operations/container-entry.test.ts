@@ -27,6 +27,6 @@ const policy = semanticPolicySchema().parse({
 // rather than cross the child card before returning to the container's top.
 test("a side entry reaches a container without crossing its children", async () => {
 	const content = orderedFixture(containerEntry);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawing = await renderArchitecture({ content, theme: "light", policy });
 	expect(routesThroughCards(drawing, content)).toEqual([]);
 });

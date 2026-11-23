@@ -58,7 +58,6 @@ test.each([2, 3])("%i source blocks fan in with one solve", async (count) => {
 		const drawing = await renderArchitecture({
 			content,
 			policy: defaultSemanticPolicy(),
-			layout: "blocks",
 			theme: "light",
 		});
 		expect(asked).toBe(1);

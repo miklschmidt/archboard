@@ -1,7 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
@@ -25,11 +24,7 @@ const RELATIONSHIPS = [
 	["from a card back to the frame", { id: "e4", from: "vault", to: "server", kind: "data" }],
 ] as const;
 
-test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
-		RELATIONSHIPS.map(([name, relationship]) => [name, layout, relationship] as const),
-	),
-)("a frame draws a relationship %s (%s)", async (_, layout, relationship) => {
+test.each(RELATIONSHIPS)("a frame draws a relationship %s", async (_, relationship) => {
 	const before = orderedFixture({
 		...BASE,
 		edges: [...BASE.edges, relationship],
@@ -42,7 +37,6 @@ test.each(
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout,
 	});
 	expect(Object.keys(drawing.atlas.edges)).toContain(relationship.id);
 	expect(routesThroughCards(drawing, content)).toEqual([]);

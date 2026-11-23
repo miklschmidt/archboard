@@ -469,9 +469,10 @@ function SwitchRow(props: {
 				aria-label={`Show ${name} lines`}
 				{...{ [`data-filter-${field}`]: id }}
 				onClick={toggle}
-				className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-control flex size-7 shrink-0 items-center justify-center outline-none focus-visible:ring-2"
+				className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-control flex size-7 shrink-0 items-center justify-end outline-none focus-visible:ring-2"
 			>
-				<Eye aria-hidden="true" className="size-4" />
+				{/* The glyph leaves 0.75px inside its box, so its ink ends where the panel's words end. */}
+				<Eye aria-hidden="true" className="-mr-[0.75px] size-4" />
 			</button>
 		</li>
 	);

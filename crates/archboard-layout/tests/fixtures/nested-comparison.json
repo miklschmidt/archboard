@@ -1,8 +1,6 @@
 {
 	"id": "root",
-	"layoutOptions": {
-		"archboard.blocks.nesting": "blocks"
-	},
+	"layoutOptions": {},
 	"children": [
 		{
 			"id": "n35",

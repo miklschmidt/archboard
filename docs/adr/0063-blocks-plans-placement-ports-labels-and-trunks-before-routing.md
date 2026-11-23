@@ -10,7 +10,7 @@ Simulated annealing from a fixed seed moves the parts between the cells of each 
 
 Amended on 2026-11-21 (TASK-624). A reading can crowd a card with more line ends than its walls can space.
 When every dense placement and every legacy candidate refuses, the solve answers the legacy Blocks placement with its own routes.
-That drawing is not told as planned, and the drawing settles its crossings as it settles Track's.
+That drawing is not told as planned, and the drawing settles its crossings after routing.
 "No unchecked route reaches the painter" holds for every drawing told as planned.
 A Graphviz failure still fails the solve.
 
@@ -42,7 +42,9 @@ The complete geometry guard protects cards, headers, captions, walls, labels, en
 It also refuses a route that crosses or touches its own ink, because no hop can mark where a line crosses itself.
 The Solver interface, text shaping, Rust core, worker pool, and Graphviz remain under ADRs 0059 and 0060.
 A pool of several workers lays a dense reading out in parts across them, and the core makes the choice of one solve from their answers ([ADR 0078](0078-a-blocks-solve-is-laid-out-in-parts-across-the-layout-workers.md)).
-Track retains its existing behavior and must remain byte-identical.
+Track retained its existing behavior at the time of this decision.
+[ADR 0096](0096-track-is-replaced-by-lanes.md) replaced it with Lanes,
+which always uses the fallback placement and lane routing described above.
 ADRs 0033 and 0040 retain their placement decisions.
 
 The original proposal replaced placement as well as routing.

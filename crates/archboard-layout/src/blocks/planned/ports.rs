@@ -4,8 +4,8 @@ use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
 use crate::graph::Node;
-use crate::track::chains::LANE;
-use crate::track::channels::PORT_MARGIN;
+use crate::lanes::chains::LANE;
+use crate::lanes::channels::PORT_MARGIN;
 
 #[derive(Clone, Copy, PartialEq)]
 pub(super) struct Port {

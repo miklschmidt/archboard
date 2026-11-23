@@ -5,7 +5,7 @@ use crate::constants::LANDING_ROOM;
 use crate::{
     blocks::assembly::PlacedLine,
     geometry::{Point, Rect},
-    track::{chains::LANE, score::crossings_of},
+    lanes::{chains::LANE, score::crossings_of},
 };
 
 /// A crossing costs the same travel as two and a half bends.

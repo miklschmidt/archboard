@@ -40,8 +40,8 @@ const policy = semanticPolicySchema().parse({
 // leaves its card by the face toward them.
 test("a planned departure crosses its own frame through a clear channel", async () => {
 	const content = orderedFixture(requestPath);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawn, content, "blocks");
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	expectDrawingIntact(drawn, content);
 });
 
 // Reduced from a document of a work vault, names replaced: the line into the
@@ -51,7 +51,7 @@ test("a planned departure crosses its own frame through a clear channel", async 
 // of every card.
 test("a joined line runs on into its container without the loop its pieces made", async () => {
 	const content = orderedFixture(requestPath);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
 	// Three rounded corners, two turning points each; the loop made seven.
 	expect(turnsOf(corridorPoints(drawn.svg).get("f3lzoqzb")!)).toBeLessThanOrEqual(6);
 	const route = routePoints(drawn.svg).get("f3lzoqzb")!;

@@ -4,21 +4,18 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 use super::planned::{Routed, Split, Step};
-use super::tree::Nesting;
 use crate::{Graphviz, graph::Node, json::J};
 
 /// The root option carrying the placed drawing.
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
-/// The root option selecting Blocks or one of Track's nesting policies.
-const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
 /// Whether this solve owns the final route coordinates.
 const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
+/// The root option naming the engine, present for Lanes alone: a graph without it is Blocks.
+const ENGINE: &str = "archboard.layout.engine";
 
-/// The root option that asks a solve for a drawing with group nesting fixed by membership:
-/// inline, or as Blocks.
-pub(crate) fn nesting_option(inline: bool) -> (&'static str, String) {
-    let nesting = if inline { "inline" } else { "blocks" };
-    (BLOCKS_NESTING, nesting.to_owned())
+/// Whether a graph asks for Lanes: the lanes' placement, never planned.
+fn lanes(graph: &Node) -> bool {
+    graph.option(ENGINE) == Some("lanes")
 }
 
 /// The drawing a solve's answer carries in its root options, and whether the solve owns its
@@ -61,7 +58,7 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 ///
 /// # Errors
 ///
-/// An unreadable graph or a refusal from the selected layout engine.
+/// An unreadable graph, a Lanes request for a split part, or a refusal from Graphviz.
 pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let unreadable =
         |error: serde_json::Error| format!("The measured graph is unreadable: {error}");
@@ -70,49 +67,32 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     } else {
         None
     };
-    let graph = read(serde_json::from_str(graph).map_err(unreadable)?);
+    let graph: Node = serde_json::from_str(graph).map_err(unreadable)?;
+    // Either engine lays a graph out with each door as wide as its lines' heads need.
+    let graph = super::planned::doors_widened(&graph);
     if let Some(Asked { part }) = asked {
+        if lanes(&graph) {
+            return Err("Lanes does not solve in parts.".to_owned());
+        }
         return super::planned::solve_part(&graph, &part);
     }
-    let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
-    let planned = if mode == "blocks" {
-        Some(hybrid(&graph, host)?)
-    } else {
-        None
-    };
-    // Track, and a Blocks reading that no placement gives every line a clear planned channel,
-    // take the retained placement, whose routes the drawing settles as Track's (TASK-624).
+    // Lanes always takes the lanes' placement, and so does a Blocks reading that no placement
+    // gives every line a clear planned channel (TASK-624). The drawing settles its routes.
     // That Blocks reading draws no line's words and keeps no room for them: the selection
     // still names each line.
-    let (placed, frozen) = match planned {
-        Some(Some(placed)) => (placed, true),
-        Some(None) => (
-            super::legacy::place(
-                &super::planned::without_words(&graph, |_| true),
-                Nesting::Blocks,
-                host,
-            )?,
-            false,
-        ),
-        None => (
-            super::legacy::place(&graph, Nesting::named(mode)?, host)?,
-            false,
-        ),
+    let (placed, frozen) = if lanes(&graph) {
+        (super::legacy::place(&graph, host)?, false)
+    } else if let Some(placed) = hybrid(&graph, host)? {
+        (placed, true)
+    } else {
+        let quiet = super::planned::without_words(&graph, |_| true);
+        (super::legacy::place(&quiet, host)?, false)
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {
         told.push((BLOCKS_PLANNED, "true".to_owned()));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
-}
-
-/// A graph as Blocks lays it out: each door as wide as its lines need.
-fn read(graph: Node) -> Node {
-    if graph.option(BLOCKS_NESTING) == Some("blocks") {
-        super::planned::doors_widened(&graph)
-    } else {
-        graph
-    }
 }
 
 /// How the graph of a part of a split solve starts: the part, named first on its root.
@@ -151,10 +131,11 @@ pub(crate) enum Next {
 impl Across {
     /// The solve in parts of a Blocks graph that takes a dense placement.
     pub(crate) fn of(graph: &str) -> Option<Across> {
-        let graph = read(serde_json::from_str(graph).ok()?);
-        if graph.option(BLOCKS_NESTING) != Some("blocks") {
+        let graph: Node = serde_json::from_str(graph).ok()?;
+        if lanes(&graph) {
             return None;
         }
+        let graph = super::planned::doors_widened(&graph);
         let quiet = super::planned::without_trunk_words(&graph);
         let plain = quiet.is_none();
         let split = Split::of(quiet.unwrap_or_else(|| graph.clone()), plain)?;

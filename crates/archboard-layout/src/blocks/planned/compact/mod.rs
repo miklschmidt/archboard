@@ -7,7 +7,7 @@ use crate::{
     blocks::assembly::Placed,
     constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET},
     geometry::Axis,
-    track::chains::LANE,
+    lanes::chains::LANE,
 };
 
 use super::{junctions::JOIN_ROOM, shape::Shape};
