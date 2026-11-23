@@ -57,6 +57,7 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
         .iter()
         .enumerate()
         .map(|(index, route)| DrawingEdge {
+            echelon: false,
             edge: looks.iter().find(|look| look.0 == index).map_or_else(
                 || facts(index),
                 |&(_, kind, emphasis)| EdgeFacts {

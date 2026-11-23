@@ -46,6 +46,8 @@ pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approa
 /// The least length of an arrow with no bend: the painter's marks at its ends
 /// and a little body. With no bend, a head needs no approach.
 pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_run();
+/// How far back from its ends a strand of a cable in echelon stands its marks.
+pub(crate) const ECHELON: f64 = archboard_scene::paint::design::echelon();
 
 /// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;

@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, STRAIGHT_RUN};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -385,13 +385,14 @@ pub(super) fn shared_fragment(
 }
 
 /// Rounded corners must leave the complete arrow approach after painting, on the inner strand
-/// of a cable too, which turns `half` sooner. A line with no bend needs only the room its
-/// marks take.
+/// of a cable too, which turns `half` sooner, and with room for the marks its strands set back
+/// in echelon. A line with no bend needs only the room its marks take.
 pub(super) fn approaches(points: &[Point], half: f64) -> bool {
+    let echelon = if half > 0.0 { ECHELON } else { 0.0 };
     let required = if points.len() > 2 {
-        APPROACH_STRAIGHT + BEND_RADIUS + half + if half > 0.0 { 24.0 } else { 0.0 }
+        APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
     } else {
-        STRAIGHT_RUN
+        STRAIGHT_RUN + 2.0 * echelon
     };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
 }

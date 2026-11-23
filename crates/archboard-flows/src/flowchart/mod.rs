@@ -262,6 +262,7 @@ fn drawing_of(
         .into_iter()
         .enumerate()
         .map(|(order, run)| DrawingEdge {
+            echelon: false,
             edge: EdgeFacts {
                 id: edge_id(&run, order),
                 from: run.from,

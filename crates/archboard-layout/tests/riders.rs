@@ -50,19 +50,32 @@ fn drawing(content: Value, solver: &Here) -> Painted {
     answer.expect("a drawing")
 }
 
+/// Two parts with two relationships one way, a cable of two strands, and one the other way.
+fn pair() -> Value {
+    json!({
+    "nodes":[{"id":"one","name":"One","kind":"service"},
+        {"id":"other","name":"Other","kind":"service"}],
+    "edges":[
+        {"id":"sync","from":"one","to":"other","kind":"sync","order":0},
+        {"id":"event","from":"one","to":"other","kind":"event","order":1},
+        {"id":"back","from":"other","to":"one","kind":"sync","order":2}]})
+}
+
+#[test]
+fn the_second_strand_of_a_cable_stands_its_marks_in_echelon_with_the_first() {
+    let drawn = drawing(pair(), &Here::default());
+    let echelon = |id: &str| {
+        (drawn.drawing.edges.iter())
+            .find(|line| line.edge.id == id)
+            .is_some_and(|line| line.echelon)
+    };
+    assert!(!echelon("sync") && echelon("event") && !echelon("back"));
+}
+
 #[test]
 fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_as_its_strands() {
     let solver = Here::default();
-    let drawn = drawing(
-        json!({
-        "nodes":[{"id":"one","name":"One","kind":"service"},
-            {"id":"other","name":"Other","kind":"service"}],
-        "edges":[
-            {"id":"sync","from":"one","to":"other","kind":"sync","order":0},
-            {"id":"event","from":"one","to":"other","kind":"event","order":1},
-            {"id":"back","from":"other","to":"one","kind":"sync","order":2}]}),
-        &solver,
-    );
+    let drawn = drawing(pair(), &solver);
     for graph in solver.graphs.borrow().iter() {
         let graph: Value = serde_json::from_str(graph).expect("a graph");
         let ids: Vec<&str> = (graph["edges"].as_array().expect("edges").iter())

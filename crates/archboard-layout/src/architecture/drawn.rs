@@ -166,6 +166,7 @@ fn edges_of(
                 }
             });
         DrawingEdge {
+            echelon: strands.get(&edge.id).is_some_and(|&(at, _)| at % 2 == 1),
             edge: edge.facts(),
             curve,
             label,
