@@ -2,6 +2,7 @@
 //! items, and every line inside it drawn on tracks of its own in the channels
 //! between them.
 
+pub(crate) mod buses;
 pub(crate) mod card_steps;
 pub(crate) mod chains;
 pub(crate) mod channels;
@@ -12,6 +13,7 @@ pub(crate) mod graphviz;
 pub(crate) mod grid;
 pub(crate) mod jogs;
 pub(crate) mod kept_off;
+pub(crate) mod knots;
 pub(crate) mod label_runs;
 pub(crate) mod labels;
 pub(crate) mod occupancy;
@@ -28,6 +30,7 @@ pub(crate) mod spacing;
 pub(crate) mod straighten;
 pub(crate) mod stranded;
 pub(crate) mod sweep;
+pub(crate) mod track_lanes;
 pub(crate) mod tracks;
 pub(crate) mod traffic;
 pub(crate) mod wrap_columns;

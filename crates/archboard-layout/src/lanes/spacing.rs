@@ -44,6 +44,16 @@ pub(crate) fn channel_height(tracks: usize, rising: bool) -> f64 {
     }
 }
 
+/// How far a Lanes channel's last track stands above the band under it: room for the bend, and
+/// for the arrow's approach where a line ends on a card there, less what every line's end can
+/// spare; a lane at least, clear of whatever stands on the band.
+fn room_below(lifts: impl Iterator<Item = f64>) -> f64 {
+    js_max(
+        LANE,
+        TRACK_BOTTOM - lifts.fold(f64::INFINITY, js_min).min(TRACK_BOTTOM),
+    )
+}
+
 /// The height of a channel no line turns in at a block's edge rows.
 fn rim_of(scene: &Placement, index: usize, rim: Option<Rim>) -> Option<f64> {
     let rim = rim?;
@@ -91,6 +101,28 @@ impl Router<'_> {
         })
     }
 
+    /// How much of a channel's room below its last track a net does not need: the arrow's
+    /// approach where it runs on into a lane past the band's top; a lane where it runs on into a
+    /// container's door, so a join on the last track stands clear of a hop below it; or a
+    /// container's title, where the face it ends on stands lower.
+    fn lift_of(&self, net: NetId) -> f64 {
+        let station = self.station(self.net(net).bottom);
+        let Some(item) = station.item.filter(|_| station.kind == Kind::Card) else {
+            return APPROACH_STRAIGHT;
+        };
+        let door = (self.scene.cards.iter()).any(|(name, &one)| {
+            one == item
+                && ["pin:", "port:", "stub:"]
+                    .iter()
+                    .any(|at| name.starts_with(at))
+        });
+        if door {
+            LANE
+        } else {
+            self.scene.item(item).face_top
+        }
+    }
+
     /// Lay out every band and channel again, from the tracks each channel needs.
     pub(crate) fn space_bands(
         &mut self,
@@ -128,6 +160,9 @@ impl Router<'_> {
             let mut channel = rimmed.unwrap_or_else(|| {
                 if unheld {
                     REGION_INSET
+                } else if self.bus && tracks > 0 {
+                    let lifts = crossing.iter().map(|&net| self.lift_of(net));
+                    channel_height(tracks, rises) - TRACK_BOTTOM + room_below(lifts)
                 } else {
                     channel_height(tracks, rises)
                 }
