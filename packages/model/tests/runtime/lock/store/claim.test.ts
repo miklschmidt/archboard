@@ -5,11 +5,7 @@ import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import { ms } from "@archboard/timing";
-
-/** How far the fake clock moves per step: the first pause between two looks of a wait. A test number beside the product's. */
-const LOCK_POLL_MS = 10;
-/** The reviewed pause after taking over a lapsed lease. A test number beside the product's. */
-const STEAL_GUARD_MS = 25;
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 const originalWarn = logger().warn;
@@ -17,20 +13,10 @@ const models = new Set<string>();
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 
-async function advanceLockTime(duration: number): Promise<void> {
-	let elapsed = 0;
-	while (elapsed < duration) {
-		const step = Math.min(LOCK_POLL_MS, duration - elapsed);
-		jest.advanceTimersByTime(step);
-		// A turn of the loop lets every promise the step released settle.
-		await new Promise((resolve) => setImmediate(resolve));
-		elapsed += step;
-	}
-}
-
 test("claims keep one hold, renew, expire, and report both lapsed takeovers once", async () => {
 	jest.useFakeTimers();
 	try {
+		using timers = observeLockTimers();
 		const model = "claimed";
 		models.add(model);
 		const first = await lock.claimModel({
@@ -90,7 +76,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			waits: false,
 			revokeClaim: true,
 		});
-		await advanceLockTime(STEAL_GUARD_MS);
+		jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
 		const takeover = await takeoverRequest;
 		expect(takeover.holder.id).toBe("user");
 		expect(lock.claimOn(vault, model)).toBeNull();
@@ -121,7 +107,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				revokeClaim: true,
 			});
 			if (mode === "expired") {
-				await advanceLockTime(STEAL_GUARD_MS);
+				jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
 			}
 			const taken = await lapsedTakeover;
 			expect(taken.holder.id).toBe("user");
@@ -149,8 +135,15 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 
 		const brief = "brief";
 		models.add(brief);
-		await lock.claimModel({ vault, model: brief, reason: "a moment", forMs: ms("claim.lease") });
-		jest.advanceTimersByTime(ms("claim.lease"));
+		const { claim } = await lock.claimModel({
+			vault,
+			model: brief,
+			reason: "a moment",
+			forMs: ms("claim.lease"),
+		});
+		jest.advanceTimersByTime(Date.parse(claim.expires) - Date.now() - 1);
+		expect(lock.claimOn(vault, brief)?.holder.id).toBe(claim.holder.id);
+		jest.advanceTimersByTime(1);
 		expect(lock.modelLockState(vault, brief)).toBeNull();
 		expect(lock.claimOn(vault, brief)).toBeNull();
 		expect(lock.releaseClaim(vault, brief)).toBeNull();
@@ -161,7 +154,6 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const refusal = lock
 			.holdModel({ vault, model: plain, holder: human("user"), revokeClaim: true })
 			.catch((error: unknown) => error);
-		await advanceLockTime(100);
 		const plainRefusal = await refusal;
 		expect(plainRefusal).toBeInstanceOf(lock.ModelHeldError);
 		expect(lock.takeClaimRevocation(vault, plain)).toBeNull();

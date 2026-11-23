@@ -3,9 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-
-/** The reviewed interval at which a server looks at the lock files on its screen. A test number beside the product's. */
-const WATCH_MS = 1000;
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 
@@ -64,13 +62,14 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 	});
 	jest.useFakeTimers();
 	try {
+		using timers = observeLockTimers();
 		lock.watchModelLocks({
 			models: () => [
 				{ vault: vaultA, model: "payments" },
 				{ vault: vaultB, model: "Payments" },
 			],
 		});
-		jest.advanceTimersByTime(WATCH_MS);
+		jest.advanceTimersByTime(timers.delay("modelLock.watch"));
 		expect(told).toEqual([
 			{ vault: vaultA, held: false },
 			{ vault: vaultB, held: true },

@@ -4,13 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { ms } from "@archboard/timing";
-
-/** How far the fake clock moves per step: the first pause between two looks of a wait. A test number beside the product's. */
-const LOCK_POLL_MS = 10;
-/** The reviewed interval at which a holder renews its lease. A test number beside the product's. */
-const RENEW_MS = 1000;
-/** The reviewed pause after taking over a lapsed lease. A test number beside the product's. */
-const STEAL_GUARD_MS = 25;
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a
@@ -30,23 +24,11 @@ afterEach(() => {
 });
 
 /**
- * Let fake time pass in poll-sized steps, so awaited lock waits settle.
- * @param ms How long.
- */
-async function advanceLockTime(duration: number): Promise<void> {
-	for (let elapsed = 0; elapsed < duration; elapsed += LOCK_POLL_MS) {
-		jest.advanceTimersByTime(Math.min(LOCK_POLL_MS, duration - elapsed));
-		// A turn of the loop lets every promise the step released settle.
-		await new Promise((resolve) => setImmediate(resolve));
-	}
-}
-
-/**
  * The server doing one synchronous piece of work longer than a claim's lease:
  * the clock moves and no timer runs.
  */
 function stallServer(): void {
-	jest.setSystemTime(Date.now() + ms("claim.lease") + RENEW_MS);
+	jest.setSystemTime(Date.now() + ms("claim.lease") + 1);
 }
 
 /**
@@ -61,11 +43,11 @@ async function writeUnderClaim(model: string): Promise<void> {
 		{ vault, model, holder: { id: id!, kind: "agent", claimed: true }, waits: false },
 		() => model,
 	);
-	await advanceLockTime(STEAL_GUARD_MS * 2);
 	expect(await written).toBe(model);
 }
 
 test("claims on several models of one server stand through a stall while their holders write", async () => {
+	using timers = observeLockTimers();
 	const models = ["payments", "ledger", "queues", "audit"];
 	const claims = new Map<string, lock.Claim>();
 	for (const model of models) {
@@ -81,8 +63,10 @@ test("claims on several models of one server stand through a stall while their h
 		stallServer();
 		// After the pause, half the holders' writes land before the late renewal
 		// runs and half after it.
-		await Promise.all(models.slice(0, 2).map(writeUnderClaim));
-		await advanceLockTime(RENEW_MS);
+		const beforeRenewal = Promise.all(models.slice(0, 2).map(writeUnderClaim));
+		jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
+		await beforeRenewal;
+		jest.advanceTimersByTime(timers.delay("modelLock.renew"));
 		await Promise.all(models.slice(2).map(writeUnderClaim));
 	}
 	for (const model of models) {
@@ -102,6 +86,7 @@ test("claims on several models of one server stand through a stall while their h
 });
 
 test("a claim that ends without a person names what its renewal found", async () => {
+	using timers = observeLockTimers();
 	const taken = "taken";
 	const removed = "removed";
 	for (const model of [taken, removed]) {
@@ -115,7 +100,7 @@ test("a claim that ends without a person names what its renewal found", async ()
 		JSON.stringify({ ...record, id: "elsewhere", claimed: false, token: "elsewhere-token" }),
 	);
 	rmSync(join(vault, ".archboard/locks", `${removed}.lock`));
-	await advanceLockTime(RENEW_MS);
+	jest.advanceTimersByTime(timers.delay("modelLock.renew"));
 
 	expect(lock.claimOn(vault, taken)).toBeNull();
 	expect(lock.takeClaimRevocation(vault, taken)).toMatchObject({

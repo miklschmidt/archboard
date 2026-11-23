@@ -4,14 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { ms } from "@archboard/timing";
-
-/** How far the fake clock moves per step: the first pause between two looks of a wait. A test number beside the product's. */
-const LOCK_POLL_MS = 10;
-/** The reviewed time an agent waits for a held model. A test number beside the product's. */
-const LOCK_WAIT_MS = 5000;
-/** The reviewed pause after taking over a lapsed lease. A test number beside the product's. */
-const STEAL_GUARD_MS = 25;
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
 const originalWarn = logger().warn;
@@ -20,14 +13,15 @@ const human = (id: string) => ({ id, kind: "human" as const });
 const models = new Set<string>();
 
 async function advanceLockTime(duration: number): Promise<void> {
-	let elapsed = 0;
-	while (elapsed < duration) {
-		const step = Math.min(LOCK_POLL_MS, duration - elapsed);
-		jest.advanceTimersByTime(step);
-		// A turn of the loop lets every promise the step released settle.
+	const boundary = { reached: false };
+	setTimeout(() => (boundary.reached = true), duration);
+	while (!boundary.reached) {
+		// Let the work awakened by each timer schedule its next wait before advancing.
 		await new Promise((resolve) => setImmediate(resolve));
-		elapsed += step;
+		jest.advanceTimersToNextTimer();
 	}
+	// The boundary can wake the final attempt without scheduling a further timer.
+	await new Promise((resolve) => setImmediate(resolve));
 }
 
 async function cleanup(): Promise<void> {
@@ -79,23 +73,31 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 test("lease interface excludes, renews, expires, and normalizes", async () => {
 	jest.useFakeTimers();
 	try {
+		using timers = observeLockTimers();
 		const model = "interface";
 		models.add(model);
 		let writes = 0;
 		expect(await lock.withLease({ vault, model, holder: agent("first") }, () => ++writes)).toBe(1);
 		expect(lock.modelLockState(vault, model)).toBeNull();
-		const held = await lock.holdModel({
+		const userRequest = {
 			vault,
 			model,
 			holder: human("user"),
-			leaseMs: LOCK_WAIT_MS + ms("modelLock.lease"),
-			waits: false,
-		});
+			leaseMs: 60_000,
+			waits: false as const,
+		};
+		const held = await lock.holdModel(userRequest);
 		expect(held.created).toBeTrue();
+		let settled = false;
 		const refusal = lock
 			.holdModel({ vault, model, holder: agent("later") })
-			.catch((error: unknown) => error);
-		await advanceLockTime(LOCK_WAIT_MS);
+			.catch((error: unknown) => error)
+			.finally(() => (settled = true));
+		const wait = timers.delay("modelLock.wait");
+		await advanceLockTime(wait - 1);
+		expect(settled).toBeFalse();
+		await advanceLockTime(1);
+		expect(settled).toBeTrue();
 		const refused = await refusal;
 		expect(refused).toBeInstanceOf(lock.ModelHeldError);
 		if (!(refused instanceof lock.ModelHeldError)) {
@@ -105,9 +107,11 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		expect(refused.model).toBe(model);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
 		expect(refused.message).toMatch(/held by the user at the canvas, since/);
-		expect(refused.waitedMs).toBe(LOCK_WAIT_MS);
+		expect(refused.waitedMs).toBe(wait);
+		expect(lock.modelLockState(vault, model)).toEqual(held.holder);
+		expect(jest.getTimerCount()).toBe(0);
 		jest.advanceTimersByTime(1);
-		const renewed = await lock.holdModel({ vault, model, holder: human("user"), waits: false });
+		const renewed = await lock.holdModel(userRequest);
 		expect(renewed.created).toBeFalse();
 		expect(renewed.holder.since).toBe(held.holder.since);
 		expect(Date.parse(renewed.holder.until)).toBeGreaterThan(Date.parse(held.holder.until));
@@ -129,22 +133,24 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 
 		const expired = "expired";
 		models.add(expired);
-		await lock.holdModel({
+		const departed = await lock.holdModel({
 			vault,
 			model: expired,
 			holder: agent("departed"),
 			leaseMs: 100,
 			waits: false,
 		});
+		await advanceLockTime(Date.parse(departed.holder.until) - Date.now() - 1);
+		expect(lock.modelLockState(vault, expired)?.id).toBe("departed");
 		const expiredTakeover = lock.holdModel({
 			vault,
 			model: expired,
 			holder: agent("later"),
 		});
-		// The lease lapses at 100 ms; the waiter sees it at its next look and pays the steal guard.
-		await advanceLockTime(500);
+		jest.advanceTimersByTime(1);
+		expect(lock.modelLockState(vault, expired)).toBeNull();
+		await advanceLockTime(timers.delay("modelLock.wait") - 1);
 		expect(await expiredTakeover).toMatchObject({ created: true, holder: { id: "later" } });
-		expect(LOCK_WAIT_MS).toBeGreaterThan(ms("modelLock.lease"));
 
 		const waiting = "waiting";
 		models.add(waiting);
@@ -220,7 +226,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			holder: agent("later"),
 			waits: false,
 		});
-		await advanceLockTime(STEAL_GUARD_MS);
+		jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
 		expect(await unreadableTakeover).toMatchObject({ created: true });
 	} finally {
 		await cleanup();
