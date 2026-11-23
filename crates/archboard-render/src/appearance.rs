@@ -98,10 +98,8 @@ fn recorded(policy: &Policy) -> bool {
 
 /// How a line reads. A flow's step is dashed with an open head in the neutral
 /// ink, never mistaken for a relationship of any kind. A relationship wears its
-/// kind's ink, and its effect says its line type and its head
-/// (`effect_look`): a mutation solid with a filled head, a query, a compute
-/// and a dependency that states none each in its own line type with an open
-/// head. A reading from before effects draws each kind as its policy recorded it.
+/// kind's ink and uses the body and end marks of its effect (`effect_look`).
+/// A reading from before effects draws each kind as its policy recorded it.
 pub(crate) fn line_appearance(
     kind: &str,
     effect: Option<Effect>,
