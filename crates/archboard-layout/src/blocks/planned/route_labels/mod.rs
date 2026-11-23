@@ -17,6 +17,7 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
+    constants::BEND_RADIUS,
     geometry::{Point, Rect, inflate},
 };
 
@@ -207,19 +208,28 @@ fn spot_on(
     narrow: bool,
 ) -> Option<(Rect, bool)> {
     let size = plate(model, own.edge, narrow)?;
+    // A cable's inner strand bends half the cable's width nearer its words than its middle does,
+    // and its corner ends a bend's radius further on.
+    let room = BEND_ROOM.max(BEND_RADIUS + model.half(own.edge) + CORNER_CLEAR);
     if shape.trunk.contains_key(&own.edge) {
-        return nearest(spans, size, shape, own, index, labels).map(|at| (at, false));
+        return nearest(spans, (size, room), shape, own, index, labels).map(|at| (at, false));
     }
-    let midway = midway(spans, size, shape, own, index, labels);
+    let midway = midway(spans, (size, room), shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(spans, size, shape, own, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(spans, (size, room), shape, own, index, labels).map(|at| (at, true)))
 }
+
+/// How far a line's words stand at least from each end of the run they stand on, where the
+/// line bends.
+const BEND_ROOM: f64 = 16.0;
+/// How far a cable's words stand at least past the corner of its inner strand.
+const CORNER_CLEAR: f64 = 4.0;
 
 /// The middle of the longest run that holds the words.
 fn midway(
     spans: &[Span],
-    size: Rect,
+    (size, room): (Rect, f64),
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
@@ -235,7 +245,7 @@ fn midway(
         };
         let label = at(span, position, size);
         let kept = inflate(label, own.keep(12.01));
-        (length(&[span.a, span.b]) >= required + 32.0
+        (length(&[span.a, span.b]) >= required + 2.0 * room
             && own.others(span).all(|stretch| !meets(kept, stretch))
             && clear(shape, own.edge, label, index, labels))
         .then_some(label)
@@ -244,7 +254,7 @@ fn midway(
 
 fn nearest(
     spans: &[Span],
-    size: Rect,
+    (size, room): (Rect, f64),
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
@@ -256,7 +266,7 @@ fn nearest(
         if best.is_some_and(|(distance, _)| span.before > distance) {
             continue;
         }
-        for spot in spots_for(span, size, shape, own, index, labels) {
+        for spot in spots_for(span, (size, room), shape, own, index, labels) {
             if best.is_none_or(|(distance, _)| spot.0.total_cmp(&distance).is_lt()) {
                 best = Some(spot);
             }
@@ -267,7 +277,7 @@ fn nearest(
 
 fn spots_for(
     span: Span,
-    size: Rect,
+    (size, room): (Rect, f64),
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
@@ -276,7 +286,8 @@ fn spots_for(
     let mut spots = Vec::new();
     let horizontal = span.a.y == span.b.y;
     let (a, b, across, along_half, across_half) = projection(span, size);
-    let (lo, hi) = (a.min(b) + along_half + 16.01, a.max(b) - along_half - 16.01);
+    let room = room + 0.01;
+    let (lo, hi) = (a.min(b) + along_half + room, a.max(b) - along_half - room);
     if hi < lo {
         return Vec::new();
     }
