@@ -2,6 +2,7 @@ import { RiEyeLine, RiEyeOffLine, type RemixiconComponentType } from "@remixicon
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
+import { hiddenKinds } from "@archboard/model/policy";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
@@ -81,9 +82,22 @@ interface ModelLegendProps {
  * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
-	const { model, projection, picture, selection, filters } = props;
+	const { model, projection, picture, selection, filters, onHide } = props;
+	const rows = useMemo(
+		() => relationshipRows({ model, projection, ...filters }),
+		[model, projection, filters],
+	);
+	const hideRows = useCallback(
+		(field: FilterField, ids: readonly string[]): void => {
+			const kinds = field === "hideKinds";
+			const current = kinds ? hiddenKinds(filters.hideKinds, model.policy) : filters.hideEffects;
+			const visibleRows = kinds ? rows.kinds : rows.effects;
+			const unlisted = (current ?? []).filter((id) => !visibleRows.some((row) => row.id === id));
+			onHide(field, [...unlisted, ...ids]);
+		},
+		[filters, model.policy, onHide, rows],
+	);
 	if (picture === null) return null;
-	const rows = relationshipRows({ model, projection, ...filters });
 	return (
 		<div data-slot="model-legend" className="flex flex-col gap-5">
 			<Kinds model={model} look={props.look} rows={kindRows({ model, projection, picture })} />
@@ -92,7 +106,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 				marks={markRows(projection)}
 				standings={comparisonRows(projection)}
 				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
-				onHide={props.onHide}
+				onHide={hideRows}
 				onShowAll={props.onShowAll}
 			>
 				{/* A reading with one lens, as one from before lenses, has nothing to choose. */}

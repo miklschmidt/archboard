@@ -329,18 +329,16 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	// The legend decides what a switch or a row's name hides; the address only holds the list.
 	const setHidden = useCallback(
 		(field: FilterField, ids: readonly string[]): void => {
-			userChanged?.("view");
-			void navigate({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
+			explore({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
 		},
-		[navigate, userChanged],
+		[explore],
 	);
 	// A lens is a question of its own, so choosing one shows every kind and effect it selects.
 	const selectLens = useCallback(
 		(id: string): void => {
-			userChanged?.("view");
-			void navigate({ lens: id, hideKinds: undefined, hideEffects: undefined });
+			explore({ lens: id, hideKinds: undefined, hideEffects: undefined });
 		},
-		[navigate, userChanged],
+		[explore],
 	);
 	const showAll = useCallback((): void => {
 		selectLens(allLens());

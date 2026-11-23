@@ -155,7 +155,8 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?${new URLSearchParams({ scopeA: "Shop#Gateway" })}`]);
+	const search = new URLSearchParams({ scopeA: "Shop#Gateway", hideEffectsA: "query" });
+	await browser.run(["open", `${server.base}/?${search}`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await settledOn(browser, "Shop#Gateway");
 	await pollUntil(
@@ -236,8 +237,8 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 	await browser.run(["click", '[data-filter-effect="mutation"]']);
 	await pollUntil(
 		() => addressed(browser, "hideEffectsA"),
-		(hidden) => hidden === "mutation",
-		"the effect hidden by its own switch",
+		(hidden) => hidden === "mutation,query",
+		"the effect hidden by its switch while preserving a filter absent from this scope",
 		WAIT,
 	);
 
@@ -281,6 +282,34 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 		"a kind hidden under every relationship",
 		WAIT,
 	);
+	await browser.run(["click", '[data-filter-effect="mutation"]']);
+	await pollUntil(
+		() => addressed(browser, "hideEffectsA"),
+		(hidden) => hidden === "mutation",
+		"an effect hidden under every relationship",
+		WAIT,
+	);
+	await browser.run(["click", '[data-lens-id="all"]']);
+	await pollUntil(
+		async () => [await addressed(browser, "hideKindsA"), await addressed(browser, "hideEffectsA")],
+		(hidden) => hidden.every((list) => list === null),
+		"both filters cleared by choosing the active lens again",
+		WAIT,
+	);
+	await pollUntil(
+		() => lensOf(browser),
+		(lens) => lens === "All relationships",
+		"every relationship shown by the active preset",
+		WAIT,
+	);
+	await browser.run(["click", '[data-filter-kind="event"]']);
+	await pollUntil(
+		() => addressed(browser, "hideKindsA"),
+		(hidden) => hidden === "event",
+		"a filter to clear when switching lenses",
+		WAIT,
+	);
+
 	await browser.run(["click", '[data-lens-id="dependencies"]']);
 	await pollUntil(
 		() => lensOf(browser),
