@@ -3,7 +3,7 @@
 use archboard_scene::request::{Arrowhead, Dash, LineAppearance, LineEffect};
 use archboard_scene::scene::{Group, Item, LineFacts, Role, SubjectKind};
 
-use super::{frame, route, stage_of, subject, traffic_picture};
+use super::{frame, painting, route, stage_of, subject, traffic_picture};
 use crate::stage::Stage;
 
 /// A line of a relationship that does something, with its facts.
@@ -61,4 +61,16 @@ fn a_declared_line_and_a_line_with_traffic_stay_as_they_are() {
     let (before, _) = strokes_at(&mut busy, 0.0);
     busy.play(vec!["e".to_owned()], 0.0);
     assert_eq!(strokes_at(&mut busy, 300.0).0, before);
+}
+
+#[test]
+fn replacing_the_picture_does_not_play_an_effect_on_its_lines() {
+    let line = || effect_line("e", LineEffect::Mutation);
+    let mut stage = stage_of(vec![line()]);
+    let (still, _) = strokes_at(&mut stage, 0.0);
+    stage.play(vec!["e".to_owned()], 0.0);
+    assert!(strokes_at(&mut stage, 100.0).1);
+
+    stage.show(painting(vec![line()]));
+    assert_eq!(strokes_at(&mut stage, 200.0), (still, false));
 }

@@ -160,6 +160,7 @@ impl Stage {
         self.behind.clear();
         self.dive = None;
         self.presentation.sweep = None;
+        self.plays.clear();
         self.drawn = false;
         self.looks += 1;
         self.find_warnings();
@@ -245,6 +246,7 @@ impl Stage {
     /// Take the picture off the stage.
     pub fn clear(&mut self) {
         self.shown = None;
+        self.plays.clear();
         self.presentation.sweep = None;
         self.find_warnings();
     }
