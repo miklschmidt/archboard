@@ -84,7 +84,14 @@ draws. Blocks' planned drawings and its fallback do not change. Lanes differs in
   direction and the one line against it turns. Blocks' fallback turns whichever line a
   depth-first walk meets last.
 - The page holds every point of every line.
+- The ends on each card face gather into one group a lane apart, round where their lines come
+  from, so the lines bound for one card run together in parallel lanes and land as one bus.
+- The parent ranks a container as a record whose fields are its ports in the order they stand,
+  so Graphviz stands each door over the port its line enters by.
+- The pass that pulls a line lapping the drawing back inside prices a crossing at 8 lanes, not
+  25: a line crossing a bus square reads at a glance, and a lap round the page does not.
 
 Tests hold the bus look, not equality with the fallback: no line words, the lines between two
-cards in one bundle a lane apart, cards ranked with the container they talk to, and every line on
-its page.
+cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
+with the container they talk to and in the order of its ports, no lap round the README reading,
+and every line on its page.
