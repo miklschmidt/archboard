@@ -60,3 +60,29 @@ fn lanes_draws_a_reading_blocks_draws_by_its_fallback_byte_for_byte_without_line
             .all(|line| line.get("label").is_none_or(Value::is_null))
     );
 }
+
+#[test]
+fn two_cables_with_the_same_strands_leave_a_card_from_separate_ports() {
+    let mut graph = json!({
+        "id": "root",
+        "layoutOptions": { "archboard.layout.engine": "lanes" },
+        "children": [
+            { "id": "source", "width": 40, "height": 100 },
+            { "id": "left", "width": 200, "height": 100 },
+            { "id": "right", "width": 200, "height": 100 },
+        ],
+        "edges": [
+            { "id": "one", "sources": ["source"], "targets": ["left"] },
+            { "id": "two", "sources": ["source"], "targets": ["right"] },
+        ],
+    });
+    for edge in graph["edges"].as_array_mut().expect("edges") {
+        edge["layoutOptions"]["archboard.cable"] =
+            json!("sync|mutation|unchanged|normal|off||;event|mutation|unchanged|normal|off||");
+    }
+    let (placed, planned) = told(&graph);
+    assert!(!planned);
+    let placed: Value = serde_json::from_str(&placed).expect("a placed drawing");
+    let edges = placed["edges"].as_array().expect("placed edges");
+    assert_ne!(edges[0]["points"][0], edges[1]["points"][0]);
+}
