@@ -98,7 +98,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 			{ name: "Reports", kind: "datastore" },
 		],
 		edges: [
-			{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
+			{ from: "Gateway", to: "Writer", kind: "sync", label: "hands it over" },
 			{ from: "Writer", to: "Ledger", kind: "storage", label: "writes" },
 			{ from: "Ledger", to: "Reports", kind: "storage", label: "feeds" },
 		],

@@ -113,7 +113,7 @@ test("structural writes refresh current modules while exact history and selected
 			source: "Cache",
 			relationship: {
 				to: "Shop#Worker",
-				kind: "call",
+				kind: "sync",
 				effect: "mutation",
 				label: "Read cached result",
 				order: 20,
