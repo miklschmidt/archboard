@@ -291,15 +291,25 @@ describe.serial("the repositories of the navigator", () => {
 	});
 
 	test("a tab is sent a vault that leaves the disk while the registry stays, and a returning tab the listing as it is", async () => {
+		await using resources = new AsyncDisposableStack();
 		const holder = join(fixture.root, "zz-scratch");
-		vaultOf(holder);
+		const vault = vaultOf(holder);
 		cli("repo", "add", holder);
 		{
 			using tab = await openRepositoryFeed(server.base);
 			expect(names(await tab.next())).toContain("zz-scratch");
+			const pane = await openPaneSession(server.base, createRequester({ ...server, vault }), {
+				clientId: "scratch-pane",
+			});
+			resources.defer(() => pane.close());
 			// Nothing writes the registry: the server finds the change on its own look at the disk.
 			rmSync(holder, { recursive: true, force: true });
 			await tab.until((listing) => !names(listing).includes("zz-scratch"));
+
+			// Forgetting an already missing vault leaves the listing alone but removes the pane's name.
+			const mark = pane.mark();
+			cli("repo", "forget", holder);
+			expect(await pane.waitFor("pane_place", mark)).toMatchObject({ vault, repository: null });
 		}
 		// While no tab follows, a choice changes the listing; a tab that comes back is sent it.
 		expect((await choose(main)).status).toBe(200);
