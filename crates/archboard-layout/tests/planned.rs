@@ -2,7 +2,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+mod common;
+
 use archboard_layout::lay_out_picture;
+use common::crowded_card;
 use serde_json::{Value, json};
 
 fn drawing(graph: &Value) -> Value {
@@ -466,30 +469,6 @@ fn a_small_reading_with_doors_round_its_frame_stands_in_the_panes_shape_not_a_st
     assert!(width / height < 2.0, "a {width:.0} by {height:.0} strip");
 }
 
-/// A card too small to space the ends of its eight lines of six kinds: no placement gives
-/// every line a clear planned channel.
-fn crowded_card() -> String {
-    let kinds = ["call", "http", "event", "data", "config", "mixed kinds"];
-    let cards = std::iter::once(json!({"id":"hub","width":16,"height":16}))
-        .chain((0..8).map(|at| json!({"id":format!("c{at}"),"width":160,"height":60})));
-    let edges = (0..8).map(|at| {
-        let kind = kinds[at % kinds.len()];
-        let card = format!("c{at}");
-        let (from, to) = if at < kinds.len() {
-            ("hub", card.as_str())
-        } else {
-            (card.as_str(), "hub")
-        };
-        json!({"id":format!("e{at}"),"sources":[from],"targets":[to],
-            "layoutOptions":{"archboard.relationship.kind":kind,
-                "archboard.relationship.held-kind":kind},
-            "labels":[{"id":format!("l{at}"),"text":"calls","width":40,"height":16}]})
-    });
-    json!({"id":"root","layoutOptions":{},
-        "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()})
-    .to_string()
-}
-
 #[test]
 fn a_reading_no_placement_routes_is_drawn_unplanned_by_its_legacy_placement() {
     let mut graph: Value = serde_json::from_str(&crowded_card()).unwrap();
@@ -566,65 +545,6 @@ fn a_reading_the_planner_refuses_still_fails_when_graphviz_fails() {
         assert_eq!(
             lay_out_picture(&graph, &mut host).unwrap_err(),
             "Graphviz test failure"
-        );
-    }
-}
-
-#[test]
-fn lanes_takes_the_lanes_placement_where_blocks_plans() {
-    for graph in [
-        include_str!("fixtures/refused-dense.json"),
-        include_str!("fixtures/trunk-words.json"),
-    ] {
-        let mut graph: Value = serde_json::from_str(graph).unwrap();
-        let told = |graph: &Value| {
-            let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
-                .expect("a drawing");
-            let answer: Value = serde_json::from_str(&answer).expect("an answer");
-            answer["layoutOptions"]
-                .get("archboard.blocks.planned")
-                .is_some()
-        };
-        assert!(told(&graph), "Blocks plans this reading");
-        graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
-        assert!(!told(&graph), "Lanes never plans");
-    }
-}
-
-/// What one solve answers for a graph: the drawing as it was written, and whether it was planned.
-fn told(graph: &Value) -> (String, bool) {
-    let answer =
-        lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore).expect("a drawing");
-    let mut answer: Value = serde_json::from_str(&answer).expect("an answer");
-    let options = answer["layoutOptions"]
-        .as_object_mut()
-        .expect("its options");
-    let planned = options.contains_key("archboard.blocks.planned");
-    let placed = options["archboard.blocks.placed"]
-        .as_str()
-        .expect("a drawing");
-    (placed.to_owned(), planned)
-}
-
-#[test]
-fn lanes_draws_a_reading_blocks_draws_by_its_fallback_byte_for_byte_without_line_words() {
-    for graph in [
-        crowded_card(),
-        include_str!("fixtures/readme-all.json").to_owned(),
-    ] {
-        let mut graph: Value = serde_json::from_str(&graph).unwrap();
-        let (blocks, planned) = told(&graph);
-        assert!(!planned, "Blocks draws this reading by its fallback");
-        graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
-        let (lanes, _) = told(&graph);
-        assert_eq!(lanes, blocks);
-        let drawn: Value = serde_json::from_str(&lanes).unwrap();
-        let lines = drawn["edges"].as_array().expect("its lines");
-        assert_ne!(lines.len(), 0);
-        assert!(
-            lines
-                .iter()
-                .all(|line| line.get("label").is_none_or(Value::is_null))
         );
     }
 }
