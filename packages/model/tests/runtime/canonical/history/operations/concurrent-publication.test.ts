@@ -68,7 +68,7 @@ test("stale publication joins signed archive ancestry without merging distinct c
 	const tip = git(remote, "rev-parse", destination.ref);
 	git(other, "verify-commit", tip);
 	expect(git(other, "show", `${tip}:record.json`)).toBe(
-		JSON.stringify({ schemaVersion: 1, kind: "synchronization" }),
+		JSON.stringify({ schemaVersion: 2, kind: "synchronization" }),
 	);
 	expect(git(other, "ls-tree", "--name-only", tip)).toBe("record.json");
 	expect(
