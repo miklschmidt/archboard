@@ -35,6 +35,7 @@ struct Door {
     line: usize,
     leaving: bool,
     card: Rect,
+    frame: Rect,
     wall: f64,
     run: f64,
     outside: Vec<Point>,
@@ -114,6 +115,7 @@ fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
         line,
         leaving,
         card,
+        frame,
         wall: wall_toward(placed, &frame, &card)?,
         run: points[crossed].y,
         outside: points[..crossed].to_vec(),
@@ -188,24 +190,75 @@ fn others_of(placed: &Picture<'_>, line: usize) -> Vec<Run> {
         .collect()
 }
 
+#[cfg(test)]
+#[test]
+fn aligned_cards_can_both_receive_a_line_through_one_wall() {
+    let card = |x, y| Rect {
+        x,
+        y,
+        width: 60.0,
+        height: 40.0,
+    };
+    let cards = [
+        card(0.0, 0.0),
+        card(120.0, 180.0),
+        card(120.0, 400.0),
+        card(0.0, 560.0),
+    ];
+    let frames = [(
+        Rect {
+            x: 100.0,
+            y: 100.0,
+            width: 300.0,
+            height: 400.0,
+        },
+        0,
+    )];
+    let points = |pairs: [(f64, f64); 6]| pairs.into_iter().map(|(x, y)| Point { x, y }).collect();
+    let mut lines = [
+        points([
+            (30.0, 40.0),
+            (30.0, 60.0),
+            (170.0, 60.0),
+            (170.0, 140.0),
+            (150.0, 140.0),
+            (150.0, 180.0),
+        ]),
+        points([
+            (30.0, 560.0),
+            (30.0, 540.0),
+            (170.0, 540.0),
+            (170.0, 460.0),
+            (150.0, 460.0),
+            (150.0, 440.0),
+        ]),
+    ];
+    enter_by_frame_sides(&mut Picture {
+        cards: &cards,
+        frames: &frames,
+        lines: &mut lines,
+    });
+    assert_eq!(lines[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
+    assert_eq!(lines[1].last(), Some(&Point { x: 120.0, y: 420.0 }));
+}
+
 /// Bring one line in through its wall where that reads better, a lane out from the lines
-/// already through it; answers the card face it lands on.
+/// already through it.
 fn through_wall_if_better(
     placed: &mut Picture<'_>,
     door: &Door,
-    taken: &[(f64, f64)],
-) -> Option<f64> {
+    taken: &[(Rect, f64)],
+) -> Option<(Rect, f64)> {
     let toward = if door.wall <= door.card.x { -1.0 } else { 1.0 };
     // The card and wall stay fixed. A move at the other end can change the way in.
     let door = &door_of(placed, door.line, door.leaving)?;
     let face = door.card.x + if toward < 0.0 { 0.0 } else { door.card.width };
-    let used = (taken
+    let used = taken
         .iter()
-        .filter(|(wall, _)| abs(*wall - door.wall) < 0.5))
-    .count();
+        .filter(|&&(frame, wall)| frame == door.frame && wall == door.wall)
+        .count();
     let lane = door.wall + toward * LANE * (used + 1) as f64;
-    let busy = taken.iter().any(|(_, x)| abs(*x - face) < 0.5);
-    if busy || face_taken(placed, &door.card, face) || !among_cards(placed, lane) {
+    if face_taken(placed, &door.card, face) || !among_cards(placed, lane) {
         return None;
     }
     let mut points = through_wall(door, lane, face);
@@ -216,7 +269,7 @@ fn through_wall_if_better(
         points.reverse();
     }
     placed.lines[door.line] = points;
-    Some(face)
+    Some((door.frame, door.wall))
 }
 
 #[cfg(test)]
@@ -268,10 +321,10 @@ pub(crate) fn enter_by_frame_sides(placed: &mut Picture<'_>) {
         .collect();
     let reach = |door: &Door| abs(door.outside.last().map_or(0.0, |point| point.x) - door.wall);
     doors.sort_by(|one, other| reach(other).total_cmp(&reach(one)));
-    let mut taken: Vec<(f64, f64)> = Vec::new();
+    let mut taken = Vec::new();
     for door in doors {
-        if let Some(face) = through_wall_if_better(placed, &door, &taken) {
-            taken.push((door.wall, face));
+        if let Some(wall) = through_wall_if_better(placed, &door, &taken) {
+            taken.push(wall);
         }
     }
 }
