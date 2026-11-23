@@ -8,7 +8,11 @@
 //! [`Viewport`]), definitions ([`Definition`]) and trains of pulses
 //! ([`TrafficMark`]). Colours name the page's tokens and the operations that
 //! mix them ([`Colour`]); the frontend resolves them in its theme. Every type
-//! has one path: `scene::` and its name. The scene holds no interaction state: the
+//! has one path: `scene::` and its name. A scene states every value, so no
+//! reader knows a default: an `Option` in it is an absence (no stroke, no clip,
+//! no mask, no subject, a pointer left to the group around), never a default
+//! to fill in, and the SVG painter leaves out what SVG's own default says.
+//! The scene holds no interaction state: the
 //! light, the recede, the far view, the camera and the flight are each
 //! painter's own (ADR 0023).
 
