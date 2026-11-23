@@ -6,8 +6,8 @@
 // and the flank fan say how much wiring runs down margins; label reach says
 // how far a reader goes along a line before meeting its words, and the shared
 // corridor how long two routes run side by side. A cable's strands are one
-// route to trace: crossings and corridors count each cable once, by its first
-// strand, while route length, bends and lane ink count every strand's ink, and
+// route to trace: bends, crossings, corridors and flank fans count each cable
+// once, by its first strand, while route length and lane ink count every strand, and
 // the cable count and the widest cable say how many lines were joined. The
 // invariants at the end must stay zero.
 //
@@ -89,9 +89,10 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		(total, [from, to]) => total + Math.abs(to.x - from.x) + Math.abs(to.y - from.y),
 		0,
 	);
-	const ink = inkOf(drawing);
 	const cables = cablesOf(drawing);
-	const traced = runs.filter(([, , id]) => (cables.get(id) ?? [id])[0] === id);
+	const tracedIds = new Set([...cables.values()].map(([id]) => id!));
+	const traced = runs.filter(([, , id]) => tracedIds.has(id));
+	const ink = inkOf(drawing, tracedIds);
 	const joined = [...new Set([...cables.values()].filter((strands) => strands.length > 1))];
 	const corridor = sharedCorridorOf(drawing, traced);
 	const reach = labelReachOf(drawing);
@@ -141,7 +142,7 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		},
 		{
 			name: "flank fan",
-			value: flankFanOf(drawing, content),
+			value: flankFanOf(drawing, content, tracedIds),
 			digits: 0,
 			better: "lower",
 			meaning: "most routes leaving one card by its beside flank",
