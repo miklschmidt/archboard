@@ -388,7 +388,7 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 A failed drawing lies over the picture as a floating card, with Retry and Back, and with `No comparison` when a comparison can be what failed.
 A failed read under a kept picture, a lost server and an unconfirmed reading are the shell's toast, one for each pane: `readingTrouble` says what is wrong, `useTroubleReport` hands it to the pane's `onTrouble` when it changes, and the application raises or dismisses the notice `reading:<pane>`, which carries the refusal's code as `data-code`.
 Its Retry reads every model again. A lost server's toast has none and goes when the server answers.
-A failed listing of the repositories is a toast too, with Retry, from `useListingNotice`.
+`useListingNotice` shows a toast when the repository list is unavailable. The page keeps trying and dismisses the toast when the list arrives.
 Back is the browser's, so a reading opened directly has none.
 What stays in the pane lies over the picture in `model-notices`, so nothing moves it.
 A claim is status, and no surface offers an action on it.
