@@ -86,14 +86,14 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Decide whether KILL cleanup still needs to drain. Ownership was proved
+	 * Decide whether a signalled group still needs to drain. Ownership was proved
 	 * immediately before signalling, so a short unproven exit transition can
 	 * be polled without sending another signal. Reuse still fails immediately.
 	 * @param identity - The owned group.
 	 * @param action - What cleanup is attempting, for the failure message.
 	 * @returns False when quiescent, true while owned or transiently unproven.
 	 */
-	const needsKillDrain = (identity: CodexProcessGroupIdentity, action: string): boolean => {
+	const needsDrain = (identity: CodexProcessGroupIdentity, action: string): boolean => {
 		const status = inspect(identity);
 		if (status === "quiescent") return false;
 		if (status === "reused") throw groupFailure(status, action);
@@ -186,7 +186,7 @@ function createProcessGroupCleanup(
 			pollUntil(
 				"codex.termGrace",
 				() => {
-					gone = !stillOwned(input.identity, "finish TERM cleanup of the Codex process group");
+					gone = !needsDrain(input.identity, "finish TERM cleanup of the Codex process group");
 					return gone ? true : undefined;
 				},
 				{ signal: input.signal },
@@ -205,7 +205,7 @@ function createProcessGroupCleanup(
 		if (!stillOwned(input.identity, "escalate the Codex process group")) return false;
 		await freezeGroup(input);
 		killFrozenGroup(input.identity);
-		return needsKillDrain(input.identity, "verify KILL cleanup of the Codex process group");
+		return needsDrain(input.identity, "verify KILL cleanup of the Codex process group");
 	};
 
 	/**
@@ -221,10 +221,7 @@ function createProcessGroupCleanup(
 			pollUntil(
 				"codex.killDrain",
 				() => {
-					drained = !needsKillDrain(
-						input.identity,
-						"verify KILL cleanup of the Codex process group",
-					);
+					drained = !needsDrain(input.identity, "verify KILL cleanup of the Codex process group");
 					return drained ? true : undefined;
 				},
 				{ signal: input.signal },
