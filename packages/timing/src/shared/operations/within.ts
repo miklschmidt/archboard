@@ -14,7 +14,8 @@ interface WithinOptions {
  * timer that carries the wait's name, and it is cleared once the work settles.
  *
  * Expiry rejects at once with `TimedOut`, without waiting for the work: the caller decides what
- * the work's state is, because a timeout never proves that it stopped.
+ * the work's state is, because a timeout never proves that it stopped. An exhausted bound
+ * rejects before any work starts.
  * @param wait The bound.
  * @param work The work, given the signal it should stop on.
  * @param options The caller's signal, and an override of the bound's length.
@@ -29,6 +30,7 @@ function within<T>(
 	const { signal } = options;
 	if (signal?.aborted) return Promise.reject(signal.reason);
 	const ms = options.ms ?? lengthOf(wait);
+	if (ms <= 0) return Promise.reject(new TimedOut(wait, 0));
 	const controller = new AbortController();
 	return new Promise<T>((resolve, reject) => {
 		/**

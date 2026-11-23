@@ -95,6 +95,15 @@ describe("within", () => {
 		expect(jest.getTimerCount()).toBe(0);
 	});
 
+	test.each([0, -10])("an exhausted bound of %i ms expires before starting work", async (ms) => {
+		const work = jest.fn(() => Promise.resolve("done"));
+		await expect(within("server.mutationDrain", work, { ms })).rejects.toThrow(
+			/^Timed out after 0 ms waiting for /,
+		);
+		expect(work).not.toHaveBeenCalled();
+		expect(jest.getTimerCount()).toBe(0);
+	});
+
 	test("a work that throws at once rejects with its error", async () => {
 		await expect(
 			within("server.mutationDrain", () => {
