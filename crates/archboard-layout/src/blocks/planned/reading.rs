@@ -65,12 +65,16 @@ fn approach_sites(at: Point, next: Point, other: &PlacedLine) -> impl Iterator<I
     })
 }
 
-/// Lower ranks keep card approaches clear, then reduce the work of tracing lines.
-pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
+/// How much a line weighs in a drawing's price, by its id (`model::weight_of`).
+pub(super) type Weigh<'a> = &'a dyn Fn(&str) -> f64;
+
+/// Lower ranks keep card approaches clear, then reduce the work of tracing lines: each line's
+/// route as often as it weighs, a cable as often as its strands.
+pub(super) fn rank(lines: &[PlacedLine], weigh: Weigh<'_>) -> (usize, u64) {
     let crossings = crossings_of(lines.iter().map(|line| line.points.as_slice()));
     let cost = lines
         .iter()
-        .map(|line| super::fixed::route_cost(&line.points))
+        .map(|line| weigh(&line.id) * super::fixed::route_cost(&line.points))
         .sum::<f64>()
         + CROSSING_COST * crossings;
     (approaches(lines), cost.to_bits())
@@ -113,16 +117,19 @@ fn as_routed(drawing: &crate::blocks::assembly::Placed) -> &crate::blocks::assem
 }
 
 /// How a finished drawing's routes rank.
-pub(super) fn drawn_rank(drawing: &crate::blocks::assembly::Placed) -> (usize, u64) {
-    rank(&as_routed(drawing).edges)
+pub(super) fn drawn_rank(
+    drawing: &crate::blocks::assembly::Placed,
+    weigh: Weigh<'_>,
+) -> (usize, u64) {
+    rank(&as_routed(drawing).edges, weigh)
 }
 
 /// The largest page whose words still read where it lands.
 pub(super) const READABLE: (f64, f64) = (LANDING_ROOM.0 / NEAR_SCALE, LANDING_ROOM.1 / NEAR_SCALE);
 
-pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
+pub(super) fn order(drawing: &crate::blocks::assembly::Placed, weigh: Weigh<'_>) -> Order {
     let routed = &as_routed(drawing).edges;
-    let (crowded, cost) = rank(routed);
+    let (crowded, cost) = rank(routed, weigh);
     let unreadable = drawing.width > READABLE.0 || drawing.height > READABLE.1;
     (
         unreadable,
@@ -295,7 +302,9 @@ pub(super) fn worth_placing(
     first: &crate::blocks::assembly::Placed,
     graph: &crate::graph::Node,
 ) -> bool {
-    let cheaper = order(next).2 <= order(first).2;
+    let weights = super::model::weights(graph);
+    let weigh = |id: &str| weights.get(id).copied().unwrap_or(1.0);
+    let cheaper = order(next, &weigh).2 <= order(first, &weigh).2;
     let (next, first) = (as_routed(next), as_routed(first));
     let grows_detour = next.edges.iter().any(|edge| {
         first
@@ -453,7 +462,7 @@ mod tests {
             height: 1000.0,
             ..readable.clone()
         };
-        assert!(order(&readable) < order(&unreadable));
+        assert!(order(&readable, &|_| 1.0) < order(&unreadable, &|_| 1.0));
     }
 
     /// The same two pages, one with a short line that runs a long way round, one with a longer
@@ -494,8 +503,11 @@ mod tests {
         ];
         let straight = vec![at(0.0, 600.0), at(1950.0, 600.0)];
         let (reads, wide) = (2000.0, READABLE.0 + 100.0);
-        assert!(order(&page(reads, straight.clone())) < order(&page(reads, around.clone())));
-        assert!(order(&page(wide, around)) < order(&page(wide, straight)));
+        assert!(
+            order(&page(reads, straight.clone()), &|_| 1.0)
+                < order(&page(reads, around.clone()), &|_| 1.0)
+        );
+        assert!(order(&page(wide, around), &|_| 1.0) < order(&page(wide, straight), &|_| 1.0));
     }
 
     /// Pages that land at full scale, each with one line of the same length. On pages as tall as
@@ -542,12 +554,12 @@ mod tests {
         let small = page(600.0, tall, Vec::new());
         let filled = page(1200.0, tall, vec![filler]);
         let blank = page(1200.0, tall, Vec::new());
-        assert!(order(&filled) <= order(&small));
-        assert!(order(&small) < order(&blank));
+        assert!(order(&filled, &|_| 1.0) <= order(&small, &|_| 1.0));
+        assert!(order(&small, &|_| 1.0) < order(&blank, &|_| 1.0));
         let (roomy, wider) = (
             page(600.0, 500.0, Vec::new()),
             page(900.0, 500.0, Vec::new()),
         );
-        assert_eq!(order(&roomy), order(&wider));
+        assert_eq!(order(&roomy, &|_| 1.0), order(&wider, &|_| 1.0));
     }
 }

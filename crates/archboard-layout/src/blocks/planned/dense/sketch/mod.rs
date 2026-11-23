@@ -251,6 +251,9 @@ pub(super) struct Line {
     pub to: usize,
     /// How tall the line's label plate stands, where it has one.
     pub plate: f64,
+    /// How much the line weighs against the others: a cable as much as its strands, each of
+    /// which a reader traces, a lone line one.
+    pub weight: f64,
 }
 
 /// Every box that a placement stands, and the lines and groups that weigh it.
@@ -339,7 +342,8 @@ impl Scene {
         (solid, frames): ([f64; 2], [f64; 2]),
     ) -> [Option<f64>; 2] {
         let against = self.against(line);
-        [0, 1].map(|at| Some(ways[at].as_ref()?.cost(solid[at] + frames[at], against)))
+        let weight = self.lines[line].weight;
+        [0, 1].map(|at| Some(weight * ways[at].as_ref()?.cost(solid[at] + frames[at], against)))
     }
 
     /// What a line adds where it climbs against the reading.
@@ -456,6 +460,7 @@ mod tests {
             from,
             to,
             plate: 0.0,
+            weight: 1.0,
         }
     }
 
@@ -468,6 +473,24 @@ mod tests {
             lines,
             ..Scene::default()
         }
+    }
+
+    /// A cable pulls its ends together as its strands weigh, more than a lone line on the same
+    /// way, so a placement keeps a wide cable short.
+    #[test]
+    fn a_cable_costs_as_much_more_than_a_lone_line_as_its_strands_weigh() {
+        let boxes = vec![card(0.0, 0.0), card(600.0, 400.0)];
+        let lone = scene(boxes.clone(), vec![line(0, 1)]);
+        let weight = super::super::super::model::weight_of(4);
+        let cable = scene(
+            boxes,
+            vec![Line {
+                weight,
+                ..line(0, 1)
+            }],
+        );
+        assert!((cable.bare(0) - weight * lone.bare(0)).abs() < 1e-9);
+        assert!(weight > 1.0 && weight < 4.0);
     }
 
     /// A line past a card that stands between its ends pays the way round that card.
