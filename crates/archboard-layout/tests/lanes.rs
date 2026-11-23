@@ -499,3 +499,96 @@ fn lanes_lands_a_line_that_turns_past_a_card_on_its_side() {
         "a line lands on a side: {ends:?}"
     );
 }
+
+/// How far a point stands from a line's nearest run.
+fn distance_to(point: (f64, f64), line: &[(f64, f64)]) -> f64 {
+    line.windows(2)
+        .map(|pair| {
+            let ((ax, ay), (bx, by)) = (pair[0], pair[1]);
+            let (dx, dy) = (bx - ax, by - ay);
+            let length = dx * dx + dy * dy;
+            let share = if length == 0.0 {
+                0.0
+            } else {
+                (((point.0 - ax) * dx + (point.1 - ay) * dy) / length).clamp(0.0, 1.0)
+            };
+            (point.0 - (ax + share * dx)).hypot(point.1 - (ay + share * dy))
+        })
+        .fold(f64::INFINITY, f64::min)
+}
+
+#[test]
+fn lanes_runs_the_lines_between_two_cards_one_way_as_one_bus() {
+    // The root reading: Browser calls Archboard server twice, a query and a mutation. The mutation
+    // crossed the middle of the page alone; both now travel a lane apart.
+    let graph: Value = serde_json::from_str(include_str!("fixtures/root.json")).unwrap();
+    let drawn = drawn_by_lanes(&graph);
+    let lines = lines_of(&drawn);
+    let between: Vec<&Vec<(f64, f64)>> = lines
+        .iter()
+        .filter(|(id, _)| id.ends_with("#k5pgt4eX") || id.ends_with("#poDLrJ2M"))
+        .map(|(_, points)| points)
+        .collect();
+    assert_eq!(between.len(), 2, "both lines are drawn");
+    let apart = (between[0]
+        .iter()
+        .map(|&point| distance_to(point, between[1])))
+    .chain(
+        between[1]
+            .iter()
+            .map(|&point| distance_to(point, between[0])),
+    )
+    .fold(0.0, f64::max);
+    assert!(apart <= 3.0 * 16.0, "the two lines stand {apart} apart");
+}
+
+#[test]
+fn lanes_keeps_no_lane_of_a_channel_that_no_line_runs_across() {
+    // Packages: the channel between the top row and the frame held empty lanes between its runs.
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/packages.json")).unwrap());
+    let mut boxes: Vec<(f64, f64)> = Vec::new();
+    for key in ["cards", "frames"] {
+        for item in drawn[key].as_array().expect("its boxes") {
+            let at = |axis: &str| item["box"][axis].as_f64().expect("a box");
+            boxes.push((at("y"), at("y") + at("height")));
+        }
+    }
+    let mut levels: Vec<(f64, f64, f64)> = lines_of(&drawn)
+        .into_iter()
+        .flat_map(|(_, points)| {
+            points
+                .windows(2)
+                .filter(|pair| {
+                    (pair[0].1 - pair[1].1).abs() < 0.01 && (pair[0].0 - pair[1].0).abs() > 16.0
+                })
+                .map(|pair| {
+                    (
+                        pair[0].1,
+                        pair[0].0.min(pair[1].0),
+                        pair[0].0.max(pair[1].0),
+                    )
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    levels.sort_by(|one, other| one.0.total_cmp(&other.0));
+    for (index, &(y, from, to)) in levels.iter().enumerate() {
+        let Some(&(below, ..)) = levels[index + 1..]
+            .iter()
+            .find(|&&(other, low, high)| other > y + 0.5 && low < to && from < high)
+        else {
+            continue;
+        };
+        let edged = boxes
+            .iter()
+            .any(|&(top, bottom)| (top > y && top < below) || (bottom > y && bottom < below));
+        let used = levels
+            .iter()
+            .any(|&(other, ..)| other > y + 8.0 && other < below - 8.0);
+        assert!(
+            edged || used || below - y < 32.0,
+            "no line runs across the lanes between {y} and {below}"
+        );
+    }
+}

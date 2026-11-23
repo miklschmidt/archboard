@@ -10,12 +10,13 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
+use crate::lanes::buses::Buses;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chain_kind};
 use crate::lanes::channels::{End, Net, NetId};
 use crate::lanes::jogs::nothing;
 use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
 pub(crate) use crate::lanes::sides::route_scene;
-use crate::lanes::sides::{Routing, Sided};
+use crate::lanes::sides::{Choice, Routing};
 use crate::lanes::spacing::Rim;
 use crate::placed::PlacedEdge;
 
@@ -502,14 +503,43 @@ fn routed_of(
     routed
 }
 
-/// Route a scene once, with the line ends `sided` names landed on a card's side.
+/// Gather the buses a routing names, each line's lanes over where it lands, and answer every bus
+/// the block holds.
+fn gather(
+    track: &mut Router<'_>,
+    (inner, routed, chains): (
+        &[&SceneLine<'_>],
+        &Map<String, Routed>,
+        &Map<String, ChainId>,
+    ),
+    chosen: &Buses,
+) -> Buses {
+    let landing: Map<ChainId, f64> = inner
+        .iter()
+        .map(|line| {
+            let last = *routed[&line.id].nets.last().expect("a net");
+            (chains[&line.id], track.net(last).bottom_x)
+        })
+        .collect();
+    let chains: Vec<ChainId> = chains.values().copied().collect();
+    let buses = track.gather_buses(&chains, &landing, chosen);
+    let nets: Vec<NetId> = routed
+        .values()
+        .flat_map(|route| route.nets.clone())
+        .collect();
+    track.follow_lanes(&nets);
+    buses
+}
+
+/// Route a scene once, with the line ends `choice` names landed on a card's side and the buses it
+/// names gathered.
 pub(crate) fn route_once(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
     (margin, top): (f64, f64),
     rim: Option<Rim>,
     (reserve, bus): (bool, bool),
-    sided: &Sided,
+    choice: &Choice,
 ) -> Result<Routing, Map<ItemId, f64>> {
     let mut track = Router::new(scene);
     track.bus = bus;
@@ -539,7 +569,8 @@ pub(crate) fn route_once(
     track.relay_laps(&kinds, &movable);
     track.straighten_through_labels(&all);
     let routed = routed_of(&mut track, lines, &inner, &chains);
-    track.mark_sided(sided, &routed);
+    track.mark_sided(&choice.sided, &routed);
+    track.mark_loose(&choice.loose, &routed);
     let nets: Vec<NetId> = routed
         .values()
         .flat_map(|route| route.nets.iter().copied())
@@ -571,7 +602,14 @@ pub(crate) fn route_once(
         .filter(|route| route.upward)
         .map(|route| route.nets[0])
         .collect();
+    let buses = if bus {
+        gather(&mut track, (&inner, &routed, &chains), &choice.buses)
+    } else {
+        Buses::default()
+    };
     track.follow_sided();
     track.space_bands(&nets, &rising, top, rim);
-    Ok(track.drawn(&routed, margin))
+    let mut routing = track.drawn(&routed, margin);
+    routing.buses = buses;
+    Ok(routing)
 }
