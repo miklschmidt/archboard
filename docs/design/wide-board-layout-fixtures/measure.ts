@@ -159,7 +159,9 @@ if (against !== undefined) {
 		const moved: string[] = [];
 		const counts = { better: 0, worse: 0 };
 		result.measures.forEach((measure, index) => {
-			const previous = before.measures[index]!;
+			const previous = before.measures[index];
+			// A measure the saved run did not take yet has nothing to compare.
+			if (previous === undefined) return;
 			const verdict = verdictOf(previous, measure);
 			if (verdict === "same") return;
 			if (verdict === "better" || verdict === "worse") counts[verdict] += 1;

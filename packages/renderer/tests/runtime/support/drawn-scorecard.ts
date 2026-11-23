@@ -5,14 +5,18 @@
 // pane; route length, bends and crossings say what a reader traces; lane ink
 // and the flank fan say how much wiring runs down margins; label reach says
 // how far a reader goes along a line before meeting its words, and the shared
-// corridor how long two routes run side by side. The invariants at the end
-// must stay zero.
+// corridor how long two routes run side by side. A cable's strands are one
+// route to trace: crossings and corridors count each cable once, by its first
+// strand, while route length, bends and lane ink count every strand's ink, and
+// the cable count and the widest cable say how many lines were joined. The
+// invariants at the end must stay zero.
 //
 // Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
 // for every document and compares two runs measure by measure.
 
 import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	fitOf,
 	flankFanOf,
@@ -85,7 +89,10 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		0,
 	);
 	const ink = inkOf(drawing);
-	const corridor = sharedCorridorOf(drawing);
+	const cables = cablesOf(drawing);
+	const traced = runs.filter(([, , id]) => (cables.get(id) ?? [id])[0] === id);
+	const joined = [...new Set([...cables.values()].filter((strands) => strands.length > 1))];
+	const corridor = sharedCorridorOf(drawing, traced);
 	const reach = labelReachOf(drawing);
 	return [
 		{
@@ -119,10 +126,10 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 		},
 		{
 			name: "crossings",
-			value: crossingsOf(runs),
+			value: crossingsOf(traced),
 			digits: 0,
 			better: "lower",
-			meaning: "right-angle crossings between two routes",
+			meaning: "right-angle crossings between two routes, a cable crossed once",
 		},
 		{
 			name: "lane ink",
@@ -186,6 +193,20 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 			digits: 0,
 			better: "lower",
 			meaning: "invariant, must be zero",
+		},
+		{
+			name: "cables",
+			value: joined.length,
+			digits: 0,
+			better: "lower",
+			meaning: "lines joined into cables of two strands or more",
+		},
+		{
+			name: "widest cable",
+			value: Math.max(0, ...joined.map((strands) => strands.length)),
+			digits: 0,
+			better: "lower",
+			meaning: "most strands one cable holds",
 		},
 	];
 }

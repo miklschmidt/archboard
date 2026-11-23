@@ -349,10 +349,10 @@ function bundleAt(run: Run, runs: readonly Run[]): number {
  * and the share of all route ink that has another route beside it. A reader
  * can follow one line out of such a corridor only by counting lines across it.
  * @param drawing The rendered document.
+ * @param runs The runs to measure: every route's, unless the caller names fewer.
  * @returns The longest shared stretch, the widest bundle and the share of ink drawn beside another route.
  */
-function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
-	const runs = runsOf(drawing);
+function sharedCorridorOf(drawing: RenderedDiagram, runs: readonly Run[] = runsOf(drawing)): Corridor {
 	let total = 0,
 		beside = 0,
 		longest = 0,
