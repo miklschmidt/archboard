@@ -1,5 +1,5 @@
 import { Toaster, toast } from "sonner";
-import { shellClockMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,
@@ -194,7 +194,7 @@ function Notices(props: NoticesProps): JSX.Element {
 				if (current.current.get(notice) === id) props.actions.dismissNotice(notice);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
-				duration: isPersistent(notice) ? Infinity : shellClockMs("notice"),
+				duration: isPersistent(notice) ? Infinity : ms("shell.notice"),
 				onAutoClose: dismiss,
 				onDismiss: dismiss,
 			});

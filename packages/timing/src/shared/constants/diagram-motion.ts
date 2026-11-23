@@ -6,7 +6,7 @@
 // a speed (a distance a second), which is not a duration and lives with the
 // renderer that draws it.
 
-import { durations } from "#shared/constants/durations.ts";
+import { delay, handed, motion } from "#shared/constants/uses.ts";
 
 /**
  * The longest a whole exchange's cycle may take before every pulse in it flies
@@ -19,8 +19,30 @@ import { durations } from "#shared/constants/durations.ts";
  */
 const FLOW_CYCLE_CAP_MS = 16_000;
 
+/**
+ * How long a picture takes to swap its cards drawn near (chip, name and
+ * responsibility) for the cards seen from far away (a large tile, a larger name
+ * and the start of the responsibility), and back. The chip moves and grows into
+ * the tile and the words move between their places while they fade (TASK-428).
+ * Both views fade over the whole of it, one in as the other goes out, so the
+ * words never fade out together. On a painted model the swap starts the moment the
+ * camera crosses the line, so it runs with a zoom or a flight (TASK-562).
+ *
+ * Pulls against the eye that follows the chip. Shorter than about 200 ms the
+ * chip jumps rather than travels, and the change of the words reads as a cut.
+ * Longer than about 400 ms the reader, who has stopped zooming to read, waits
+ * for the words to settle, and reads two sets of words through each other for
+ * too long. It also pulls against the cost: every card's chip and words move in
+ * the same frames.
+ */
+const FAR_VIEW_SWAP_MS = 280;
+
 /** One picture of a model turning into the next, arriving, and leaving. */
-const PICTURE_MS = durations({
+const PICTURE = {
+	/** See `FAR_VIEW_SWAP_MS`. */
+	"picture.farViewSwap": motion(FAR_VIEW_SWAP_MS),
+	/** See `FLOW_CYCLE_CAP_MS`. */
+	"picture.flowCycleCap": motion(FLOW_CYCLE_CAP_MS),
 	/**
 	 * How long a pane takes to turn one picture of a model into the next one of
 	 * the same model — another variant, or the same variant after an edit.
@@ -34,20 +56,20 @@ const PICTURE_MS = durations({
 	 * shortens or lengthens together. Sparks that redraw lines run on past it, up to
 	 * `drawEnd` of it, once the rest of the move has landed.
 	 */
-	transition: 640,
+	"picture.transition": motion(640),
 	/**
 	 * How long the shutter samples a sideways passage, in milliseconds.
 	 * A longer sample smears words too far to read during travel.
 	 */
-	shutter: 8,
+	"picture.shutter": motion(8),
 	/**
 	 * How long the picture on the stage takes to step back once the next one is on
 	 * its way. A large model takes a moment to lay out, and this answers the click
 	 * at once. A flight then goes on from where this stands.
 	 */
-	awaitIn: 160,
+	"picture.awaitIn": motion(160),
 	/** How long a picture takes to step forward again, as a flight starts or the wait ends. */
-	awaitOut: 300,
+	"picture.awaitOut": motion(300),
 	/**
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
 	 * the first picture of a page, another model, another view of this one.
@@ -61,7 +83,7 @@ const PICTURE_MS = durations({
 	 * it, so the cards land in this time and a card is readable well before the
 	 * last line is drawn. The sparks that draw the lines run on up to `drawEnd` of it.
 	 */
-	entry: 760,
+	"picture.entry": motion(760),
 	/**
 	 * How long the picture a pane is leaving takes to go, when it goes to another
 	 * model or view rather than turning into the next picture. On a passage, this
@@ -70,7 +92,7 @@ const PICTURE_MS = durations({
 	 * Short on purpose: it is only there so the old picture is not snatched away,
 	 * and it runs underneath the next picture's entrance.
 	 */
-	exit: 280,
+	"picture.exit": motion(280),
 	/**
 	 * How long a reader waits for the next reading before the pane names it.
 	 *
@@ -79,7 +101,7 @@ const PICTURE_MS = durations({
 	 * doubt: a comparison can take many seconds, and past about a second a reader
 	 * with only the old picture cannot tell that the pane heard them.
 	 */
-	waitNotice: 800,
+	"picture.waitNotice": delay(800),
 	/**
 	 * How long a picture waits for this browser's picture store before it draws anyway.
 	 *
@@ -87,7 +109,7 @@ const PICTURE_MS = durations({
 	 * a store that never answers: a page that reloads during the first open of the store leaves
 	 * every later open waiting, and no error says so.
 	 */
-	storeWait: 400,
+	"picture.storeWait": handed(400),
 	/**
 	 * The longest step the painter's clock takes in one frame.
 	 *
@@ -96,7 +118,7 @@ const PICTURE_MS = durations({
 	 * Pulls against a slow painter: a machine whose frames all take longer sees every motion
 	 * stretched, so this stays above the 33 ms of a recording's slowest frame.
 	 */
-	longestStep: 50,
+	"picture.longestStep": motion(50),
 	/**
 	 * How long a first picture's ink waits for its painter before the SVG shows.
 	 *
@@ -105,7 +127,7 @@ const PICTURE_MS = durations({
 	 * but a browser can take a second to give a GPU, or never give one, and a reader must see
 	 * a correct model.
 	 */
-	painterGrace: 400,
+	"picture.painterGrace": handed(400),
 	/**
 	 * How soon after one GPU failure a second one leaves the model on the CPU painter.
 	 *
@@ -113,11 +135,11 @@ const PICTURE_MS = durations({
 	 * starts a GPU painter again without a reload. Pulls against a failure that repeats, which
 	 * must not rebuild the painter over and over.
 	 */
-	gpuRetry: 30_000,
-});
+	"picture.gpuRetry": handed(30_000),
+};
 
 /**
- * When, as fractions of `PICTURE_MS.transition`, each part of the change
+ * When, as fractions of `picture.transition`, each part of the change
  * happens. The order is the point: what is leaving goes first so that what is
  * moving has room, what is moving settles before what is arriving appears, and
  * the content of a card that changed swaps over while its frame is still in
@@ -175,7 +197,7 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	drawEnd: 3.0,
 });
 
-/** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
+/** When, as fractions of `picture.entry`, each part of a picture arrives. */
 const PICTURE_ENTRY_PHASES = Object.freeze({
 	/** The page's furniture fades in over the first part. */
 	framesEnd: 0.3,
@@ -210,7 +232,7 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 });
 
 /** A walkthrough presented step by step. */
-const PRESENTATION_MS = durations({
+const PRESENTATION = {
 	/**
 	 * How long the camera takes to glide from one step of a presented walkthrough
 	 * to the next, and the veil over what the step is not about takes to follow it.
@@ -220,76 +242,33 @@ const PRESENTATION_MS = durations({
 	 * against the talk itself: a glide much past a second is dead air between two
 	 * sentences, and one shorter than half a second reads as a cut with a blur. A
 	 * step that also changes the view the model is read through moves with the
-	 * picture instead, on `PICTURE_MS.transition`, so the cards and the camera
+	 * picture instead, on `picture.transition`, so the cards and the camera
 	 * arrive together.
 	 */
-	step: 900,
+	"presentation.step": motion(900),
 	/**
 	 * How long a presented walkthrough's box takes to arrive over the foot of the picture: it rises a
 	 * few pixels and fades in, once, as the camera sets out for the first step.
 	 *
 	 * Pulls against two things. The box is what is read first, so it is in well before the camera's
-	 * glide ends (`PRESENTATION_MS.step`), and it is there before the voice's orb, which flies into its
-	 * foot, can land (`VOICE_MS.flight`). And it is the answer to the press that opened the
+	 * glide ends (`presentation.step`), and it is there before the voice's orb, which flies into its
+	 * foot, can land (`voice.flight`). And it is the answer to the press that opened the
 	 * walkthrough, so it cannot make a person wait: past a quarter of a second it is slower than the
 	 * press.
 	 */
-	boxIn: 220,
+	"presentation.boxIn": motion(220),
 	/**
 	 * How long a presented walkthrough's box takes to hand one step to the next: the rail's gold
 	 * travels to the new step, the step's number rolls, and the heading and the words slide out and
 	 * in along the way the reader stepped, one after the other.
 	 *
-	 * Pulls against the camera's glide (`PRESENTATION_MS.step`, 900): the new words are to be readable
+	 * Pulls against the camera's glide (`presentation.step`, 900): the new words are to be readable
 	 * well before the camera has settled, so this is the shorter. It also pulls against a reader who
 	 * steps again at once: nothing waits for it, and a move turns round from where it is. Shorter than
 	 * about 350ms the gold cannot be followed across the rail, and it is the eye that follows it.
 	 */
-	boxStep: 520,
-});
-
-/**
- * How long a picture takes to swap its cards drawn near (chip, name and
- * responsibility) for the cards seen from far away (a large tile, a larger name
- * and the start of the responsibility), and back. The chip moves and grows into
- * the tile and the words move between their places while they fade (TASK-428).
- * Both views fade over the whole of it, one in as the other goes out, so the
- * words never fade out together. On a painted model the swap starts the moment the
- * camera crosses the line, so it runs with a zoom or a flight (TASK-562).
- *
- * Pulls against the eye that follows the chip. Shorter than about 200 ms the
- * chip jumps rather than travels, and the change of the words reads as a cut.
- * Longer than about 400 ms the reader, who has stopped zooming to read, waits
- * for the words to settle, and reads two sets of words through each other for
- * too long. It also pulls against the cost: every card's chip and words move in
- * the same frames.
- */
-const FAR_VIEW_SWAP_MS = 280;
-
-/** The picture's durations with the two that stand on their own. */
-const PICTURE_LOOKUP = Object.freeze({
-	...PICTURE_MS,
-	farViewSwap: FAR_VIEW_SWAP_MS,
-	flowCycleCap: FLOW_CYCLE_CAP_MS,
-});
-
-/**
- * One duration of a picture.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function pictureMs(key: keyof typeof PICTURE_LOOKUP): number {
-	return PICTURE_LOOKUP[key];
-}
-
-/**
- * One duration of a presented walkthrough.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function presentationMs(key: keyof typeof PRESENTATION_MS): number {
-	return PRESENTATION_MS[key];
-}
+	"presentation.boxStep": motion(520),
+};
 
 /**
  * At which points of a move each of its parts happens, and how long the
@@ -300,10 +279,10 @@ function painterPhasesJson(): string {
 	return JSON.stringify({
 		transition: PICTURE_TRANSITION_PHASES,
 		entry: PICTURE_ENTRY_PHASES,
-		enter: PICTURE_MS.entry,
-		exit: PICTURE_MS.exit,
-		shutter: PICTURE_MS.shutter,
+		enter: PICTURE["picture.entry"].ms,
+		exit: PICTURE["picture.exit"].ms,
+		shutter: PICTURE["picture.shutter"].ms,
 	});
 }
 
-export { pictureMs, presentationMs, painterPhasesJson };
+export { painterPhasesJson, PICTURE, PRESENTATION };

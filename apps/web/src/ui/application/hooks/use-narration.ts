@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { voiceMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 
 import type { AgentSetup } from "@archboard/workbench/agent";
 import { narrate } from "#ui/application/clients/agent-setup-ports.ts";
@@ -67,7 +67,7 @@ function useVoiceStarting(stage: VoiceStage): boolean {
 		if (connecting || settled) return undefined;
 		const timer = setTimeout(() => {
 			setSettled(true);
-		}, voiceMs("firstStepSettle"));
+		}, ms("voice.firstStepSettle"));
 		return (): void => {
 			clearTimeout(timer);
 		};

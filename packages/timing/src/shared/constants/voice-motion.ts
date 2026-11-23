@@ -9,10 +9,10 @@
 // model says. Too fast and the light flickers on every breath. The follow times
 // are the ones a ridge of light needs to read as a voice, not as a meter.
 
-import { durations } from "#shared/constants/durations.ts";
+import { handed, motion } from "#shared/constants/uses.ts";
 
 /** The voice in the agent dock and its flight to the voice box over a pane. */
-const VOICE_MS = durations({
+const VOICE = {
 	/**
 	 * How long a voice that just connected gets before the first step of a narration reaches it.
 	 *
@@ -21,7 +21,7 @@ const VOICE_MS = durations({
 	 * runs. Handed over as it connected, it stopped at a sound such as "Mm-hmm" in 3 of 7 runs, and
 	 * after this wait in 3 of 15. Pulls against the silence after Narrate.
 	 */
-	firstStepSettle: 1500,
+	"voice.firstStepSettle": handed(1500),
 	/**
 	 * How long the Talk key takes to become the voice circle, and the circle to
 	 * become the key again.
@@ -32,7 +32,7 @@ const VOICE_MS = durations({
 	 * lighting starts while the key is still moving, so this is not also the time
 	 * until the voice is lit.
 	 */
-	morph: 520,
+	"voice.morph": motion(520),
 	/**
 	 * How long the circle takes to light once voice starts: the ring draws itself
 	 * and then the lines rise. It is the time a critically damped spring takes to
@@ -41,44 +41,44 @@ const VOICE_MS = durations({
 	 * Pulls against how long connecting takes. The circle should be lit about when
 	 * the voice is, and should not still be rising a second after the model speaks.
 	 */
-	ignite: 1100,
+	"voice.ignite": motion(1100),
 	/**
 	 * How long the circle takes to go dark when voice ends. Shorter than lighting it
 	 * because the dock is already giving the room back, and a light that outlives
 	 * its key reads as stuck.
 	 */
-	extinguish: 420,
+	"voice.extinguish": motion(420),
 	/**
 	 * How long the circle takes to dim for a mute, and to swap the ring's steady
 	 * light for the travelling spark of connecting. Pulls against a click: a mute
 	 * must read as an answer to it, so it cannot be slower than the press that
 	 * caused it.
 	 */
-	hush: 360,
+	"voice.hush": motion(360),
 	/**
 	 * How fast the light rises when the model's output does: the time constant of
 	 * the level's follower, going up. Short, so that the first syllable shows in
 	 * the same moment it is heard. Pulls against flicker: shorter than a frame or
 	 * two follows noise in the level, not speech.
 	 */
-	attack: 38,
+	"voice.attack": motion(38),
 	/**
 	 * How fast the light falls when the output does: the follower's time constant,
 	 * going down. Long enough to bridge the gaps between syllables, so a word is one
 	 * swell and not a row of flashes. Pulls against the next word: much longer and
 	 * the lines are still up when the model has stopped.
 	 */
-	release: 230,
+	"voice.release": motion(230),
 	/**
 	 * The time constant of the slow swell that follows the light: the long, rolling
 	 * shape of a sentence under the quick shape of its syllables.
 	 */
-	swell: 380,
+	"voice.swell": motion(380),
 	/**
 	 * How long the bite of a hard onset (a consonant, a word that starts loud) stays
 	 * in the lines before it dies away. It makes the lines sharper while it lasts.
 	 */
-	spark: 150,
+	"voice.spark": motion(150),
 	/**
 	 * How much older each line of the sheet reads than the line in front of it, so
 	 * a loud moment rolls back through the sheet. Eleven lines read about 0.64 s of
@@ -86,7 +86,7 @@ const VOICE_MS = durations({
 	 * themselves: a step much longer than a syllable makes the lines separate
 	 * pictures, and one much shorter makes them copies of each other.
 	 */
-	rowStep: 64,
+	"voice.rowStep": motion(64),
 	/**
 	 * How far back one line reads, from its middle to its edge. The middle of a line
 	 * is now and its edges are the past, so a syllable spreads out from the middle as
@@ -94,47 +94,47 @@ const VOICE_MS = durations({
 	 * Pulls against what the eye can follow at 64px: shorter and a line shows one
 	 * bump, longer and it shows a texture.
 	 */
-	trace: 1000,
+	"voice.trace": motion(1000),
 	/**
 	 * How often the level is taken for the lines to read back. Fine enough that a
 	 * syllable of about a tenth of a second has several samples, and coarse enough
 	 * that a second of the past fits in a few dozen numbers.
 	 */
-	traceStep: 24,
+	"voice.traceStep": motion(24),
 	/**
 	 * How fast the level the lines are drawn from falls after a syllable. Much
 	 * shorter than the release of the light above, so that the gap between two
 	 * syllables shows in a line as a dip and a word does not run into one swell.
 	 */
-	syllable: 110,
+	"voice.syllable": motion(110),
 	/**
 	 * How long a ring of light takes to leave the circle and fade, once the voice
 	 * speaks a loud onset. Pulls against the dock's other text: the ring ends before
 	 * it has crossed the room the circle is given.
 	 */
-	pulse: 1000,
+	"voice.pulse": motion(1000),
 	/**
 	 * How long a ring of light waits before another may leave. Without it a loud,
 	 * ragged level would throw a ring every frame and the dock would shimmer.
 	 */
-	pulseRest: 340,
+	"voice.pulseRest": handed(340),
 	/**
 	 * How long the ring's gold sheen takes to turn once around at rest. Slow enough
 	 * to read as metal catching the light and not as a spinner. The voice speeds it
 	 * up, but never to the pace of the spark below.
 	 */
-	ringTurn: 24_000,
+	"voice.ringTurn": motion(24_000),
 	/**
 	 * How long the spark that circles the ring while the voice is connecting takes
 	 * for one lap. Pulls against the sheen above: the spark must read as waiting,
 	 * which the sheen must not.
 	 */
-	comet: 1300,
+	"voice.comet": motion(1300),
 	/**
 	 * How long one breath of the lines takes while the voice listens. The lines lift
 	 * and settle a hair, so the circle reads as awake and not as a still picture.
 	 */
-	breath: 3800,
+	"voice.breath": motion(3800),
 	/**
 	 * How long the orb takes to fly between the dock's circle and the voice box over
 	 * a pane's picture, in either direction. It is the key's own morph and a little
@@ -147,44 +147,44 @@ const VOICE_MS = durations({
 	 * the orb is the one lit thing on the page and a stop that is abrupt reads as a
 	 * collision.
 	 */
-	flight: 680,
+	"voice.flight": motion(680),
 	/**
 	 * How long the dock's circle takes to let go of its seat once the orb is not in it: the
 	 * seat is drawn only while the orb is there, and the orb has gone or is yet to come.
 	 * Pulls against the flight: it must be gone in a blink, or an empty circle is seen
 	 * waiting for an orb that is already in the air.
 	 */
-	seatOut: 90,
+	"voice.seatOut": motion(90),
 	/**
 	 * How long the dock's wash in the status colour takes to come up while the agent works, and to go
 	 * once it stops. Pulls against the status line it lights, which changes at once: much slower and
 	 * the light lags the word, much faster and a short turn makes the dock flicker.
 	 */
-	dockWash: 360,
+	"voice.dockWash": motion(360),
 	/**
 	 * How long the voice box takes to arrive over the picture: its glass rises and
 	 * fades in while the orb is still on its way, so the socket is there to receive
 	 * it. Pulls against the flight: the box must be seen before the orb lands in it,
 	 * and it must not hide the picture for longer than the flight takes.
 	 */
-	boxIn: 360,
+	"voice.boxIn": motion(360),
 	/**
 	 * How long the voice box takes to leave. Shorter than arriving, as a menu is,
 	 * because it is going away from what the person is reading, and the orb that
 	 * left it is already on its way to the dock.
 	 */
-	boxOut: 240,
+	"voice.boxOut": motion(240),
 	/**
 	 * How long the voice's word ("Listening", "Muted") takes to fade in once the
 	 * words have gone from the box. It follows the words' own fade out, so the two
 	 * are never on screen together. Pulls against that wait: the box should not be
 	 * empty of both for longer than the fade itself.
 	 */
-	wordIn: 300,
-});
+	"voice.wordIn": motion(300),
+};
 
 /** The words of a subtitle in the voice box, as they come and go (TASK-292). */
-const SUBTITLE_MS = durations({
+const SUBTITLE = {
 	/**
 	 * How long each word of a subtitle takes to fade in. Words arrive about every
 	 * third of a second in speech, so a word that takes this long is still arriving
@@ -194,26 +194,26 @@ const SUBTITLE_MS = durations({
 	 * the voice: much slower and the words lag what is said, much faster and they
 	 * are on screen before the eye has seen them come.
 	 */
-	word: 640,
+	"subtitle.word": motion(640),
 	/**
 	 * How long the lines of one cue take to fade out under the cue that replaces
 	 * them, so a full box is not cut to its first new word. Short, because the
 	 * words it holds have been read.
 	 */
-	swap: 260,
+	"subtitle.swap": motion(260),
 	/**
 	 * How long a subtitle that has stopped growing takes to fade out once it has
 	 * lingered. Pulls against the linger before it: the words are going, and they
 	 * should leave as they came, quietly.
 	 */
-	out: 560,
+	"subtitle.out": motion(560),
 	/**
 	 * How long a subtitle that is fading out takes to come back to full, and the
 	 * voice's word to leave, when words arrive again. Pulls against the fade out
 	 * above: it must be much faster, or the words of a voice that has started to
 	 * speak again are dim, and the voice's word is still on screen under them.
 	 */
-	back: 120,
+	"subtitle.back": motion(120),
 	/**
 	 * How long a subtitle stays after the latest word of it arrived.
 	 *
@@ -223,25 +223,7 @@ const SUBTITLE_MS = durations({
 	 * seconds. It pulls against reading a finished line, which wants it long, and against a stale
 	 * line hanging over the picture after an interruption, which wants it short.
 	 */
-	linger: 2500,
-});
+	"subtitle.linger": handed(2500),
+};
 
-/**
- * One duration of the voice motion.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function voiceMs(key: keyof typeof VOICE_MS): number {
-	return VOICE_MS[key];
-}
-
-/**
- * One duration of the subtitles.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function subtitleMs(key: keyof typeof SUBTITLE_MS): number {
-	return SUBTITLE_MS[key];
-}
-
-export { voiceMs, subtitleMs };
+export { SUBTITLE, VOICE };

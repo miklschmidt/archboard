@@ -1,6 +1,8 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, jest, test } from "bun:test";
-import { pictureMs } from "@archboard/timing";
+
+/** How long a wait lasts before it is named: the reviewed delay, as a test number. */
+const WAIT_NOTICE_MS = 800;
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -28,13 +30,13 @@ test("a wait is named only once it has lasted, and a new destination starts agai
 	jest.useFakeTimers();
 	const opening: { on: string | null } = { on: "gateway" };
 	const wait = renderHook(({ on }) => useSlowWait(on), { initialProps: opening });
-	pass(pictureMs("waitNotice") - 1);
+	pass(WAIT_NOTICE_MS - 1);
 	expect(wait.result.current).toBe(false);
 	pass(1);
 	expect(wait.result.current).toBe(true);
 	wait.rerender({ on: "worker" });
 	expect(wait.result.current).toBe(false);
 	wait.rerender({ on: null });
-	pass(pictureMs("waitNotice"));
+	pass(WAIT_NOTICE_MS);
 	expect(wait.result.current).toBe(false);
 });

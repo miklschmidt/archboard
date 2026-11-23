@@ -4,15 +4,20 @@
 
 import type { Use } from "#shared/constants/uses.ts";
 import { CHECKS } from "#shared/constants/checks.ts";
+import { COLUMN, SIDEBAR } from "#shared/constants/column-motion.ts";
+import { PICTURE, PRESENTATION } from "#shared/constants/diagram-motion.ts";
+import { EXPLORING } from "#shared/constants/exploring.ts";
 import { CODEX } from "#shared/constants/codex.ts";
 import { GIT } from "#shared/constants/git.ts";
 import { HISTORY_LENS } from "#shared/constants/history-lens.ts";
 import { CLAIMS, MODEL_LOCKS } from "#shared/constants/model-locks.ts";
 import { PANE } from "#shared/constants/pane.ts";
 import { RASTER } from "#shared/constants/raster.ts";
+import { MODEL_CACHE, SHELL_CLOCK } from "#shared/constants/shell.ts";
 import { SKILL_EVAL } from "#shared/constants/skill-eval.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
 import { TELEMETRY } from "#shared/constants/telemetry.ts";
+import { SUBTITLE, VOICE } from "#shared/constants/voice-motion.ts";
 import { RECORDER, RECORDING } from "#shared/constants/walkthrough-recording.ts";
 import { REPLAY } from "#shared/constants/walkthrough-replay.ts";
 
@@ -32,6 +37,15 @@ const WAITS = Object.freeze({
 	...SKILL_EVAL,
 	...PANE,
 	...HISTORY_LENS,
+	...SHELL_CLOCK,
+	...MODEL_CACHE,
+	...COLUMN,
+	...SIDEBAR,
+	...EXPLORING,
+	...PICTURE,
+	...PRESENTATION,
+	...VOICE,
+	...SUBTITLE,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;

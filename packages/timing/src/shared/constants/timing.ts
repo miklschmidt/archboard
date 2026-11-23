@@ -43,10 +43,3 @@ export type {
 	Timeout,
 	Wait,
 } from "#shared/constants/waits.ts";
-
-// ── Groups still read by their old getters, until their owners move ────────
-export { modelCacheMs, shellClockMs } from "#shared/constants/shell.ts";
-export { columnMs, columnSlideSettledMs, sidebarMs } from "#shared/constants/column-motion.ts";
-export { exploringMs, reachHopDelayMs } from "#shared/constants/exploring.ts";
-export { pictureMs, presentationMs } from "#shared/constants/diagram-motion.ts";
-export { subtitleMs, voiceMs } from "#shared/constants/voice-motion.ts";

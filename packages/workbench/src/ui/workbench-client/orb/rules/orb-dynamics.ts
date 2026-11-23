@@ -7,7 +7,7 @@
 // slow one for the sentence, a spark for a hard onset, and a ridge of past values
 // that rolls a loud moment back through the lines.
 
-import { voiceMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 
 /** What the orb shows, from the voice's stage. */
 type OrbMode = "off" | "starting" | "listening" | "speaking" | "muted" | "ending";
@@ -49,7 +49,7 @@ const SHEEN_GAIN = 4;
 /** How far back the trace of the level reaches, in milliseconds: further than any line reads. */
 const TRACE_SPAN_MS = 2000;
 /** How many samples the trace holds. */
-const TRACE_LEN = Math.ceil(TRACE_SPAN_MS / voiceMs("traceStep")) + 2;
+const TRACE_LEN = Math.ceil(TRACE_SPAN_MS / ms("voice.traceStep")) + 2;
 /** A full turn. */
 const TAU = Math.PI * 2;
 
@@ -113,7 +113,7 @@ function createOrbDynamics(): OrbDynamics {
 		clock: 0,
 		turn: 0,
 		sinceTrace: 0,
-		sincePulse: voiceMs("pulseRest"),
+		sincePulse: ms("voice.pulseRest"),
 		trace: new Float32Array(TRACE_LEN),
 		pulses: [],
 	};
@@ -166,14 +166,14 @@ function heard(input: OrbInput): number {
  * @param dtMs The step.
  */
 function followLevel(dyn: OrbDynamics, level: number, dtMs: number): void {
-	const tau = level > dyn.voice ? voiceMs("attack") : voiceMs("release");
+	const tau = level > dyn.voice ? ms("voice.attack") : ms("voice.release");
 	dyn.voice += (level - dyn.voice) * (1 - Math.exp(-dtMs / tau));
-	dyn.swell += (dyn.voice - dyn.swell) * (1 - Math.exp(-dtMs / voiceMs("swell")));
-	const syllableTau = level > dyn.syllable ? voiceMs("attack") : voiceMs("syllable");
+	dyn.swell += (dyn.voice - dyn.swell) * (1 - Math.exp(-dtMs / ms("voice.swell")));
+	const syllableTau = level > dyn.syllable ? ms("voice.attack") : ms("voice.syllable");
 	dyn.syllable += (level - dyn.syllable) * (1 - Math.exp(-dtMs / syllableTau));
 	const rise = (Math.max(0, level - dyn.previous) * FRAME_MS) / dtMs;
 	dyn.spark = Math.max(
-		dyn.spark * Math.exp(-dtMs / voiceMs("spark")),
+		dyn.spark * Math.exp(-dtMs / ms("voice.spark")),
 		Math.min(1, rise * SPARK_GAIN),
 	);
 	dyn.previous = level;
@@ -187,8 +187,8 @@ function followLevel(dyn: OrbDynamics, level: number, dtMs: number): void {
  */
 function recordTrace(dyn: OrbDynamics, dtMs: number): void {
 	dyn.sinceTrace += dtMs;
-	while (dyn.sinceTrace >= voiceMs("traceStep")) {
-		dyn.sinceTrace -= voiceMs("traceStep");
+	while (dyn.sinceTrace >= ms("voice.traceStep")) {
+		dyn.sinceTrace -= ms("voice.traceStep");
 		dyn.trace.copyWithin(1, 0, TRACE_LEN - 1);
 		dyn.trace[0] = dyn.syllable;
 	}
@@ -201,7 +201,7 @@ function recordTrace(dyn: OrbDynamics, dtMs: number): void {
  * @returns A number in 0..1, between the two samples either side of that time.
  */
 function levelAgo(dyn: OrbDynamics, agoMs: number): number {
-	const at = Math.min(Math.max(agoMs, 0), TRACE_SPAN_MS) / voiceMs("traceStep");
+	const at = Math.min(Math.max(agoMs, 0), TRACE_SPAN_MS) / ms("voice.traceStep");
 	const before = Math.floor(at);
 	const near = dyn.trace[before] ?? 0;
 	const far = dyn.trace[before + 1] ?? near;
@@ -215,7 +215,7 @@ function levelAgo(dyn: OrbDynamics, agoMs: number): number {
  */
 function launchPulse(dyn: OrbDynamics, dtMs: number): void {
 	dyn.sincePulse += dtMs;
-	const allowed = dyn.sincePulse >= voiceMs("pulseRest") && dyn.pulses.length < MAX_PULSES;
+	const allowed = dyn.sincePulse >= ms("voice.pulseRest") && dyn.pulses.length < MAX_PULSES;
 	if (!allowed || dyn.spark <= PULSE_SPARK || dyn.presence.x <= PULSE_PRESENCE) return;
 	dyn.pulses.push(0);
 	dyn.sincePulse = 0;
@@ -228,7 +228,7 @@ function launchPulse(dyn: OrbDynamics, dtMs: number): void {
  */
 function ageRings(dyn: OrbDynamics, dtMs: number): void {
 	for (let index = dyn.pulses.length - 1; index >= 0; index -= 1) {
-		const age = (dyn.pulses[index] ?? 1) + dtMs / voiceMs("pulse");
+		const age = (dyn.pulses[index] ?? 1) + dtMs / ms("voice.pulse");
 		if (age >= 1) dyn.pulses.splice(index, 1);
 		else dyn.pulses[index] = age;
 	}
@@ -261,17 +261,17 @@ function stepOrb(dyn: OrbDynamics, input: OrbInput, stepMs: number): void {
 	easeSpring(
 		dyn.presence,
 		target,
-		target > dyn.presence.x ? voiceMs("ignite") : voiceMs("extinguish"),
+		target > dyn.presence.x ? ms("voice.ignite") : ms("voice.extinguish"),
 		dt,
 	);
-	easeSpring(dyn.hush, input.mode === "muted" ? 1 : 0, voiceMs("hush"), dt);
-	easeSpring(dyn.pending, input.mode === "starting" ? 1 : 0, voiceMs("hush"), dt);
+	easeSpring(dyn.hush, input.mode === "muted" ? 1 : 0, ms("voice.hush"), dt);
+	easeSpring(dyn.pending, input.mode === "starting" ? 1 : 0, ms("voice.hush"), dt);
 	followLevel(dyn, heard(input), dt);
 	recordTrace(dyn, dt);
 	launchPulse(dyn, dt);
 	ageRings(dyn, dt);
 	dyn.clock += dt;
-	dyn.turn += (dt / voiceMs("ringTurn")) * TAU * (1 + SHEEN_GAIN * dyn.swell);
+	dyn.turn += (dt / ms("voice.ringTurn")) * TAU * (1 + SHEEN_GAIN * dyn.swell);
 }
 
 /**

@@ -85,6 +85,13 @@ const RELATIONS: readonly Relation[] = [
 	[["pane.socketReconnect", "pane.socketReconnect"], "<=", "pane.contactLost"],
 	// A reload plus a redial of the pane and of the voice fit inside a tab's grace.
 	[["pane.socketReconnect", "codex.clientReconnect"], "<", "codex.tabSessionGrace"],
+	// A model is put up before its first frame long enough for its entrance to end.
+	["picture.entry", "<", "replay.preroll"],
+	// A docked sidebar slides with the conversation, and a settled slide is the slide and its settling.
+	["sidebar.dock", "=", "column.agentPanelSlide"],
+	[["column.agentPanelSlide", "column.slideSettled"], "=", "column.agentPanelSettled"],
+	// A model read that met a write is read again within the wait of an agent.
+	["modelCache.busyRetry", "<", "modelLock.readerWait"],
 ];
 
 export { RELATIONS };

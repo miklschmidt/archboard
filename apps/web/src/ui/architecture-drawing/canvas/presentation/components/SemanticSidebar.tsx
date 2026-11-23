@@ -31,7 +31,7 @@ import {
 } from "react";
 
 import { shellLength } from "@archboard/renderer/shell-geometry";
-import { sidebarMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import { cn, IconButton, Tabs } from "@archboard/ui-kit/components";
 import type {
 	Sidebar,
@@ -86,10 +86,10 @@ function SidebarPanel(props: {
  */
 const COLUMN_STYLE: CSSProperties = {
 	"--sidebar-width": `${shellLength("sidebar")}px`,
-	"--sidebar-dock-ms": `${sidebarMs("dock")}ms`,
-	"--sidebar-float-in-ms": `${sidebarMs("floatIn")}ms`,
-	"--sidebar-float-out-ms": `${sidebarMs("floatOut")}ms`,
-	"--sidebar-subject-in-ms": `${sidebarMs("subjectIn")}ms`,
+	"--sidebar-dock-ms": `${ms("sidebar.dock")}ms`,
+	"--sidebar-float-in-ms": `${ms("sidebar.floatIn")}ms`,
+	"--sidebar-float-out-ms": `${ms("sidebar.floatOut")}ms`,
+	"--sidebar-subject-in-ms": `${ms("sidebar.subjectIn")}ms`,
 };
 
 /** The panel's width, whatever the column around it is doing. */
