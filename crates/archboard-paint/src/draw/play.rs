@@ -113,7 +113,10 @@ fn animated_effect(group: &Group) -> Option<LineEffect> {
 fn has_effect(items: &[Item], id: &str) -> bool {
     items.iter().any(|item| match item {
         Item::Group(group) => {
-            (group.subject.as_ref().is_some_and(|subject| subject.id == id)
+            (group
+                .subject
+                .as_ref()
+                .is_some_and(|subject| subject.id == id)
                 && animated_effect(group).is_some())
                 || has_effect(&group.items, id)
         }
