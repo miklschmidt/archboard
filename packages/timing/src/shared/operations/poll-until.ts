@@ -95,10 +95,13 @@ async function pollUntil<T>(
 	const { signal } = options;
 	signal?.throwIfAborted();
 	const expiry = startExpiry(wait, signal);
-	const cancelled = Promise.withResolvers<never>();
+	let rejectWait: ((reason: unknown) => void) | undefined;
+	const cancelled = new Promise<never>((_, reject) => {
+		rejectWait = reject;
+	});
 	/** Reject the wait for the caller's reason. */
 	const abandon = (): void => {
-		cancelled.reject(signal?.reason);
+		rejectWait?.(signal?.reason);
 	};
 	/**
 	 * Look in series until the condition holds, the wait ends, or the caller cancels.
@@ -119,7 +122,7 @@ async function pollUntil<T>(
 	};
 	signal?.addEventListener("abort", abandon, { once: true });
 	try {
-		return await (signal === undefined ? observe() : Promise.race([cancelled.promise, observe()]));
+		return await (signal === undefined ? observe() : Promise.race([cancelled, observe()]));
 	} finally {
 		expiry.release();
 		signal?.removeEventListener("abort", abandon);
