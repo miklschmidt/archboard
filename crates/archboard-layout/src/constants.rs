@@ -6,6 +6,9 @@ use archboard_scene::paint::design::card_radius;
 
 /// The radius of every bend a route takes.
 pub(crate) const BEND_RADIUS: f64 = bend_radius();
+/// How far apart the strands of a cable stand: half a lane, so that a cable reads as one
+/// ribbon.
+pub(crate) const STRAND: f64 = crate::lanes::chains::LANE / 2.0;
 /// How round a card's corner is, which keeps a line's port clear of it.
 pub(crate) const CARD_RADIUS: f64 = card_radius();
 /// How close two points must be to be one, and the least a turn may move.

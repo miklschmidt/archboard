@@ -52,10 +52,6 @@ pub(super) struct Model<'a> {
     pub incoming: Vec<Vec<usize>>,
 }
 
-/// How far apart the strands of a cable stand: half a lane, so that a cable reads as one
-/// ribbon.
-pub(super) const STRAND: f64 = crate::lanes::chains::LANE / 2.0;
-
 impl<'a> Model<'a> {
     /// How far a line's ink reaches to either side of its route.
     pub(super) fn half(&self, edge: usize) -> f64 {
@@ -143,7 +139,7 @@ impl<'a> Model<'a> {
                 let strands = edge
                     .option(crate::graph::CABLE)
                     .map_or(1, |cable| cable.split(';').count());
-                (strands - 1) as f64 * STRAND
+                (strands - 1) as f64 * crate::constants::STRAND
             })
             .collect();
         model.outgoing = vec![Vec::new(); model.endpoints.len()];

@@ -47,7 +47,7 @@ pub async fn draw<S: Solver>(
     engine: Engine,
     solver: &S,
 ) -> Result<Painted, String> {
-    let riders = graph::riders(content, standings);
+    let riders = graph::riders(content, standings, engine);
     let graph = graph::compound_graph(content, measured, standings, &riders, engine);
     let placed = choosing::placed_drawing(solver, graph).await?;
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed, &riders));

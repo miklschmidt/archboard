@@ -1,5 +1,5 @@
-//! Relationships between the same two parts reach the layout as one line, and each is drawn
-//! along it.
+//! Relationships between the same two parts reach the layout as one line, a cable, and each is
+//! drawn as a strand beside its route.
 
 use std::cell::RefCell;
 use std::future::{Future, Ready, ready};
@@ -51,7 +51,7 @@ fn drawing(content: Value, solver: &Here) -> Painted {
 }
 
 #[test]
-fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_along_it() {
+fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_as_its_strands() {
     let solver = Here::default();
     let drawn = drawing(
         json!({
@@ -76,8 +76,12 @@ fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_along_it()
             .map(|line| line.curve.clone())
             .expect("each relationship is drawn")
     };
-    assert_eq!(curve("event"), curve("sync"));
-    assert_ne!(curve("back"), curve("sync"));
+    // The two strands of the cable stand half a lane apart, each end on its own spot.
+    let (sync, event) = (curve("sync"), curve("event"));
+    for (one, other) in [(sync.from, event.from), (sync.end(), event.end())] {
+        assert!(((one.x - other.x).hypot(one.y - other.y) - 8.0).abs() < 1e-6);
+    }
+    assert_ne!(curve("back"), sync);
 }
 
 #[test]

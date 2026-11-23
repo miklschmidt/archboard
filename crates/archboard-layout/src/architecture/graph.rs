@@ -251,8 +251,15 @@ fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
 /// The relationship that each other relationship between the same two ends rides with, by id:
 /// the layout routes one line from one part to another, the first in the picture's order, and
 /// the rest of them take its route. Relationships that stand differently in a comparison keep
-/// lines of their own.
-pub(crate) fn riders(content: &Content, standings: Option<&Standings>) -> BTreeMap<String, String> {
+/// lines of their own, and Lanes lays out every relationship by itself.
+pub(crate) fn riders(
+    content: &Content,
+    standings: Option<&Standings>,
+    engine: super::Engine,
+) -> BTreeMap<String, String> {
+    if engine == super::Engine::Lanes {
+        return BTreeMap::new();
+    }
     let ordered = ecma::sorted_by(&content.edges.iter().collect::<Vec<_>>(), |one, other| {
         one.order - other.order
     });
