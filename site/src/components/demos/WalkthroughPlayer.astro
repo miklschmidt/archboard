@@ -64,7 +64,7 @@ const first = walkthrough.beats[0];
 			</div>
 		</div>
 		<div class="foot">
-			<button type="button" class="narrate" data-narrate aria-pressed="false">
+			<button type="button" class="narrate" data-narrate aria-label="Narrate">
 				<span class="seat" aria-hidden="true">
 					<span class="disc"><Icon name="mic" size={20} /></span>
 					<span class="hang-up"><Icon name="phone" size={20} /></span>
@@ -405,11 +405,11 @@ const first = walkthrough.beats[0];
 	.hang-up :global(svg) {
 		rotate: 135deg;
 	}
-	.narrate[aria-pressed="true"] .disc {
+	.player.is-playing .narrate .disc {
 		scale: 0;
 		opacity: 0;
 	}
-	.narrate[aria-pressed="true"] .hang-up {
+	.player.is-playing .narrate .hang-up {
 		scale: 1;
 	}
 	.key-words {
@@ -425,10 +425,10 @@ const first = walkthrough.beats[0];
 		transition: opacity 200ms var(--ease-out);
 	}
 	.when-playing,
-	.narrate[aria-pressed="true"] .when-paused {
+	.player.is-playing .narrate .when-paused {
 		opacity: 0;
 	}
-	.narrate[aria-pressed="true"] .when-playing {
+	.player.is-playing .narrate .when-playing {
 		opacity: 1;
 	}
 	.narrate:disabled .key-words {
@@ -590,7 +590,7 @@ const first = walkthrough.beats[0];
 		const setPlaying = (value: boolean) => {
 			playing = value;
 			root.classList.toggle("is-playing", value);
-			narrate.setAttribute("aria-pressed", String(value));
+			narrate.setAttribute("aria-label", value ? "Hang up" : "Narrate");
 			word = null;
 			startedAt = performance.now();
 			show(index, value);
