@@ -147,14 +147,14 @@ impl Router<'_> {
         if self.bus {
             return self.slide_card(nets, net, end, x);
         }
-        let half = self.net(net).half_width();
+        let half = self.net(net).reach();
         if self.shared_at(net, end).is_some() || !self.on_face(station, x, half) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {
             other != net
                 && self.station(self.net(other).at(end)).item == item
-                && abs(self.net(other).x_at(end) - x) < LANE + half + self.net(other).half_width()
+                && abs(self.net(other).x_at(end) - x) < LANE + half + self.net(other).reach()
         });
         if crowded {
             return false;

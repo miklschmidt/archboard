@@ -138,10 +138,6 @@ pub struct DrawingEdge<E> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub label: Option<PlacedLabel>,
-    /// Whether the marks at its ends stand a mark's length back from them, in echelon with the
-    /// marks of the strand beside it in its cable, so that the marks of a cable never overlap.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub echelon: bool,
 }
 
 /// Which way content reads on the page: architecture diagrams read top to bottom.

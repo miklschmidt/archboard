@@ -51,9 +51,12 @@ pub enum Purpose {
     Rule,
     /// A legend's sample of a line, or of a pulse and its glow.
     Sample,
-    /// A mutation's imprint on its target's edge: flat in a document, fading
-    /// at both ends with a soft glow where a viewer draws it.
+    /// A mutation's imprint on its target's edge, just in front of it: flat
+    /// in a document, fading at both ends where a viewer draws it.
     Imprint,
+    /// A soft light in its stroke's ink along a line, as broad as the stroke
+    /// and fading to nothing at its rim, under the mark it lights.
+    Glow,
 }
 
 /// Whether a shape or a group takes the pointer.

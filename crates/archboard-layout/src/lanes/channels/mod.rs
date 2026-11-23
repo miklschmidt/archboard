@@ -87,9 +87,15 @@ impl Net {
             .then(|| self.bottom_x + sign(self.bottom_x - self.top_x) * LANE)
     }
 
-    /// How far the outermost strand stands from this net's route.
+    /// How far the outermost strand stands from this net's route along its body.
     pub(crate) fn half_width(&self) -> f64 {
         self.kind.matches(';').count() as f64 * crate::constants::STRAND / 2.0
+    }
+
+    /// How far the outermost strand stands from this net's route where it reaches a card, as a
+    /// cable fans out to its ports (`constants::FAN`).
+    pub(crate) fn reach(&self) -> f64 {
+        self.kind.matches(';').count() as f64 * crate::constants::FAN / 2.0
     }
 
     /// The station at one end.

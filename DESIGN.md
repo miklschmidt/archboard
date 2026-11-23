@@ -465,16 +465,16 @@ kind's name and a middle dot, except on a sync line, so its kind never rests on 
 
 **The Ends Carry the Effect Rule.** A line's effect, what it does, is drawn at its ends, in the
 kind's ink, and its body stays solid: dashes and dots make a busy picture harder to follow. A
-mutation ends in a solid wedge, and in the live reader the wedge leaves an imprint on the target:
-a short stripe along the card's edge, centered on the tip, fading at both ends with a soft glow and
-kept inside the port's share of the edge; an export draws it as a flat contact bar. A query ends in
-an eye, a rounded back, a clear center and a sharp forward tip, in outline, and a hollow ring sits
+mutation ends in a solid wedge, and the wedge leaves an imprint on the target: a short stripe along
+the card's edge, centered on the tip and lying just in front of the edge, so the card hides none of
+it, on a soft glow in the kind's ink, kept inside the port's share of the edge. The live reader
+fades the stripe at both ends, and an export draws it flat over a blurred glow. A query ends in
+an eye, a rounded back, a dot at its center and a sharp forward tip, in outline, and a hollow ring sits
 on the caller's edge, where the answer lands. A compute ends in an "=", two short bars across the
 line just behind a small open point, and its body stops before the bars. Only a dependency that
 states no effect has a broken body: long strokes, thinner than a solid line, ending in a detached
-open chevron. A head, a ring and the bars keep a minimum size on screen, and the eye's center and
-the gap of the "=" keep at least 2 clear pixels, so each survives the opening zoom of a wide scope.
-Emphasis thickens the body and keeps the openings. A compared line takes its standing's color for its
+open chevron. Every mark scales with the picture, as its line does: it is one size in picture
+units at every zoom, near or far. Emphasis thickens the body and keeps the openings. A compared line takes its standing's color for its
 ink and keeps its shapes, so its effect still reads. A reading from before effects keeps the dash
 and the head its policy recorded.
 
@@ -483,21 +483,28 @@ emphasised one 3.6, and a declared-only body 0.7 of that. Every mark is drawn at
 the line's weight, in a 24-unit square: the wedge is 15 long and 15 wide, about six times the line's
 width; the eye about 16 long; the "=" with its point reaches 21 back from the tip, its bars 13 across
 the line and 8 apart; the detached chevron about 8 long, clear of the body's end; the ring at the
-caller is 4.2 round. A mutation's imprint reaches 9 to either side of the tip and is 2.6 thick. A
-line runs straight for 30 after its last bend, the longest head and some body, so no head sits on
-or just past a bend; a line with no bend needs only 23, its marks and a little body. Seen from far
-out, a viewer grows each mark about its tip until its square is 8 CSS pixels: at the opening zoom
-of a large picture that keeps the "=" open, and from about a third of full size inward every mark
-keeps its own size. A door, or a card, widens until the heads of the lines on one of its walls
-stand a lane (16) apart; a wall whose lines fit keeps its measured size. Parallel lines pack a lane
-apart. When Blocks finds no placement that gives every line a clear channel, it draws the retained
+caller is 4.2 round. A mutation's imprint reaches 9 to either side of the tip and is 3.6 thick,
+as thick as an emphasised line; its glow is a lane (16) broad across the edge and fades to nothing
+at its rim from a heart 0.4 solid on the light ground and 0.6 on the dark one. A line runs
+straight for 30 after its last bend, the longest head and some body, so no head sits on or just
+past a bend; a line with no bend needs only 23, its marks and a little body. A door, or a card,
+widens until the heads of the lines on one of its walls stand a lane (16) apart; a wall whose
+lines fit keeps its measured size. Parallel lines pack a lane apart. When Blocks finds no placement that gives every line a clear channel, it draws the retained
 placement as long parallel runs, and draws no line words there: the shell's selection lists each
 line's relationships.
 
-Relationships between the same two drawn ends join into one line only when they share their kind
-and their effect, and every other pair draws a line of its own, so a line never claims a pair that
-none of its relationships has. A joined line's label keeps its "+N", and selecting it lists each
-relationship with its kind and effect.
+In Blocks, the relationships between the same two drawn ends travel as one cable: one route, with
+a strand for each relationship in its own kind and effect, so a line never claims a pair that none
+of its relationships has. The strands run half a lane (8) apart as one ribbon, with one plate for
+their words. Where a cable reaches a card its strands fan out a lane (16) apart, so that every
+strand's mark lands on a port of its own, side by side with the others at the same depth. No mark
+stands back from its card. A short end run spreads at the bend before the card; on a longer one each
+outer strand steps out to its port inside the apron at the card (its mark's straight approach and
+two bends), the outermost furthest from the card, so that strands never cross and each glow runs
+cleanly to its own mark. A cable holds its own ports, never shared with another cable. A card that
+a cable ends on widens until its ports fit one wall, and the grid keeps room above and below a card
+whose side walls are too short for a fan. Selecting a strand lists its relationship with its kind
+and effect.
 
 Nothing on a line moves by default. Pointing at a line or a card plays its effect once, in the
 spark's look, its ink toward the text, one pass and never a train of pulses: a mutation runs to the

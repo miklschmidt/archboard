@@ -125,7 +125,6 @@ fn a_fallback_cable_leaves_room_for_its_marks_at_both_ends() {
     let placed: Value = serde_json::from_str(&placed).expect("a drawing");
     let minimum = archboard_scene::paint::design::approach_straight()
         + archboard_scene::geometry::bend_radius()
-        + archboard_scene::paint::design::echelon()
         + 4.0;
     let length = |one: &Value, two: &Value| {
         let coordinate = |point: &Value, axis: &str| point[axis].as_f64().expect("a coordinate");

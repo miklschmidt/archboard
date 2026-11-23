@@ -218,11 +218,6 @@ pub fn far_line_widths() -> [(f64, f64); 4] {
     FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
 }
 
-/// How far back from its ends a strand in echelon stands its marks.
-pub const fn echelon() -> f64 {
-    super::heads::ECHELON
-}
-
 /// The straight run a line needs after its last bend, so the mark at its end
 /// lies along it: the longest mark and a little body before it.
 pub const fn approach_straight() -> f64 {
@@ -233,24 +228,6 @@ pub const fn approach_straight() -> f64 {
 /// and a little body. With no bend, a head needs no approach.
 pub const fn straight_run() -> f64 {
     super::heads::STRAIGHT_RUN
-}
-
-/// How many steps an octave of the camera's scale holds for a mark's growth.
-const GROWTH_STEPS: f64 = 8.0;
-
-/// How much larger a viewer draws every mark at the ends of a line, from a
-/// camera at some scale in canvas pixels to a unit on a page of some pixel
-/// ratio: the share that keeps a relationship mark's square at its least size
-/// on screen, and one near enough. It rises in steps of an eighth of an octave
-/// of the camera's scale, so a zoom draws kept parts again a few times an
-/// octave rather than every frame.
-pub fn mark_growth(pixel_ratio: f64, scale: f64) -> f64 {
-    let floor = crate::sizes::HEAD_FLOOR * pixel_ratio / scale;
-    if !floor.is_finite() || floor <= 0.0 {
-        return 1.0;
-    }
-    let stepped = ((floor.log2() * GROWTH_STEPS).ceil() / GROWTH_STEPS).exp2();
-    (stepped / super::heads::mark_side()).max(1.0)
 }
 
 /// The icon a part without a known icon is drawn with.
@@ -266,26 +243,4 @@ pub const fn flow_icon() -> &'static str {
 /// Every icon a picture can draw, whatever its policy says.
 pub const fn own_icons() -> [&'static str; 2] {
     super::icons::OWN_ICONS
-}
-
-#[cfg(test)]
-mod tests {
-    use super::mark_growth;
-    use crate::paint::heads::mark_side;
-    use crate::sizes::HEAD_FLOOR;
-
-    #[test]
-    fn a_mark_keeps_its_least_size_on_screen_and_its_own_size_near() {
-        for (ratio, scale) in [(1.0, 0.1), (2.0, 0.2), (1.5, 0.3)] {
-            let on_screen = mark_side() * mark_growth(ratio, scale) * scale / ratio;
-            assert!(
-                on_screen >= HEAD_FLOOR - 1e-9,
-                "{ratio} {scale}: {on_screen}"
-            );
-            assert!(on_screen < HEAD_FLOOR * 1.1, "{ratio} {scale}: {on_screen}");
-        }
-        // At the opening zoom of a large picture and nearer, marks keep their size.
-        assert_eq!(mark_growth(1.0, 0.4), 1.0);
-        assert_eq!(mark_growth(2.0, 0.8), 1.0);
-    }
 }

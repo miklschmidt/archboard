@@ -13,7 +13,7 @@ import {
 
 /**
  * How far each pill sits from the route it names, or a cable's plate from the
- * nearest of its strands, past the half of the cable it stands beside.
+ * nearest of its strands, past half the cable at its widest.
  * @param drawn The rendered picture.
  * @returns One "id: distance" per pill.
  */

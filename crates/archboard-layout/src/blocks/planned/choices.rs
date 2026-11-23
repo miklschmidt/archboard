@@ -57,7 +57,7 @@ pub(super) fn search<'a>(
     };
     let sources = super::endpoint_choices::ends(model, edge, true, shape, guide, search);
     let targets = super::endpoint_choices::ends(model, edge, false, shape, guide, search);
-    let half = model.half(edge);
+    let ink = model.ink(edge);
     for tail in sources {
         for &head in &targets {
             let pairs = super::endpoint_choices::aligned(model, edge, shape, tail, head);
@@ -66,7 +66,7 @@ pub(super) fn search<'a>(
                     // A bend approach can extend past the opposite wall of a straight span.
                     let span = [tail.attachment, head.attachment];
                     if (span[0].x == span[1].x || span[0].y == span[1].y)
-                        && super::channel::approaches(&span, half)
+                        && super::channel::approaches(&span, ink)
                         && obstacles.clear(&span)
                     {
                         paths.push(span.to_vec());
@@ -348,7 +348,7 @@ fn connect(
                 &mut points,
             );
             if points.len() >= 2
-                && super::channel::approaches(&points, model.half(edge))
+                && super::channel::approaches(&points, model.ink(edge))
                 && super::channel::attached(points[0], points[1], a)
                 && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
             {
@@ -534,9 +534,11 @@ mod tests {
         };
         let shape = super::super::fixed::placement(&model, drawing).unwrap();
         let routes = choose(&model, &topology, 0, &shape, None, None, Search::Simple);
+        // The first straight span clear of the obstacle stands the cable's fan clear of the
+        // target's corner: 100 + 20 + 32.
         assert!(routes.iter().any(|line| {
             line.points.len() == 2
-                && line.points.iter().all(|point| point.x == 136.0)
+                && line.points.iter().all(|point| point.x == 152.0)
                 && (length(&line.points) - 72.0).abs() < 0.1
         }));
     }

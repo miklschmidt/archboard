@@ -97,9 +97,6 @@ pub struct Stage {
     settled: bool,
     /// Whether a frame of a picture was drawn yet.
     drawn: bool,
-    /// Canvas pixels to one CSS pixel, once the page says it; until then
-    /// every head is drawn at its own size.
-    pixel_ratio: Option<f64>,
     /// The lines whose effect plays once, each with the moment it started.
     plays: Vec<(String, f64)>,
 }
@@ -135,7 +132,6 @@ impl Stage {
             look: Presentation::default(),
             looks: 0,
             settled: false,
-            pixel_ratio: None,
             plays: Vec::new(),
             drawn: false,
         }
@@ -287,12 +283,6 @@ impl Stage {
             self.plays.retain(|(playing, _)| *playing != id);
             self.plays.push((id, now));
         }
-    }
-
-    /// Say how many canvas pixels one CSS pixel is, so a head keeps its least
-    /// size on screen.
-    pub fn set_pixel_ratio(&mut self, ratio: f64) {
-        self.pixel_ratio = (ratio > 0.0).then_some(ratio);
     }
 
     /// Say at which scale of the camera the far view begins, in canvas pixels

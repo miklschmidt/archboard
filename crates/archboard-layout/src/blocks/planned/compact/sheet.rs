@@ -345,21 +345,21 @@ impl Sheet {
         drawing: &'a Placed,
         axis: Axis,
         (_, inks): Looks<'a>,
-    ) -> impl Iterator<Item = ((usize, usize), f64, f64)> + 'a {
+    ) -> impl Iterator<Item = ((usize, usize), f64)> + 'a {
         drawing
             .edges
             .iter()
             .zip(&self.lines)
             .filter_map(move |(line, movers)| {
-                let half = *inks.get(line.id.as_str())?;
+                inks.get(line.id.as_str())?;
                 let ([a, b], [first, second]) = (line.points.as_slice(), movers.as_slice()) else {
                     return None;
                 };
                 let span = axis.of(*b) - axis.of(*a);
                 if span > 0.0 {
-                    Some(((*first, *second), span, half))
+                    Some(((*first, *second), span))
                 } else {
-                    (span < 0.0).then_some(((*second, *first), -span, half))
+                    (span < 0.0).then_some(((*second, *first), -span))
                 }
             })
     }

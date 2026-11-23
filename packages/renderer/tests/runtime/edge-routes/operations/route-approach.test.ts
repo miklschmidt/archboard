@@ -137,12 +137,11 @@ test("an incoming header arrow has a whole head and room for any bend before its
 	const route = [
 		...group.matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
 	].at(-1)!;
-	const width = Number(route[0].match(/stroke-width="([^"]+)"/)![1]);
 	const marker = drawing.svg.match(new RegExp(`<marker id="${route[2]}"[^>]*>`))![0];
 	const refX = Number(marker.match(/refX="([^"]+)"/)![1]);
 	const markerWidth = Number(marker.match(/markerWidth="([^"]+)"/)![1]);
 	const viewWidth = Number(marker.match(/viewBox="[^ ]+ [^ ]+ ([^ ]+) [^"]+"/)![1]);
-	const headReach = ((refX * markerWidth) / viewWidth) * width;
+	const headReach = (refX * markerWidth) / viewWidth;
 	const steps = [...route[1]!.matchAll(/([MLC])([^MLC]+)/g)].map((match) => ({
 		kind: match[1],
 		values: match[2]!.trim().split(/[ ,]+/).map(Number),

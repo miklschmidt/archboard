@@ -6,9 +6,14 @@ use archboard_scene::paint::design::card_radius;
 
 /// The radius of every bend a route takes.
 pub(crate) const BEND_RADIUS: f64 = bend_radius();
-/// How far apart the strands of a cable stand: half a lane, so that a cable reads as one
-/// ribbon.
+/// How far apart the strands of a cable stand along its body: half a lane, so that a cable reads
+/// as one ribbon.
 pub(crate) const STRAND: f64 = crate::lanes::chains::LANE / 2.0;
+/// How far apart the strands of a cable stand on its first and last runs, where it reaches its
+/// cards: a lane, as far as the heads of separate lines on one wall, which holds the widest mark
+/// at its one size (a wedge 15 across), so that every strand's head lands on its own port, side by
+/// side with the others.
+pub(crate) const FAN: f64 = crate::lanes::chains::LANE;
 /// How round a card's corner is, which keeps a line's port clear of it.
 pub(crate) const CARD_RADIUS: f64 = card_radius();
 /// How close two points must be to be one, and the least a turn may move.
@@ -46,13 +51,25 @@ pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approa
 /// The least length of an arrow with no bend: the painter's marks at its ends
 /// and a little body. With no bend, a head needs no approach.
 pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_run();
-/// How far back from its ends a strand of a cable in echelon stands its marks.
-pub(crate) const ECHELON: f64 = archboard_scene::paint::design::echelon();
+
+/// How far from its card a cable's strands stand at most a lane apart on an end run (the
+/// apron): a head's straight approach and two bends for the jog that steps each outer strand out
+/// from its body to its port, as far out again as the fan is wider than the body. Beyond the apron
+/// the strands run as one ribbon.
+pub(crate) fn apron(half: f64, reach: f64) -> f64 {
+    APPROACH_STRAIGHT + 2.0 * BEND_RADIUS + reach - half
+}
+
+/// Whether a cable's end run of some length fans out whole, its strands spreading at the bend
+/// before it, rather than stepping out at its apron: a run too short to hold the apron's jogs and
+/// the bend's corner.
+pub(crate) fn fans_whole(length: f64, half: f64, reach: f64) -> bool {
+    length <= apron(half, reach) + 2.0 * BEND_RADIUS
+}
 
 /// The room between a wall and a turn, including the cable's innermost strand and its marks.
 pub(crate) fn approach_of(half: f64) -> f64 {
-    let echelon = if half > 0.0 { ECHELON } else { 0.0 };
-    APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
+    APPROACH_STRAIGHT + BEND_RADIUS + half
 }
 
 /// The page shape the renderer lays a picture out for: width over height.
