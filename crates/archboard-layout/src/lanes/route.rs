@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
-use crate::lanes::buses::Buses;
+use crate::lanes::buses::{Buses, gather};
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chain_kind};
 use crate::lanes::channels::{End, Net, NetId};
 use crate::lanes::jogs::nothing;
@@ -319,7 +319,7 @@ impl Router<'_> {
     }
 
     /// Move every net's ends that stand on a lane to where the lane now stands.
-    fn follow_lanes(&mut self, nets: &[NetId]) {
+    pub(crate) fn follow_lanes(&mut self, nets: &[NetId]) {
         for &net in nets {
             let (top, bottom) = (self.net(net).top, self.net(net).bottom);
             if self.station(top).kind == Kind::Lane {
@@ -501,34 +501,6 @@ fn routed_of(
         );
     }
     routed
-}
-
-/// Gather the buses a routing names, each line's lanes over where it lands, and answer every bus
-/// the block holds.
-fn gather(
-    track: &mut Router<'_>,
-    (inner, routed, chains): (
-        &[&SceneLine<'_>],
-        &Map<String, Routed>,
-        &Map<String, ChainId>,
-    ),
-    chosen: &Buses,
-) -> Buses {
-    let landing: Map<ChainId, f64> = inner
-        .iter()
-        .map(|line| {
-            let last = *routed[&line.id].nets.last().expect("a net");
-            (chains[&line.id], track.net(last).bottom_x)
-        })
-        .collect();
-    let chains: Vec<ChainId> = chains.values().copied().collect();
-    let buses = track.gather_buses(&chains, &landing, chosen);
-    let nets: Vec<NetId> = routed
-        .values()
-        .flat_map(|route| route.nets.clone())
-        .collect();
-    track.follow_lanes(&nets);
-    buses
 }
 
 /// Route a scene once, with the line ends `choice` names landed on a card's side and the buses it

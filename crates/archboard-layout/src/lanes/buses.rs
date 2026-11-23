@@ -5,6 +5,8 @@
 //! of the bus no longer crosses the page alone on a route of its own.
 
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
+use crate::lanes::channels::NetId;
+use crate::lanes::route::{Routed, SceneLine};
 use crate::lanes::scene::{ItemId, Map, Set};
 
 /// The buses of a block, each by the cards it runs between and whether it runs upward.
@@ -130,4 +132,32 @@ impl Router<'_> {
             .map(|(&key, _)| key)
             .collect()
     }
+}
+
+/// Gather the buses a routing names, each line's lanes over where it lands, and answer every bus
+/// the block holds.
+pub(crate) fn gather(
+    track: &mut Router<'_>,
+    (inner, routed, chains): (
+        &[&SceneLine<'_>],
+        &Map<String, Routed>,
+        &Map<String, ChainId>,
+    ),
+    chosen: &Buses,
+) -> Buses {
+    let landing: Map<ChainId, f64> = inner
+        .iter()
+        .map(|line| {
+            let last = *routed[&line.id].nets.last().expect("a net");
+            (chains[&line.id], track.net(last).bottom_x)
+        })
+        .collect();
+    let chains: Vec<ChainId> = chains.values().copied().collect();
+    let buses = track.gather_buses(&chains, &landing, chosen);
+    let nets: Vec<NetId> = routed
+        .values()
+        .flat_map(|route| route.nets.clone())
+        .collect();
+    track.follow_lanes(&nets);
+    buses
 }

@@ -38,15 +38,20 @@ function distanceTo(point: DrawnPoint, line: readonly DrawnPoint[]): number {
 /** Up to this, a sideways step reads as a kink in one line, not a route: two lanes. */
 const KINK = 2 * LANE;
 
+/** One straight run of a line: upright or level, where it stands across, and how long it is. */
+interface StraightRun {
+	readonly upright: boolean;
+	readonly at: number;
+	readonly length: number;
+}
+
 /**
  * The straight runs of a line, each upright or level, with where it stands across.
  * @param points The line's points, its bridges taken out.
  * @returns Its runs, in order.
  */
-function straightRuns(
-	points: readonly DrawnPoint[],
-): { upright: boolean; at: number; length: number }[] {
-	return points.slice(1).flatMap((point, index) => {
+function straightRuns(points: readonly DrawnPoint[]): StraightRun[] {
+	return points.slice(1).flatMap((point, index): StraightRun[] => {
 		const previous = points[index]!;
 		const [dx, dy] = [Math.abs(point.x - previous.x), Math.abs(point.y - previous.y)];
 		if (dy > 1 && dx < 0.01) return [{ upright: true, at: point.x, length: dy }];

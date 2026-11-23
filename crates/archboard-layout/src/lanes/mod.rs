@@ -30,6 +30,7 @@ pub(crate) mod spacing;
 pub(crate) mod straighten;
 pub(crate) mod stranded;
 pub(crate) mod sweep;
+pub(crate) mod track_lanes;
 pub(crate) mod tracks;
 pub(crate) mod traffic;
 pub(crate) mod wrap_columns;
