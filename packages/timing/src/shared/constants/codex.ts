@@ -137,7 +137,7 @@ const CODEX_REALTIME = {
 	 * conversation, and `codex.approvalExpiry`, which it must stay under so a closed tab's approvals
 	 * end as "tab session ended" rather than expiring unanswered.
 	 */
-	"codex.tabSessionGrace": delay(60_000),
+	"codex.tabSessionGrace": { ...delay(60_000), background: true },
 };
 
 /** A browser command an agent leases, and the approvals a person answers. */

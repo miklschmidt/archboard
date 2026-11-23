@@ -13,7 +13,7 @@ const TELEMETRY = {
 	 * Cadence of the sender. An error reaches PostHog within this time of the server seeing it, and
 	 * a finished day within this time of midnight UTC.
 	 */
-	"telemetry.round": tick(5 * 60 * 1000),
+	"telemetry.round": { ...tick(5 * 60 * 1000), background: true },
 	/** A record that no round could send in this time is deleted unsent. */
 	"telemetry.keep": span(7 * 24 * 60 * 60 * 1000),
 	/**

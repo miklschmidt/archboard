@@ -193,6 +193,22 @@ test("every bound carries its wait's name to the timer, so a preload can shorten
 });
 
 describe("after and every", () => {
+	test("an awaited delay keeps the process alive while background timers let it exit", () => {
+		const result = Bun.spawnSync({
+			cmd: [
+				process.execPath,
+				"--eval",
+				`import { after, every } from "@archboard/timing";
+				after("claim.activityLinger", () => console.log("lingered"));
+				every("modelLock.watch", () => console.log("watched"));
+				after("modelLock.stealGuard", () => console.log("settled"));`,
+			],
+			timeout: 2000,
+		});
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout.toString()).toBe("settled\n");
+	});
+
 	test("run their work without arguments, and stop when cancelled", () => {
 		const heard: unknown[][] = [];
 		const cancel = after("modelLock.stealGuard", (...args: unknown[]) => heard.push(args));

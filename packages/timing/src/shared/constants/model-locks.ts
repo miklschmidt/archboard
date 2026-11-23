@@ -46,7 +46,7 @@ const MODEL_LOCKS = {
 	 * long. Pushing this closer to the lease trades the second property for
 	 * nothing.
 	 */
-	"modelLock.renew": tick(LOCK_RENEW_MS),
+	"modelLock.renew": { ...tick(LOCK_RENEW_MS), background: true },
 	/**
 	 * How long an agent waits for a model somebody else holds before giving up and
 	 * naming the holder.
@@ -98,7 +98,7 @@ const MODEL_LOCKS = {
 	 * followed vault per second, and only while a browser is connected: with nothing
 	 * rendering, there is no pane to be wrong.
 	 */
-	"modelLock.watch": tick(LOCK_RENEW_MS),
+	"modelLock.watch": { ...tick(LOCK_RENEW_MS), background: true },
 	/**
 	 * How long the checkout registry's lock directory stands before it counts as left by a process
 	 * that died: one model lock lease, since it is a lock file of the same kind.
@@ -175,7 +175,7 @@ const CLAIMS = {
 	 * unclaimed writes reads as one visit rather than a model that never comes
 	 * free. Each write restarts it, so continuous work never flickers.
 	 */
-	"claim.activityLinger": delay(8000),
+	"claim.activityLinger": { ...delay(8000), background: true },
 };
 
 export { CLAIMS, MODEL_LOCKS };
