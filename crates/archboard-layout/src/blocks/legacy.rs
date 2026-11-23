@@ -185,7 +185,8 @@ fn lay_all(
         graph,
         Kept {
             expanded: way.expanded,
-            packed: way.packed,
+            packed: way.drawing != Drawing::Candidate,
+            lanes: way.drawing == Drawing::Lanes,
             ..earlier.kept.clone()
         },
     )?;
@@ -276,11 +277,12 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The lanes' placement: every Lanes drawing, and a Blocks reading that no planned placement
-/// routes.
+/// The lanes' placement: every Lanes drawing, when `lanes` says so, and a Blocks reading that no
+/// planned placement routes.
 pub(super) fn place(
     graph: &Node,
     host: &mut dyn Graphviz,
+    lanes: bool,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
     let picture = lay_out(
@@ -288,7 +290,11 @@ pub(super) fn place(
         graph,
         &Way {
             expanded: false,
-            packed: true,
+            drawing: if lanes {
+                Drawing::Lanes
+            } else {
+                Drawing::Fallback
+            },
             room: Vec::new(),
             extra: 0.0,
             complete_repair: false,
@@ -373,7 +379,7 @@ pub(super) fn candidates<'g>(
     let mut gv = Engine::new(host);
     let way = Way {
         expanded: false,
-        packed: false,
+        drawing: Drawing::Candidate,
         room: room.to_vec(),
         extra,
         complete_repair,
@@ -465,11 +471,19 @@ fn expanded_candidates(
     Ok(candidates)
 }
 
+/// What a layout is: a candidate the planner routes again, Blocks' own fallback drawing, or a
+/// Lanes drawing (`BlockTree::packed`, `BlockTree::lanes`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Drawing {
+    Candidate,
+    Fallback,
+    Lanes,
+}
+
 #[derive(Clone)]
 struct Way {
     expanded: bool,
-    /// The layout is the drawing itself (`BlockTree::packed`).
-    packed: bool,
+    drawing: Drawing,
     room: Vec<String>,
     extra: f64,
     complete_repair: bool,

@@ -96,7 +96,7 @@ pub(super) fn routed(
     }
     let settled = Map::default();
     let (held, ports) = settling.kept(&settled);
-    let (mut laid, left) = read(block, insets, &scene, routes, held);
+    let (mut laid, left) = read(block, insets, &scene, routes, (held, tree.lanes));
     laid.header = placed.header;
     super::headers::place_header_entries(block, &mut laid, ports);
     Ok((laid, left))
@@ -124,13 +124,15 @@ fn boxes_of(side: f64, scene: &Placement) -> Map<String, Rect> {
     boxes
 }
 
-/// Read the routed scene back into the laid-out block.
+/// Read the routed scene back into the laid-out block, at least as wide as it is held, and, in a
+/// Lanes drawing, a picture wide and tall enough for every point its lines draw: a lane round the
+/// outside of its outermost card stands on the page.
 fn read(
     block: &Block,
     insets: Insets,
     scene: &Placement,
     lines: Map<String, Vec<Point>>,
-    held: f64,
+    (held, lanes): (f64, bool),
 ) -> (Laid, f64) {
     let Insets { side, bottom, .. } = insets;
     let mut boxes = boxes_of(side, scene);
@@ -156,7 +158,11 @@ fn read(
         .collect();
     let mut walled = lines;
     let mut reach: Vec<Rect> = boxes.values().copied().collect();
-    let inside = inner_points(block, &walled);
+    let inside = if lanes && block.kind == Kind::Root {
+        walled.values().flatten().copied().collect()
+    } else {
+        inner_points(block, &walled)
+    };
     let left = js_max(0.0, side - min(inside.iter().map(|point| point.x)));
     reach.extend(inside.into_iter().map(|Point { x, y }| Rect {
         x,

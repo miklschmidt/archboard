@@ -1,5 +1,6 @@
 //! The relationships that close a cycle in a block (TASK-349), found by a
-//! depth-first walk.
+//! depth-first walk, or, for a Lanes drawing, as few as the greedy order of
+//! Eades, Lin and Smyth turns.
 
 use crate::lanes::scene::{Map, Set};
 
@@ -45,6 +46,35 @@ impl CycleWalk {
         std::mem::take(&mut self.back)
     }
 
+    /// The relationships that close a cycle, as few as a greedy order turns: an
+    /// item that points at nothing still unplaced goes last, one that nothing
+    /// still unplaced points at goes first, and else the item that sends the most
+    /// lines more than it takes, the first in authored order on a tie. Every
+    /// relationship that runs back up that order closes a cycle. A depth-first
+    /// walk turns whichever line it meets last, which can be a bundle of many
+    /// lines kept for one line the other way.
+    pub(super) fn fewest_back(&self, items: &[String]) -> Set<String> {
+        let greedy = Greedy {
+            links: self
+                .out
+                .iter()
+                .flat_map(|(from, links)| links.iter().map(move |(to, edge)| (from, to, edge)))
+                .collect(),
+        };
+        let order = greedy.order(items);
+        let place: Map<&String, usize> = order
+            .iter()
+            .enumerate()
+            .map(|(at, &item)| (item, at))
+            .collect();
+        greedy
+            .links
+            .into_iter()
+            .filter(|&(from, to, _)| place[from] >= place[to])
+            .map(|(_, _, edge)| edge.clone())
+            .collect()
+    }
+
     /// Walk from one item, unless the walk has been there.
     fn from(&mut self, item: &str) {
         if self.state.contains_key(item) {
@@ -60,6 +90,68 @@ impl CycleWalk {
             }
         }
         self.state.insert(item.to_owned(), Walked::Done);
+    }
+}
+
+/// The greedy order of a block's items: every relationship as its source, its target and its id.
+struct Greedy<'w> {
+    links: Vec<(&'w String, &'w String, &'w String)>,
+}
+
+impl<'w> Greedy<'w> {
+    /// Every item in the greedy order: the items first, in authored order, then
+    /// any end no item names.
+    fn order(&self, items: &'w [String]) -> Vec<&'w String> {
+        let mut left: Vec<&String> = items.iter().collect();
+        for &(from, to, _) in &self.links {
+            for end in [from, to] {
+                if !left.contains(&end) {
+                    left.push(end);
+                }
+            }
+        }
+        let (mut first, mut last) = (Vec::new(), Vec::new());
+        while !left.is_empty() {
+            if let Some(sink) = left.iter().position(|item| self.sends(item, &left) == 0) {
+                last.push(left.remove(sink));
+            } else {
+                let next = self.next(&left);
+                first.push(left.remove(next));
+            }
+        }
+        first.extend(last.into_iter().rev());
+        first
+    }
+
+    /// Where the next item to go first stands among those left: one nothing left
+    /// points at, else the one whose sent lines lead its taken lines the most.
+    fn next(&self, left: &[&String]) -> usize {
+        if let Some(source) = left.iter().position(|item| self.takes(item, left) == 0) {
+            return source;
+        }
+        // Every count stays below the number of links, so the lead never falls below zero.
+        let lead =
+            |item: &&String| self.links.len() + self.sends(item, left) - self.takes(item, left);
+        let best = left.iter().map(lead).max().expect("an item left");
+        left.iter()
+            .position(|item| lead(item) == best)
+            .expect("the item that leads")
+    }
+
+    /// The lines an item sends to the items left, itself apart.
+    fn sends(&self, item: &String, left: &[&String]) -> usize {
+        self.links
+            .iter()
+            .filter(|&&(from, to, _)| from == item && to != item && left.contains(&to))
+            .count()
+    }
+
+    /// The lines an item takes from the items left, itself apart.
+    fn takes(&self, item: &String, left: &[&String]) -> usize {
+        self.links
+            .iter()
+            .filter(|&&(from, to, _)| to == item && from != item && left.contains(&from))
+            .count()
     }
 }
 

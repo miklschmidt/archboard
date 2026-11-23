@@ -99,7 +99,11 @@ impl BlockTree {
         }
         let mut items = vec![header];
         items.extend(block.items.iter().cloned());
-        let walked = walk.back_edges(&items);
+        let walked = if self.lanes {
+            walk.fewest_back(&items)
+        } else {
+            walk.back_edges(&items)
+        };
         let mut back: Set<String> = here
             .iter()
             .zip(&upward)
