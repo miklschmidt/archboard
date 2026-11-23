@@ -188,6 +188,7 @@ function argumentsOf(options: VideoEncoderOptions): readonly string[] {
 function spawned(options: VideoEncoderOptions) {
 	try {
 		return Bun.spawn([...options.command.argv, ...argumentsOf(options)], {
+			env: process.env,
 			stdin: "pipe",
 			stdout: "ignore",
 			stderr: "pipe",
