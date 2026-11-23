@@ -223,9 +223,11 @@ const rows = [
 	.summary {
 		color: var(--ink-body);
 	}
+	/* The pulse would hold a mark's opacity, so a released mark stops pulsing as it leaves. */
 	.claimed.is-released .mark,
 	.claimed.is-released .badge {
 		opacity: 0;
+		animation: none;
 	}
 	/* With no claim and no code path, the shell draws no line under the name. */
 	.claimed.is-released .claim-line {
