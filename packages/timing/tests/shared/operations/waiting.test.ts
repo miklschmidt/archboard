@@ -73,7 +73,6 @@ describe("within", () => {
 			);
 			const timedOut = (outcome as PromiseRejectedResult).reason as TimedOut;
 			expect(performance.now() - start).toBe(length);
-			expect(timedOut.ms).toBe(length);
 			expect(timedOut.message).toStartWith(`Timed out after ${words} waiting for`);
 		}
 	});

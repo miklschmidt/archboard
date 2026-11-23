@@ -26,8 +26,6 @@ function spoken(ms: number): string {
 class TimedOut extends Error {
 	/** The wait that ran out. */
 	readonly wait: Timeout;
-	/** How long it ran, in milliseconds. */
-	readonly ms: number;
 
 	/**
 	 * Say that a wait ran out.
@@ -39,7 +37,6 @@ class TimedOut extends Error {
 		super(`Timed out after ${spoken(ms)} waiting for ${declared.waitingFor ?? wait}.`);
 		this.name = "TimedOut";
 		this.wait = wait;
-		this.ms = ms;
 	}
 }
 
