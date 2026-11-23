@@ -41,8 +41,12 @@ const MARK_UNIT: f64 = 1.5;
 /// How far a mutation's imprint reaches along its target's edge to either
 /// side of the tip, where the edge has room: a little wider than its wedge.
 pub(super) const IMPRINT_REACH: f64 = 6.0 * MARK_UNIT;
-/// How thick a mutation's imprint is drawn: a little thinner than its line.
-pub(super) const IMPRINT_WIDTH: f64 = 1.75 * MARK_UNIT;
+/// How thick a mutation's imprint is drawn: about twice its line, so it
+/// reads as the mark the wedge leaves.
+pub(super) const IMPRINT_WIDTH: f64 = 3.0 * MARK_UNIT;
+/// How broad the glow round a mutation's imprint is, across its target's
+/// edge, and how solid it is at its heart.
+pub(super) const IMPRINT_GLOW: (f64, f64) = (8.0 * MARK_UNIT, 0.5);
 /// The side of the square a classic head is drawn in, in its own units.
 const CLASSIC_BOX: f64 = 10.0;
 /// Where a new head's tip lies in its square.

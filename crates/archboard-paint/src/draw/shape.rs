@@ -6,7 +6,7 @@ use archboard_scene::paint::design::{far_line_scale, widens_far};
 use archboard_scene::scene::{Colour, Geometry, Marker, Paint, Purpose, Shape, Stroke, Token};
 use kurbo::{Affine, BezPath, Rect};
 
-use super::{Inside, Walk, play};
+use super::{Inside, Walk};
 use crate::canvas::Canvas;
 use crate::path::{end_of, outline_of, path_of, straightened, stroke_of, trimmed};
 
@@ -57,9 +57,8 @@ impl<C: Canvas> Walk<'_, C> {
         if ring && (!inside.selected || inside.line) {
             return;
         }
-        if shape.purpose == Purpose::Imprint {
-            let lit = inside.play.map_or(0.0, play::Play::imprint_glow);
-            self.imprint(shape, inside, lit);
+        if matches!(shape.purpose, Purpose::Imprint | Purpose::Glow) {
+            self.imprint(shape, inside);
             return;
         }
         let (path, bounds) = outline_of(&shape.geometry);

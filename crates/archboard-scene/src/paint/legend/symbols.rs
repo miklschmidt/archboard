@@ -136,10 +136,10 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
                 Purpose::Sample,
                 vec![
                     PathStep::Move {
-                        to: point(tip.x, across - IMPRINT_REACH),
+                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across - IMPRINT_REACH),
                     },
                     PathStep::Line {
-                        to: point(tip.x, across + IMPRINT_REACH),
+                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across + IMPRINT_REACH),
                     },
                 ],
             )
