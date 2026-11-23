@@ -75,23 +75,24 @@ Blocks' fallback:
 > lanes is supposed to have a bus look.
 
 Lanes still starts from the lanes' placement, but it no longer has to draw what Blocks' fallback
-draws. Blocks' planned drawings and its fallback do not change. Lanes differs in three ways:
+draws. Blocks' planned drawings and its fallback do not change. Lanes differs in these ways:
 
-- The cards beside a container are ranked with the container, so a caller stands above it and
-  what the container calls stands below. Blocks' fallback gathers them into a block of their own,
-  which wraps them into a grid above the container.
 - A cycle turns as few lines as a greedy order finds, so a bundle of many lines keeps its
   direction and the one line against it turns. Blocks' fallback turns whichever line a
   depth-first walk meets last.
 - The page holds every point of every line.
 - The ends on each card face gather into one group a lane apart, round where their lines come
   from, so the lines bound for one card run together in parallel lanes and land as one bus.
-- The parent ranks a container as a record whose fields are its ports in the order they stand,
-  so Graphviz stands each door over the port its line enters by.
+- Lanes draws every container and group region inline, as a Graphviz cluster of the picture:
+  every card is ranked in one layout and every line routed in one scene, through each frame,
+  not twice with a join at a port. The owner decided this on 2026-11-23, knowing that Track drew
+  containers inline too; Track's entry rows, peer rows and sliding ports stay deleted. A card
+  outside a container ranks by its own lines, and a card that only calls the container's first
+  row stands above it (both advisors chose callers above and callees free).
 - The pass that pulls a line lapping the drawing back inside prices a crossing at 8 lanes, not
   25: a line crossing a bus square reads at a glance, and a lap round the page does not.
 
 Tests hold the bus look, not equality with the fallback: no line words, the lines between two
-cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
-with the container they talk to and in the order of its ports, no lap round the README reading,
-and every line on its page.
+cards in one bundle a lane apart, the lines bound for one card landing together, a caller above
+the container it calls, a card a container calls beside the member that calls it, no lap round
+the README reading, and every line on its page.
