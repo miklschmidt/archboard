@@ -120,8 +120,7 @@ fn overlaps(a: Rect, b: Rect) -> bool {
 pub(super) fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for label in labels {
-        let shape =
-            Shape::rect(Purpose::Box, boxed(*label), PILL_RADIUS).filled(Colour::Black);
+        let shape = Shape::rect(Purpose::Box, boxed(*label), PILL_RADIUS).filled(Colour::Black);
         for routed in edges
             .iter()
             .filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label))

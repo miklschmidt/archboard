@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{Scene, Transform};
+use archboard_scene::scene::Scene;
 
 use super::ease::{carried, then};
 use super::found::{Found, found};
@@ -55,9 +55,9 @@ impl<'a> Last<'a> {
             .filter(|group| group.is_card() && group.ordinal == 0)
             .filter_map(|group| {
                 let frame = group.frame?;
-                let outer = group.outer.unwrap_or(Transform::translate(0.0, 0.0));
+                let outer = group.outer;
                 let frame = carried(frame, then(outer, group.group.transform));
-                Some((group.id, (frame, group.group.opacity.unwrap_or(1.0))))
+                Some((group.id, (frame, group.group.opacity)))
             })
             .collect();
         let holder = boxes.iter().find(|&&(_, tray, _)| {

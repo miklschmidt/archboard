@@ -189,13 +189,11 @@ fn paint_column(
         bars.iter()
             .map(|bar| slab(*bar, &look, palette, None, None)),
     );
-    parts.extend(bars.iter().map(|bar| {
-        shape(styles.halo(Shape::rect(
-            Purpose::Halo,
-            boxed(*bar),
-            ACTIVATION_RADIUS,
-        )))
-    }));
+    parts.extend(
+        bars.iter().map(|bar| {
+            shape(styles.halo(Shape::rect(Purpose::Halo, boxed(*bar), ACTIVATION_RADIUS)))
+        }),
+    );
     vec![crate::scene::Item::Group(Group {
         opacity: ghost_opacity(standing),
         ..Group::new(Role::Lifeline, lines(parts)).drawing(subject(

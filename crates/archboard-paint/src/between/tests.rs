@@ -27,7 +27,7 @@ fn said(items: &[Item]) -> Vec<String> {
 
 /// How solid a group is drawn.
 pub(super) fn solid(group: &Group) -> f64 {
-    group.opacity.unwrap_or(1.0)
+    group.opacity
 }
 
 /// The shape of a purpose that a line group draws directly.
@@ -114,7 +114,7 @@ fn a_shift_holds_the_shared_cards_still_until_they_have_moved() {
     let between = Between::new(&from, &to, (5.0, 7.0), &PHASES);
 
     let back = |items: &[Item]| match items {
-        [Item::Group(group)] => group.transform,
+        [Item::Group(group)] => Some(group.transform),
         _ => None,
     };
     assert_eq!(
@@ -225,8 +225,8 @@ fn a_removed_card_fades_and_shrinks_about_its_box() {
     let early = between.at(0.1);
     let group = drawing(&early, "c")[0];
     assert!(solid(group) < 1.0 && solid(group) > 0.0);
-    let shrink = group.transform.expect("shrunk");
-    let scale = shrink.scale.expect("a scale");
+    let shrink = group.transform;
+    let scale = shrink.scale;
     assert!(scale < 1.0 && scale > 0.9);
     let (cx, cy) = (gone.x + gone.width / 2.0, gone.y + gone.height / 2.0);
     assert!((cx * scale + shrink.x - cx).abs() < 1e-9 && (cy * scale + shrink.y - cy).abs() < 1e-9);
@@ -437,7 +437,7 @@ fn a_shadow_rides_under_the_card_that_casts_it() {
     let moved = riding.iter().find_map(|item| match item {
         Item::Group(group) if group.items.iter().any(
             |inside| matches!(inside, Item::Group(shadow) if matches!(shadow.role, Role::Shadow(_))),
-        ) => group.transform,
+        ) => Some(group.transform),
         _ => None,
     });
     let moved = moved.expect("the shadow moves");
@@ -553,11 +553,9 @@ fn a_door_that_opens_carries_its_parts_inside_it() {
     let between = Between::new(&shut, &open, (0.0, 0.0), &PHASES);
     let early = between.at(0.2);
     let part = drawing(&early, "p")[0];
-    assert!(part.opacity.is_some_and(|opacity| opacity > 0.0));
+    assert!(part.opacity > 0.0);
     assert!(
-        part.transform
-            .and_then(|moved| moved.scale)
-            .is_some_and(|scale| scale < 1.0),
+        part.transform.scale < 1.0,
         "a part is as small as its door still is"
     );
     let held = between.opening_at(0.0).expect("a door opens");
@@ -570,10 +568,6 @@ fn a_door_that_closes_takes_its_parts_back_inside_it() {
     let between = Between::new(&open, &shut, (0.0, 0.0), &PHASES);
     let early = between.at(0.2);
     let part = drawing(&early, "p")[0];
-    assert!(
-        part.transform
-            .and_then(|moved| moved.scale)
-            .is_some_and(|scale| scale < 1.0)
-    );
+    assert!(part.transform.scale < 1.0);
     assert!(between.opening_at(0.5).is_none(), "no door opens");
 }

@@ -38,7 +38,7 @@ pub(super) struct Found<'a> {
     /// The box the atlas gives its subject.
     pub(super) atlas: Option<Rect>,
     /// How the plain groups it stands in move it, outermost first.
-    pub(super) outer: Option<Transform>,
+    pub(super) outer: Transform,
 }
 
 impl Found<'_> {
@@ -110,14 +110,20 @@ pub(super) fn found(scene: &Scene) -> Vec<Found<'_>> {
     let atlas = atlas_boxes(scene);
     let mut seen: HashMap<&str, usize> = HashMap::new();
     let mut groups = Vec::new();
-    walk(&scene.body, None, &atlas, &mut seen, &mut groups);
+    walk(
+        &scene.body,
+        Transform::IDENTITY,
+        &atlas,
+        &mut seen,
+        &mut groups,
+    );
     groups
 }
 
 /// Find the subject groups among some items.
 fn walk<'a>(
     items: &'a [Item],
-    outer: Option<Transform>,
+    outer: Transform,
     atlas: &HashMap<&str, Rect>,
     seen: &mut HashMap<&'a str, usize>,
     groups: &mut Vec<Found<'a>>,
@@ -125,11 +131,13 @@ fn walk<'a>(
     for item in items {
         let Item::Group(group) = item else { continue };
         let Some(subject) = &group.subject else {
-            let around = match (outer, group.transform) {
-                (Some(outer), own) => Some(then(outer, own)),
-                (None, own) => own,
-            };
-            walk(&group.items, around, atlas, seen, groups);
+            walk(
+                &group.items,
+                then(outer, group.transform),
+                atlas,
+                seen,
+                groups,
+            );
             continue;
         };
         let id = subject.id.as_str();

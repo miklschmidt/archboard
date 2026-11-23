@@ -135,14 +135,15 @@ pub(super) fn look(shape: &Shape) -> Shape {
     }
 }
 
-/// A move with where it goes taken out.
-const STILL: Transform = Transform::translate(0.0, 0.0);
-
 /// The role of a group with the places it names taken out.
 fn unplaced_role(role: &Role) -> Role {
     match role {
-        Role::Chip { .. } => Role::Chip { far: STILL },
-        Role::Words { .. } => Role::Words { away: STILL },
+        Role::Chip { .. } => Role::Chip {
+            far: Transform::IDENTITY,
+        },
+        Role::Words { .. } => Role::Words {
+            away: Transform::IDENTITY,
+        },
         other => other.clone(),
     }
 }
@@ -152,7 +153,7 @@ fn signature(item: &Item) -> Item {
     match item {
         Item::Group(group) => Item::Group(Group {
             role: unplaced_role(&group.role),
-            transform: None,
+            transform: Transform::IDENTITY,
             items: group.items.iter().map(signature).collect(),
             ..group.clone()
         }),

@@ -137,9 +137,13 @@ pub(super) fn subject(kind: SubjectKind, id: &str, standing: Option<Standing>) -
     }
 }
 
-/// The opacity a removed line's group takes, or none for a line still on the proposal.
-pub(super) fn ghost_opacity(standing: Option<Standing>) -> Option<f64> {
-    (standing == Some(Standing::Removed)).then_some(GHOST_OPACITY)
+/// The opacity a removed line's group takes, or full for a line still on the proposal.
+pub(super) fn ghost_opacity(standing: Option<Standing>) -> f64 {
+    if standing == Some(Standing::Removed) {
+        GHOST_OPACITY
+    } else {
+        1.0
+    }
 }
 
 /// The colours a subject's own words are drawn with: a removed block's names

@@ -544,7 +544,7 @@ impl Between {
             return body;
         }
         let mut around = Group::new(Role::Move, body);
-        around.transform = Some(Transform::translate(-back.0, -back.1));
+        around.transform = Transform::translate(-back.0, -back.1);
         vec![Item::Group(around)]
     }
 

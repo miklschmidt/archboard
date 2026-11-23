@@ -41,7 +41,7 @@ impl<C: Canvas> Walk<'_, C> {
             };
             let words = Group {
                 subject: line.subject.clone(),
-                transform: Some(Transform::translate(at.x, at.y)),
+                transform: Transform::translate(at.x, at.y),
                 opacity: line.opacity,
                 ..Group::new(Role::Label, warnings.glyph().to_vec())
             };

@@ -290,10 +290,6 @@ mod tests {
                         && !stroke.dashes.is_empty()
                 })
         }));
-        assert!(
-            shapes(&plain)
-                .iter()
-                .all(|shape| shape.fill_opacity == 1.0)
-        );
+        assert!(shapes(&plain).iter().all(|shape| shape.fill_opacity == 1.0));
     }
 }

@@ -46,24 +46,24 @@ pub struct Subject {
 
 /// A scale about the origin, followed by a move.
 /// A point `(px, py)` maps to `(px * scale + x, py * scale + y)`.
-/// An absent scale is 1.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Transform {
     /// How far right.
     pub x: f64,
     /// How far down.
     pub y: f64,
-    /// How much bigger, when it is scaled.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub scale: Option<f64>,
+    /// How much bigger; 1 for the same size.
+    pub scale: f64,
 }
 
 impl Transform {
     /// A move.
     pub const fn translate(x: f64, y: f64) -> Self {
-        Transform { x, y, scale: None }
+        Transform { x, y, scale: 1.0 }
     }
+
+    /// The transform that moves nothing.
+    pub const IDENTITY: Transform = Transform::translate(0.0, 0.0);
 }
 
 /// How a relationship's line was drawn: its kind's appearance and its kind.
@@ -206,13 +206,9 @@ pub struct Group {
     #[ts(optional)]
     pub subject: Option<Subject>,
     /// How its parts are moved and scaled.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub transform: Option<Transform>,
+    pub transform: Transform,
     /// How solid its parts are drawn together, from 0 to 1.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub opacity: Option<f64>,
+    pub opacity: f64,
     /// The mask its parts are drawn through.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -238,8 +234,8 @@ impl Group {
         Group {
             role,
             subject: None,
-            transform: None,
-            opacity: None,
+            transform: Transform::IDENTITY,
+            opacity: 1.0,
             mask: None,
             pointer: None,
             members: Vec::new(),
@@ -265,7 +261,7 @@ impl Group {
     /// The group moved and scaled.
     #[must_use]
     pub fn moved(mut self, transform: Transform) -> Self {
-        self.transform = Some(transform);
+        self.transform = transform;
         self
     }
 

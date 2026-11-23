@@ -74,13 +74,13 @@ pub(super) fn scale_about(rect: Rect, scale: f64) -> Transform {
     Transform {
         x: cx * (1.0 - scale),
         y: cy * (1.0 - scale),
-        scale: Some(scale),
+        scale,
     }
 }
 
 /// Where a box stands after a move.
 pub(super) fn carried(rect: Rect, by: Transform) -> Rect {
-    let scale = by.scale.unwrap_or(1.0);
+    let scale = by.scale;
     Rect {
         x: rect.x * scale + by.x,
         y: rect.y * scale + by.y,
@@ -90,16 +90,11 @@ pub(super) fn carried(rect: Rect, by: Transform) -> Rect {
 }
 
 /// The move that does `inner` first and `outer` after it.
-pub(super) fn then(outer: Transform, inner: Option<Transform>) -> Transform {
-    let Some(inner) = inner else { return outer };
-    let scale = outer.scale.unwrap_or(1.0);
+pub(super) fn then(outer: Transform, inner: Transform) -> Transform {
     Transform {
-        x: scale * inner.x + outer.x,
-        y: scale * inner.y + outer.y,
-        scale: match (outer.scale, inner.scale) {
-            (None, None) => None,
-            (a, b) => Some(a.unwrap_or(1.0) * b.unwrap_or(1.0)),
-        },
+        x: outer.scale * inner.x + outer.x,
+        y: outer.scale * inner.y + outer.y,
+        scale: outer.scale * inner.scale,
     }
 }
 
@@ -132,7 +127,7 @@ mod tests {
             height: 20.0,
         };
         let about = scale_about(rect, 0.5);
-        let scale = about.scale.expect("a scale");
+        let scale = about.scale;
         assert_eq!(
             (30.0 * scale + about.x, 30.0 * scale + about.y),
             (30.0, 30.0)
@@ -145,10 +140,10 @@ mod tests {
             Transform {
                 x: 1.0,
                 y: 0.0,
-                scale: Some(2.0),
+                scale: 2.0,
             },
-            Some(Transform::translate(3.0, 4.0)),
+            Transform::translate(3.0, 4.0),
         );
-        assert_eq!((both.x, both.y, both.scale), (7.0, 8.0, Some(2.0)));
+        assert_eq!((both.x, both.y, both.scale), (7.0, 8.0, 2.0));
     }
 }

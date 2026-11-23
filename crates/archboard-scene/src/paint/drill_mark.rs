@@ -92,7 +92,7 @@ pub(super) fn corner_drill_mark(
         .moved(Transform {
             x: round_coord(cx),
             y: round_coord(cy),
-            scale: (scale != 1.0).then(|| round_coord(scale)),
+            scale: round_coord(scale),
         }),
     )
 }

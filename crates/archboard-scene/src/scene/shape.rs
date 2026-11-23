@@ -330,19 +330,13 @@ impl Stroke {
     /// The stroke with its ends drawn one way.
     #[must_use]
     pub fn capped(self, cap: Cap) -> Self {
-        Stroke {
-            cap,
-            ..self
-        }
+        Stroke { cap, ..self }
     }
 
     /// The stroke at a strength.
     #[must_use]
     pub fn at(self, opacity: f64) -> Self {
-        Stroke {
-            opacity,
-            ..self
-        }
+        Stroke { opacity, ..self }
     }
 
     /// The stroke broken into dashes.

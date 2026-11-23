@@ -47,7 +47,7 @@ impl Unfold {
         Transform {
             x: now.0 - rest.0 * scale,
             y: now.1 - rest.1 * scale,
-            scale: Some(scale),
+            scale,
         }
     }
 
@@ -220,8 +220,8 @@ impl Inside {
             return Vec::new();
         }
         let mut group = self.item.clone();
-        group.opacity = Some(group.opacity.unwrap_or(1.0) * visible);
-        group.transform = Some(then(self.unfold.at(progress), group.transform));
+        group.opacity = group.opacity * visible;
+        group.transform = then(self.unfold.at(progress), group.transform);
         vec![Item::Group(group)]
     }
 }
@@ -252,14 +252,14 @@ mod tests {
     #[test]
     fn the_parts_of_a_door_start_in_the_door_and_end_in_their_places() {
         let start = door().at(0.0);
-        assert_eq!(start.scale, Some(0.1));
+        assert_eq!(start.scale, 0.1);
         let middle = |x: f64| x * 0.1 + start.x;
         assert!(
             (middle(300.0) - 300.0).abs() < 1e-9,
             "the door's own middle"
         );
         let end = door().at(1.0);
-        assert_eq!(end.scale, Some(1.0));
+        assert_eq!(end.scale, 1.0);
         assert!(
             end.x.abs() < 1e-9 && end.y.abs() < 1e-9,
             "where they were drawn"

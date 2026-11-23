@@ -122,7 +122,7 @@ fn distances(rect: Rect, middle: Point) -> (f64, f64) {
 
 /// How the plain items of a group stand against the picture.
 fn placing(group: &Group) -> Transform {
-    group.transform.unwrap_or(Transform::translate(0.0, 0.0))
+    group.transform
 }
 
 /// The box a container shows itself in while a move that was cut short has it.
@@ -166,7 +166,7 @@ pub(super) fn containers<'a>(groups: &[Found<'a>]) -> Vec<(&'a str, Rect, Rect)>
             width: landed.width + ROOM * 2.0,
             height: landed.height + ROOM * 2.0,
         });
-        let outer = group.outer.unwrap_or(Transform::translate(0.0, 0.0));
+        let outer = group.outer;
         let drawn = carried(drawn, outer);
         let frame = carried(frame, outer);
         match boxes.iter_mut().find(|(id, ..)| *id == group.id) {
@@ -246,12 +246,12 @@ impl Opening {
         }
         let square = way.front.square(reach);
         let Some(area) = meeting(way.whole, square) else {
-            group.opacity = Some(0.0);
+            group.opacity = 0.0;
             return group;
         };
         let span = way.far - way.near;
         let shown = ease_out(phase(reach, way.near, way.near + span * SHOWN_BY));
-        group.opacity = Some(group.opacity.unwrap_or(1.0) * shown);
+        group.opacity = group.opacity * shown;
         group.items = vec![Item::Viewport(Viewport {
             frame: area,
             view: area,
@@ -286,7 +286,7 @@ pub(super) fn edge(area: Rect, solid: f64) -> Item {
 #[cfg(test)]
 mod tests {
     use archboard_scene::geometry::{Point, Rect};
-    use archboard_scene::scene::{Group, Item, Scene, Transform};
+    use archboard_scene::scene::{Group, Item, Scene};
 
     use super::super::ease::carried;
     use super::super::found::found;
@@ -380,7 +380,7 @@ mod tests {
         let early = PHASES.entry.region_span * 0.1;
         assert!(shown_box(&near.at(early)).is_some());
         let unseen = far.at(early);
-        assert_eq!(unseen.opacity, Some(0.0));
+        assert_eq!(unseen.opacity, 0.0);
         assert_eq!(worn_edge(&unseen), None);
     }
 
@@ -495,7 +495,7 @@ mod tests {
 
     /// The box that shows a group, where the group stands.
     fn held_box(group: &Group) -> Rect {
-        let at = group.transform.unwrap_or(Transform::translate(0.0, 0.0));
+        let at = group.transform;
         carried(shown_box(group).expect("a box shows it"), at)
     }
 

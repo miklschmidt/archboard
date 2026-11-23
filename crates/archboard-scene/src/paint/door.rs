@@ -134,7 +134,7 @@ fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
         .moved(Transform {
             x: round_coord(rect.x + rect.width - DOOR_ARROW_INSET),
             y: round_coord(rect.y + rect.height / 2.0),
-            scale: (scale != 1.0).then(|| round_coord(scale)),
+            scale: round_coord(scale),
         }),
     )
 }

@@ -192,8 +192,8 @@ pub(crate) fn end_of(path: &BezPath, start: bool) -> Option<(kurbo::Point, f64)>
 }
 
 /// The transform of one group: a move, and a scale inside it.
-pub(crate) fn placed(x: f64, y: f64, scale: Option<f64>) -> Affine {
-    Affine::translate((x, y)) * Affine::scale(scale.unwrap_or(1.0))
+pub(crate) fn placed(x: f64, y: f64, scale: f64) -> Affine {
+    Affine::translate((x, y)) * Affine::scale(scale)
 }
 
 /// How exactly a trim measures along a path, in the picture's units.
@@ -286,10 +286,7 @@ mod tests {
             width: 3.0,
             height: 4.0,
         };
-        let (_, bounds) = outline_of(&Geometry::Rect {
-            rect,
-            radius: 1.0,
-        });
+        let (_, bounds) = outline_of(&Geometry::Rect { rect, radius: 1.0 });
         assert_eq!(bounds, kurbo::Rect::new(1.0, 2.0, 4.0, 6.0));
     }
 

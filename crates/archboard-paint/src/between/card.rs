@@ -190,13 +190,12 @@ fn opens(small: Rect, large: Rect) -> bool {
 /// frame while the card is in flight. Clipped, it is cut to a sliver and
 /// pops back whole when the picture lands.
 fn is_corner_mark(item: &Item, card: Rect) -> bool {
-    let Item::Group(Group {
-        transform: Some(at),
-        ..
-    }) = item
-    else {
+    let Item::Group(Group { transform: at, .. }) = item else {
         return false;
     };
+    if *at == Transform::IDENTITY {
+        return false;
+    }
     let near_x = at.x - card.x < MARK_MARGIN || card.x + card.width - at.x < MARK_MARGIN;
     let near_y = at.y - card.y < MARK_MARGIN || card.y + card.height - at.y < MARK_MARGIN;
     near_x || near_y
@@ -230,13 +229,8 @@ fn together(items: &[Item], dx: f64, dy: f64, opacity: f64) -> Option<Item> {
     if items.is_empty() || opacity <= 0.0 {
         return None;
     }
-    let mut group = Group::new(Role::Marks, items.to_vec());
-    if dx != 0.0 || dy != 0.0 {
-        group.transform = Some(Transform::translate(dx, dy));
-    }
-    if opacity < 1.0 {
-        group.opacity = Some(opacity);
-    }
+    let mut group = Group::new(Role::Marks, items.to_vec()).moved(Transform::translate(dx, dy));
+    group.opacity = opacity.min(1.0);
     Some(Item::Group(group))
 }
 
@@ -245,7 +239,7 @@ fn together(items: &[Item], dx: f64, dy: f64, opacity: f64) -> Option<Item> {
 pub(super) struct CardCarry {
     shell: Group,
     /// The entrance's growth, or another move still on the old group.
-    from_transform: Option<Transform>,
+    from_transform: Transform,
     fixed: Vec<Item>,
     frames: Vec<Frame>,
     old_frames: Vec<Frame>,
@@ -345,22 +339,16 @@ impl CardCarry {
     }
 
     /// Carry an unfinished entrance's scale and position into the next scene.
-    fn transform_at(&self, moved: f64) -> Option<Transform> {
-        if self.from_transform == self.shell.transform {
-            return self.shell.transform;
+    fn transform_at(&self, moved: f64) -> Transform {
+        let (from, to) = (self.from_transform, self.shell.transform);
+        if from == to {
+            return to;
         }
-        let still = Transform::translate(0.0, 0.0);
-        let from = self.from_transform.unwrap_or(still);
-        let to = self.shell.transform.unwrap_or(still);
-        Some(Transform {
+        Transform {
             x: lerp(from.x, to.x, moved),
             y: lerp(from.y, to.y, moved),
-            scale: Some(lerp(
-                from.scale.unwrap_or(1.0),
-                to.scale.unwrap_or(1.0),
-                moved,
-            )),
-        })
+            scale: lerp(from.scale, to.scale, moved),
+        }
     }
 
     /// Each role's content with where it stands and how visible it is.

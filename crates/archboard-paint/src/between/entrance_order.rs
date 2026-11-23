@@ -99,9 +99,9 @@ fn an_entrance_opens_from_the_middle_of_the_picture() {
 #[test]
 fn a_card_comes_out_of_the_middle_small_and_lands_where_it_is_drawn() {
     let early = Entrance::new(&tall_picture(), &PHASES, None).at(0.12);
-    let moved = drawing(&early, "middle")[0].transform.expect("it is moved");
-    assert!(moved.scale.is_some_and(|scale| scale < 1.0));
-    let (x, _) = (50.0 * moved.scale.unwrap_or(1.0) + moved.x, 0.0);
+    let moved = drawing(&early, "middle")[0].transform;
+    assert!(moved.scale < 1.0);
+    let (x, _) = (50.0 * moved.scale + moved.x, 0.0);
     assert!(x > 50.0, "it starts nearer the middle than it lands");
 }
 
@@ -118,7 +118,7 @@ fn a_card_the_last_picture_drew_flies_from_where_it_stood() {
     assert!(entrance.flown().contains("middle"));
     let start = entrance.at(0.0);
     let flying = drawing(&start, "middle")[0];
-    let moved = flying.transform.expect("it stands where it stood");
+    let moved = flying.transform;
     assert_eq!((10.0 + moved.x, 110.0 + moved.y), (was.x, was.y));
     assert_eq!(solid(flying), 0.5, "it shows as the last picture does");
     assert_eq!(solid(drawing(&start, "top")[0]), 0.0, "the rest bloom");

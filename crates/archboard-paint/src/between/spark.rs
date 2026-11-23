@@ -321,7 +321,7 @@ impl DrawOn {
             return group;
         }
         if drawn <= 0.0 {
-            group.opacity = Some(0.0);
+            group.opacity = 0.0;
         }
         for &Stroked { child, length } in &self.strokes {
             let Some(Item::Shape(shape)) = group.items.get_mut(child) else {

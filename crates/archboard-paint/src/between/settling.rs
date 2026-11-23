@@ -30,7 +30,7 @@ fn an_entrance_finishes_the_rim_and_pulse_fade_after_the_last_line() {
     let pulse = body
         .iter()
         .find_map(|item| match item {
-            Item::Group(group) if matches!(group.role, Role::Traffic(_)) => group.opacity,
+            Item::Group(group) if matches!(group.role, Role::Traffic(_)) => Some(group.opacity),
             _ => None,
         })
         .expect("the pulses fade in");

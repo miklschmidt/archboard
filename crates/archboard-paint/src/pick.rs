@@ -132,9 +132,9 @@ impl Finder<'_> {
     }
 
     /// Where a group sits in this view.
-    fn place_of(&self, group: &Group) -> Option<Transform> {
+    fn place_of(&self, group: &Group) -> Transform {
         match &group.role {
-            Role::Chip { far } if self.far => Some(*far),
+            Role::Chip { far } if self.far => *far,
             _ => group.transform,
         }
     }
@@ -151,9 +151,10 @@ impl Finder<'_> {
         };
         let lowered = around.transform * Affine::translate((0.0, drop));
         let held = Around {
-            transform: self.place_of(group).map_or(lowered, |place| {
+            transform: {
+                let place = self.place_of(group);
                 lowered * placed(place.x, place.y, place.scale)
-            }),
+            },
             pointer: group.pointer.or(around.pointer),
             marked: marked.or(around.marked),
             stuck: around.stuck || drop > 0.0,
@@ -210,7 +211,7 @@ impl Finder<'_> {
         let x = frame.x + (frame.width - view.width * scale) / 2.0 - view.x * scale;
         let y = frame.y + (frame.height - view.height * scale) / 2.0 - view.y * scale;
         let held = Around {
-            transform: around.transform * placed(x, y, Some(scale)),
+            transform: around.transform * placed(x, y, scale),
             ..around
         };
         self.items(&viewport.items, held);
