@@ -21,6 +21,6 @@ The two advisors in this repository:
 | Fable   | Claude   | The latest Claude Fable model, for example `claude-fable-5-2` |
 
 Pick the latest model of each family that the harness lists.
-Use each model's default reasoning effort.
+Run each advisor at high reasoning effort, and set it explicitly when you start it: Codex `reasoningEffort: "high"`, Claude `effort: "high"`. Left unset, Astra runs at low.
 Give each advisor a brief with only the question, the facts it needs and pointers to the files, and no history of the conversation.
 Let it read the repository, and change nothing.
