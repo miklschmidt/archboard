@@ -52,7 +52,7 @@ fn fanned(face: &Rect, wanted: &[f64]) -> Vec<f64> {
 /// The ports of a face gathered into one group a lane apart, in the order asked, centred on the
 /// face's reach: a port leaves the middle only to make room for the others, never to stand nearer
 /// its line's other end. A group longer than the face packs closer, still centred.
-fn gathered((low, high): (f64, f64), count: usize) -> Vec<f64> {
+pub(crate) fn gathered((low, high): (f64, f64), count: usize) -> Vec<f64> {
     let gap = if count > 1 {
         js_min(LANE, (high - low) / (count - 1) as f64)
     } else {
@@ -122,7 +122,9 @@ impl Router<'_> {
 
     /// The port one end of a net asks for: its trunk's, the first time the trunk is met, or its own.
     fn request_of(&self, net: NetId, side: End, asked: &mut Set<TrunkId>) -> Option<PortRequest> {
-        if self.station(self.net(net).at(side)).kind != Kind::Card {
+        if self.station(self.net(net).at(side)).kind != Kind::Card
+            || self.sided.contains(&(net, side))
+        {
             return None;
         }
         let Some(shared) = self.shared_at(net, side) else {
@@ -215,6 +217,7 @@ impl Router<'_> {
                     .collect();
                 self.place_ports(item, &bottoms);
             }
+            self.follow_sided();
         }
     }
 }

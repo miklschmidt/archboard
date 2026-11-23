@@ -14,6 +14,8 @@ use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chai
 use crate::lanes::channels::{End, Net, NetId};
 use crate::lanes::jogs::nothing;
 use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
+pub(crate) use crate::lanes::sides::route_scene;
+use crate::lanes::sides::{Routing, Sided};
 use crate::lanes::spacing::Rim;
 use crate::placed::PlacedEdge;
 
@@ -42,9 +44,9 @@ pub(crate) struct SceneLine<'a> {
 }
 
 /// A relationship's nets, top to bottom, and whether it runs upward.
-struct Routed {
-    nets: Vec<NetId>,
-    upward: bool,
+pub(crate) struct Routed {
+    pub nets: Vec<NetId>,
+    pub upward: bool,
 }
 
 /// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk:
@@ -237,7 +239,7 @@ impl Router<'_> {
     }
 
     /// The points of one relationship, from its upper end to its lower end.
-    fn points_of(&self, nets: &[NetId], left: f64) -> Vec<Point> {
+    pub(crate) fn points_of(&self, nets: &[NetId], left: f64) -> Vec<Point> {
         let mut points = Vec::new();
         for &id in nets {
             let net = self.net(id);
@@ -500,20 +502,15 @@ fn routed_of(
     routed
 }
 
-/// Route lines through a banded scene, each on tracks of its own, and space
-/// the bands for the tracks each channel holds. `margin` is how far every x
-/// moves, `top` where the first band starts, and `rim` the room the block
-/// keeps at its edge rows where no line turns. Answers each line's points,
-/// from its source to its target. With `reserve`, a crowded card stops the
-/// routing before anything settles, and the answer is the widths it needs. With `bus`, the ends
-/// on each face gather into one group a lane apart, as Lanes draws them.
-pub(crate) fn route_scene(
+/// Route a scene once, with the line ends `sided` names landed on a card's side.
+pub(crate) fn route_once(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
     (margin, top): (f64, f64),
     rim: Option<Rim>,
     (reserve, bus): (bool, bool),
-) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
+    sided: &Sided,
+) -> Result<Routing, Map<ItemId, f64>> {
     let mut track = Router::new(scene);
     track.bus = bus;
     let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
@@ -542,6 +539,7 @@ pub(crate) fn route_scene(
     track.relay_laps(&kinds, &movable);
     track.straighten_through_labels(&all);
     let routed = routed_of(&mut track, lines, &inner, &chains);
+    track.mark_sided(sided, &routed);
     let nets: Vec<NetId> = routed
         .values()
         .flat_map(|route| route.nets.iter().copied())
@@ -573,15 +571,7 @@ pub(crate) fn route_scene(
         .filter(|route| route.upward)
         .map(|route| route.nets[0])
         .collect();
+    track.follow_sided();
     track.space_bands(&nets, &rising, top, rim);
-    Ok(routed
-        .iter()
-        .map(|(id, route)| {
-            let mut points = track.points_of(&route.nets, margin);
-            if route.upward {
-                points.reverse();
-            }
-            (id.clone(), points)
-        })
-        .collect())
+    Ok(track.drawn(&routed, margin))
 }

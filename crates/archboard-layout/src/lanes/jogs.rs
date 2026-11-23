@@ -140,6 +140,9 @@ impl Router<'_> {
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
         let item = self.station(station).item;
+        if self.sided.contains(&(net, end)) {
+            return false;
+        }
         if self.bus {
             return self.slide_card(nets, net, end, x);
         }

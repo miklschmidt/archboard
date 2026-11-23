@@ -434,3 +434,44 @@ fn lanes_wraps_a_wide_rank_into_rows_with_its_ends_centred() {
         "the rank below the container wraps: {rows:?}"
     );
 }
+
+#[test]
+fn lanes_lands_a_line_that_turns_past_a_card_on_its_side() {
+    // Painting: the painter's line runs down beside the container and turns into a card inside
+    // it, so it lands on that card's side; every line end still touches a card.
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/side-port.json")).unwrap());
+    let boxes: Vec<(f64, f64, f64, f64)> = drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .map(|card| {
+            let at = |key: &str| card["box"][key].as_f64().expect("a card's box");
+            (at("x"), at("y"), at("width"), at("height"))
+        })
+        .collect();
+    let on_face = |(x, y): (f64, f64), side: bool| {
+        boxes.iter().any(|&(left, top, width, height)| {
+            let level = (y - top).abs() < 0.01 || (y - top - height).abs() < 0.01;
+            let upright = (x - left).abs() < 0.01 || (x - left - width).abs() < 0.01;
+            if side {
+                upright && top < y && y < top + height
+            } else {
+                (level && left <= x && x <= left + width)
+                    || (upright && top <= y && y <= top + height)
+            }
+        })
+    };
+    let ends: Vec<(f64, f64)> = lines_of(&drawn)
+        .into_iter()
+        .flat_map(|(_, points)| [points[0], *points.last().expect("an end")])
+        .collect();
+    assert!(
+        ends.iter().all(|&end| on_face(end, false)),
+        "every end touches a card: {ends:?}"
+    );
+    assert!(
+        ends.iter().any(|&end| on_face(end, true)),
+        "a line lands on a side: {ends:?}"
+    );
+}

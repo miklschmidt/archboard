@@ -86,7 +86,11 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         (placed, true)
     } else {
         let quiet = super::planned::without_words(&graph, |_| true);
-        (super::legacy::place(&quiet, host, lanes)?, false)
+        let mut placed = super::legacy::place(&quiet, host, lanes)?;
+        if lanes {
+            crate::lanes::frame_sides::enter_by_frame_sides(&mut placed);
+        }
+        (placed, false)
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {

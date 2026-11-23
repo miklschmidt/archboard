@@ -7,7 +7,7 @@
 
 use crate::ecma::{js_max, js_min};
 use crate::geometry::{Point, polyline_x};
-use crate::lanes::channels::{Net, NetId, Trunk};
+use crate::lanes::channels::{End, Net, NetId, Trunk};
 use crate::lanes::occupancy::Occupancy;
 use crate::lanes::scene::{ItemId, Placement, Set, centre_x};
 use crate::placed::PlacedEdge;
@@ -144,6 +144,8 @@ pub(crate) struct Router<'s> {
     /// Whether the ends on each card face gather into one group a lane apart, a bus, as Lanes
     /// draws them (`place_ports`).
     pub bus: bool,
+    /// The net ends that land on a card's side, not its face (`sides.rs`).
+    pub sided: Set<(NetId, End)>,
 }
 
 impl<'s> Router<'s> {
@@ -156,6 +158,7 @@ impl<'s> Router<'s> {
             nets: Vec::new(),
             trunks: Vec::new(),
             bus: false,
+            sided: Set::default(),
         }
     }
 
