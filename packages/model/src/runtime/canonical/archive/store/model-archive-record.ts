@@ -21,7 +21,7 @@ import {
  * this one, and a record of a higher format comes from a newer Archboard. Raise
  * it whenever the record schema changes, so an older reader says so.
  */
-const RECORD_FORMAT = 1;
+const RECORD_FORMAT = 2;
 const RecordFormatSchema = z.int().min(1).max(RECORD_FORMAT);
 
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
