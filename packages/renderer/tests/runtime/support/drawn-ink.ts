@@ -237,7 +237,7 @@ function labelsOffRuns(drawing: RenderedDiagram): string[] {
 	for (const [id, label] of routeLabels(drawing.svg)) {
 		const strands = cables.get(id) ?? [id];
 		const reach = plateReach(strands);
-		const on = strands.some((strand) => {
+		const on = strands.every((strand) => {
 			const route = routes.get(strand);
 			return route === undefined || onStraightRun(route, label, reach);
 		});
