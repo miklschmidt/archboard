@@ -409,8 +409,8 @@ async function waitedFor<T>(
 	try {
 		return await pollUntil("modelLock.wait", look, { signal: request.signal });
 	} catch (error) {
-		if (error instanceof TimedOut) return undefined;
 		if (request.signal?.aborted) throw new ModelLockCancelledError(model);
+		if (error instanceof TimedOut) return undefined;
 		throw error;
 	}
 }
