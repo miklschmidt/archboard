@@ -21,7 +21,9 @@ use crate::lanes::ports::gathered;
 use crate::lanes::route::{Routed, SceneLine, route_once};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
 use crate::lanes::score::crossing_places;
-use crate::lanes::side_runs::{CLEAR, Run, at_face, bends, meets, met, runs_of, through, worse};
+use crate::lanes::side_runs::{
+    CLEAR, Run, at_face, bends, meets, met, runs_of, through, turns, worse,
+};
 use crate::lanes::spacing::Rim;
 
 /// The ends of lines that land on a card's side: each line's key, and the end of its route, top
@@ -486,9 +488,9 @@ impl Router<'_> {
             Sided::default()
         };
         let (crossings, bends) = if self.bus {
-            let lines = routes.values().map(Vec::as_slice);
+            let lines: Vec<_> = routes.values().map(|points| turns(points)).collect();
             (
-                crossing_places(lines).len(),
+                crossing_places(lines.iter().map(Vec::as_slice)).len(),
                 routes.values().map(|one| bends(one)).sum(),
             )
         } else {

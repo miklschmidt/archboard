@@ -1,7 +1,7 @@
 //! The straight runs of lines, as the side ports of a Lanes drawing weigh them: where two runs
 //! cross or lie on top of each other, where a run passes a box, and how often a line turns.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_scene::geometry::{Point, Rect, route_tolerance};
 
 use crate::ecma::{abs, js_max, js_min};
 use crate::lanes::chains::LANE;
@@ -16,9 +16,36 @@ pub(crate) const OVERLAP: usize = 1 << 20;
 /// How far a run keeps from a box it passes.
 pub(crate) const CLEAR: f64 = LANE / 2.0;
 
-/// A line's straight runs.
+/// A line's points of change in direction. An extra waypoint on a straight run must not hide
+/// an intersection at that point.
+pub(crate) fn turns(points: &[Point]) -> Vec<Point> {
+    let same = |a, b| abs(a - b) < route_tolerance();
+    let mut kept: Vec<Point> = Vec::new();
+    for &point in points {
+        if let Some(&last) = kept.last() {
+            if same(last.x, point.x) && same(last.y, point.y) {
+                continue;
+            }
+            if kept.len() >= 2 {
+                let before = kept[kept.len() - 2];
+                if (same(before.x, last.x) && same(last.x, point.x))
+                    || (same(before.y, last.y) && same(last.y, point.y))
+                {
+                    kept.pop();
+                }
+            }
+        }
+        kept.push(point);
+    }
+    kept
+}
+
+/// A line's straight runs, without intermediate waypoints.
 pub(crate) fn runs_of(points: &[Point]) -> Vec<Run> {
-    points.windows(2).map(|pair| (pair[0], pair[1])).collect()
+    turns(points)
+        .windows(2)
+        .map(|pair| (pair[0], pair[1]))
+        .collect()
 }
 
 /// Whether a run is level.

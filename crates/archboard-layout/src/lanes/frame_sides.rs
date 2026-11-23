@@ -151,15 +151,16 @@ fn among_cards(placed: &Picture<'_>, x: f64) -> bool {
 fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[Run]) -> bool {
     let old = outside_first(placed, door.line, door.leaving);
     let start = door.outside.len().saturating_sub(1);
-    let (new_runs, old_runs) = (runs_of(&points[start..]), runs_of(&old[start..]));
+    let outside = runs_of(&points[start..points.len() - 1]);
     let side = *points.last().expect("a point");
     let head = at_face(side.x, points[points.len() - 2].x, side.y);
-    let bused = met(&runs_of(&old), others) / OVERLAP > 0;
+    let old_meets = met(&runs_of(&old), others);
+    let bused = old_meets / OVERLAP > 0;
     !bused
-        && !blocked(placed, &new_runs[..new_runs.len() - 1], &door.card)
+        && !blocked(placed, &outside, &door.card)
         && !others.iter().any(|&other| meets(head, other) > 0)
         && length(points) <= length(&old)
-        && !worse(met(&new_runs, others), met(&old_runs, others))
+        && !worse(met(&runs_of(points), others), old_meets)
         && bends(points) < bends(&old)
 }
 
@@ -229,5 +230,55 @@ pub(crate) fn enter_by_frame_sides(placed: &mut Picture<'_>) {
         if let Some(face) = through_wall_if_better(placed, &door, &taken) {
             taken.push((door.wall, face));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn points(pairs: &[(f64, f64)]) -> Vec<Point> {
+        pairs.iter().map(|&(x, y)| Point { x, y }).collect()
+    }
+
+    fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {
+        Rect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    #[test]
+    fn a_wall_entry_keeps_clear_of_a_crossing_at_a_straight_waypoint() {
+        let cards = [rect(0.0, 0.0, 60.0, 40.0), rect(120.0, 180.0, 60.0, 40.0)];
+        let frames = [(rect(100.0, 100.0, 300.0, 200.0), 0)];
+        let top_entry = points(&[
+            (30.0, 40.0),
+            (30.0, 60.0),
+            (170.0, 60.0),
+            (170.0, 140.0),
+            (150.0, 140.0),
+            (150.0, 180.0),
+        ]);
+        let mut clear = [top_entry.clone()];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut clear,
+        });
+        assert_eq!(clear[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
+
+        let mut crossed = [
+            top_entry.clone(),
+            points(&[(64.0, 120.0), (84.0, 120.0), (96.0, 120.0)]),
+        ];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut crossed,
+        });
+        assert_eq!(crossed[0], top_entry);
     }
 }
