@@ -197,7 +197,8 @@ pub(super) fn ordered_pieces(
     };
     let beside = move |one: &Piece| {
         let (at, ink) = (one.envelope, one.ink);
-        theirs.iter()
+        theirs
+            .iter()
             .filter(move |other| !other.envelope.apart_by(at, ink + other.ink))
             .map(move |other| (ink + other.ink, &other.ends[..]))
     };
