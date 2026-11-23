@@ -14,6 +14,7 @@ use crate::drawing::Emphasis;
 use crate::geometry::Point;
 use crate::paint::styles::{HEAD_LENGTH, stroke_width};
 use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, Shape, Stroke};
+use crate::sizes::THIN_BODY;
 
 /// The side of the square a new mark is drawn in, in its own units.
 const MARK_BOX: f64 = 16.0;
@@ -257,20 +258,44 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
 pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
     let place = place_of(head);
     let length = mark_length(head);
+    let width = stroke_width(weight);
+    let body_width = if head == Head::Detached {
+        THIN_BODY * width
+    } else {
+        width
+    };
     Marker {
         id,
         view: place.view,
         reference: place.reference,
         hold: place.hold,
-        size: crate::geometry::round_coord(length / stroke_width(weight)),
+        size: crate::geometry::round_coord(length / body_width),
         shapes: mark_shapes(head, ink),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{APPROACH, STRAIGHT_RUN, body_short_of};
+    use super::{APPROACH, STRAIGHT_RUN, body_short_of, mark_length, mark_marker, stroke_width};
+    use crate::drawing::Emphasis;
     use crate::scene::Head;
+    use crate::scene::{HeadInk, MarkerId, Token};
+    use crate::sizes::THIN_BODY;
+
+    #[test]
+    fn a_thinner_body_keeps_its_chevron_at_the_route_end() {
+        for weight in [Emphasis::Normal, Emphasis::Hero] {
+            let head = Head::Detached;
+            let id = MarkerId::Shared {
+                head,
+                weight,
+                ink: HeadInk::Neutral,
+            };
+            let marker = mark_marker(id, head, weight, &Token::Border.into());
+            let size = marker.size * stroke_width(weight) * THIN_BODY;
+            assert!((size - mark_length(head)).abs() < 0.01);
+        }
+    }
 
     #[test]
     fn every_mark_and_a_little_body_fit_the_straight_approach_and_a_straight_line() {
