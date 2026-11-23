@@ -28,7 +28,8 @@ test("relationships between two cards draw as one cable whose strands of differe
 				expect(Math.hypot(one.x - other.x, one.y - other.y)).toBeGreaterThanOrEqual(8 - 0.01);
 	}
 	for (const [index, one] of strands.entries())
-		for (const other of strands.slice(index + 1)) expect(sharedLength(one, other)).toBeLessThanOrEqual(0.01);
+		for (const other of strands.slice(index + 1))
+			expect(sharedLength(one, other)).toBeLessThanOrEqual(0.01);
 });
 
 /**

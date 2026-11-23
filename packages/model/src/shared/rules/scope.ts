@@ -271,7 +271,14 @@ function cablePlates(
 		const [first, ...rest] = cable.toSorted((one, other) => one.line.order - other.line.order);
 		if (first === undefined) continue;
 		const ends = { from: first.line.from, to: first.line.to, twoWay: first.line.twoWay === true };
-		words.set(first.line.id, wordsOnJoinedLine(cable.flatMap(({ joins }) => joins), ends, reached));
+		words.set(
+			first.line.id,
+			wordsOnJoinedLine(
+				cable.flatMap(({ joins }) => joins),
+				ends,
+				reached,
+			),
+		);
 		for (const other of rest) words.set(other.line.id, undefined);
 	}
 	return lines.map((one) =>
