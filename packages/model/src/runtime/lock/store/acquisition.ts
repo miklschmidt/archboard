@@ -333,19 +333,23 @@ async function stealContested(
  */
 async function holdModel(request: LockRequest): Promise<LockHold> {
 	const startedAt = performance.now();
-	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
+	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0, created: false };
 	const look = lockAttempt(request, wait);
-	const first =
-		request.waits === false ? await look() : await waitedFor(request.model, look, request);
-	const outcome = await lastAttempts(first, look, wait);
-	if (outcome === undefined || outcome === "refused") {
-		throw new ModelHeldError(
-			request.model,
-			wait.blocker ? holderOf(wait.blocker) : null,
-			Math.round(performance.now() - startedAt),
-		);
+	try {
+		const first = request.waits === false ? await look() : await waitedFor(look, request);
+		const outcome = await lastAttempts(first, look, wait);
+		if (outcome === undefined || outcome === "refused") {
+			throw new ModelHeldError(
+				request.model,
+				wait.blocker ? holderOf(wait.blocker) : null,
+				Math.round(performance.now() - startedAt),
+			);
+		}
+		return outcome;
+	} finally {
+		// The poll can cancel after a look acquired a lease but before handing it back.
+		refuseIfCancelled(request, wait.created);
 	}
-	return outcome;
 }
 
 /**
@@ -363,8 +367,20 @@ function lockAttempt(
 	const leaseMs = request.leaseMs ?? ms("modelLock.lease");
 	return async () => {
 		// One try at a time, against one lease file: the model admits a single writer.
-		const result = await attemptOnce(model, request, leaseMs);
-		if (result.ok) return { holder: holderOf(result.record), created: result.created };
+		refuseIfCancelled(request);
+		const result = await attempt(
+			request.vault,
+			model,
+			request.holder,
+			leaseMs,
+			request.revokeClaim === true,
+		);
+		// A look can outlive its poll. Return any lease this look acquired after cancellation.
+		refuseIfCancelled(request, result.ok && result.created);
+		if (result.ok) {
+			wait.created = result.created;
+			return { holder: holderOf(result.record), created: result.created };
+		}
 		// Null means movement or a race, not a known holder, so the last concrete blocker is kept.
 		wait.blocker = result.record ?? wait.blocker;
 		return result.record && refusedOutright(result.record, request) ? "refused" : undefined;
@@ -395,22 +411,18 @@ async function lastAttempts<T>(
  * Attempt again until the model is held or refused, or the wait runs out. The lock is a file,
  * so waiting is polling: another process has no signal it can send here. A request that goes
  * away ends the wait at once, so it does not consume application shutdown time.
- * @param model The legacy board key, for the refusal a cancelled wait carries.
  * @param look One attempt.
  * @param request Who is asking, and its cancellation.
  * @returns What the last attempt found, or undefined when the wait ran out.
- * @throws {ModelLockCancelledError} When the request goes away.
  */
 async function waitedFor<T>(
-	model: string,
 	look: () => Promise<T | undefined>,
 	request: LockRequest,
 ): Promise<T | undefined> {
 	try {
 		return await pollUntil("modelLock.wait", look, { signal: request.signal });
 	} catch (error) {
-		if (request.signal?.aborted) throw new ModelLockCancelledError(model);
-		if (error instanceof TimedOut) return undefined;
+		if (!request.signal?.aborted && error instanceof TimedOut) return undefined;
 		throw error;
 	}
 }
@@ -420,6 +432,8 @@ interface WaitState {
 	/** The last concrete blocker, for the refusal text. */
 	blocker: LockRecord | null;
 	attemptsPastDeadline: number;
+	/** Whether a look acquired a new lease before the poll delivered its result. */
+	created: boolean;
 }
 
 /**
@@ -440,40 +454,14 @@ function givesUp(wait: WaitState): boolean {
 }
 
 /**
- * One attempt, with cancellation checked on both sides of it.
- *
- * If cancellation arrives after a successful new acquisition, that
- * acquisition is released; a reentrant hold that belonged to the caller
- * beforehand never is.
- * @param model The legacy board key, already normalized.
- * @param request Who is asking.
- * @param leaseMs How long the lease runs for.
- * @returns This acquisition, or the live blocker that refused it.
- * @throws {ModelLockCancelledError} When the request goes away.
- */
-async function attemptOnce(model: string, request: LockRequest, leaseMs: number): Promise<Attempt> {
-	refuseIfCancelled(request);
-	const result = await attempt(
-		request.vault,
-		model,
-		request.holder,
-		leaseMs,
-		request.revokeClaim === true,
-	);
-	if (request.signal?.aborted && result.ok && result.created) {
-		releaseHold(request.vault, model, request.holder.id);
-	}
-	refuseIfCancelled(request);
-	return result;
-}
-
-/**
- * Stop when the request that was waiting has gone away.
+ * Stop when the request has gone away and release any lease this request created.
  * @param request Who was asking.
+ * @param created Whether this request created the lease.
  * @throws {ModelLockCancelledError} When the request has gone away.
  */
-function refuseIfCancelled(request: LockRequest): void {
+function refuseIfCancelled(request: LockRequest, created = false): void {
 	if (request.signal?.aborted) {
+		if (created) releaseHold(request.vault, request.model, request.holder.id);
 		throw new ModelLockCancelledError(request.model);
 	}
 }

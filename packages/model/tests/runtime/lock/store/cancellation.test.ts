@@ -35,3 +35,32 @@ test("a parent's timeout cancels a pending lock request and leaves the original 
 		rmSync(vault, { recursive: true, force: true });
 	}
 });
+
+test("cancellation as a lease is acquired returns the model to the next writer", async () => {
+	const vault = mkdtempSync(join(tmpdir(), "archboard-lock-cancellation-"));
+	const model = "payments";
+	const controller = new AbortController();
+	try {
+		lock.onModelLockChanged((_vault, _model, holder) => {
+			if (holder?.id === "leaving") {
+				// Cancel after the acquisition has passed its own check, before polling delivers it.
+				queueMicrotask(() => queueMicrotask(() => controller.abort()));
+			}
+		});
+		await expect(
+			lock.holdModel({
+				vault,
+				model,
+				holder: { id: "leaving", kind: "agent" },
+				signal: controller.signal,
+			}),
+		).rejects.toBeInstanceOf(lock.ModelLockCancelledError);
+		await expect(
+			lock.holdModel({ vault, model, holder: { id: "next", kind: "human" }, waits: false }),
+		).resolves.toMatchObject({ holder: { id: "next" }, created: true });
+	} finally {
+		lock.onModelLockChanged(null);
+		lock.forgetLockAnnouncements();
+		rmSync(vault, { recursive: true, force: true });
+	}
+});
