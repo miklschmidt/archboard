@@ -737,8 +737,8 @@ export draws the same line above its picture.
 The `Relationships` part holds, from top to bottom, the lenses, the kinds, the effects and the
 marks. The lenses come first, one press each, in the policy's order (Main lines, Side effects, Sync
 compute, Network, Reads, Declared dependencies, All relationships), and the lens in use is marked
-as pressed. A kind and an effect each stand on a row of their own, and the row is its switch. A
-kind's sample is a solid line in the kind's ink with a mutation's wedge; an effect's sample is a
+as pressed. A kind and an effect each stand on a row of their own. A kind's sample is a
+solid line in the kind's ink; an effect's sample is a
 line in Line Ink with that effect's ends; a reading from before effects samples each kind as its
 policy recorded it. A row is a row of the panel like any other, with the tone of a row under the
 pointer, 8px past the column on each side, and the ring of the keyboard's focus. Its sample and
