@@ -411,3 +411,26 @@ fn lanes_stands_the_ends_on_every_face_round_its_middle() {
         }
     }
 }
+
+#[test]
+fn lanes_wraps_a_wide_rank_into_rows_with_its_ends_centred() {
+    // The Archboard workbench host reading: six cards below the container are one wide rank,
+    // dealt into rows, though every line end stands centred on its face.
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/wrapped-rank.json")).unwrap());
+    let frame = &drawn["frames"][0]["box"];
+    let below = frame["y"].as_f64().expect("a top") + frame["height"].as_f64().expect("a height");
+    let mut rows: Vec<f64> = drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .map(|card| card["box"]["y"].as_f64().expect("a top"))
+        .filter(|&y| y > below)
+        .collect();
+    rows.sort_by(f64::total_cmp);
+    rows.dedup();
+    assert!(
+        rows.len() >= 2,
+        "the rank below the container wraps: {rows:?}"
+    );
+}

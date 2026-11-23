@@ -1,0 +1,618 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.layout.engine": "lanes"
+	},
+	"children": [
+		{
+			"id": "vKEsyHFk#Zse70SS2",
+			"width": 340,
+			"height": 146.602,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.groups": "panes",
+				"archboard.order-group": "[\"module\",\"Registers each accepted pane socket, hands its pane's authority to the newest socket, notes its tab, opens and closes its Codex browser, and retires it on close or at stop\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+			"width": 594.9200000000001,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "1",
+				"archboard.groups": "agent",
+				"archboard.order-group": "[\"service\",\"Adapts local panes, context, tools, and narration to the voice agent\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+					"width": 340,
+					"height": 146.602,
+					"layoutOptions": {
+						"archboard.order": "3",
+						"archboard.groups": "agent",
+						"archboard.order-group": "[\"module\",\"Archboard's options for the voice agent: identity and tool names, domain instructions, context, tools, storage, Codex environment, admitted checkouts and their labels, and its context announcer\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "9",
+						"archboard.order-group": "[\"module\",\"Captures walkthrough narration and applies addressed presentation commands\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#OY4JPr8G",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "11",
+						"archboard.order-group": "[\"function\",\"Builds the voice agent for one server and joins it to the panes, the model news and the context sources\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+			"width": 237.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.door": "true",
+				"archboard.order-group": "11004"
+			}
+		},
+		{
+			"id": "vKEsyHFk/qKGcB6vZ#ZilfteOF",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.order-group": "[\"module\",\"Archboard's context for the coordinator: the catalogue of the models and variants in the vault of the pane the session presents through, read whole\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.order-group": "[\"module\",\"Publishes canonical reading context and exact-capture requirements; legacy-authority refusals return explicit migration guidance.\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "7",
+				"archboard.order-group": "[\"module\",\"Runs one temporary captured request through the existing local workhorse and queue\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+			"width": 274.96000000000004,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.groups": "agent packages",
+				"archboard.door": "true",
+				"archboard.order-group": "38000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.order-group": "[\"module\",\"Forward pane registration and browser activation to core-owned tab state\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "10",
+				"archboard.order-group": "[\"module\",\"Adapts canonical model news and pane context to the voice agent\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk#Tr8wcPNp",
+			"sources": [
+				"vKEsyHFk#Zse70SS2"
+			],
+			"targets": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"layoutOptions": {
+				"archboard.order": "200",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#Tr8wcPNp:label",
+					"text": "accept and close the\npane's Codex browser",
+					"width": 126.06999969482422,
+					"height": 46,
+					"narrow": {
+						"width": 97,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#cPOdAA3f"
+			],
+			"targets": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"layoutOptions": {
+				"archboard.order": "4000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "event",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#UxINwpn6:label",
+					"text": "Event \u00b7 from Panes and the\nworkbench, Start and stop",
+					"width": 148.11000061035156,
+					"height": 46,
+					"narrow": {
+						"width": 115.18000030517578,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#cPOdAA3f"
+			],
+			"targets": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#elH6AHHL:label",
+					"text": "Async",
+					"width": 49.77000045776367,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#AfSjx649",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+			],
+			"layoutOptions": {
+				"archboard.order": "20000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#AfSjx649:label",
+					"text": "a pane's tab, its shown\ncheckout, a tab's end",
+					"width": 129.38999938964844,
+					"height": 46,
+					"narrow": {
+						"width": 101.37999725341797,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#cPOdAA3f"
+			],
+			"targets": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"layoutOptions": {
+				"archboard.order": "22000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk#RZlJRIaF",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#SQjLwRvE"
+			],
+			"layoutOptions": {
+				"archboard.order": "70001",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#RZlJRIaF:label",
+					"text": "publish host changes",
+					"width": 121.55000305175781,
+					"height": 31,
+					"narrow": {
+						"width": 77.93000030517578,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#jKN6JFi4",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/qKGcB6vZ#ZilfteOF"
+			],
+			"layoutOptions": {
+				"archboard.order": "70002",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#jKN6JFi4:label",
+					"text": "supply the model catalogue",
+					"width": 151.82000732421875,
+					"height": 31,
+					"narrow": {
+						"width": 98.91000366210938,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#pTZh5zI9",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/SJ2JMVyz#bxWDGUJk"
+			],
+			"layoutOptions": {
+				"archboard.order": "70003",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#pTZh5zI9:label",
+					"text": "run captured explanation actions",
+					"width": 177.2100067138672,
+					"height": 31,
+					"narrow": {
+						"width": 112.69000244140625,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#IFPR1GJT",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
+			],
+			"layoutOptions": {
+				"archboard.order": "75000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#IFPR1GJT:label",
+					"text": "the brief's input for the\nmodel a pane shows",
+					"width": 130.2300033569336,
+					"height": 46,
+					"narrow": {
+						"width": 95.3499984741211,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#34fI1JB6",
+			"sources": [
+				"vKEsyHFk/9ncuT5DP#yyFS6UVO"
+			],
+			"targets": [
+				"vKEsyHFk/vKEsyHFk#lU0khwR0"
+			],
+			"layoutOptions": {
+				"archboard.order": "79000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#34fI1JB6:label",
+					"text": "createVoiceAgent with\nArchboard's options",
+					"width": 129.62999725341797,
+					"height": 46,
+					"narrow": {
+						"width": 105.76000213623047,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#3494fDAK",
+			"sources": [
+				"vKEsyHFk/9ncuT5DP#yyFS6UVO"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#SQjLwRvE"
+			],
+			"layoutOptions": {
+				"archboard.order": "81000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#3494fDAK:label",
+					"text": "announce the tabs' model\nchanges, focus and selection",
+					"width": 158.17999267578125,
+					"height": 46,
+					"narrow": {
+						"width": 112.68000030517578,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#UE6yrRV7",
+			"sources": [
+				"vKEsyHFk/9ncuT5DP#yyFS6UVO"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+			],
+			"layoutOptions": {
+				"archboard.order": "83000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#UE6yrRV7:label",
+					"text": "attach pane registration to\ncore-owned tab presence",
+					"width": 148.16000366210938,
+					"height": 46,
+					"narrow": {
+						"width": 118.01000213623047,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#lU0khwR0"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#SScV6EZR"
+			],
+			"layoutOptions": {
+				"archboard.order": "95000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#a5ULzncp:label",
+					"text": "Async \u00b7 await captured host narrative",
+					"width": 199.6300048828125,
+					"height": 31,
+					"narrow": {
+						"width": 86.66999816894531,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",
+			"sources": [
+				"vKEsyHFk/9ncuT5DP#yyFS6UVO"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#SScV6EZR"
+			],
+			"layoutOptions": {
+				"archboard.order": "100000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#8iYy7AoA:label",
+					"text": "subscribe to arrived\nnarration changes",
+					"width": 115.44999694824219,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#xV2HMQ01",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/vKEsyHFk#lU0khwR0"
+			],
+			"layoutOptions": {
+				"archboard.order": "123000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#xV2HMQ01:label",
+					"text": "host Archboard on the voice\nagent; start and stop it",
+					"width": 155.3699951171875,
+					"height": 46,
+					"narrow": {
+						"width": 109.01000213623047,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#ratt913y",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#yyFS6UVO"
+			],
+			"layoutOptions": {
+				"archboard.order": "980190",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#ratt913y:label",
+					"text": "the options of the voice agent",
+					"width": 162.66000366210938,
+					"height": 31,
+					"narrow": {
+						"width": 93.83000183105469,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#AvmihZrD",
+			"sources": [
+				"vKEsyHFk#OY4JPr8G"
+			],
+			"targets": [
+				"vKEsyHFk/9ncuT5DP#SScV6EZR"
+			],
+			"layoutOptions": {
+				"archboard.order": "980200",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#AvmihZrD:label",
+					"text": "what narration changes",
+					"width": 133.68000030517578,
+					"height": 31,
+					"narrow": {
+						"width": 90.51000213623047,
+						"height": 46
+					}
+				}
+			]
+		}
+	]
+}

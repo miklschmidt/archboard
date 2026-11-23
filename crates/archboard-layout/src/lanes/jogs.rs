@@ -4,8 +4,9 @@
 //! lanes still reads as a kink in one line rather than a route, and is closed
 //! the same way. Each such step is closed by moving one of its ends onto the
 //! other's column where that end can move without crowding anything: a card's
-//! own port along its face, a run of lanes onto a free column, or a label box
-//! clear of the rest of its band. A move that would bend a line that ran
+//! own port along its face (in a Lanes drawing, whose ports stand centred, the
+//! card itself by no more than a kink), a run of lanes onto a free column, or a
+//! label box clear of the rest of its band. A move that would bend a line that ran
 //! straight on the moved station's other side is not made.
 //!
 //! Drawn as blocks, a step at a label of any width that turns its line back
@@ -17,6 +18,7 @@
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_min, sign, to_fixed};
+use crate::geometry::Rect;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId};
 use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
@@ -134,11 +136,14 @@ impl Router<'_> {
     /// Move a card's own port along its face to an x, when the port is no
     /// trunk's and clear of the face's corners and its
     /// other ports. A bus's ports stand centred on their face (`place_ports`) and never move
-    /// to close a jog.
+    /// to close a jog: their card slides instead (`slide_card`).
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
         let item = self.station(station).item;
-        if self.bus || self.shared_at(net, end).is_some() || !self.on_face(station, x) {
+        if self.bus {
+            return self.slide_card(nets, net, end, x);
+        }
+        if self.shared_at(net, end).is_some() || !self.on_face(station, x) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {
@@ -150,6 +155,44 @@ impl Router<'_> {
             return false;
         }
         self.net_mut(net).set_x_at(end, x);
+        true
+    }
+
+    /// Slide a card along its band by a kink, so its centred port stands at an x: the card and
+    /// every line end on it, kept a lane clear of everything else on the band and of the lanes
+    /// that pass it. A card laid out as the region round it stays.
+    fn slide_card(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
+        let item = self.station(self.net(net).at(end)).item.expect("a card");
+        let one = *self.scene.item(item);
+        let shift = x - self.net(net).x_at(end);
+        if one.inset.is_some() || abs(shift) > KINK + STRAIGHT {
+            return false;
+        }
+        let moved = Rect {
+            x: one.bx.x + shift,
+            ..one.bx
+        };
+        let apart =
+            |low: f64, high: f64| high + LANE <= moved.x || low >= moved.x + moved.width + LANE;
+        let clear = (self.scene.cards.values().chain(self.scene.labels.values()))
+            .filter(|&&other| other != item && self.scene.item(other).band == one.band)
+            .map(|&other| self.scene.item(other).bx)
+            .all(|bx| apart(bx.x, bx.x + bx.width))
+            && self.lanes_by_band(nets)[one.band]
+                .iter()
+                .all(|&lane| apart(lane, lane));
+        if !clear {
+            return false;
+        }
+        self.scene.item_mut(item).bx = moved;
+        for &other in nets {
+            for side in [End::Top, End::Bottom] {
+                if self.station(self.net(other).at(side)).item == Some(item) {
+                    let at = self.net(other).x_at(side);
+                    self.net_mut(other).set_x_at(side, at + shift);
+                }
+            }
+        }
         true
     }
 
@@ -198,7 +241,8 @@ impl Router<'_> {
         let mut boxes: Map<StationId, Item> = Map::default();
         for &station in stations {
             let one = self.station(station);
-            if one.kind == Kind::Label {
+            // A card slides too (`slide_card`).
+            if one.kind != Kind::Lane {
                 boxes.insert(station, *self.scene.item(one.item.expect("a box")));
             }
         }
