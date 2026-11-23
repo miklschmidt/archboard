@@ -27,9 +27,6 @@ const DRAW_EASING: Curve = Curve(0.2, 0.0, 0.0, 1.0);
 /// line settling back to its own weight.
 const DRAWING_SHARE: f64 = 0.65;
 
-/// The weight of a line that states none, which a sweep settles to.
-const OWN_WIDTH: f64 = 1.2;
-
 /// How closely the length of a route is measured.
 const ACCURACY: f64 = 0.01;
 
@@ -132,9 +129,9 @@ impl Copy {
         };
         // A copy is drawn on whole, whatever dashes its line has.
         let stroke = Stroke {
-            cap: Some(Cap::Round),
+            cap: Cap::Round,
             dashes: Vec::new(),
-            dash_offset: None,
+            dash_offset: 0.0,
             ..shape.stroke.clone()?
         };
         let path = straightened(&path_of(steps));
@@ -152,7 +149,7 @@ impl Copy {
 
     /// The weight the copy settles to.
     fn own_width(&self) -> f64 {
-        self.stroke.width.unwrap_or(OWN_WIDTH)
+        self.stroke.width
     }
 
     /// When the copy ends, in milliseconds.

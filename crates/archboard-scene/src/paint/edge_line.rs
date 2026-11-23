@@ -172,7 +172,7 @@ pub(super) fn paint_edge_line(
     parts.push(shape(
         Shape::path(Purpose::Halo, path)
             .unfilled()
-            .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
+            .stroked(styles.ring(width + EDGE_HALO_EXTRA).rounded()),
     ));
     let inside = line.stroke.clone().unwrap_or(stroke);
     parts.push(shape(line));

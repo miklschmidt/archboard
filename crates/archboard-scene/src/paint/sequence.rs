@@ -167,7 +167,7 @@ fn paint_column(
         },
     )
     .stroked(Stroke {
-        dash_offset: Some(LIFELINE_DASH_OFFSET),
+        dash_offset: LIFELINE_DASH_OFFSET,
         ..Stroke::new(&palette.edge, 1.0).dashed(&LIFELINE_DASH)
     });
     let bars = activation_boxes(column);
@@ -178,7 +178,7 @@ fn paint_column(
             purpose: Purpose::Halo,
             ..styles.halo(Shape {
                 stroke: lifeline.stroke.map(|stroke| Stroke {
-                    width: Some(LIT_LIFELINE_WIDTH),
+                    width: LIT_LIFELINE_WIDTH,
                     ..stroke
                 }),
                 ..lifeline

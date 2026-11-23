@@ -8,10 +8,40 @@ use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
 use crate::css::paint;
 use crate::definitions::{Names, marker_id};
 use crate::path::{Spelling, path_data};
-use crate::xml::{Attributes, empty};
+use crate::xml::{Attributes, Spelt, empty};
 
 /// The class of everything a viewer shows only round what is selected.
 pub(crate) const HALO_CLASS: &str = "ab-halo";
+
+/// What SVG draws where an attribute is absent. A scene states every value, and
+/// a stated value that equals its attribute's initial one is not written: the
+/// reader draws the same without it. The stylesheet's selectors on a written
+/// value (`path[stroke-width="…"]`) must not name an initial one.
+const INITIAL: [(&str, &str); 7] = [
+    ("fill-opacity", "1"),
+    ("stroke-width", "1"),
+    ("stroke-opacity", "1"),
+    ("stroke-linecap", "butt"),
+    ("stroke-linejoin", "miter"),
+    ("stroke-dashoffset", "0"),
+    ("opacity", "1"),
+];
+
+/// An attribute set to a value the scene states, unless that is the initial one.
+pub(crate) fn stated<'a>(
+    out: &'a mut Attributes,
+    name: &'static str,
+    value: impl Spelt,
+) -> &'a mut Attributes {
+    let value = value.spelt();
+    if INITIAL
+        .iter()
+        .any(|(attribute, initial)| *attribute == name && *initial == value)
+    {
+        return out;
+    }
+    out.set(name, value)
+}
 
 /// One attribute a shape can carry.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -153,24 +183,24 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             out.maybe("stroke", stroke.map(|stroke| paint(&stroke.paint)));
         }
         Width => {
-            out.maybe("stroke-width", stroke.and_then(|stroke| stroke.width));
+            if let Some(stroke) = stroke {
+                stated(out, "stroke-width", stroke.width);
+            }
         }
         Opacity => {
-            out.maybe("stroke-opacity", stroke.and_then(|stroke| stroke.opacity));
+            if let Some(stroke) = stroke {
+                stated(out, "stroke-opacity", stroke.opacity);
+            }
         }
         Cap => {
-            out.maybe(
-                "stroke-linecap",
-                stroke.and_then(|stroke| stroke.cap).map(|cap| word(&cap)),
-            );
+            if let Some(stroke) = stroke {
+                stated(out, "stroke-linecap", word(&stroke.cap));
+            }
         }
         Join => {
-            out.maybe(
-                "stroke-linejoin",
-                stroke
-                    .and_then(|stroke| stroke.join)
-                    .map(|join| word(&join)),
-            );
+            if let Some(stroke) = stroke {
+                stated(out, "stroke-linejoin", word(&stroke.join));
+            }
         }
         Dash => {
             out.maybe(
@@ -181,10 +211,9 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             );
         }
         Offset => {
-            out.maybe(
-                "stroke-dashoffset",
-                stroke.and_then(|stroke| stroke.dash_offset),
-            );
+            if let Some(stroke) = stroke {
+                stated(out, "stroke-dashoffset", stroke.dash_offset);
+            }
         }
         Pointer => {
             out.maybe(
@@ -252,4 +281,26 @@ pub(crate) fn write_shape(shape: &Shape, names: &Names, arrowhead: Spelling, out
         Geometry::Path { .. } => "path",
     };
     empty(name, &attributes, out);
+}
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::paint::design::far_line_widths;
+
+    use super::stated;
+    use crate::xml::Attributes;
+
+    #[test]
+    fn a_far_view_rule_names_only_widths_that_are_written() {
+        for (near, _) in far_line_widths() {
+            let mut out = Attributes::new();
+            stated(&mut out, "stroke-width", near);
+            let mut written = String::new();
+            out.write(&mut written);
+            assert!(
+                written.contains("stroke-width"),
+                "a line of width {near} would be written without it, and the far view's rule would miss it"
+            );
+        }
+    }
 }

@@ -103,11 +103,11 @@ fn spark(
     if let Some(stroke) = &mut lit.stroke {
         let period = reach + length * 2.0;
         stroke.paint = sparked(&stroke.paint, toward);
-        stroke.width = Some(stroke.width.unwrap_or(1.0) + wider);
-        stroke.opacity = Some(shown);
-        stroke.cap = Some(Cap::Round);
+        stroke.width += wider;
+        stroke.opacity = shown;
+        stroke.cap = Cap::Round;
         stroke.dashes = vec![reach, length * 2.0];
-        stroke.dash_offset = Some((period + reach - head).rem_euclid(period));
+        stroke.dash_offset = (period + reach - head).rem_euclid(period);
     }
     Item::Shape(lit)
 }
@@ -142,10 +142,10 @@ impl Rim {
             .map(|&(width, solid)| {
                 let mut shape = self.shape.clone();
                 if let Some(stroke) = &mut shape.stroke {
-                    stroke.width = Some(width);
-                    stroke.opacity = Some(solid * shown);
+                    stroke.width = width;
+                    stroke.opacity = solid * shown;
                     stroke.dashes = vec![arc, (self.edge - arc).max(0.01)];
-                    stroke.dash_offset = Some((arc / 2.0 - self.landed).rem_euclid(self.edge));
+                    stroke.dash_offset = (arc / 2.0 - self.landed).rem_euclid(self.edge);
                 }
                 Item::Shape(shape)
             })
@@ -250,10 +250,10 @@ fn draw_shape(shape: &mut Shape, length: f64, drawn: f64, arrowhead_at: f64) {
     if let Some(stroke) = &mut shape.stroke {
         if stroke.dashes.is_empty() {
             stroke.dashes = vec![length, length];
-            stroke.dash_offset = Some(length * (1.0 - drawn));
+            stroke.dash_offset = length * (1.0 - drawn);
         } else {
             let shown = ease_out(phase(drawn, 0.0, DASHED_FADE));
-            stroke.opacity = Some(stroke.opacity.unwrap_or(1.0) * shown);
+            stroke.opacity *= shown;
         }
     }
     if drawn < arrowhead_at {
@@ -429,13 +429,13 @@ mod tests {
         assert!(stroke.marker.is_none());
         let ink = stroke.stroke.as_ref().expect("stroked");
         assert_eq!(ink.dashes, [4.0, 6.0]);
-        assert!(ink.opacity.is_some_and(|shown| shown > 0.0 && shown < 1.0));
+        assert!(ink.opacity > 0.0 && ink.opacity < 1.0);
         let landed = draw.at(1.0);
         let Some(Item::Shape(stroke)) = landed.items.get(1) else {
             panic!("a stroke")
         };
         assert!(stroke.marker.is_some());
-        assert_eq!(stroke.stroke.as_ref().expect("stroked").opacity, None);
+        assert_eq!(stroke.stroke.as_ref().expect("stroked").opacity, 1.0);
     }
 
     #[test]
@@ -463,7 +463,7 @@ mod tests {
                 panic!("a rim stands")
             };
             let stroke = shape.stroke.clone().expect("stroked");
-            (stroke.dashes[0], stroke.dash_offset.expect("an offset"))
+            (stroke.dashes[0], stroke.dash_offset)
         };
         let (arc, offset) = dash_at(0.1);
         assert!(arc > 0.0 && arc < edge);

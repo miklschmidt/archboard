@@ -492,7 +492,7 @@ impl<C: Canvas> Walk<'_, C> {
     fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
         let grows = inside.line
             && matches!(geometry, Geometry::Path { .. })
-            && stroke.width.is_some_and(widens_far);
+            && widens_far(stroke.width);
         if grows {
             far_line_scale(self.presentation.far)
         } else {
@@ -563,13 +563,13 @@ impl<C: Canvas> Walk<'_, C> {
     ) {
         let selection = Paint::from(Token::DiagramSelection);
         let paint = if ring { &selection } else { &stroke.paint };
-        let alpha = stroke.opacity.unwrap_or(1.0) * self.shown_with_members(shape);
+        let alpha = stroke.opacity * self.shown_with_members(shape);
         let Some(ink) = self.ink(paint, alpha, bounds) else {
             return;
         };
         let ink = self.glowing(ink, inside.glow);
         let grown = self.far_scale(stroke, &shape.geometry, inside);
-        let width = stroke.width.unwrap_or(1.0) * grown;
+        let width = stroke.width * grown;
         let marks: Vec<Mark<'_>> = [(&shape.start_marker, true), (&shape.marker, false)]
             .into_iter()
             .filter_map(|(marker, start)| {

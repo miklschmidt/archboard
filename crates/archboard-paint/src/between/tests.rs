@@ -158,7 +158,7 @@ fn a_line_that_travels_far_recedes_and_comes_back() {
         let stroke = shape_of(drawing(&items, "e")[0], Purpose::Line)
             .stroke
             .as_ref();
-        stroke.and_then(|stroke| stroke.opacity).unwrap_or(1.0)
+        stroke.map_or(1.0, |stroke| stroke.opacity)
     };
     assert!(shown(0.0) > 0.99);
     assert!(shown(0.4) < 0.75);
@@ -259,8 +259,8 @@ fn an_added_line_draws_on_from_its_start() {
     assert_eq!(visible, 0.0, "invisible where its phase begins");
     let dash = begun.stroke.as_ref().expect("stroked");
     assert_eq!(
-        dash.dash_offset,
         dash.dashes.first().copied(),
+        Some(dash.dash_offset),
         "not a unit of it drawn yet"
     );
     assert!(begun.marker.is_none());
@@ -284,7 +284,7 @@ fn an_added_lines_arrowhead_waits_until_it_is_nearly_drawn() {
         .find(|(_, shape)| shape.marker.is_some())
         .expect("it lands");
     let partly = there.stroke.as_ref().expect("stroked");
-    let left = partly.dash_offset.expect("an offset") / partly.dashes[0];
+    let left = partly.dash_offset / partly.dashes[0];
     assert!(left > 0.0, "still drawing");
     assert!(left < 0.1, "no arrowhead before it is nearly there");
 }

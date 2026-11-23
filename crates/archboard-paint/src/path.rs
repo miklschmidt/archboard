@@ -152,21 +152,18 @@ pub(crate) fn straightened(path: &BezPath) -> BezPath {
 
 /// A stroke as a canvas takes it, its width times `scale`.
 pub(crate) fn stroke_of(stroke: &Stroke, scale: f64) -> kurbo::Stroke {
-    let mut drawn = kurbo::Stroke::new(stroke.width.unwrap_or(1.0) * scale)
+    let mut drawn = kurbo::Stroke::new(stroke.width * scale)
         .with_caps(match stroke.cap {
-            Some(Cap::Round) => kurbo::Cap::Round,
-            Some(Cap::Butt) | None => kurbo::Cap::Butt,
+            Cap::Round => kurbo::Cap::Round,
+            Cap::Butt => kurbo::Cap::Butt,
         })
         .with_join(match stroke.join {
-            Some(Join::Round) => kurbo::Join::Round,
-            None => kurbo::Join::Miter,
+            Join::Round => kurbo::Join::Round,
+            Join::Miter => kurbo::Join::Miter,
         })
         .with_miter_limit(MITER_LIMIT);
     if !stroke.dashes.is_empty() {
-        drawn = drawn.with_dashes(
-            stroke.dash_offset.unwrap_or(0.0),
-            stroke.dashes.iter().copied(),
-        );
+        drawn = drawn.with_dashes(stroke.dash_offset, stroke.dashes.iter().copied());
     }
     drawn
 }

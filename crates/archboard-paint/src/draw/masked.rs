@@ -19,10 +19,10 @@ fn cuts(shape: &Shape) -> bool {
 
 /// A cut for a trunk that a line shares: a lit line draws that stretch again.
 fn cuts_a_trunk(shape: &Shape) -> bool {
-    matches!(
-        shape.stroke.as_ref().and_then(|stroke| stroke.cap),
-        Some(Cap::Butt)
-    )
+    shape
+        .stroke
+        .as_ref()
+        .is_some_and(|stroke| stroke.cap == Cap::Butt)
 }
 
 impl<C: Canvas> Walk<'_, C> {
@@ -42,9 +42,9 @@ impl<C: Canvas> Walk<'_, C> {
         self.inner(group, held);
         self.canvas.set_transform(held.transform);
         self.canvas.push_cut();
-        let black = |opacity: Option<f64>| {
+        let black = |opacity: f64| {
             #[expect(clippy::cast_possible_truncation, reason = "a colour's alpha is f32")]
-            let alpha = opacity.unwrap_or(1.0) as f32;
+            let alpha = opacity as f32;
             Ink::Solid(peniko::Color::BLACK.with_alpha(alpha))
         };
         for shape in mask.shapes.iter().filter(|shape| cuts(shape)) {
@@ -53,7 +53,8 @@ impl<C: Canvas> Walk<'_, C> {
             }
             let (path, _) = outline_of(&shape.geometry);
             if shape.fill.as_ref().is_some_and(|fill| *fill != Paint::None) {
-                self.canvas.fill(&path, &black(shape.fill_opacity), false);
+                self.canvas
+                    .fill(&path, &black(shape.fill_opacity.unwrap_or(1.0)), false);
             }
             if let Some(stroke) = &shape.stroke {
                 self.canvas

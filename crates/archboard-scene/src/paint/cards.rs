@@ -56,7 +56,7 @@ pub(super) fn halo(
             Some(round_coord(radius + inset)),
         )
         .unfilled()
-        .stroked(styles.ring(Some(HALO_WIDTH))),
+        .stroked(styles.ring(HALO_WIDTH)),
     )
 }
 

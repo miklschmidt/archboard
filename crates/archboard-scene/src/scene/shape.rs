@@ -80,6 +80,8 @@ pub enum Cap {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Join {
+    /// Pointed where the sides meet.
+    Miter,
     /// Rounded.
     Round,
 }
@@ -193,33 +195,23 @@ pub enum Geometry {
     },
 }
 
-/// How a shape's outline is stroked.
+/// How a shape's outline is stroked. Every value is stated.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Stroke {
     /// What it is stroked with.
     pub paint: Paint,
-    /// How thick; one unit when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub width: Option<f64>,
-    /// How solid, from 0 to 1; fully when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub opacity: Option<f64>,
-    /// How its open ends are drawn; cut square when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub cap: Option<Cap>,
-    /// How its corners are drawn; mitred when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub join: Option<Join>,
+    /// How thick.
+    pub width: f64,
+    /// How solid, from 0 to 1.
+    pub opacity: f64,
+    /// How its open ends are drawn.
+    pub cap: Cap,
+    /// How its corners are drawn.
+    pub join: Join,
     /// How it is broken: the lengths of each dash and each gap, in turn; solid when empty.
     pub dashes: Vec<f64>,
     /// How far into its dashes it starts.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub dash_offset: Option<f64>,
+    pub dash_offset: f64,
 }
 
 /// One shape: what it is, where it is, and how it is painted.
@@ -318,24 +310,16 @@ impl Shape {
 }
 
 impl Stroke {
-    /// A stroke in some paint, its width unstated.
-    pub fn plain(paint: impl Into<Paint>) -> Self {
-        Stroke {
-            paint: paint.into(),
-            width: None,
-            opacity: None,
-            cap: None,
-            join: None,
-            dashes: Vec::new(),
-            dash_offset: None,
-        }
-    }
-
-    /// A stroke in some paint, its width stated.
+    /// A solid, square-ended stroke in some paint, of some width.
     pub fn new(paint: impl Into<Paint>, width: f64) -> Self {
         Stroke {
-            width: Some(width),
-            ..Stroke::plain(paint)
+            paint: paint.into(),
+            width,
+            opacity: 1.0,
+            cap: Cap::Butt,
+            join: Join::Miter,
+            dashes: Vec::new(),
+            dash_offset: 0.0,
         }
     }
 
@@ -343,8 +327,8 @@ impl Stroke {
     #[must_use]
     pub fn rounded(self) -> Self {
         Stroke {
-            cap: Some(Cap::Round),
-            join: Some(Join::Round),
+            cap: Cap::Round,
+            join: Join::Round,
             ..self
         }
     }
@@ -353,7 +337,7 @@ impl Stroke {
     #[must_use]
     pub fn capped(self, cap: Cap) -> Self {
         Stroke {
-            cap: Some(cap),
+            cap,
             ..self
         }
     }
@@ -362,7 +346,7 @@ impl Stroke {
     #[must_use]
     pub fn at(self, opacity: f64) -> Self {
         Stroke {
-            opacity: Some(opacity),
+            opacity,
             ..self
         }
     }

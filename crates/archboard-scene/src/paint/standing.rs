@@ -220,7 +220,7 @@ pub(super) fn standing_swipe(
         Shape::path(Purpose::Swipe, path.to_vec())
             .unfilled()
             .stroked(Stroke {
-                cap: Some(Cap::Butt),
+                cap: Cap::Butt,
                 ..Stroke::new(ink, width + SWIPE_EXTRA)
                     .rounded()
                     .at(SWIPE_OPACITY)

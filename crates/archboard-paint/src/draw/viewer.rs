@@ -21,7 +21,7 @@ impl<C: Canvas> Walk<'_, C> {
         };
         self.canvas.set_transform(inside.transform);
         for copy in sweep.showing() {
-            let alpha = copy.paint.opacity.unwrap_or(1.0) * copy.opacity;
+            let alpha = copy.paint.opacity * copy.opacity;
             if let Some(ink) = self.ink(&copy.paint.paint, alpha, copy.bounds) {
                 self.canvas.stroke(copy.path, &copy.stroke, &ink);
             }

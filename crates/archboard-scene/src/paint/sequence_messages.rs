@@ -281,7 +281,7 @@ fn paint_label(
         purpose: Purpose::Halo,
         ..plate_of(rect)
             .unfilled()
-            .stroked(styles.ring(Some(LIT_RULE_WIDTH)))
+            .stroked(styles.ring(LIT_RULE_WIDTH))
     });
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
         text(
@@ -378,7 +378,7 @@ pub(super) fn paint_step(
             ink: HeadInk::Lit,
         }),
         ..styles.halo(Shape::path(Purpose::LitLine, path.clone()).stroked(Stroke {
-            width: Some(width + LIT_TRACE_EXTRA),
+            width: width + LIT_TRACE_EXTRA,
             ..step_stroke(kind, palette, None)
         }))
     };
@@ -390,7 +390,7 @@ pub(super) fn paint_step(
                 shape(
                     Shape::path(Purpose::Halo, path).unfilled().stroked(
                         styles
-                            .ring(Some(width + STEP_HALO_EXTRA))
+                            .ring(width + STEP_HALO_EXTRA)
                             .at(STEP_HALO_OPACITY)
                             .rounded(),
                     ),

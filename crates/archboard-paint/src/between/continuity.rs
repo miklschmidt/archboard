@@ -173,7 +173,7 @@ fn a_dashed_line_waits_for_the_card_at_its_far_end() {
             let Item::Shape(shape) = &line.items[1] else {
                 panic!("a route")
             };
-            line.opacity != Some(0.0) && shape.stroke.as_ref().unwrap().opacity.unwrap_or(1.0) > 0.0
+            line.opacity != Some(0.0) && shape.stroke.as_ref().unwrap().opacity > 0.0
         })
         .expect("the dashed line appears");
     assert_eq!(drawing(&body, "far")[0].opacity.unwrap_or(1.0), 1.0);

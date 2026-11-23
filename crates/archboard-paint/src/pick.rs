@@ -188,7 +188,7 @@ impl Finder<'_> {
         }
         let (path, own) = outline_of(&shape.geometry);
         let reach = stroke
-            .map(|stroke| stroke.width.unwrap_or(1.0) / 2.0)
+            .map(|stroke| stroke.width / 2.0)
             .or_else(|| all.then_some(0.5));
         let room = reach.unwrap_or(0.0);
         self.found.push(Target {

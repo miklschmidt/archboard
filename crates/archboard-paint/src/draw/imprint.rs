@@ -20,7 +20,7 @@ impl<C: Canvas> Walk<'_, C> {
             return;
         };
         let grown = self.presentation.mark_growth.unwrap_or(1.0);
-        let width = stroke.width.unwrap_or(1.0) * grown;
+        let width = stroke.width * grown;
         let (from, to) = ((from.x, from.y), (to.x, to.y));
         let path: BezPath = Line::new(from, to).to_path(0.1);
         let colour = self.lit_colour(&stroke.paint, lit);

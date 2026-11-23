@@ -175,7 +175,7 @@ pub(super) fn paint_fragment(
                     purpose: Purpose::Halo,
                     ..outline
                         .unfilled()
-                        .stroked(Styles::of(palette).ring(Some(2.0)))
+                        .stroked(Styles::of(palette).ring(2.0))
                 }),
                 tab_path(frame, ink, &palette.pill),
                 row_words(

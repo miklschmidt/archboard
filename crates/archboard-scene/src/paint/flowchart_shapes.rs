@@ -338,7 +338,7 @@ pub(super) fn ring(
             polygon_path(&inset(outline, by), js::js_max(0.0, radius - by)),
         )
         .unfilled()
-        .stroked(Styles::of(palette).ring(Some(HALO_WIDTH))),
+        .stroked(Styles::of(palette).ring(HALO_WIDTH)),
     )
 }
 

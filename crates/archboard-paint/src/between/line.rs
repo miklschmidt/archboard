@@ -133,7 +133,7 @@ fn dim(mut shape: Shape, visible: f64) -> Shape {
     if visible < 1.0 {
         shape.fill_opacity = Some(shape.fill_opacity.unwrap_or(1.0) * visible);
         if let Some(stroke) = &mut shape.stroke {
-            stroke.opacity = Some(stroke.opacity.unwrap_or(1.0) * visible);
+            stroke.opacity *= visible;
         }
     }
     shape

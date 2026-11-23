@@ -145,7 +145,7 @@ pub(super) fn worn_edge(group: &Group) -> Option<(Rect, f64)> {
     let Geometry::Rect { rect, .. } = shape.geometry else {
         return None;
     };
-    let solid = shape.stroke.as_ref()?.opacity? / EDGE[0].1;
+    let solid = shape.stroke.as_ref()?.opacity / EDGE[0].1;
     Some((carried(rect, placing(group)), solid))
 }
 
@@ -271,7 +271,7 @@ impl Opening {
 pub(super) fn edge(area: Rect, solid: f64) -> Item {
     let layer = |(width, most): (f64, f64)| {
         let stroke = Stroke {
-            opacity: Some(most * solid),
+            opacity: most * solid,
             ..Stroke::new(Token::DiagramText, width)
         };
         Item::Shape(
