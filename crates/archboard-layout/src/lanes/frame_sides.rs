@@ -59,6 +59,24 @@ fn card_under(placed: &Picture<'_>, end: Point) -> Option<Rect> {
     })
 }
 
+/// The line ends that touch cards or frames in the assembled picture.
+fn ends_of(placed: &Picture<'_>) -> impl Iterator<Item = Point> {
+    placed
+        .lines
+        .iter()
+        .filter_map(|points| Some([*points.first()?, *points.last()?]))
+        .flatten()
+}
+
+/// A wall move removes a port after routing. Only a lone port can leave its face centred.
+fn lone_on_face(placed: &Picture<'_>, card: &Rect, y: f64) -> bool {
+    ends_of(placed)
+        .filter(|end| abs(end.y - y) < 0.5 && end.x > card.x && end.x < card.x + card.width)
+        .take(2)
+        .count()
+        == 1
+}
+
 /// The innermost frame round a card.
 fn frame_round(placed: &Picture<'_>, card: &Rect) -> Option<Rect> {
     let corner = Point {
@@ -100,9 +118,10 @@ fn wall_toward(placed: &Picture<'_>, frame: &Rect, card: &Rect) -> Option<f64> {
 /// The way in through a wall for one end of a line, when there is one.
 fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
     let points = outside_first(placed, line, leaving);
-    let card = card_under(placed, *points.last()?)?;
+    let end = *points.last()?;
+    let card = card_under(placed, end)?;
     let frame = frame_round(placed, &card)?;
-    if inside(points[0], &frame) {
+    if inside(points[0], &frame) || !lone_on_face(placed, &card, end.y) {
         return None;
     }
     let crossed = (0..points.len() - 1)
@@ -124,11 +143,8 @@ fn door_of(placed: &Picture<'_>, line: usize, leaving: bool) -> Option<Door> {
 
 /// Whether a line already ends on a card's face.
 fn face_taken(placed: &Picture<'_>, card: &Rect, face: f64) -> bool {
-    placed.lines.iter().any(|points| {
-        let ends = [points[0], *points.last().expect("a point")];
-        ends.iter().any(|end| {
-            abs(end.x - face) < 0.5 && end.y > card.y - 0.5 && end.y < card.y + card.height + 0.5
-        })
+    ends_of(placed).any(|end| {
+        abs(end.x - face) < 0.5 && end.y > card.y - 0.5 && end.y < card.y + card.height + 0.5
     })
 }
 
@@ -346,6 +362,14 @@ mod tests {
         }
     }
 
+    fn at(x: f64, y: f64) -> Point {
+        Point { x, y }
+    }
+
+    fn card(x: f64, y: f64) -> Rect {
+        rect(x, y, 100.0, 60.0)
+    }
+
     #[test]
     fn a_wall_entry_keeps_clear_of_a_crossing_at_a_straight_waypoint() {
         let cards = [rect(0.0, 0.0, 60.0, 40.0), rect(120.0, 180.0, 60.0, 40.0)];
@@ -376,5 +400,45 @@ mod tests {
             lines: &mut crossed,
         });
         assert_eq!(crossed[0], top_entry);
+    }
+
+    #[test]
+    fn a_wall_door_keeps_the_ends_on_the_card_face_centred() {
+        let cards = [card(0.0, -28.0), card(120.0, 170.0)];
+        let frames = [(
+            Rect {
+                x: 100.0,
+                y: 100.0,
+                width: 200.0,
+                height: 220.0,
+            },
+            0,
+        )];
+        let approach = |x| {
+            vec![
+                at(30.0, 32.0),
+                at(30.0, 70.0),
+                at(190.0, 70.0),
+                at(190.0, 140.0),
+                at(x, 140.0),
+                at(x, 170.0),
+            ]
+        };
+        let mut alone = [approach(170.0)];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut alone,
+        });
+        assert_eq!(alone[0].last(), Some(&at(120.0, 200.0)));
+
+        let mut bus = [approach(162.0), vec![at(178.0, 120.0), at(178.0, 170.0)]];
+        let before = bus.clone();
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut bus,
+        });
+        assert_eq!(bus, before);
     }
 }
