@@ -103,8 +103,9 @@ sent last. The server compares the list, not the registry file, because the list
 also reads the disk: a checkout or a vault can come or go while the registry
 stays the same. So it looks again on each change of the registry file, and on a
 slow tick while any tab follows. The answer to a choice is the list, so the page
-that chose has it at once. Each list carries the count of the lists that its
-server sent since it started, so a tab keeps the newer of an answer and a frame.
+that chose has it at once. Each list identifies its server instance and carries
+the count of the lists that instance sent since it started. A tab can keep the
+newer of an answer and a frame across a reconnect to the same server.
 
 So the list has no Refresh. A page that cannot reach the server says so and
 keeps trying, and the list replaces that message when it comes.

@@ -170,12 +170,12 @@ describe.serial("the repositories of the navigator", () => {
 		const mark = pane.mark();
 		const chose = await choose(worktree);
 		expect(chose.status).toBe(200);
-		const { revision, repositories } = (await chose.json()) as Answer;
+		const { instance, revision, repositories } = (await chose.json()) as Answer;
 		expect(revision).toBeGreaterThan(snapshot.revision);
 		expect(ordersVault(repositories)).toBe(worktreeVault);
 		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ paneKey: "payments", vault: worktreeVault, repository: ORDERS });
-		expect(await tab.next()).toEqual({ type: "repositories", revision, repositories });
+		expect(await tab.next()).toEqual({ type: "repositories", instance, revision, repositories });
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
 		// A show names the pane and the vault of another repository's model, and the
@@ -349,11 +349,13 @@ describe.serial("the repositories of the navigator", () => {
 		expect(last!.revision).toBe(snapshot.revision + 2);
 		expect(await tab.next()).toEqual({
 			type: "repositories",
+			instance: first!.instance,
 			revision: first!.revision,
 			repositories: first!.repositories,
 		});
 		expect(await tab.next()).toEqual({
 			type: "repositories",
+			instance: last!.instance,
 			revision: last!.revision,
 			repositories: last!.repositories,
 		});

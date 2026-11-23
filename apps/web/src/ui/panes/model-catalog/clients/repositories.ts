@@ -41,15 +41,16 @@ const mirrors = new WeakMap<QueryClient, ReturnType<typeof createMirror>>();
  *
  * A server counts its listings, so the mirror keeps the newest of the answers and frames it gets:
  * two tabs that choose at once each get the answer to their own choice and the frame of the
- * other, in either order. A restarted server counts from zero again, so the revision resets
- * when the feed drops. From then on both answers and frames can advance it.
+ * other, in either order. Each listing identifies the server that counted it, so a dropped
+ * feed does not invalidate checkout answers from a server that is still running.
  * @param client The tab's query cache, whose feed socket carries the listing.
  * @returns The mirror.
  */
 function createMirror(client: QueryClient) {
 	const readers = new Set<() => void>();
 	let state: Repositories = { error: null, loading: true };
-	let order = { revision: -1 };
+	let latest: Pick<Listing, "instance" | "revision"> | undefined;
+	const retired = new Set<Listing["instance"]>();
 	let stopFollowing: (() => void) | null = null;
 	/**
 	 * Show what the mirror holds now.
@@ -63,17 +64,18 @@ function createMirror(client: QueryClient) {
 	 * Keep the most recent listing, whether it came from the feed or a checkout answer.
 	 * @param listing The listing.
 	 */
-	function take(listing: Pick<Listing, "revision" | "repositories">): void {
-		if (listing.revision < order.revision) return;
-		order.revision = listing.revision;
-		show({ repositories: listing.repositories, error: null, loading: false });
+	function take(listing: Omit<Listing, "success">): void {
+		const { instance, revision, repositories } = listing;
+		if (retired.has(instance)) return;
+		if (latest !== undefined) {
+			if (latest.instance === instance && revision < latest.revision) return;
+			if (latest.instance !== instance) retired.add(latest.instance);
+		}
+		latest = { instance, revision };
+		show({ repositories, error: null, loading: false });
 	}
-	/**
-	 * A page with no listing says why. A dropped feed can reconnect to a restarted server.
-	 * @param disconnected Whether the socket closed.
-	 */
-	function lost(disconnected: boolean): void {
-		if (disconnected) order = { revision: -1 };
+	/** A page with no listing says why while its feed reconnects. */
+	function lost(): void {
 		if (state.repositories === undefined) show({ error: UNREACHABLE, loading: false });
 	}
 	return {
@@ -90,7 +92,6 @@ function createMirror(client: QueryClient) {
 				if (readers.size > 0) return;
 				stopFollowing?.();
 				stopFollowing = null;
-				order = { revision: -1 };
 			};
 		},
 		/**
@@ -99,13 +100,15 @@ function createMirror(client: QueryClient) {
 		 */
 		read: (): Repositories => state,
 		/**
-		 * Capture the listing order before a choice goes to the server.
-		 * @returns How to accept the answer while that order still applies.
+		 * Capture the server last heard from before a choice goes out.
+		 * @returns How to accept an answer that still applies to this tab.
 		 */
 		beginChoice: (): ((listing: Listing) => void) => {
-			const requested = order;
+			const requested = latest?.instance;
 			return (listing) => {
-				if (order === requested) take(listing);
+				if (latest?.instance === requested || latest?.instance === listing.instance) {
+					take(listing);
+				}
 			};
 		},
 	};
@@ -127,7 +130,7 @@ function repositoryMirror(client: QueryClient): ReturnType<typeof createMirror> 
 
 /**
  * Choose the checkout of a repository that this machine reads. Every tab is sent the listing
- * that follows. This tab also accepts the answer immediately while its feed order still applies.
+ * that follows. This tab also accepts the answer immediately while its server's order still applies.
  * @param client The tab's query cache.
  * @param choice The repository and one of its known checkouts.
  * @returns Once the server has acknowledged the chosen checkout.

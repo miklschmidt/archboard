@@ -49,7 +49,12 @@ test("the chooser names a server that does not answer, and lists the repositorie
 		await act(async () => jest.advanceTimersToNextTimer());
 		await settle();
 		await act(async () =>
-			feed.latest()!.receive({ type: "repositories", revision: 0, repositories: [] }),
+			feed.latest()!.receive({
+				type: "repositories",
+				instance: "fixture",
+				revision: 0,
+				repositories: [],
+			}),
 		);
 		// The page hears the listing, the notice is dismissed, and then the toast leaves.
 		await settle();

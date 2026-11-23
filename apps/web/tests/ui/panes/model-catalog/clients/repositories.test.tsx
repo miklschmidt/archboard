@@ -29,11 +29,13 @@ const FEATURE = "/work/orders-feature";
  * The listing of one repository whose chosen checkout is the one named.
  * @param choice The chosen checkout.
  * @param revision The server's count of its listings.
+ * @param instance The server process that counted it.
  * @returns The frame the server sends.
  */
-function listing(choice: string, revision: number): Frame {
+function listing(choice: string, revision: number, instance = "original"): Frame {
 	return {
 		type: "repositories",
+		instance,
 		revision,
 		repositories: [
 			{
@@ -186,7 +188,7 @@ test("a reconnect takes the server's snapshot, even from a server that counts fr
 		await redial();
 		const again = followingNow();
 		expect(again).not.toBe(first);
-		await act(async () => again.receive(listing(FEATURE, 0)));
+		await act(async () => again.receive(listing(FEATURE, 0, "restarted")));
 		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
 	}));
 
@@ -200,18 +202,18 @@ test("a checkout answer after redial wins over an older reconnect snapshot", () 
 		await act(async () => first.close());
 		await redial();
 
-		const { revision, repositories } = listing(FEATURE, 1);
+		const { instance, revision, repositories } = listing(FEATURE, 1, "restarted");
 		globalThis.fetch = Object.assign(
-			async () => Response.json({ success: true, revision, repositories }),
+			async () => Response.json({ success: true, instance, revision, repositories }),
 			{ preconnect: realFetch.preconnect },
 		);
 		await act(async () => chooseCheckout(client, { repository: ORDERS, root: FEATURE }));
 		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
-		await act(async () => followingNow().receive(listing(MAIN, 0)));
+		await act(async () => followingNow().receive(listing(MAIN, 0, instance)));
 		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
 	}));
 
-test("an answer pending on a lost connection cannot overwrite the next snapshot", () =>
+test("an answer from the old server cannot overwrite a restarted server's snapshot", () =>
 	onTestClock(async () => {
 		const client = createModelQueryClient();
 		const { result } = readIn(client);
@@ -224,10 +226,30 @@ test("an answer pending on a lost connection cannot overwrite the next snapshot"
 		const choosing = chooseCheckout(client, { repository: ORDERS, root: MAIN });
 		await act(async () => first.close());
 		await redial();
-		await act(async () => followingNow().receive(listing(FEATURE, 0)));
-		const { revision, repositories } = listing(MAIN, 4);
+		await act(async () => followingNow().receive(listing(FEATURE, 0, "restarted")));
+		const { instance, revision, repositories } = listing(MAIN, 4);
 		await act(async () => {
-			answer.resolve(Response.json({ success: true, revision, repositories }));
+			answer.resolve(Response.json({ success: true, instance, revision, repositories }));
+			await choosing;
+		});
+		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
+	}));
+
+test("a checkout answer from the same server takes effect while its feed reconnects", () =>
+	onTestClock(async () => {
+		const client = createModelQueryClient();
+		const { result } = readIn(client);
+		await act(async () => {});
+		const first = followingNow();
+		await act(async () => first.receive(listing(MAIN, 4)));
+
+		const answer = Promise.withResolvers<Response>();
+		globalThis.fetch = Object.assign(() => answer.promise, { preconnect: realFetch.preconnect });
+		const choosing = chooseCheckout(client, { repository: ORDERS, root: FEATURE });
+		await act(async () => first.close());
+		const { instance, revision, repositories } = listing(FEATURE, 5);
+		await act(async () => {
+			answer.resolve(Response.json({ success: true, instance, revision, repositories }));
 			await choosing;
 		});
 		expect(chosenVault(result)).toBe(`${FEATURE}/.archboard/vault`);
@@ -250,8 +272,8 @@ test("two tabs that choose at once each end on the newest listing, whatever orde
 	globalThis.fetch = Object.assign(
 		async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
 			const { root } = checkoutChoiceSchema().parse(await new Response(init?.body).json());
-			const { revision, repositories } = answers[root]!;
-			return Response.json({ success: true, revision, repositories });
+			const { instance, revision, repositories } = answers[root]!;
+			return Response.json({ success: true, instance, revision, repositories });
 		},
 		{ preconnect: realFetch.preconnect },
 	);

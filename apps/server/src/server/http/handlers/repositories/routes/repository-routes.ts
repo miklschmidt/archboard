@@ -141,6 +141,9 @@ function statedChoice(
 /** The listing as this server publishes it. */
 type Listing = z.infer<ReturnType<typeof repositoryListingSchema>>;
 
+/** The server process whose listings share one revision sequence. */
+const instance = crypto.randomUUID();
+
 /** What this server last published, and its text, which a new look is compared with. */
 let published: { readonly listing: Listing; readonly text: string } | null = null;
 
@@ -176,7 +179,7 @@ function registryText(): string | null {
  */
 function publish(repositories: Listing["repositories"], text: string): Listing {
 	const revision = (published?.listing.revision ?? -1) + 1;
-	const listing: Listing = { success: true, revision, repositories };
+	const listing: Listing = { success: true, instance, revision, repositories };
 	agentActivity.register(repositories.flatMap((entry) => entry.vault ?? []));
 	published = { listing, text };
 	for (const send of followers) send(listing);

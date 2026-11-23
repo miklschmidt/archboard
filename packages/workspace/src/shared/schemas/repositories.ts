@@ -36,11 +36,12 @@ const RepositoryEntrySchema = z.object({
 });
 
 /**
- * The listing as the server last published it. Its revision counts the changes one server has
- * published since it started, so a tab keeps the newest of the answers and frames it gets.
+ * The listing as the server last published it. The revision counts changes within one server
+ * instance, so a tab can order answers and frames even when the feed reconnects.
  */
 const RepositoryListingSchema = z.object({
 	success: z.literal(true),
+	instance: z.string().min(1),
 	revision: z.number().int().nonnegative(),
 	repositories: z.array(RepositoryEntrySchema),
 });

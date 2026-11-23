@@ -19,6 +19,7 @@ const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";
 const REPOSITORIES: Extract<ArchitectureFeedFrame, { type: "repositories" }> = {
 	type: "repositories",
+	instance: "fixture",
 	revision: 0,
 	repositories: [
 		{ name: "github.com/acme/shop", untracked: false, vault: SHOP, state: "ready", checkouts: [] },

@@ -57,8 +57,8 @@ function serveArchitectureFeed(ws: WebSocket): void {
 	 */
 	const follow = (topic: Topic): void => {
 		if (topic === REPOSITORIES) {
-			const listed = followRepositories(({ revision, repositories }) =>
-				send({ type: "repositories", revision, repositories }),
+			const listed = followRepositories(({ instance, revision, repositories }) =>
+				send({ type: "repositories", instance, revision, repositories }),
 			);
 			watching.set(topic, listed);
 		} else if (namedVault(topic).ok) watching.set(topic, watchArchitectureModel(topic, send));
