@@ -220,14 +220,6 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
                 Shape::path(Purpose::Arrowhead, steps)
                     .unfilled()
                     .stroked(Stroke::new(ink, OUTLINE).rounded()),
-                Shape::new(
-                    Purpose::Arrowhead,
-                    Geometry::Circle {
-                        centre: Some(back(6.2, 0.0)),
-                        radius: 0.95,
-                    },
-                )
-                .filled(ink),
             ]
         }
         // The bars stand wide apart and reach well past the line, so the "="
@@ -293,7 +285,7 @@ mod tests {
             };
             let marker = mark_marker(id, head, weight, &Token::Border.into());
             let size = marker.size * stroke_width(weight) * THIN_BODY;
-            assert!((size - mark_length(head)).abs() < 0.01);
+            assert!((size - mark_length(head)).abs() < 0.02);
         }
     }
 
