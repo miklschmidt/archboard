@@ -26,7 +26,6 @@ import play from "remixicon/icons/Media/play-fill.svg?raw";
 import playCircle from "remixicon/icons/Media/play-circle-line.svg?raw";
 import plug from "remixicon/icons/Others/plug-line.svg?raw";
 import priceTag from "remixicon/icons/Finance/price-tag-3-line.svg?raw";
-import question from "remixicon/icons/Communication/question-answer-line.svg?raw";
 import route from "remixicon/icons/Map/route-line.svg?raw";
 import search from "remixicon/icons/System/search-line.svg?raw";
 import stack from "remixicon/icons/Business/stack-line.svg?raw";
@@ -82,7 +81,6 @@ export const icons = {
 	playCircle,
 	plug,
 	priceTag,
-	question,
 	route,
 	search,
 	stack,
