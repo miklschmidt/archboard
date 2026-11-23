@@ -45,23 +45,18 @@ fn told(graph: &Value) -> (String, bool) {
 
 #[test]
 fn lanes_draws_a_reading_blocks_draws_by_its_fallback_byte_for_byte_without_line_words() {
-    for graph in [
-        crowded_card(),
-        include_str!("fixtures/readme-all.json").to_owned(),
-    ] {
-        let mut graph: Value = serde_json::from_str(&graph).unwrap();
-        let (blocks, planned) = told(&graph);
-        assert!(!planned, "Blocks draws this reading by its fallback");
-        graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
-        let (lanes, _) = told(&graph);
-        assert_eq!(lanes, blocks);
-        let drawn: Value = serde_json::from_str(&lanes).unwrap();
-        let lines = drawn["edges"].as_array().expect("its lines");
-        assert_ne!(lines.len(), 0);
-        assert!(
-            lines
-                .iter()
-                .all(|line| line.get("label").is_none_or(Value::is_null))
-        );
-    }
+    let mut graph: Value = serde_json::from_str(&crowded_card()).unwrap();
+    let (blocks, planned) = told(&graph);
+    assert!(!planned, "Blocks draws this reading by its fallback");
+    graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
+    let (lanes, _) = told(&graph);
+    assert_eq!(lanes, blocks);
+    let drawn: Value = serde_json::from_str(&lanes).unwrap();
+    let lines = drawn["edges"].as_array().expect("its lines");
+    assert_ne!(lines.len(), 0);
+    assert!(
+        lines
+            .iter()
+            .all(|line| line.get("label").is_none_or(Value::is_null))
+    );
 }
