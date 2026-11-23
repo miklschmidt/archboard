@@ -230,7 +230,7 @@
 <rect x="497.79" y="20" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="497.79" y="21" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="497.79" y="21" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(513.79,36.5)" class="ab-chip" style="--near:translate(513.79px,36.5px);--far:translate(513.79px,36.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(513.79,36.5)" style="--near:translate(513.79px,36.5px);--far:translate(513.79px,36.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -251,7 +251,7 @@
 <rect x="355.79" y="157" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="355.79" y="158" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="355.79" y="158" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(371.79,173.5)" class="ab-chip" style="--near:translate(371.79px,173.5px);--far:translate(371.79px,173.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(371.79,173.5)" style="--near:translate(371.79px,173.5px);--far:translate(371.79px,173.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -272,7 +272,7 @@
 <rect x="586.79" y="294" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="586.79" y="295" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="586.79" y="295" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(602.79,310.5)" class="ab-chip" style="--near:translate(602.79px,310.5px);--far:translate(602.79px,310.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(602.79,310.5)" style="--near:translate(602.79px,310.5px);--far:translate(602.79px,310.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -293,7 +293,7 @@
 <rect x="586.79" y="441" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="586.79" y="442" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="586.79" y="442" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(602.79,457.5)" class="ab-chip" style="--near:translate(602.79px,457.5px);--far:translate(602.79px,457.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(602.79,457.5)" style="--near:translate(602.79px,457.5px);--far:translate(602.79px,457.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -316,7 +316,7 @@
 <rect x="147.79" y="441" width="260" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="147.79" y="442" width="260" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="147.79" y="442" width="260" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(163.79,457.5)" class="ab-chip" style="--near:translate(163.79px,457.5px);--far:translate(163.79px,457.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(163.79,457.5)" style="--near:translate(163.79px,457.5px);--far:translate(163.79px,457.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -339,7 +339,7 @@
 <rect x="124.79" y="294" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="124.79" y="295" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="124.79" y="295" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(140.79,310.5)" class="ab-chip" style="--near:translate(140.79px,310.5px);--far:translate(140.79px,310.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(140.79,310.5)" style="--near:translate(140.79px,310.5px);--far:translate(140.79px,310.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -360,7 +360,7 @@
 <rect x="958.8" y="216" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="958.8" y="217" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="958.8" y="217" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(974.8,232.5)" class="ab-chip" style="--near:translate(974.8px,232.5px);--far:translate(974.8px,232.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(974.8,232.5)" style="--near:translate(974.8px,232.5px);--far:translate(974.8px,232.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
@@ -383,7 +383,7 @@
 <rect x="958.8" y="352" width="340" height="68" rx="8" pointer-events="none" style="fill:light-dark(color-mix(in srgb, var(--slab-glint) 80%, var(--slab-face)), color-mix(in srgb, var(--slab-glint) 26%, var(--slab-face)))"/>
 <rect x="958.8" y="353" width="340" height="67" rx="8" pointer-events="none" style="fill:var(--slab-face)"/>
 <rect x="958.8" y="353" width="340" height="67" rx="8" pointer-events="none" style="fill:url(#ab-slab-sheen-soft)"/>
-<g transform="translate(974.8,368.5)" class="ab-chip" style="--near:translate(974.8px,368.5px);--far:translate(974.8px,368.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
+<g class="ab-chip" transform="translate(974.8,368.5)" style="--near:translate(974.8px,368.5px);--far:translate(974.8px,368.5px)"><g pointer-events="none"><rect x="-1" y="1" width="7" height="7" style="fill:url(#ab-shadow-00)"/>
 <rect x="6" y="1" width="12" height="7" style="fill:url(#ab-shadow-01)"/>
 <rect x="18" y="1" width="7" height="7" style="fill:url(#ab-shadow-02)"/>
 <rect x="-1" y="8" width="7" height="11" style="fill:url(#ab-shadow-10)"/>
