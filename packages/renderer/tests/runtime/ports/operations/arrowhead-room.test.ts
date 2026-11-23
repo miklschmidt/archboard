@@ -38,8 +38,8 @@ const DOCUMENTS: readonly VariantContent[] = [
 ].map(orderedFixture);
 
 /**
- * How far each marker's ink reaches back from the end of its line, in widths of
- * that line: from the line's end at `refX` to the first ink of its shape.
+ * How far each marker's ink reaches back from the end of its line, in the page's
+ * units: from the line's end at `refX` to the first ink of its shape.
  * @param svg The drawn document.
  * @returns Each marker's reach, by its id.
  */
@@ -90,12 +90,11 @@ test("every arrowhead fits the straight run that every line keeps before its end
 		];
 		expect(lines.length).toBeGreaterThan(0);
 		for (const [path, head] of lines) {
-			const width = Number(/stroke-width="([\d.]+)"/.exec(path)![1]);
 			const run = lastRun(/\sd="([^"]+)"/.exec(path)![1]!);
 			const length = Math.hypot(run.to.x - run.from.x, run.to.y - run.from.y);
 			expect(run.straight).toBe(true);
 			expect(length).toBeGreaterThanOrEqual(APPROACH_STRAIGHT - 0.01);
-			expect(reaches.get(head!)! * width).toBeLessThanOrEqual(APPROACH_STRAIGHT);
+			expect(reaches.get(head!)!).toBeLessThanOrEqual(APPROACH_STRAIGHT);
 		}
 	}
 });

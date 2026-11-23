@@ -15,8 +15,10 @@ use archboard_scene::geometry::{Point, Rect};
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_max, js_min};
+use crate::lanes::buses::Buses;
 use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId};
+use crate::lanes::knots::{knots_in, knotted_lines};
 use crate::lanes::ports::gathered;
 use crate::lanes::route::{Routed, SceneLine, route_once};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
@@ -45,6 +47,8 @@ pub(crate) struct Routing {
     pub refused: Sided,
     pub crossings: usize,
     pub bends: usize,
+    /// Every bus the routing found, gathered or not.
+    pub buses: Buses,
 }
 
 /// Where one end lands on a side face: the face's x, the end's height, and the x its line runs on.
@@ -83,20 +87,24 @@ pub(crate) fn route_scene(
     if bus {
         return route_with_sides(scene, lines, spacing, rim, reserve);
     }
-    route_once(
-        scene,
-        lines,
-        spacing,
-        rim,
-        (reserve, bus),
-        &Sided::default(),
-    )
-    .map(|routing| routing.routes)
+    let choice = Choice::default();
+    route_once(scene, lines, spacing, rim, (reserve, bus), &choice).map(|routing| routing.routes)
 }
 
-/// Route a Lanes block, with the ends that read better on a card's side landed there: each
-/// candidate in turn, kept when the block, routed again with it and those kept before it, bends
-/// less and crosses no more lines.
+/// What a routing of a Lanes block lands on sides and gathers into buses.
+#[derive(Clone, Default)]
+pub(crate) struct Choice {
+    pub sided: Sided,
+    pub buses: Buses,
+    /// The lines that run on their own, in no trunk.
+    pub loose: Set<String>,
+}
+
+/// Route a Lanes block, with the buses that cross no more lines gathered, the lines that tie a
+/// knot on a run of their own where that unties it, and the ends that read
+/// better on a card's side landed there: each candidate in turn, kept when the block, routed
+/// again with it and those kept before it, crosses no more lines and bends no more, and for a
+/// side, bends less.
 pub(crate) fn route_with_sides(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
@@ -105,24 +113,89 @@ pub(crate) fn route_with_sides(
     reserve: bool,
 ) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
     let fresh = scene.clone();
-    let none = Sided::default();
-    let mut best = route_once(scene, lines, spacing, rim, (reserve, true), &none)?;
-    let mut drawn = scene.clone();
-    let mut kept = Sided::default();
-    for candidate in best.candidates.clone().into_iter().take(TRIED) {
-        let mut trying = kept.clone();
-        trying.insert(candidate);
-        *scene = fresh.clone();
-        let again = route_once(scene, lines, spacing, rim, (reserve, true), &trying)?;
-        let better = again.crossings <= best.crossings && again.bends < best.bends;
-        if again.refused.is_empty() && better {
-            kept = trying;
-            best = again;
-            drawn = scene.clone();
-        }
+    let kept = Choice::default();
+    let best = route_once(scene, lines, spacing, rim, (reserve, true), &kept)?;
+    let drawn = scene.clone();
+    let mut search = Search {
+        scene,
+        fresh,
+        lines,
+        spacing,
+        rim,
+        reserve,
+        kept,
+        best,
+        drawn,
+    };
+    for bus in search.best.buses.clone() {
+        search.try_with(
+            |choice| choice.buses.insert(bus),
+            |again, best| again.crossings <= best.crossings && again.bends <= best.bends,
+        )?;
     }
-    *scene = drawn;
-    Ok(best.routes)
+    // A line whose turn ties a knot runs on its own where that unties more knots than it ties.
+    for line in knotted_lines(&search.best.routes).into_iter().take(TRIED) {
+        search.try_with(
+            |choice| choice.loose.insert(line),
+            |again, best| {
+                knots_in(&again.routes) < knots_in(&best.routes)
+                    && again.crossings <= best.crossings
+            },
+        )?;
+    }
+    for candidate in search.best.candidates.clone().into_iter().take(TRIED) {
+        search.try_with(
+            |choice| choice.sided.insert(candidate),
+            |again, best| {
+                again.refused.is_empty()
+                    && again.crossings <= best.crossings
+                    && again.bends < best.bends
+            },
+        )?;
+    }
+    *search.scene = search.drawn;
+    Ok(search.best.routes)
+}
+
+/// A search over a Lanes block's routings: the choice kept so far, its routing and its scene.
+struct Search<'s, 'l, 'e> {
+    scene: &'s mut Placement,
+    fresh: Placement,
+    lines: &'l [SceneLine<'e>],
+    spacing: (f64, f64),
+    rim: Option<Rim>,
+    reserve: bool,
+    kept: Choice,
+    best: Routing,
+    drawn: Placement,
+}
+
+impl Search<'_, '_, '_> {
+    /// Route the block again with one change to the kept choice, and keep the change where the
+    /// new routing reads `better` than the best so far.
+    fn try_with(
+        &mut self,
+        change: impl FnOnce(&mut Choice) -> bool,
+        better: impl FnOnce(&Routing, &Routing) -> bool,
+    ) -> Result<(), Map<ItemId, f64>> {
+        let mut trying = self.kept.clone();
+        change(&mut trying);
+        *self.scene = self.fresh.clone();
+        let again = route_once(
+            self.scene,
+            self.lines,
+            self.spacing,
+            self.rim,
+            (self.reserve, true),
+            &trying,
+        )?;
+        if better(&again, &self.best) {
+            self.kept = trying;
+            self.best = again;
+            self.drawn = self.scene.clone();
+        }
+        Ok(())
+    }
 }
 
 /// The net of a route at one of its ends, top to bottom.
@@ -195,6 +268,15 @@ fn crossed_near(landed: &Map<(String, End), Landing>, routes: &Map<String, Vec<P
 }
 
 impl Router<'_> {
+    /// Mark the nets of the lines a routing runs on their own, in no trunk.
+    pub(crate) fn mark_loose(&mut self, loose: &Set<String>, routed: &Map<String, Routed>) {
+        for id in loose {
+            if let Some(route) = routed.get(id) {
+                self.loose.extend(route.nets.iter().copied());
+            }
+        }
+    }
+
     /// Mark the net ends a routing lands on sides.
     pub(crate) fn mark_sided(&mut self, sided: &Sided, routed: &Map<String, Routed>) {
         for (id, end) in sided {
@@ -509,6 +591,7 @@ impl Router<'_> {
             refused,
             crossings,
             bends,
+            buses: Buses::default(),
         }
     }
 }

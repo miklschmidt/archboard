@@ -147,14 +147,14 @@ impl Router<'_> {
         if self.bus {
             return self.slide_card(nets, net, end, x);
         }
-        let half = self.net(net).half_width();
+        let half = self.net(net).reach();
         if self.shared_at(net, end).is_some() || !self.on_face(station, x, half) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {
             other != net
                 && self.station(self.net(other).at(end)).item == item
-                && abs(self.net(other).x_at(end) - x) < LANE + half + self.net(other).half_width()
+                && abs(self.net(other).x_at(end) - x) < LANE + half + self.net(other).reach()
         });
         if crowded {
             return false;
@@ -164,8 +164,8 @@ impl Router<'_> {
     }
 
     /// Slide a card along its band by a kink, so its centred port stands at an x: the card and
-    /// every line end on it, kept a lane clear of everything else on the band and of the lanes
-    /// that pass it. A card laid out as the region round it stays.
+    /// every line end on it, kept a lane clear of everything else on the band and half a lane
+    /// clear of the lines that pass it. A card laid out as the region round it stays.
     fn slide_card(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let item = self.station(self.net(net).at(end)).item.expect("a card");
         let one = *self.scene.item(item);
@@ -177,15 +177,26 @@ impl Router<'_> {
             x: one.bx.x + shift,
             ..one.bx
         };
-        let apart =
-            |low: f64, high: f64| high + LANE <= moved.x || low >= moved.x + moved.width + LANE;
+        // A lane apart from every other box on the band, and half a lane from a line passing it.
+        let apart = |low: f64, high: f64, gap: f64| {
+            high + gap <= moved.x || low >= moved.x + moved.width + gap
+        };
+        // Two doors, slivers a lane apart, stand a lane apart from middle to middle.
+        let sliver = |bx: &Rect| bx.width <= 2.0 * STRAIGHT + 1.0;
         let clear = (self.scene.cards.values().chain(self.scene.labels.values()))
             .filter(|&&other| other != item && self.scene.item(other).band == one.band)
             .map(|&other| self.scene.item(other).bx)
-            .all(|bx| apart(bx.x, bx.x + bx.width))
+            .all(|bx| {
+                let gap = if sliver(&bx) && sliver(&one.bx) {
+                    LANE - bx.width
+                } else {
+                    LANE
+                };
+                apart(bx.x, bx.x + bx.width, gap)
+            })
             && self.lanes_by_band(nets)[one.band]
                 .iter()
-                .all(|&lane| apart(lane, lane));
+                .all(|&lane| apart(lane, lane, LANE / 2.0));
         if !clear {
             return false;
         }

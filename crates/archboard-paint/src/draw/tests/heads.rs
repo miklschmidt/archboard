@@ -1,5 +1,5 @@
-//! The head a line ends in: drawn at its own size near, grown far, its tip on
-//! the line's end.
+//! The head a line ends in: drawn at its own size in the picture's units at
+//! every zoom, its tip on the line's end.
 
 use archboard_scene::drawing::Emphasis;
 use archboard_scene::geometry::Point;
@@ -48,8 +48,7 @@ fn headed_line() -> Vec<Item> {
                 id: head,
                 view: 10.0,
                 reference: Point { x: 8.0, y: 5.0 },
-                hold: Point { x: 10.0, y: 5.0 },
-                size: 11.0 / 2.0,
+                size: 11.0,
                 shapes: vec![Shape::path(Purpose::Arrowhead, triangle).filled(Token::Border)],
             })],
         },
@@ -57,17 +56,14 @@ fn headed_line() -> Vec<Item> {
     ]
 }
 
-/// The box of the head a far camera draws, on a page of some pixel ratio, if it knows one.
-fn head_seen_far(ratio: Option<f64>) -> kurbo::Rect {
+/// The box of the head a camera at some scale draws.
+fn head_seen_at(scale: f64) -> kurbo::Rect {
     let mut stage = stage_of(headed_line());
-    if let Some(ratio) = ratio {
-        stage.set_pixel_ratio(ratio);
-    }
     stage.set_camera(
         Camera {
             x: 0.0,
             y: 0.0,
-            scale: 0.25,
+            scale,
         },
         0.0,
         0.0,
@@ -79,32 +75,16 @@ fn head_seen_far(ratio: Option<f64>) -> kurbo::Rect {
         .drawn
 }
 
-/// The tip of the test's head on a camera at a quarter scale: past the line's
-/// end by a fifth of the head.
-const FAR_TIP: f64 = (240.0 + 11.0 / 5.0) * 0.25;
-
 #[test]
-fn a_head_seen_from_far_grows_by_the_marks_growth_and_keeps_its_tip_on_the_line_end() {
-    let own = head_seen_far(None);
-    assert!((own.width() - 11.0 * 0.25).abs() < 1e-6, "{own:?}");
-    assert!((own.x1 - FAR_TIP).abs() < 1e-6, "{own:?}");
-    for ratio in [1.0, 2.0] {
-        let held = head_seen_far(Some(ratio));
-        let grown = 11.0 * 0.25 * archboard_scene::paint::design::mark_growth(ratio, 0.25);
-        assert!((held.width() - grown).abs() < 1e-6, "{ratio}: {held:?}");
-        assert!((held.x1 - FAR_TIP).abs() < 1e-6, "{ratio}: {held:?}");
+fn a_head_scales_with_the_picture_and_keeps_its_tip_on_the_line_end() {
+    for scale in [0.1, 0.25, 1.0] {
+        let head = head_seen_at(scale);
+        assert!(
+            (head.width() - 11.0 * scale).abs() < 1e-6,
+            "{scale}: {head:?}"
+        );
+        // The tip stands past the line's end by a fifth of the head.
+        let tip = (240.0 + 11.0 / 5.0) * scale;
+        assert!((head.x1 - tip).abs() < 1e-6, "{scale}: {head:?}");
     }
-}
-
-#[test]
-fn a_head_near_enough_is_drawn_at_its_own_size() {
-    let mut stage = stage_of(headed_line());
-    stage.set_pixel_ratio(1.0);
-    let (ops, _) = frame(&mut stage, 0.0);
-    let near = ops
-        .iter()
-        .rfind(|op| !op.stroked)
-        .expect("the head is filled")
-        .drawn;
-    assert!((near.width() - 11.0).abs() < 1e-6, "{near:?}");
 }

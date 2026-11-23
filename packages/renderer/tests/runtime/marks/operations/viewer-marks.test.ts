@@ -59,6 +59,5 @@ test("a pane draws the pins, warnings, inks and heads the picture draws", async 
 
 	const head = /marker-end="url\(#([^)]+)\)"/u.exec(line)![1]!;
 	const marker = new RegExp(`<marker id="${head}"[^>]*>`, "u").exec(drawn.svg)![0];
-	const width = Number(/markerWidth="([\d.]+)"/u.exec(marker)![1]);
-	expect(width * lineWidth("normal")).toBeCloseTo(HEAD_LENGTH, 1);
+	expect(Number(/markerWidth="([\d.]+)"/u.exec(marker)![1])).toBeCloseTo(HEAD_LENGTH, 1);
 });

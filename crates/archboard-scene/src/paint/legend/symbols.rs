@@ -77,16 +77,16 @@ struct Sample {
     imprint: bool,
 }
 
-/// A mark drawn at its own size with its hold on a point, facing along the
+/// A mark drawn at its own size with its end on a point, facing along the
 /// row. The one mark a start wears, a ring, reads the same either way.
-fn mark_at(mark: Head, ink: &Colour, hold: Point) -> Items {
+fn mark_at(mark: Head, ink: &Colour, end: Point) -> Items {
     let place = place_of(mark);
     let length = mark_length(mark);
     let unit = length / place.view;
     vec![Item::Viewport(Viewport {
         frame: Rect {
-            x: round_coord(hold.x - place.hold.x * unit),
-            y: round_coord(hold.y - place.hold.y * unit),
+            x: round_coord(end.x - place.end.x * unit),
+            y: round_coord(end.y - place.end.y * unit),
             width: length,
             height: length,
         },
@@ -135,10 +135,10 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
                 Purpose::Sample,
                 vec![
                     PathStep::Move {
-                        to: point(tip.x, across - IMPRINT_REACH),
+                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across - IMPRINT_REACH),
                     },
                     PathStep::Line {
-                        to: point(tip.x, across + IMPRINT_REACH),
+                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across + IMPRINT_REACH),
                     },
                 ],
             )

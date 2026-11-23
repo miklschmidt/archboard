@@ -44,41 +44,38 @@ const CONTENT = orderedFixture({
 
 const THEMES: DiagramTheme[] = ["light", "dark"];
 
-/** A line that ends in a head: its ink, its width and the marker it ends in. */
+/** A line that ends in a head: its ink and the marker it ends in. */
 const LINE =
-	/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*stroke="(#[0-9a-f]{6})" stroke-width="([\d.]+)"/gu;
+	/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*stroke="(#[0-9a-f]{6})"/gu;
 
 /**
  * Every line that ends in a head, in the subject group that draws it.
  * @param svg The drawn document, painted in literals.
- * @returns The id of the subject, the ink, the width and the head's marker.
+ * @returns The id of the subject, the ink and the head's marker.
  */
-function headedLines(svg: string): { id: string; ink: string; width: number; head: string }[] {
+function headedLines(svg: string): { id: string; ink: string; head: string }[] {
 	return svg.split("data-semantic-id=").flatMap((part) => {
 		const id = /^"([^"]+)"/u.exec(part)?.[1];
 		return id === undefined
 			? []
-			: [...part.matchAll(LINE)].map(([, head, ink, width]) => ({
+			: [...part.matchAll(LINE)].map(([, head, ink]) => ({
 					id,
 					ink: ink!,
-					width: Number(width),
 					head: head!,
 				}));
 	});
 }
 
 /**
- * How long a marker draws its head on a line of one width: its side is in
- * widths of that line.
+ * How long a marker draws its head, in the page's units.
  * @param svg The drawn document.
  * @param head The marker's id.
- * @param width The line's width.
- * @returns The length, in the page's units.
+ * @returns The length.
  */
-function headLength(svg: string, head: string, width: number): number {
+function headLength(svg: string, head: string): number {
 	const marker = new RegExp(`<marker id="${head}"[^>]*markerWidth="([\\d.]+)"`, "u").exec(svg);
 	expect(marker, `no marker ${head}`).not.toBeNull();
-	return Number(marker![1]) * width;
+	return Number(marker![1]);
 }
 
 /**
@@ -138,7 +135,7 @@ test("every arrowhead has one length, whatever the emphasis of its line", async 
 	const { svg } = seenIn(
 		await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 	);
-	const lengths = headedLines(svg).map(({ head, width }) => headLength(svg, head, width));
+	const lengths = headedLines(svg).map(({ head }) => headLength(svg, head));
 	expect(lengths).toHaveLength(3);
 	for (const length of lengths) expect(length).toBeCloseTo(lengths[0]!, 1);
 });

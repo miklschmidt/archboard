@@ -36,7 +36,7 @@ pub(crate) fn coord(value: f64) -> String {
 
 /// Whether an attribute is paint, written as CSS.
 fn is_paint(name: &str) -> bool {
-    matches!(name, "fill" | "stroke" | "stop-color")
+    matches!(name, "fill" | "stroke" | "stop-color" | "filter")
 }
 
 /// An element's attributes, in the order they are written.

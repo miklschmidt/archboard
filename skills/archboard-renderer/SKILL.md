@@ -64,6 +64,14 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
   each, so a corpus of them never reaches this code. Measure a change here on readings with
   several groups open.
 - Routing is greedy. One line that takes a shorter way can force later lines into detours.
+- Blocks routes the relationships between two cards as one line, a cable, and
+  `architecture/drawn.rs` draws each relationship as a strand beside it: half a lane apart along
+  the body, and a lane apart where the cable reaches a card, so that every mark has its own port.
+  An end run longer than the apron (`constants::apron`) keeps the ribbon and steps each outer
+  strand out inside the apron; a shorter one spreads at its bend. The planner reserves the fan's
+  width only where the strands fan: port slots, the wall a cable attaches to, and the apron part
+  of each end run (`junctions::pieces`). Everything else counts the body. There is no echelon:
+  never set a mark back from its card to make room.
 - `finish` in `blocks/planned/fixed.rs` is the last guard. It places the labels, checks every
   line, the port spacing and the fan runs. Contraction runs it again. A pass that edits routes
   must pass it too.

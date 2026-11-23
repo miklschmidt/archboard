@@ -46,8 +46,12 @@ pub(super) struct Model<'a> {
     pub edge_index: rustc_hash::FxHashMap<&'a str, usize>,
     pub ends: Vec<(usize, usize)>,
     pub treatments: Vec<String>,
-    /// How wide each line is: a cable as wide as its strands stand apart, a lone line nothing.
+    /// How wide each line is along its body: a cable as wide as its strands stand apart there, a
+    /// lone line nothing.
     pub girth: Vec<f64>,
+    /// How wide each line is where it reaches its cards, where a cable's strands fan out a lane
+    /// apart to their own ports (`constants::FAN`).
+    pub fan: Vec<f64>,
     pub outgoing: Vec<Vec<usize>>,
     pub incoming: Vec<Vec<usize>>,
 }
@@ -73,9 +77,20 @@ pub(super) fn weights(graph: &Node) -> rustc_hash::FxHashMap<&str, f64> {
 }
 
 impl<'a> Model<'a> {
-    /// How far a line's ink reaches to either side of its route.
+    /// How far a line's ink reaches to either side of its route along its body.
     pub(super) fn half(&self, edge: usize) -> f64 {
         self.girth[edge] / 2.0
+    }
+
+    /// How far a line's ink reaches to either side of its route where it reaches its cards, as a
+    /// cable fans out.
+    pub(super) fn reach(&self, edge: usize) -> f64 {
+        self.fan[edge] / 2.0
+    }
+
+    /// How far a line's ink reaches along its body, and where it reaches its cards.
+    pub(super) fn ink(&self, edge: usize) -> (f64, f64) {
+        (self.half(edge), self.reach(edge))
     }
 
     pub(super) fn new(graph: &'a Node) -> Result<Self, String> {
@@ -102,6 +117,7 @@ impl<'a> Model<'a> {
             ends: Vec::new(),
             treatments: Vec::new(),
             girth: Vec::new(),
+            fan: Vec::new(),
             outgoing: Vec::new(),
             incoming: Vec::new(),
         };
@@ -159,6 +175,9 @@ impl<'a> Model<'a> {
             .collect();
         model.girth = (model.edges.iter())
             .map(|edge| (strands(edge) - 1) as f64 * crate::constants::STRAND)
+            .collect();
+        model.fan = (model.edges.iter())
+            .map(|edge| (strands(edge) - 1) as f64 * crate::constants::FAN)
             .collect();
         model.outgoing = vec![Vec::new(); model.endpoints.len()];
         model.incoming = vec![Vec::new(); model.endpoints.len()];

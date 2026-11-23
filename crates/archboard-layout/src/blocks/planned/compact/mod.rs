@@ -5,12 +5,12 @@
 
 use crate::{
     blocks::assembly::Placed,
-    constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, ECHELON},
+    constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, STRAIGHT_RUN},
     geometry::Axis,
     lanes::chains::LANE,
 };
 
-use super::{channel::straight_run_of, junctions::JOIN_ROOM, shape::Shape};
+use super::{junctions::JOIN_ROOM, shape::Shape};
 
 mod sheet;
 
@@ -124,19 +124,8 @@ impl Found {
     /// from that card.
     fn keep(&mut self, first: &Piece, second: &Piece) {
         let gap = second.low - first.high;
-        // A cable's ink reaches its half-width past its run, and its set-back marks need as much
-        // again of its approach beside a card.
-        let card_and_line = matches!(
-            (first.kind, second.kind),
-            (Kind::Card | Kind::Door, Kind::Line) | (Kind::Line, Kind::Card | Kind::Door)
-        );
-        let setback = if card_and_line && first.ink + second.ink > 0.0 {
-            ECHELON
-        } else {
-            0.0
-        };
-        let mut least =
-            room(first.kind, second.kind, self.reach) + first.ink + second.ink + setback;
+        // A cable's ink reaches its half-width past its run.
+        let mut least = room(first.kind, second.kind, self.reach) + first.ink + second.ink;
         if first.joins.contains(&second.mover) || second.joins.contains(&first.mover) {
             least = least.max(JOIN_ROOM);
         }
@@ -324,12 +313,12 @@ fn squeeze(
     reach_through(&mut sheet.pieces, reach);
     let (mut rules, bodies) = rules_of(&sheet.pieces, sheet.movers, reach);
     rules.extend(sheet.straight_cables(drawing, axis, looks).filter_map(
-        |((first, second), length, half)| {
+        |((first, second), length)| {
             let (first, second) = (bodies[first], bodies[second]);
             (first != second).then_some(Rule {
                 first,
                 second,
-                least: (straight_run_of(half) - length).min(0.0),
+                least: (STRAIGHT_RUN - length).min(0.0),
             })
         },
     ));

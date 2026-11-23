@@ -21,7 +21,7 @@ pub(crate) struct Unit {
 }
 
 /// Whether two units' runs overlap, so they cannot share a track.
-fn overlap(one: &Unit, other: &Unit) -> bool {
+pub(crate) fn overlap(one: &Unit, other: &Unit) -> bool {
     one.low - LANE / 2.0 < other.high + LANE / 2.0 && other.low - LANE / 2.0 < one.high + LANE / 2.0
 }
 

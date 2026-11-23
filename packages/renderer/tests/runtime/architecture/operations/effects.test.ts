@@ -106,6 +106,15 @@ function markerAt(markup: string, end: "marker-end" | "marker-start"): string | 
 		: new RegExp(`<marker id="${id}"[\\s\\S]*?</marker>`, "u").exec(markup)?.[0];
 }
 
+/**
+ * A line's group without the ports it draws in its cards' walls.
+ * @param markup The line's group.
+ * @returns The rest of its markup.
+ */
+function outside(markup: string): string {
+	return markup.replaceAll(/<g class="ab-port">.*?<\/g>/gsu, "");
+}
+
 describe("a line's ends say its effect", () => {
 	for (const theme of ["light", "dark"] as const) {
 		test(`each effect draws its own head, and only a declared line is broken, on the ${theme} ground`, async () => {
@@ -148,10 +157,38 @@ describe("a line's ends say its effect", () => {
 		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
 		// The imprint is a short bar across the end of the line, beside the
 		// line's ports.
-		const outsidePorts = (markup: string) =>
-			markup.replaceAll(/<g class="ab-port">.*?<\/g>/gsu, "");
-		expect(outsidePorts(lineOf(svg, "write").markup)).toContain("<line ");
-		expect(outsidePorts(query)).not.toContain("<line ");
+		expect(outside(lineOf(svg, "write").markup)).toContain("<line ");
+		expect(outside(query)).not.toContain("<line ");
+	});
+
+	test("a mutation's imprint lies wholly in front of its target's edge, on a glow in its ink", async () => {
+		const { markup } = lineOf((await drawn(LINES)).svg, "write");
+		// The halo runs to the tip, which touches the target's edge.
+		const tip = /<path class="ab-halo" d="([^"]*)"/u
+			.exec(markup)![1]!
+			.trim()
+			.split(/[ ,LMC]+/u)
+			.filter(Boolean)
+			.map(Number)
+			.slice(-2);
+		const lines = [...outside(markup).matchAll(/<line ([^>]*)\/>/gu)].map(([, attributes]) => {
+			const number = (name: string) =>
+				Number(new RegExp(` ?${name}="([^"]*)"`, "u").exec(attributes!)![1]);
+			return {
+				middle: [(number("x1") + number("x2")) / 2, (number("y1") + number("y2")) / 2],
+				width: number("stroke-width"),
+				style: /style="([^"]*)"/u.exec(attributes!)![1]!,
+			};
+		});
+		const imprint = lines.find(({ style }) => !style.includes("filter"))!;
+		const glow = lines.find(({ style }) => style.includes("filter:blur("))!;
+		// Its far side touches the tip, so the card drawn over the line hides none of it.
+		const fromTip = Math.hypot(imprint.middle[0]! - tip[0]!, imprint.middle[1]! - tip[1]!);
+		expect(fromTip).toBeCloseTo(imprint.width / 2, 1);
+		const ink = (style: string) => /stroke:([^;]*)/u.exec(style)![1];
+		// The glow is the imprint's ink, at a strength of its own on each ground.
+		expect(ink(glow.style)).toContain(ink(imprint.style));
+		expect(glow.width).toBeGreaterThan(imprint.width);
 	});
 
 	test("a line's body stops short of its head, and its halo runs to the tip", async () => {

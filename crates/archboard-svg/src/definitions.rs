@@ -222,6 +222,7 @@ fn write_marker(marker: &Marker, names: &Names, out: &mut String) {
         .set("viewBox", format!("0 0 {view} {view}"))
         .set("refX", marker.reference.x)
         .set("refY", marker.reference.y)
+        .set("markerUnits", "userSpaceOnUse")
         .set("markerWidth", marker.size)
         .set("markerHeight", marker.size)
         .set("orient", "auto-start-reverse")

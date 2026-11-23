@@ -8,7 +8,8 @@ use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, point, route, shape};
 use crate::paint::cards::halo;
-use crate::paint::heads::{ECHELON, IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker};
+use crate::paint::colour::{light_dark, translucent};
+use crate::paint::heads::{IMPRINT_GLOW, IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, at_port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -21,10 +22,10 @@ use crate::paint::styles::{
 };
 use crate::paint::text_runs::paint_text_runs;
 use crate::request::{Dash, LineAppearance, Standing};
-use crate::route::{Walk, route_length, shortened_by};
+use crate::route::{Walk, shortened_by};
 use crate::scene::{
     Cap, Colour, Definition, Geometry, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId,
-    PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
+    Purpose, Role, Shape, Stroke, SubjectKind,
 };
 use crate::sizes::PILL_RADIUS;
 
@@ -38,8 +39,8 @@ pub(super) fn arrowhead_reach(head: Head) -> f64 {
 }
 
 /// A mark in one ink as a marker for the end of a line of a weight.
-pub(super) fn arrowhead_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
-    mark_marker(id, head, weight, ink)
+pub(super) fn arrowhead_marker(id: MarkerId, head: Head, ink: &Colour) -> Marker {
+    mark_marker(id, head, ink)
 }
 
 /// The route with its body cut short of its marks: by `end` at its end and by
@@ -59,25 +60,41 @@ fn body_between(curve: &Curve, start: f64, end: f64) -> Curve {
     }
 }
 
-/// A mutation's imprint: a short bar along its target's edge, centred on the
-/// line's tip and across the way the line arrives, reaching `reach` to either
-/// side. A viewer that moves draws it fading at both ends with a soft glow;
-/// a document draws it flat.
-fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Option<Shape> {
+/// A mutation's imprint: a bar along its target's edge, across the way the
+/// line arrives, centred on the line's tip and reaching `reach` to either
+/// side. It lies just in front of the edge, the card drawn over the line, so
+/// the whole of its width shows, on a glow in its ink. A viewer that moves
+/// draws it fading at both ends; a document draws it flat.
+fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Vec<Shape> {
+    if reach <= 0.0 {
+        return Vec::new();
+    }
     let walk = Walk::of(curve);
     let end = walk.stand(walk.length());
-    (reach > 0.0).then(|| {
-        let from = end.turned(0.0, -reach);
-        let to = end.turned(0.0, reach);
+    let from = end.turned(-IMPRINT_WIDTH / 2.0, -reach);
+    let to = end.turned(-IMPRINT_WIDTH / 2.0, reach);
+    let along = |purpose: Purpose, stroke: Stroke| {
         Shape::new(
-            Purpose::Imprint,
+            purpose,
             Geometry::Line {
                 from: point(from.x, from.y),
                 to: point(to.x, to.y),
             },
         )
-        .stroked(Stroke::new(ink, IMPRINT_WIDTH).capped(Cap::Butt))
-    })
+        .stroked(stroke)
+    };
+    let (breadth, light, dark) = IMPRINT_GLOW;
+    let glow = light_dark(&translucent(ink, light), &translucent(ink, dark));
+    vec![
+        along(
+            Purpose::Glow,
+            Stroke::new(&glow, breadth).capped(Cap::Round),
+        ),
+        along(
+            Purpose::Imprint,
+            Stroke::new(ink, IMPRINT_WIDTH).capped(Cap::Butt),
+        ),
+    ]
 }
 
 /// The subject kind a drawn line is: a flow step drawn on the picture, or a relationship.
@@ -108,70 +125,6 @@ pub(super) fn body(curve: &Curve, dash: Dash, stroke: &Stroke, purpose: Purpose)
     Shape::path(purpose, route(curve)).stroked(stroke.clone().dashed(dash_array(dash)))
 }
 
-/// How far back from its end a line stands the mark there: a strand in echelon a mark's
-/// length, every other line not at all.
-fn set_back(routed: &Edge, mark: Option<Head>) -> f64 {
-    if routed.echelon && mark.is_some() {
-        ECHELON
-    } else {
-        0.0
-    }
-}
-
-/// The bare runs a strand in echelon draws from each mark it sets back on to the end of its
-/// route.
-fn stubs(
-    routed: &Edge,
-    (tail, head): (Option<Head>, Option<Head>),
-    dash: Dash,
-    stroke: &Stroke,
-) -> Vec<Items> {
-    let length = route_length(&routed.curve);
-    [(false, tail), (true, head)]
-        .into_iter()
-        .map(|(end, mark)| (end, mark, set_back(routed, mark)))
-        .filter(|&(_, _, back)| back > 0.0 && length > back)
-        .map(|(end, mark, back)| {
-            // The caller's ring holds at its centre; the bare run meets its outside.
-            let back = if mark == Some(Head::Ring) {
-                back - body_short_of(Head::Ring)
-            } else {
-                back
-            };
-            let (start, stop) = if end {
-                (length - back, 0.0)
-            } else {
-                (0.0, length - back)
-            };
-            shape(body(
-                &body_between(&routed.curve, start, stop),
-                dash,
-                stroke,
-                Purpose::Line,
-            ))
-        })
-        .collect()
-}
-
-/// The standing swipe also leaves a gap where the caller's ring sits in a bare run.
-fn swipe_around_ring(routed: &Edge, tail: Option<Head>) -> Option<Vec<PathStep>> {
-    if tail != Some(Head::Ring) || !routed.echelon {
-        return None;
-    }
-    let reach = body_short_of(Head::Ring);
-    let length = route_length(&routed.curve);
-    if length <= ECHELON + reach {
-        return None;
-    }
-    let mut path = route(&body_between(
-        &routed.curve,
-        0.0,
-        length - (ECHELON - reach),
-    ));
-    path.extend(route(&body_between(&routed.curve, ECHELON + reach, 0.0)));
-    Some(path)
-}
-
 /// One final route, its head, its halo and the insides of the ports it runs into.
 pub(super) fn paint_edge_line(
     routed: &Edge,
@@ -196,7 +149,7 @@ pub(super) fn paint_edge_line(
         look.and_then(|look| look.tail)
     };
     let path = route(&routed.curve);
-    let short = |mark: Option<Head>| mark.map_or(0.0, body_short_of) + set_back(routed, mark);
+    let short = |mark: Option<Head>| mark.map_or(0.0, body_short_of);
     let thin = thinned(&stroke, look.map_or(1.0, |look| look.body));
     let mut line = body(
         &body_between(&routed.curve, short(tail), short(head)),
@@ -204,7 +157,7 @@ pub(super) fn paint_edge_line(
         &thin,
         Purpose::Line,
     );
-    let mut parts = stubs(routed, (tail, head), appearance.dash, &thin);
+    let mut parts = Vec::new();
     let mut defined = Vec::new();
     let mut marker = |mark: Head| {
         let id = MarkerId::Line {
@@ -215,12 +168,7 @@ pub(super) fn paint_edge_line(
         if !defined.contains(&id) {
             defined.push(id.clone());
             parts.push(vec![Item::Definitions {
-                definitions: vec![Definition::Marker(arrowhead_marker(
-                    id.clone(),
-                    mark,
-                    weight,
-                    &ink,
-                ))],
+                definitions: vec![Definition::Marker(arrowhead_marker(id.clone(), mark, &ink))],
             }]);
         }
         id
@@ -228,15 +176,13 @@ pub(super) fn paint_edge_line(
     line.marker = head.map(&mut marker);
     line.start_marker = tail.map(&mut marker);
     if look.is_some_and(|look| look.imprint) && !step {
-        parts.extend(imprint(&routed.curve, imprint_reach, &ink).map(shape));
+        parts.extend(
+            imprint(&routed.curve, imprint_reach, &ink)
+                .into_iter()
+                .map(shape),
+        );
     }
-    let ring_swipe = standing.and_then(|_| swipe_around_ring(routed, tail));
-    parts.push(standing_swipe(
-        ring_swipe.as_deref().unwrap_or(&path),
-        width,
-        standing,
-        palette,
-    ));
+    parts.push(standing_swipe(&path, width, standing, palette));
     parts.push(shape(
         Shape::path(Purpose::Halo, path).stroked(styles.ring(width + EDGE_HALO_EXTRA).rounded()),
     ));
@@ -340,115 +286,5 @@ pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<St
             standing,
             None,
         ),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::geometry::Segment;
-    use crate::request::{Arrowhead, LineEffect};
-
-    fn strand(echelon: bool) -> Edge {
-        Edge {
-            echelon,
-            edge: crate::drawing::EdgeFacts {
-                id: "strand".to_owned(),
-                from: "a".to_owned(),
-                to: "b".to_owned(),
-                kind: "sync".to_owned(),
-                effect: None,
-                emphasis: Emphasis::Normal,
-                traffic: None,
-                two_way: false,
-            },
-            curve: Curve {
-                from: Point { x: 0.0, y: 0.0 },
-                segments: vec![Segment::Line {
-                    to: Point { x: 200.0, y: 0.0 },
-                }],
-            },
-            label: None,
-        }
-    }
-
-    #[test]
-    fn a_strand_in_echelon_sets_its_mark_back_and_runs_on_bare_to_its_end() {
-        let marks = (None, Some(Head::Wedge));
-        let stroke = Stroke::new(Colour::Black, 1.5);
-        assert_eq!(set_back(&strand(true), marks.1), ECHELON);
-        assert_eq!(set_back(&strand(true), marks.0), 0.0);
-        assert_eq!(stubs(&strand(true), marks, Dash::Solid, &stroke).len(), 1);
-        assert_eq!(set_back(&strand(false), marks.1), 0.0);
-        assert_eq!(stubs(&strand(false), marks, Dash::Solid, &stroke).len(), 0);
-    }
-
-    #[test]
-    fn a_strands_bare_run_leaves_its_caller_ring_hollow() {
-        let runs = stubs(
-            &strand(true),
-            (Some(Head::Ring), Some(Head::Eye)),
-            Dash::Solid,
-            &Stroke::new(Colour::Black, 2.4),
-        );
-        let [
-            Item::Shape(Shape {
-                geometry: Geometry::Path { steps },
-                ..
-            }),
-        ] = runs[0].as_slice()
-        else {
-            panic!("the caller's bare run is a path");
-        };
-        assert_eq!(
-            steps.last(),
-            Some(&PathStep::Line {
-                to: point(ECHELON - crate::paint::heads::ring_reach(), 0.0),
-            }),
-        );
-    }
-
-    #[test]
-    fn a_compared_strand_keeps_its_caller_ring_hollow() {
-        let painted = paint_edge_line(
-            &strand(true),
-            &Palette::of_page(),
-            Some(Standing::Added),
-            &LineAppearance {
-                name: "Sync".to_owned(),
-                color: None,
-                dash: Dash::Solid,
-                arrowhead: Arrowhead::Eye,
-                effect: Some(LineEffect::Query),
-            },
-            None,
-            false,
-            (&[], 0.0),
-        );
-        let [Item::Group(line)] = painted.as_slice() else {
-            panic!("the strand is a group");
-        };
-        let steps = line.items.iter().find_map(|item| match item {
-            Item::Shape(Shape {
-                purpose: Purpose::Swipe,
-                geometry: Geometry::Path { steps },
-                ..
-            }) => Some(steps.as_slice()),
-            _ => None,
-        });
-        let Some(
-            [
-                _,
-                PathStep::Line { to: before },
-                PathStep::Move { to: after },
-                _,
-            ],
-        ) = steps
-        else {
-            panic!("the standing swipe has a gap at the caller ring");
-        };
-        let reach = crate::paint::heads::ring_reach();
-        assert!(before.x <= ECHELON - reach + 0.01);
-        assert!(after.x >= ECHELON + reach - 0.01);
     }
 }

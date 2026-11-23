@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND, approach_of};
+use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_whole};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -145,7 +145,7 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .routes
                 .iter()
                 .filter(|line| line.id != model.edges[index].id)
-                .map(|line| Junction::new(model, topology, index, line).map(Junction::indexed))
+                .map(|line| Junction::new(model, topology, index, line))
                 .collect(),
             blocker: std::cell::Cell::new(0),
         }
@@ -154,7 +154,7 @@ impl<'a, 'g> Probe<'a, 'g> {
         let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
         let (from, to) = model.ends[index];
         if let Some(reason) = basic(
-            (points, model.girth[index]),
+            (points, model.ink(index)),
             shape.endpoints[&from],
             shape.endpoints[&to],
             self.bounds,
@@ -233,11 +233,13 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
 
 struct Junction<'a> {
     line: &'a PlacedLine,
-    /// How much further the two lines' ink reaches between them than two lone lines'.
-    spread: f64,
+    /// How far a candidate's ink reaches along its body and at its cards (`Model::ink`).
+    ours: (f64, f64),
+    /// The line's straight pieces, each with its ink (`junctions::pieces`).
+    theirs: Vec<super::junctions::Piece>,
+    /// How much further than two lone lines' the two lines' ink reaches between them at the most.
+    most: f64,
     bounds: super::junctions::Envelope,
-    /// The envelope of each run of the line, when a guard compares it with many candidates.
-    runs: Vec<super::junctions::Envelope>,
     shared: bool,
     /// Whether the two share their source, and their target.
     ends: [bool; 2],
@@ -258,9 +260,10 @@ impl<'a> Junction<'a> {
         let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
         Some(Self {
             line,
-            spread: model.half(index) + model.half(other),
+            ours: model.ink(index),
+            theirs: super::junctions::pieces(&line.points, model.ink(other)),
+            most: model.reach(index) + model.reach(other),
             bounds: super::junctions::Envelope::new(&line.points),
-            runs: Vec::new(),
             shared: topology.memberships[index]
                 .iter()
                 .flatten()
@@ -270,7 +273,7 @@ impl<'a> Junction<'a> {
         })
     }
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
-        bounds.apart_by(self.bounds, self.spread)
+        bounds.apart_by(self.bounds, self.most)
             || ((!self.shared
                 || super::junctions::sharing(
                     points,
@@ -283,23 +286,11 @@ impl<'a> Junction<'a> {
                     self.arrows[0],
                     self.arrows[1],
                 ))
-                && if self.runs.is_empty() {
-                    super::junctions::ordered(points, &self.line.points, (self.shared, self.spread))
-                } else {
-                    super::junctions::ordered_runs(
-                        points,
-                        &self.line.points,
-                        (self.bounds, &self.runs),
-                        (self.shared, self.spread),
-                    )
-                })
-    }
-    /// The junction with its line's runs indexed, for a guard that compares many candidates.
-    fn indexed(self) -> Self {
-        Self {
-            runs: super::junctions::runs(&self.line.points),
-            ..self
-        }
+                && super::junctions::ordered_pieces(
+                    &super::junctions::pieces(points, self.ours),
+                    (self.bounds, &self.theirs),
+                    self.shared,
+                ))
     }
 }
 /// The junctions of one line's candidates with every placed route, each route indexed once.
@@ -318,7 +309,7 @@ impl<'a> Junctions<'a> {
     ) -> Self {
         Self {
             pairs: (routes.iter())
-                .map(|line| Junction::new(model, topology, index, line).map(Junction::indexed))
+                .map(|line| Junction::new(model, topology, index, line))
                 .collect(),
             blocker: std::cell::Cell::new(0),
         }
@@ -360,8 +351,8 @@ pub(super) fn shared_junction(
 ) -> bool {
     let bounds = super::junctions::Envelope::new(points);
     // A line far from this one clears it whatever their fans and ends.
-    let spread = model.half(index)
-        + (model.edge_index.get(line.id.as_str())).map_or(0.0, |&other| model.half(other));
+    let spread = model.reach(index)
+        + (model.edge_index.get(line.id.as_str())).map_or(0.0, |&other| model.reach(other));
     if bounds.apart_by(super::junctions::Envelope::new(&line.points), spread) {
         return model.edge_index.contains_key(line.id.as_str());
     }
@@ -388,36 +379,50 @@ pub(super) fn shared_fragment(
 /// ring round the page is refused, and placement makes room for the direct way instead.
 const DETOUR_LIMIT: f64 = 2.5;
 
-/// Rounded corners must leave the complete arrow approach after painting (`approach_of`). A
-/// line with no bend needs only the room its marks take.
-pub(super) fn approaches(points: &[Point], half: f64) -> bool {
-    let required = if points.len() > 2 {
-        approach_of(half)
+/// How far a cable stands its strands out on each side of a run's end bends: its fan on a first
+/// or last run that fans out whole (`constants::fans_whole`), its body elsewhere, where an end run
+/// steps its strands out only at its apron.
+fn out_of(points: &[Point], run: usize, (half, reach): (f64, f64)) -> f64 {
+    let runs = points.len() - 1;
+    let at_end = run == 0 || run + 1 == runs;
+    if at_end && fans_whole(length(&points[run..run + 2]), half, reach) {
+        reach
     } else {
-        straight_run_of(half)
-    };
-    length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+        half
+    }
 }
 
-/// The shortest straight route that fits the marks of a line or cable.
-pub(super) fn straight_run_of(half: f64) -> f64 {
-    STRAIGHT_RUN + if half > 0.0 { 2.0 * ECHELON } else { 0.0 }
+/// Rounded corners must leave the complete arrow approach after painting (`approach_of`), on
+/// the inner strand of a cable too, which turns as much sooner as the run before the last stands
+/// its strands out (`out_of`). A line with no bend needs only the room its marks take.
+pub(super) fn approaches(points: &[Point], ink: (f64, f64)) -> bool {
+    let runs = points.len().saturating_sub(1);
+    if runs <= 1 {
+        return points.len() < 2 || length(points) >= STRAIGHT_RUN;
+    }
+    length(&points[..2]) >= approach_of(out_of(points, 1, ink))
+        && length(&points[runs - 1..]) >= approach_of(out_of(points, runs - 2, ink))
 }
 
-/// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
-/// that turn the same way, the inner strand's run is shorter by the girth, and still holds both
-/// rounded corners with a straight between them as long as the strands stand apart. Corners
-/// that met with no straight between them would turn the inner strand in one S, unlike the
-/// strands beside it.
-fn turns_clear(points: &[Point], girth: f64) -> bool {
+/// Whether a cable keeps every strand the right way round: between two bends that turn the same
+/// way, the inner strand's run is shorter by how far the runs on either side stand their strands
+/// out (`out_of`), and still holds both rounded corners with a straight between them as long as
+/// the strands stand apart along the body. Corners that met with no straight between them would
+/// turn the inner strand in one S, unlike the strands beside it.
+fn turns_clear(points: &[Point], ink: (f64, f64)) -> bool {
     let turn = |at: usize| {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
         ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)).signum()
     };
-    girth == 0.0
-        || (1..points.len().saturating_sub(2)).all(|at| {
+    let last = points.len().saturating_sub(2);
+    ink.0 == 0.0
+        || (1..last).all(|at| {
             turn(at) != turn(at + 1)
-                || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS + STRAND
+                || length(&points[at..at + 2])
+                    >= out_of(points, at - 1, ink)
+                        + out_of(points, at + 1, ink)
+                        + 2.0 * BEND_RADIUS
+                        + STRAND
         })
 }
 
@@ -503,7 +508,7 @@ fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
 }
 
 fn basic(
-    (points, girth): (&[Point], f64),
+    (points, ink): (&[Point], (f64, f64)),
     source: Rect,
     target: Rect,
     bounds: Rect,
@@ -514,19 +519,19 @@ fn basic(
     {
         return Some("slanted");
     }
-    if points.len() < 2 || !approaches(points, girth / 2.0) || !turns_clear(points, girth) {
+    if points.len() < 2 || !approaches(points, ink) || !turns_clear(points, ink) {
         return Some("approach");
     }
     if meets_itself(points) {
         return Some("loop");
     }
-    let half = girth / 2.0;
-    if !attached_by(points[0], points[1], source, half)
+    let (_, reach) = ink;
+    if !attached_by(points[0], points[1], source, reach)
         || !attached_by(
             points[points.len() - 1],
             points[points.len() - 2],
             target,
-            half,
+            reach,
         )
     {
         return Some("attachment wall");
@@ -576,7 +581,7 @@ mod tests {
             Point { x: 250.0, y: 100.0 },
         ];
         assert_eq!(
-            basic((&points, 0.0), source, target, bounds),
+            basic((&points, (0.0, 0.0)), source, target, bounds),
             Some("detour")
         );
     }

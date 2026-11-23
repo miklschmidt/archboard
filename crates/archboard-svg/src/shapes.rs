@@ -2,6 +2,7 @@
 //! and the order of its attributes, as the picture has always written it, so
 //! the same scene is the same bytes.
 
+use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape, Stroke as Outline};
 
@@ -48,6 +49,10 @@ pub(crate) fn stated<'a>(
     out.set(name, value)
 }
 
+/// How a glow is spelt: a stroke this share of its breadth, blurred by this
+/// share of it, so it fades out about where a viewer's glow does.
+const GLOW_SPELLING: (f64, f64) = (0.5, 0.125);
+
 /// One attribute a shape can carry.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Key {
@@ -66,11 +71,12 @@ enum Key {
     Pointer,
     Clip,
     Members,
+    Soft,
 }
 
 use Key::{
     Cap, Class, Clip, Dash, Fill, FillOpacity, Join, Marker, Members, Offset, Opacity, Place,
-    Pointer, Stroke, Width,
+    Pointer, Soft, Stroke, Width,
 };
 
 /// The order a shape's attributes are written in, by its geometry and what it is.
@@ -122,6 +128,7 @@ fn spelling_of(purpose: Purpose, arrowhead: Spelling) -> Spelling {
         | Purpose::LitLine
         | Purpose::Line
         | Purpose::Imprint
+        | Purpose::Glow
         | Purpose::Swipe
         | Purpose::Cutout
         | Purpose::Rule => Spelling::Route,
@@ -159,19 +166,19 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
 pub(crate) fn listed(numbers: &[f64]) -> String {
     numbers
         .iter()
-        .map(|number| archboard_scene::js::number(*number))
+        .map(|number| js::number(*number))
         .collect::<Vec<_>>()
         .join(" ")
 }
 
 /// One attribute of a shape's stroke.
-fn outline_key(outline: &Outline, key: Key, out: &mut Attributes) {
+fn outline_key(outline: &Outline, share: f64, key: Key, out: &mut Attributes) {
     match key {
         Stroke => {
             out.set("stroke", paint(&outline.paint));
         }
         Width => {
-            stated(out, "stroke-width", outline.width);
+            stated(out, "stroke-width", outline.width * share);
         }
         Opacity => {
             stated(out, "stroke-opacity", outline.opacity);
@@ -189,6 +196,15 @@ fn outline_key(outline: &Outline, key: Key, out: &mut Attributes) {
             stated(out, "stroke-dashoffset", outline.dash_offset);
         }
         _ => {}
+    }
+}
+
+/// How much of its breadth a shape's stroke is written: a glow's share, else all of it.
+fn glow_share(purpose: Purpose) -> f64 {
+    if purpose == Purpose::Glow {
+        GLOW_SPELLING.0
+    } else {
+        1.0
     }
 }
 
@@ -212,7 +228,7 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
         }
         Stroke | Width | Opacity | Cap | Join | Dash | Offset => {
             if let Some(outline) = &shape.stroke {
-                outline_key(outline, key, out);
+                outline_key(outline, glow_share(shape.purpose), key, out);
             }
         }
         Pointer => {
@@ -236,12 +252,21 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
                 (!shape.members.is_empty()).then(|| shape.members.join(" ")),
             );
         }
+        Soft => {
+            out.maybe(
+                "filter",
+                (shape.stroke.as_ref())
+                    .map(|stroke| stroke.width)
+                    .filter(|_| shape.purpose == Purpose::Glow)
+                    .map(|width| format!("blur({}px)", js::number(width * GLOW_SPELLING.1))),
+            );
+        }
     }
 }
 
 /// Every attribute a shape can carry, in the order a shape no template
 /// expects it of writes it.
-const EVERY: [Key; 15] = [
+const EVERY: [Key; 16] = [
     Class,
     Place,
     Marker,
@@ -257,6 +282,7 @@ const EVERY: [Key; 15] = [
     Pointer,
     Clip,
     Members,
+    Soft,
 ];
 
 /// A shape as an element, an arrowhead spelt as the place it is drawn in asks.

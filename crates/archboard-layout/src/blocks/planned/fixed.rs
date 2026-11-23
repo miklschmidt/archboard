@@ -46,7 +46,7 @@ pub(super) fn settled(
         .collect();
     let inks: rustc_hash::FxHashMap<&str, f64> = (model.edges.iter().enumerate())
         .filter(|&(edge, _)| model.girth[edge] > 0.0)
-        .map(|(edge, line)| (line.id.as_str(), model.half(edge)))
+        .map(|(edge, line)| (line.id.as_str(), model.reach(edge)))
         .collect();
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
         if let Some(drawing) = super::compact::drawing(shape, clear, (&two_way, &inks))
@@ -259,14 +259,14 @@ impl<'a> Meeting<'a> {
                 edge: other,
                 line,
                 peer: super::port_spacing::Peer::of(model, edge, line),
-                reach: inflate(bounds(&line.points), 1.0 + model.half(other)),
+                reach: inflate(bounds(&line.points), 1.0 + model.reach(other)),
                 kept: line.label.map(|r| inflate(r, 12.01)),
-                half: model.half(other),
+                half: model.reach(other),
             }
         };
         Self {
             routes: routes.iter().map(met).collect(),
-            half: model.half(edge),
+            half: model.reach(edge),
             junctions: super::channel::Junctions::new(model, topology, edge, routes),
         }
     }
@@ -472,6 +472,59 @@ mod tests {
     use super::*;
     use crate::blocks::assembly::PlacedCard;
     use serde_json::json;
+
+    #[test]
+    fn the_final_guard_keeps_distinct_door_ports_a_lane_apart_on_one_wall() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"door","layoutOptions":{"archboard.door":"across"}},
+            {"id":"left"}, {"id":"right"}],
+            "edges":[{"id":"left","sources":["door"],"targets":["left"],
+                "layoutOptions":{"archboard.relationship.kind":"http"}},
+                {"id":"right","sources":["door"],"targets":["right"],
+                "layoutOptions":{"archboard.relationship.kind":"event"}}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let drawing = Placed {
+            width: 550.0,
+            height: 400.0,
+            cards: vec![
+                card("door", 180.0, 80.0, 140.0, 34.0),
+                card("left", 40.0, 180.0, 140.0, 80.0),
+                card("right", 320.0, 180.0, 140.0, 80.0),
+            ],
+            frames: vec![],
+            regions: vec![],
+            edges: vec![],
+            titles: vec![],
+            routed: None,
+        };
+        let route = |id: &str, x, far| PlacedLine {
+            id: id.into(),
+            points: vec![
+                Point { x, y: 114.02 },
+                Point { x, y: 220.0 },
+                Point { x: far, y: 220.0 },
+            ],
+            label: None,
+        };
+        let mut shape = placement(&model, drawing).unwrap();
+        shape.routes = vec![route("left", 243.0, 180.02), route("right", 257.0, 319.98)];
+        finish(&model, &topology, &mut shape).expect_err("fourteen units is less than a lane");
+        shape.routes = vec![route("left", 242.0, 180.02), route("right", 258.0, 319.98)];
+        finish(&model, &topology, &mut shape).expect("sixteen units leaves a full lane");
+    }
 
     #[test]
     fn opposite_wall_ports_keep_distinct_routes_off_one_line() {

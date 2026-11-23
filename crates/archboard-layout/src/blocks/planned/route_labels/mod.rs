@@ -1,11 +1,13 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
 pub(super) mod own;
+mod plate;
 mod seating;
 mod strokes;
 mod trunk;
 
 use own::{Own, keeps, meets};
+use plate::Plate;
 pub(super) use seating::Seating;
 pub(super) use strokes::StrokeIndex;
 pub(super) use trunk::{branches, from_part, seat};
@@ -17,7 +19,6 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
-    constants::BEND_RADIUS,
     geometry::{Point, Rect, inflate},
 };
 
@@ -179,23 +180,6 @@ fn spans(edge: usize, path: &[Point], shape: &Shape, index: &StrokeIndex) -> Vec
     spans
 }
 
-/// The size of a label's plate, or of its narrow plate where its words wrap narrower.
-fn plate(model: &Model<'_>, edge: usize, narrow: bool) -> Option<Rect> {
-    let label = model.edges[edge].label()?;
-    let (width, height) = if narrow {
-        let plate = label.narrow?;
-        (plate.width, plate.height)
-    } else {
-        (label.width.unwrap_or(0.0), label.height.unwrap_or(0.0))
-    };
-    Some(Rect {
-        x: 0.0,
-        y: 0.0,
-        width,
-        height,
-    })
-}
-
 /// A spot for a route's words on its `spans`, as `spans` finds them, and whether it is a
 /// fallback.
 fn spot_on(
@@ -207,35 +191,28 @@ fn spot_on(
     labels: &super::label_space::Labels,
     narrow: bool,
 ) -> Option<(Rect, bool)> {
-    let size = plate(model, own.edge, narrow)?;
-    // A cable's inner strand bends half the cable's width nearer its words than its middle does,
-    // and its corner ends a bend's radius further on.
-    let room = BEND_ROOM.max(BEND_RADIUS + model.half(own.edge) + CORNER_CLEAR);
+    let plate = Plate::of(model, own, narrow)?;
     if shape.trunk.contains_key(&own.edge) {
-        return nearest(spans, (size, room), shape, own, index, labels).map(|at| (at, false));
+        return nearest(spans, plate, shape, own, index, labels).map(|at| (at, false));
     }
-    let midway = midway(spans, (size, room), shape, own, index, labels);
+    let midway = midway(spans, plate, shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(spans, (size, room), shape, own, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(spans, plate, shape, own, index, labels).map(|at| (at, true)))
 }
-
-/// How far a line's words stand at least from each end of the run they stand on, where the
-/// line bends.
-const BEND_ROOM: f64 = 16.0;
-/// How far a cable's words stand at least past the corner of its inner strand.
-const CORNER_CLEAR: f64 = 4.0;
 
 /// The middle of the longest run that holds the words.
 fn midway(
     spans: &[Span],
-    (size, room): (Rect, f64),
+    plate: Plate,
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
     spans.iter().find_map(|&span| {
+        let size = plate.size;
+        let room = plate.room_at(span.a, own).max(plate.room_at(span.b, own));
         let horizontal = span.a.y == span.b.y;
         let required = if horizontal { size.width } else { size.height };
         let position = if horizontal {
@@ -254,7 +231,7 @@ fn midway(
 
 fn nearest(
     spans: &[Span],
-    (size, room): (Rect, f64),
+    plate: Plate,
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
@@ -266,7 +243,7 @@ fn nearest(
         if best.is_some_and(|(distance, _)| span.before > distance) {
             continue;
         }
-        for spot in spots_for(span, (size, room), shape, own, index, labels) {
+        for spot in spots_for(span, plate, shape, own, index, labels) {
             if best.is_none_or(|(distance, _)| spot.0.total_cmp(&distance).is_lt()) {
                 best = Some(spot);
             }
@@ -277,7 +254,7 @@ fn nearest(
 
 fn spots_for(
     span: Span,
-    (size, room): (Rect, f64),
+    plate: Plate,
     shape: &Shape,
     own: Own<'_>,
     index: &StrokeIndex,
@@ -285,9 +262,15 @@ fn spots_for(
 ) -> Vec<(f64, Rect)> {
     let mut spots = Vec::new();
     let horizontal = span.a.y == span.b.y;
+    let size = plate.size;
     let (a, b, across, along_half, across_half) = projection(span, size);
-    let room = room + 0.01;
-    let (lo, hi) = (a.min(b) + along_half + room, a.max(b) - along_half - room);
+    let (low, high) = if a < b {
+        (span.a, span.b)
+    } else {
+        (span.b, span.a)
+    };
+    let lo = a.min(b) + along_half + (plate.room_at(low, own) + 0.01);
+    let hi = a.max(b) - along_half - (plate.room_at(high, own) + 0.01);
     if hi < lo {
         return Vec::new();
     }
@@ -410,7 +393,7 @@ pub(super) fn seated(
             .then(area(b).total_cmp(&area(a)))
             .then(a.cmp(&b))
     });
-    seed(shape, indices, &order, strokes, &mut labels);
+    seed(model, shape, indices, &order, strokes, &mut labels);
     let mut moves = Moves {
         count: 0,
         searched: vec![None; indices.len()],
@@ -490,6 +473,7 @@ fn consistent(
     Some(())
 }
 fn seed(
+    model: &Model<'_>,
     shape: &mut Shape,
     indices: &[usize],
     order: &[usize],
@@ -498,10 +482,15 @@ fn seed(
 ) {
     for &index in order {
         let line = &shape.routes[index];
+        let edge = indices[index];
+        // Contraction can carry a cable's plate over the marks at its ends or its inner bend.
+        // Give the plate a new seat on the contracted route.
+        if model.half(edge) > 0.0 {
+            continue;
+        }
         if let Some(label) = line.label
-            && clear(shape, indices[index], label, strokes, labels)
+            && clear(shape, edge, label, strokes, labels)
         {
-            let edge = indices[index];
             shape.labels.insert(edge, label);
             labels.remember(edge, label);
         }

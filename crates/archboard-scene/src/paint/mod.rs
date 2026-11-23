@@ -99,7 +99,6 @@ fn definitions(palette: &palette::Palette) -> Vec<Definition> {
                         ink: *ink,
                     },
                     head,
-                    weight,
                     colour,
                 )));
             }

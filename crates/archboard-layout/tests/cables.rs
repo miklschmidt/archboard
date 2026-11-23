@@ -100,9 +100,10 @@ fn a_group_caption_leaves_the_full_width_of_each_lanes_ribbon() {
         })
         .collect();
     ports.sort_by(f64::total_cmp);
-    // Five strands span 32 units. Compress the gap between ribbons and keep their widths.
-    assert!(ports[1] - ports[0] > 32.0, "{ports:?}");
-    assert!(ports[0] - 16.0 >= caption_end, "{ports:?}");
+    // Five strands fan out over 64 units at their card. The card widens past the caption until
+    // both fans fit beside it, apart.
+    assert!(ports[1] - ports[0] > 64.0, "{ports:?}");
+    assert!(ports[0] - 32.0 >= caption_end, "{ports:?}");
 }
 
 #[test]
@@ -125,7 +126,6 @@ fn a_fallback_cable_leaves_room_for_its_marks_at_both_ends() {
     let placed: Value = serde_json::from_str(&placed).expect("a drawing");
     let minimum = archboard_scene::paint::design::approach_straight()
         + archboard_scene::geometry::bend_radius()
-        + archboard_scene::paint::design::echelon()
         + 4.0;
     let length = |one: &Value, two: &Value| {
         let coordinate = |point: &Value, axis: &str| point[axis].as_f64().expect("a coordinate");
