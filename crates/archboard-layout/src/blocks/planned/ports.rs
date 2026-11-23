@@ -3,6 +3,7 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
+use crate::graph::Node;
 use crate::lanes::chains::LANE;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -269,6 +270,46 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
         }
     }
     kinds
+}
+
+/// The graph with each door as wide as one wall needs to hold a port for each kind of line the
+/// door takes in, and one for each it sends out: a head a lane from the next, a tail closer, each
+/// kept from the door's rounded corners. A door's words set its width only while its lines need
+/// less. Blocks' fallback lays its graph out so.
+pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
+    let widths: rustc_hash::FxHashMap<String, f64> = Model::new(graph)
+        .map(|model| {
+            (model.endpoints.iter().enumerate())
+                .filter(|(_, end)| end.door)
+                .filter_map(|(at, end)| {
+                    let width = [(8.0, &model.outgoing[at]), (LANE, &model.incoming[at])]
+                        .map(|(spacing, lines)| {
+                            let ports = kinds_of(&model, lines).len().saturating_sub(1);
+                            2.0 * 12.0 + ports as f64 * spacing
+                        })
+                        .into_iter()
+                        .fold(0.0, f64::max);
+                    (width > end.node.width.unwrap_or_default())
+                        .then(|| (end.node.id.clone(), width))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut wide = graph.clone();
+    if !widths.is_empty() {
+        widen(&mut wide, &widths);
+    }
+    wide
+}
+
+/// Give each node the width named for it, through the whole hierarchy.
+fn widen(node: &mut Node, widths: &rustc_hash::FxHashMap<String, f64>) {
+    if let Some(&width) = widths.get(&node.id) {
+        node.width = Some(width);
+    }
+    for child in node.children.iter_mut().flatten() {
+        widen(child, widths);
+    }
 }
 
 fn room(at: Rect, side: Side, count: usize, margin: f64, spacing: f64) -> bool {

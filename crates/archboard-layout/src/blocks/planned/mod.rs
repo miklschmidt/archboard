@@ -77,6 +77,7 @@ impl From<&str> for Refused {
 }
 
 pub(super) use parts::{Routed, Split, Step, solve_part};
+pub(super) use ports::doors_widened;
 pub(super) use words::{dress, without_trunk_words, without_words};
 
 mod fixed;

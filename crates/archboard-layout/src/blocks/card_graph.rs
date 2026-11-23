@@ -232,7 +232,7 @@ impl<'t> CardLayout<'t> {
                 self.tree
                     .cards
                     .get(name.as_str())
-                    .is_some_and(|card| !card.door)
+                    .is_some_and(|card| self.tree.packed || !card.door)
                     && width > self.size_of(name).width
             })
             .map(|(name, &width)| (name.clone(), width))
