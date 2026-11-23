@@ -1,6 +1,6 @@
 //! A group drawn through its mask: its items, then its cuts out of them.
 
-use archboard_scene::scene::{Cap, Colour, Group, Mask, Paint, Shape};
+use archboard_scene::scene::{Colour, Group, Mask, Paint, Purpose, Shape};
 use kurbo::Shape as _;
 
 use super::{BOX_TOLERANCE, Inside, Walk, opacity_of};
@@ -15,14 +15,6 @@ fn cuts(shape: &Shape) -> bool {
             colour: Colour::White
         }
     )
-}
-
-/// A cut for a trunk that a line shares: a lit line draws that stretch again.
-fn cuts_a_trunk(shape: &Shape) -> bool {
-    shape
-        .stroke
-        .as_ref()
-        .is_some_and(|stroke| stroke.cap == Cap::Butt)
 }
 
 impl<C: Canvas> Walk<'_, C> {
@@ -48,7 +40,8 @@ impl<C: Canvas> Walk<'_, C> {
             Ink::Solid(peniko::Color::BLACK.with_alpha(alpha))
         };
         for shape in mask.shapes.iter().filter(|shape| cuts(shape)) {
-            if whole && cuts_a_trunk(shape) {
+            // A lit line draws the shared stretch again and keeps its crossing gaps.
+            if whole && shape.purpose == Purpose::Cutout {
                 continue;
             }
             let (path, _) = outline_of(&shape.geometry);

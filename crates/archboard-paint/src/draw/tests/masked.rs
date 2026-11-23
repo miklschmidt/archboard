@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
-    Cap, Definition, Group, Item, Mask, MaskId, Painting, PathStep, Purpose, Role, Shape, Stroke,
+    Definition, Group, Item, Mask, MaskId, Painting, PathStep, Purpose, Role, Shape, Stroke,
     SubjectKind, Token,
 };
 
@@ -23,9 +23,9 @@ fn masked_line() -> Painting {
         width: 400.0,
         height: 400.0,
     };
-    let cut = |cap| {
+    let cut = |purpose| {
         Shape::path(
-            Purpose::Cutout,
+            purpose,
             vec![
                 PathStep::Move {
                     to: Point { x: 0.0, y: 0.0 },
@@ -35,7 +35,7 @@ fn masked_line() -> Painting {
                 },
             ],
         )
-        .stroked(Stroke::new(Token::Border, 7.0).capped(cap))
+        .stroked(Stroke::new(Token::Border, 7.0))
     };
     let mut line =
         Group::new(Role::Line(None), route(0.0)).drawing(subject(SubjectKind::Edge, "e"));
@@ -48,7 +48,7 @@ fn masked_line() -> Painting {
             line: "e".to_owned(),
         },
         bounds,
-        shapes: vec![cut(Cap::Round), cut(Cap::Butt)],
+        shapes: vec![cut(Purpose::Line), cut(Purpose::Cutout)],
     })];
     painting
 }
