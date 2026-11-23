@@ -47,11 +47,11 @@ function exited(child: Bun.Subprocess): boolean {
 }
 
 /**
- * Whether a promise settles within the reaping bound.
+ * Whether the output pipes close within the cleanup bound.
  * @param settled The promise.
  * @returns True when it settled in time.
  */
-async function reaped(settled: Promise<unknown>): Promise<boolean> {
+async function outputDrained(settled: Promise<unknown>): Promise<boolean> {
 	try {
 		await within("skillEval.reap", () => settled);
 		return true;
@@ -62,19 +62,14 @@ async function reaped(settled: Promise<unknown>): Promise<boolean> {
 }
 
 /**
- * Wait until the recorded group has no runnable members, within one bound.
- * @param identity The captured group.
+ * Wait for one phase of process cleanup to finish.
  * @param stop How long it may take.
- * @returns Whether every group member stopped.
+ * @param stopped Reports when the phase has finished.
+ * @returns Whether the phase finished in time.
  */
-async function groupSettled(
-	identity: CodexProcessGroupIdentity,
-	stop: GroupStop,
-): Promise<boolean> {
+async function stoppedWithin(stop: GroupStop, stopped: () => boolean): Promise<boolean> {
 	try {
-		return await pollUntil(stop, () =>
-			groups.inspect(identity) === "quiescent" ? true : undefined,
-		);
+		return await pollUntil(stop, () => (stopped() ? true : undefined));
 	} catch (error) {
 		if (error instanceof TimedOut) return false;
 		throw error;
@@ -92,14 +87,19 @@ async function stopGroup(
 	identity: CodexProcessGroupIdentity,
 	stop: GroupStop,
 ): Promise<void> {
+	/**
+	 * Check the recorded process group.
+	 * @returns True once no runnable members remain.
+	 */
+	const groupStopped = (): boolean => groups.inspect(identity) === "quiescent";
 	groups.signal(identity, "SIGTERM");
-	if (!(await groupSettled(identity, stop))) {
+	if (!(await stoppedWithin(stop, groupStopped))) {
 		groups.signal(identity, "SIGKILL");
-		if (!(await groupSettled(identity, stop))) {
+		if (!(await stoppedWithin(stop, groupStopped))) {
 			throw new Error(`Evaluation process group ${identity.pgid} did not stop after SIGKILL.`);
 		}
 	}
-	if (!(await reaped(child.exited))) {
+	if (!(await stoppedWithin(stop, () => exited(child)))) {
 		throw new Error(`Evaluation process ${child.pid} did not reap after group cleanup.`);
 	}
 }
@@ -133,7 +133,7 @@ async function ownProcess(
 		}
 		// Without an identity only the exact child handle may be signalled.
 		child.kill("SIGKILL");
-		await reaped(child.exited);
+		await stoppedWithin(stop, () => exited(child));
 		throw error;
 	}
 	let stopping: Promise<void> | undefined;
@@ -243,7 +243,7 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 		clearTimeout(timer);
 		signal.removeEventListener("abort", onAbort);
 		await owner.stop();
-		if (!(await reaped(output))) {
+		if (!(await outputDrained(output))) {
 			throw new Error(`Evaluation process ${child.pid} left an output pipe open after cleanup.`);
 		}
 		const [stdout, stderr] = await output;
