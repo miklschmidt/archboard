@@ -178,7 +178,7 @@ indigo. A kind no longer sets the arrowhead.
 | Effect        | Body                         | At the target                                      | At the caller |
 | ------------- | ---------------------------- | -------------------------------------------------- | ------------- |
 | Mutation      | solid                        | a solid wedge, and the write's imprint on the card | plain         |
-| Query         | solid                        | an eye: rounded back, clear center, sharp tip      | a hollow ring |
+| Query         | solid                        | an eye: rounded back, dot at center, sharp tip     | a hollow ring |
 | Compute       | solid                        | an "=" (two short bars) just behind a small point  | plain         |
 | Declared only | long broken strokes, thinner | a detached open chevron                            | plain         |
 
@@ -189,7 +189,7 @@ of a compute stops before its bars.
 
 The body is solid for every effect but declared-only. The owner decided it: "Dashes / dots make
 busy diagrams harder to follow, so use sparsely." The ends carry the effect. A head, a ring and
-the bars keep a minimum size on screen, and the openings, the eye's center and the gap of the "=",
+the bars keep a minimum size on screen, and the openings, the ring round the eye's dot and the gap of the "=",
 keep at least 2 clear pixels, so that they survive the opening zoom of a wide scope. Every line
 draws thicker than before, and the weight of emphasis stands on top of that base.
 

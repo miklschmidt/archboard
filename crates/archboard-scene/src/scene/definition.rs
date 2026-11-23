@@ -22,7 +22,7 @@ pub enum Head {
     Open,
     /// A solid wedge: a mutation.
     Wedge,
-    /// An eye, with a rounded back, a clear centre and a sharp tip: a query.
+    /// An eye, with a rounded back, a dot at its centre and a sharp tip: a query.
     Eye,
     /// An "=" behind a small open point: a compute.
     Equals,

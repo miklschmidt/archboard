@@ -468,11 +468,11 @@ kind's ink, and its body stays solid: dashes and dots make a busy picture harder
 mutation ends in a solid wedge, and in the live reader the wedge leaves an imprint on the target:
 a short stripe along the card's edge, centered on the tip, fading at both ends with a soft glow and
 kept inside the port's share of the edge; an export draws it as a flat contact bar. A query ends in
-an eye, a rounded back, a clear center and a sharp forward tip, in outline, and a hollow ring sits
+an eye, a rounded back, a dot at its center and a sharp forward tip, in outline, and a hollow ring sits
 on the caller's edge, where the answer lands. A compute ends in an "=", two short bars across the
 line just behind a small open point, and its body stops before the bars. Only a dependency that
 states no effect has a broken body: long strokes, thinner than a solid line, ending in a detached
-open chevron. A head, a ring and the bars keep a minimum size on screen, and the eye's center and
+open chevron. A head, a ring and the bars keep a minimum size on screen, and the ring round the eye's dot and
 the gap of the "=" keep at least 2 clear pixels, so each survives the opening zoom of a wide scope.
 Emphasis thickens the body and keeps the openings. A compared line takes its standing's color for its
 ink and keeps its shapes, so its effect still reads. A reading from before effects keeps the dash
