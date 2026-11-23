@@ -39,9 +39,19 @@ const first = walkthrough.beats[0];
 		</div>
 	</div>
 	<div class="box">
-		<div class="rail" aria-hidden="true">
-			{walkthrough.beats.map((_, index) => <span class:list={["seg", { "is-on": index === 0 }]} />)}
-		</div>
+		<nav class="rail" aria-label="Steps">
+			{
+				walkthrough.beats.map((beat, index) => (
+					<button
+						type="button"
+						class:list={["seg", { "is-on": index === 0 }]}
+						aria-current={index === 0 ? "step" : undefined}
+						aria-label={`Step ${index + 1}: ${beat.title}`}
+						title={`Step ${index + 1}: ${beat.title}`}
+					/>
+				))
+			}
+		</nav>
 		<div class="step">
 			<p class="figure" aria-hidden="true">
 				<span class="number" data-step-number>1</span>
@@ -240,10 +250,23 @@ const first = walkthrough.beats[0];
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		height: 20px;
+		height: 24px;
 	}
 	.seg {
+		position: relative;
 		flex: 1;
+		height: 24px;
+		padding: 0;
+		border: 0;
+		border-radius: 4px;
+		background: none;
+		cursor: pointer;
+	}
+	.seg::before {
+		content: "";
+		position: absolute;
+		inset: 50% 0 auto;
+		translate: 0 -50%;
 		height: 4px;
 		border-radius: 4px;
 		background: color-mix(in oklch, var(--ink-muted) 70%, transparent);
@@ -251,10 +274,13 @@ const first = walkthrough.beats[0];
 			height 520ms var(--ease-in-out),
 			background-color 150ms var(--ease-out);
 	}
-	.seg.is-done {
+	.seg:hover::before {
+		background: var(--ink-muted);
+	}
+	.seg.is-done::before {
 		background: var(--gold-mark);
 	}
-	.seg.is-on {
+	.seg.is-on::before {
 		height: 6px;
 		background: var(--gold-mark);
 	}
@@ -490,7 +516,7 @@ const first = walkthrough.beats[0];
 		const narrate = root.querySelector<HTMLButtonElement>("[data-narrate]");
 		const previous = root.querySelector<HTMLButtonElement>("[data-prev]");
 		const next = root.querySelector<HTMLButtonElement>("[data-next]");
-		const segments = [...root.querySelectorAll<HTMLElement>(".seg")];
+		const segments = [...root.querySelectorAll<HTMLButtonElement>(".seg")];
 		const orb = root.querySelector<HTMLCanvasElement>("[data-orb]");
 		if (!stage || !figure || !title || !subtitle || !number || !said || !voiceWord || !narrate || !previous || !next || !orb) continue;
 
@@ -529,6 +555,8 @@ const first = walkthrough.beats[0];
 			segments.forEach((segment, at) => {
 				segment.classList.toggle("is-on", at === index);
 				segment.classList.toggle("is-done", at < index);
+				if (at === index) segment.setAttribute("aria-current", "step");
+				else segment.removeAttribute("aria-current");
 			});
 			previous.setAttribute("aria-disabled", String(index === 0));
 			next.setAttribute("aria-disabled", String(index === beats.length - 1));
@@ -578,6 +606,9 @@ const first = walkthrough.beats[0];
 		});
 		next.addEventListener("click", () => {
 			if (index < beats.length - 1) show(index + 1, playing);
+		});
+		segments.forEach((segment, at) => {
+			segment.addEventListener("click", () => show(at, playing));
 		});
 
 		// The voice connects for half a second, the time before the first word, then speaks.
