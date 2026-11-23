@@ -252,6 +252,9 @@ fn status_words(left_out: &LeftOut) -> String {
             left_out.lens
         );
     }
+    if left_out.count == 0 {
+        return left_out.lens.clone();
+    }
     let lines = if left_out.count == 1 { "line" } else { "lines" };
     format!("{} · {} {lines} left out", left_out.lens, left_out.count)
 }
