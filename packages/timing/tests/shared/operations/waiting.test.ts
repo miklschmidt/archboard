@@ -137,23 +137,18 @@ describe("pollUntil", () => {
 		expect(outcome).toEqual({ status: "fulfilled", value: "late" });
 	});
 
-	test("a look in flight when the wait runs out is the last one", async () => {
+	test("an unsuccessful look in flight at expiry is followed by a final look", async () => {
 		let looks = 0;
-		let release: (() => void) | undefined;
-		const pending = pollUntil("server.stopPidfileWait", () => {
-			looks++;
-			return new Promise<undefined>((resolve) => {
-				release = () => resolve(undefined);
-			});
-		});
-		const outcome = drive(pending);
-		await settle();
-		jest.advanceTimersByTime(60_000);
-		await settle();
-		release?.();
-		const settled = await outcome;
+		const first = Promise.withResolvers<undefined>();
+		const pending = pollUntil("server.stopPidfileWait", () =>
+			++looks === 1 ? first.promise : "gone",
+		);
+		jest.advanceTimersToNextTimer();
 		expect(looks).toBe(1);
-		expect((settled as PromiseRejectedResult).reason).toBeInstanceOf(TimedOut);
+		first.resolve(undefined);
+		await expect(pending).resolves.toBe("gone");
+		expect(looks).toBe(2);
+		expect(jest.getTimerCount()).toBe(0);
 	});
 
 	test("times out with the wait's wording after its last look fails", async () => {

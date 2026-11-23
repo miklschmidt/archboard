@@ -79,7 +79,8 @@ function startExpiry(wait: Polled, signal: AbortSignal | undefined): Expiry {
  * Look at a condition until it holds, within a declared wait. The first look is at once, the
  * pauses between looks grow from a few milliseconds to a quarter second, and one last look is
  * taken when the wait runs out, so a condition that holds at the end is never reported as a
- * timeout. A look is never interrupted: one in flight when the wait runs out is that last look.
+ * timeout. If a look is already in flight and finds nothing, the last look follows it without
+ * a pause.
  * @param wait The wait.
  * @param look Returns what the caller waits for, or undefined while it does not hold yet.
  * @param options The caller's signal, which ends the wait even if a look is still in flight.
@@ -106,10 +107,12 @@ async function pollUntil<T>(
 	const observe = async (): Promise<T> => {
 		for (let pause = FIRST_PAUSE_MS; ; pause = Math.min(2 * pause, LONGEST_PAUSE_MS)) {
 			signal?.throwIfAborted();
+			const finalLook = expiry.expired();
 			// oxlint-disable-next-line no-await-in-loop -- one look after another until the condition holds
 			const seen = await look();
 			if (seen !== undefined) return seen;
-			if (expiry.expired()) throw new TimedOut(wait);
+			if (finalLook) throw new TimedOut(wait);
+			if (expiry.expired()) continue;
 			// oxlint-disable-next-line no-await-in-loop -- the pause between two looks
 			await expiry.pause(pause);
 		}
