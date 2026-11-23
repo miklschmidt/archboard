@@ -98,11 +98,34 @@ fn carries_traffic(items: &[Item], id: &str) -> bool {
     })
 }
 
-/// The lines among some that may play: those whose relationship does something
-/// a play shows, with no traffic of their own.
+/// The effect a line can play.
+fn animated_effect(group: &Group) -> Option<LineEffect> {
+    let Role::Line(Some(facts)) = &group.role else {
+        return None;
+    };
+    facts
+        .appearance
+        .effect
+        .filter(|effect| *effect != LineEffect::Declared)
+}
+
+/// Whether the picture holds a line with a playable effect.
+fn has_effect(items: &[Item], id: &str) -> bool {
+    items.iter().any(|item| match item {
+        Item::Group(group) => {
+            (group.subject.as_ref().is_some_and(|subject| subject.id == id)
+                && animated_effect(group).is_some())
+                || has_effect(&group.items, id)
+        }
+        Item::Viewport(viewport) => has_effect(&viewport.items, id),
+        _ => false,
+    })
+}
+
+/// The requested lines that can play and carry no traffic of their own.
 pub(crate) fn playable(items: &[Item], ids: Vec<String>) -> Vec<String> {
     ids.into_iter()
-        .filter(|id| !carries_traffic(items, id))
+        .filter(|id| has_effect(items, id) && !carries_traffic(items, id))
         .collect()
 }
 
@@ -129,13 +152,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// The play of a line's group at this moment, if one runs on it.
     pub(super) fn play_of(&self, group: &Group) -> Option<Play> {
-        let Role::Line(Some(facts)) = &group.role else {
-            return None;
-        };
-        let effect = facts
-            .appearance
-            .effect
-            .filter(|effect| *effect != LineEffect::Declared)?;
+        let effect = animated_effect(group)?;
         let id = &group.subject.as_ref()?.id;
         self.presentation
             .plays

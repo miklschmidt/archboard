@@ -50,7 +50,7 @@ fn a_declared_line_and_a_line_with_traffic_stay_as_they_are() {
     let mut declared = stage_of(vec![effect_line("e", LineEffect::Declared)]);
     let (still, _) = strokes_at(&mut declared, 0.0);
     declared.play(vec!["e".to_owned()], 0.0);
-    assert_eq!(strokes_at(&mut declared, 300.0).0, still);
+    assert_eq!(strokes_at(&mut declared, 300.0), (still, false));
 
     let mut items = traffic_picture();
     if let Some(Item::Group(traffic)) = items.first_mut() {
