@@ -15,6 +15,35 @@ struct PortRequest {
     side: End,
     wanted: f64,
     order: f64,
+    half: f64,
+}
+
+/// Spread the free space between ribbons as ordinary ports, then restore their widths.
+fn spread_ribbons((low, high): (f64, f64), wanted: &[f64], half: &[f64]) -> Vec<f64> {
+    let mut taken = 0.0;
+    let offsets: Vec<_> = half
+        .iter()
+        .map(|&half| {
+            let offset = taken + half;
+            taken += 2.0 * half;
+            offset
+        })
+        .collect();
+    // A frame tab can keep a fixed width. Keep its centres on the face even when the
+    // ribbons take more than the entire span.
+    if taken > high - low {
+        return spread_along((low, high), wanted);
+    }
+    let free: Vec<_> = wanted
+        .iter()
+        .zip(&offsets)
+        .map(|(x, offset)| x - offset)
+        .collect();
+    spread_along((low, high - taken), &free)
+        .into_iter()
+        .zip(offsets)
+        .map(|(x, offset)| x + offset)
+        .collect()
 }
 
 /// Where ports that want to stand beyond one end of a face ask to stand instead.
@@ -93,12 +122,13 @@ impl Router<'_> {
             if self.one_point(Some(item)) {
                 continue;
             }
-            let free = |side: End| {
-                let fixed = |request: &&PortRequest| request.side == side;
-                requests.iter().filter(fixed).count()
+            let span = |side| {
+                let ports = requests.iter().filter(|request| request.side == side);
+                let count = ports.clone().count();
+                ports.map(|request| 2.0 * request.half).sum::<f64>()
+                    + count.saturating_sub(1) as f64 * LANE
             };
-            let count = free(End::Top).max(free(End::Bottom));
-            let width = 2.0 * PORT_MARGIN + (count as f64 - 1.0) * LANE;
+            let width = 2.0 * PORT_MARGIN + span(End::Top).max(span(End::Bottom));
             let found = self.scene.item(item);
             if width > card_face(found).width {
                 widths.insert(item, width + 2.0 * found.inset.unwrap_or(0.0));
@@ -145,6 +175,10 @@ impl Router<'_> {
             side,
             wanted,
             order: min(members.iter().map(|&net| self.net(net).order)),
+            half: members
+                .iter()
+                .map(|&net| self.net(net).half_width())
+                .fold(0.0, f64::max),
         }
     }
 
@@ -159,10 +193,15 @@ impl Router<'_> {
             .first()
             .is_some_and(|request| request.side == End::Bottom);
         let (low, high) = self.face_reach(item, &face, fan);
-        let ports = spread_along(
-            (low.min(high), high),
-            &if fan { fanned(&face, &wanted) } else { wanted },
-        );
+        let wanted = if fan { fanned(&face, &wanted) } else { wanted };
+        let reach = (low.min(high), high);
+        let ports =
+            if self.one_point(Some(item)) || ordered.iter().all(|request| request.half == 0.0) {
+                spread_along(reach, &wanted)
+            } else {
+                let half: Vec<f64> = ordered.iter().map(|request| request.half).collect();
+                spread_ribbons(reach, &wanted, &half)
+            };
         for (index, request) in ordered.iter().enumerate() {
             for &net in &request.nets {
                 self.net_mut(net).set_x_at(request.side, ports[index]);

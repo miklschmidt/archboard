@@ -8,6 +8,48 @@ use common::crowded_card;
 use serde_json::{Value, json};
 
 #[test]
+fn wide_fallback_cables_leave_their_card_a_lane_apart() {
+    let targets = ["left", "centre", "right"];
+    let children: Vec<_> = std::iter::once(json!({"id": "source", "width": 120, "height": 80}))
+        .chain(targets.map(|id| json!({"id": id, "width": 200, "height": 80})))
+        .collect();
+    let edges = targets.map(|id| {
+        json!({
+            "id": id, "sources": ["source"], "targets": [id],
+            "layoutOptions": {"archboard.cable": format!("{id};async;http;rpc;queue")}
+        })
+    });
+    let graph = json!({
+        "id": "root", "layoutOptions": {"archboard.layout.engine": "lanes"},
+        "children": children, "edges": edges
+    });
+    let (placed, _) = told(&graph);
+    let placed: Value = serde_json::from_str(&placed).expect("a drawing");
+    let card = placed["cards"]
+        .as_array()
+        .expect("the cards")
+        .iter()
+        .find(|card| card["id"] == "source")
+        .expect("the source card");
+    let mut ports: Vec<f64> = placed["edges"]
+        .as_array()
+        .expect("the lines")
+        .iter()
+        .map(|line| line["points"][0]["x"].as_f64().expect("a port"))
+        .collect();
+    ports.sort_by(f64::total_cmp);
+    // Five strands span 32 units. A clear lane between the outer strands takes 16 more.
+    assert!(
+        ports.windows(2).all(|pair| pair[1] - pair[0] >= 48.0),
+        "{ports:?}"
+    );
+    let left = card["box"]["x"].as_f64().expect("the left wall");
+    let right = left + card["box"]["width"].as_f64().expect("the card's width");
+    assert!(ports[0] - left >= 36.0);
+    assert!(right - ports[2] >= 36.0);
+}
+
+#[test]
 fn lanes_takes_the_lanes_placement_where_blocks_plans() {
     for graph in [
         include_str!("fixtures/refused-dense.json"),
