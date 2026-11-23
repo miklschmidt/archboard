@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // when their geometry coincides.
 
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/model/content";
+import { projectModel, type Model, type VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { covering, detached, masking, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
@@ -12,6 +12,8 @@ import { endsOffWalls } from "#tests/runtime/support/drawn-ports.ts";
 import { distanceToFrame, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
+
+const policy = defaultSemanticPolicy();
 
 /**
  * Each relationship starts and ends at the frame of the subject it names, and each cable wears
@@ -21,7 +23,7 @@ async function expectReadableRoutes(
 	content: VariantContent,
 ): Promise<{ paths: ReturnType<typeof routePoints> }> {
 	const drawing = await renderArchitecture({
-		policy: defaultSemanticPolicy(),
+		policy,
 		content,
 		theme: "light",
 	});
@@ -34,14 +36,15 @@ async function expectReadableRoutes(
 		// Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
 		expect(distanceToFrame(path![0]!, drawing.atlas.nodes[edge.from]!)).toBeLessThan(0.03);
 		expect(distanceToFrame(path!.at(-1)!, drawing.atlas.nodes[edge.to]!)).toBeLessThan(0.03);
-		const first = content.edges.find(({ from, to }) => from === edge.from && to === edge.to);
-		if (first?.id !== edge.id) {
+		const first = content.edges.find(({ from, to }) => from === edge.from && to === edge.to)!;
+		if (first.id !== edge.id) {
 			expect(labels.has(edge.id), `${edge.id} wears its cable's plate`).toBe(false);
-		} else if (edge.label) {
-			expect(labels.has(edge.id), `${edge.id} keeps its label`).toBe(true);
+		}
+		if (edge.label) {
+			expect(labels.has(first.id), `${edge.id} keeps its words on the shared plate`).toBe(true);
 			expect(
 				words
-					.filter(({ subject }) => subject.kind === "edge" && subject.id === edge.id)
+					.filter(({ subject }) => subject.kind === "edge" && subject.id === first.id)
 					.map(({ text }) => text)
 					.join(" "),
 			).toContain(edge.label);
@@ -58,7 +61,7 @@ async function expectReadableRoutes(
 
 for (const framed of [false, true]) {
 	test(`parallel relationships keep both identities and one plate ${framed ? "across a frame" : "between cards"}`, async () => {
-		const content = orderedFixture({
+		const fixture = orderedFixture({
 			nodes: [
 				...(framed ? [{ id: "frame", name: "Frame", kind: "service" }] : []),
 				{ id: "source", name: "Source", kind: "module", ...(framed ? { parent: "frame" } : {}) },
@@ -66,9 +69,20 @@ for (const framed of [false, true]) {
 			],
 			edges: [
 				{ id: "request", from: "source", to: "target", kind: "call", label: "request" },
-				{ id: "signal", from: "source", to: "target", kind: "signal", label: "signal" },
+				{ id: "signal", from: "source", to: "target", kind: "signal", label: "enqueue alert" },
 			],
 		});
+		const model = {
+			modules: fixture.nodes,
+			relationships: fixture.edges,
+			collections: [],
+			policy,
+		} as unknown as Model;
+		const { content } = projectModel(model, null, null, {
+			lens: "all",
+			expand: framed ? ["frame"] : [],
+		});
+		expect(content.edges.map(({ label }) => label)).toEqual(["request +1", undefined]);
 		const { paths } = await expectReadableRoutes(content);
 		expect([...paths.keys()].toSorted()).toEqual(["request", "signal"]);
 	});
