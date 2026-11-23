@@ -47,8 +47,12 @@ struct Routed {
     upward: bool,
 }
 
-/// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk.
+/// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk:
+/// a cable's every strand (`graph::CABLE`).
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
+    if let Some(cable) = edge.option(crate::graph::CABLE) {
+        return cable.to_owned();
+    }
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
         edge.option(crate::graph::EFFECT).unwrap_or(""),

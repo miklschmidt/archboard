@@ -79,3 +79,33 @@ fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_along_it()
     assert_eq!(curve("event"), curve("sync"));
     assert_ne!(curve("back"), curve("sync"));
 }
+
+#[test]
+fn a_cables_line_names_each_strand_it_carries_and_a_lone_line_names_none() {
+    let solver = Here::default();
+    drawing(
+        json!({
+        "nodes":[{"id":"one","name":"One","kind":"service"},
+            {"id":"other","name":"Other","kind":"service"},
+            {"id":"hub","name":"Hub","kind":"service"}],
+        "edges":[
+            {"id":"sync","from":"one","to":"hub","kind":"sync","order":0},
+            {"id":"event","from":"one","to":"hub","kind":"event","order":1},
+            {"id":"plain","from":"other","to":"hub","kind":"sync","order":2}]}),
+        &solver,
+    );
+    for graph in solver.graphs.borrow().iter() {
+        let graph: Value = serde_json::from_str(graph).expect("a graph");
+        let cable = |id: &str| {
+            (graph["edges"].as_array().expect("edges").iter())
+                .find(|edge| edge["id"] == id)
+                .map(|edge| edge["layoutOptions"]["archboard.cable"].clone())
+                .expect("the line is laid out")
+        };
+        let sync = cable("sync");
+        let strands: Vec<&str> = sync.as_str().expect("a cable").split(';').collect();
+        assert_eq!(strands.len(), 2);
+        assert!(strands[0].starts_with("sync|") && strands[1].starts_with("event|"));
+        assert!(cable("plain").is_null());
+    }
+}

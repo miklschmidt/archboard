@@ -114,6 +114,9 @@ impl<'a> Model<'a> {
             .edges
             .iter()
             .map(|edge| {
+                if let Some(cable) = edge.option(crate::graph::CABLE) {
+                    return cable.to_owned();
+                }
                 format!(
                     "{}|{}|{}",
                     crate::lanes::route::trunk_kind(edge),

@@ -136,5 +136,9 @@ pub(crate) const DOOR: &str = "archboard.door";
 pub(crate) const EFFECT: &str = "archboard.relationship.effect";
 /// The effect of a relationship as the variant's own reading draws it, beside its held kind.
 pub(crate) const HELD_EFFECT: &str = "archboard.relationship.held-effect";
+/// The option on the line a cable is laid out as: the treatment of each of its strands, in the
+/// picture's order, `;`-joined. Two cables share ports, fans and trunks only when every strand
+/// does; a line of one strand carries none.
+pub(crate) const CABLE: &str = "archboard.cable";
 /// The option carrying each size a container's header can take.
 pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";

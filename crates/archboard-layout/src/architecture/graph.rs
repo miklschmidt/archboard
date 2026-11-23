@@ -11,7 +11,7 @@ use indexmap::IndexMap;
 use super::content::{Content, Edge, Node};
 use super::measured::Measured;
 use crate::ecma;
-use crate::graph::{DOOR, EFFECT, GROUPS, HELD_EFFECT};
+use crate::graph::{CABLE, DOOR, EFFECT, GROUPS, HELD_EFFECT};
 use crate::json::J;
 
 /// The option carrying each width a container's header can take, as `[width, height]` rows.
@@ -102,14 +102,35 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
     options
 }
 
-/// A relationship with its options and its measured label.
-fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>) -> J {
+/// How one strand of a cable looks to the layout: what keeps lines apart (`trunk_kind`) and its
+/// held kind and effect.
+fn strand(edge: &Edge, measured: &Measured, standing: Option<&str>) -> String {
+    let held = measured.held_lines.get(&edge.id);
+    [
+        edge.kind.as_str(),
+        edge.effect.as_ref().map_or("", word),
+        standing.unwrap_or("unchanged"),
+        word(&edge.emphasis),
+        if edge.traffic.is_some() { "on" } else { "off" },
+        held.map_or("", |(kind, _)| kind.as_str()),
+        held.and_then(|(_, effect)| effect.as_ref())
+            .map_or("", word),
+    ]
+    .join("|")
+}
+
+/// A relationship with its options and its measured label; the line of a cable also names the
+/// strands it carries.
+fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, cable: Option<String>) -> J {
     let mut options = edge_options(edge, standing);
     if let Some((kind, effect)) = measured.held_lines.get(&edge.id) {
         options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
         if let Some(effect) = effect {
             options.push((HELD_EFFECT.to_owned(), J::str(word(effect))));
         }
+    }
+    if let Some(cable) = cable {
+        options.push((CABLE.to_owned(), J::Str(cable)));
     }
     let labels = measured
         .labels
@@ -286,13 +307,21 @@ pub(crate) fn compound_graph(
         one.order - other.order
     });
     let unchanged = "unchanged";
+    let standing =
+        |edge: &Edge| standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
+    let mut strands: BTreeMap<&str, Vec<String>> = BTreeMap::new();
+    for edge in &edges {
+        let leader = riders.get(&edge.id).unwrap_or(&edge.id);
+        (strands.entry(leader.as_str()).or_default()).push(strand(edge, measured, standing(edge)));
+    }
     let edges: Vec<J> = edges
         .iter()
         .filter(|edge| !riders.contains_key(&edge.id))
         .map(|edge| {
-            let standing =
-                standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
-            edge_of(edge, measured, standing)
+            let cable = (strands.get(edge.id.as_str()))
+                .filter(|strands| strands.len() > 1)
+                .map(|strands| strands.join(";"));
+            edge_of(edge, measured, standing(edge), cable)
         })
         .collect();
     let options = match engine {
