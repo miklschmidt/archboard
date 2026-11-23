@@ -12,21 +12,25 @@ use crate::palette::{Palette, Theme};
 /// How far apart the canvas and the SVG may stand: the SVG rounds its numbers.
 const TOLERANCE: f64 = 0.02;
 
-/// A canvas that keeps each bar it fills: where it stands, and its box in its own space.
+/// A canvas that records the bars, their transforms, and the strokes of their masks.
 #[derive(Default)]
-struct Bars {
+struct BeamDrawing {
     at: Affine,
     bars: Vec<(Affine, kurbo::Rect)>,
+    masks: Vec<(kurbo::Cap, kurbo::Cap, kurbo::Join)>,
 }
 
-impl Canvas for Bars {
+impl Canvas for BeamDrawing {
     fn set_transform(&mut self, transform: Affine) {
         self.at = transform;
     }
     fn fill(&mut self, path: &BezPath, _: &Ink, _: bool) {
         self.bars.push((self.at, path.bounding_box()));
     }
-    fn stroke(&mut self, _: &BezPath, _: &kurbo::Stroke, _: &Ink) {}
+    fn stroke(&mut self, _: &BezPath, stroke: &kurbo::Stroke, _: &Ink) {
+        self.masks
+            .push((stroke.start_cap, stroke.end_cap, stroke.join));
+    }
     fn push(&mut self, _: Option<(&BezPath, bool)>, _: f32) {}
     fn push_cut(&mut self) {}
     fn push_keep(&mut self) {}
@@ -151,7 +155,7 @@ pub(crate) fn assert_agree(mark: &TrafficMark, moments: &[f64]) {
     };
     let palette = Palette::of(Theme::Light);
     for &seconds in moments {
-        let mut canvas = Bars::default();
+        let mut canvas = BeamDrawing::default();
         draw_traffic(&mut canvas, &palette, Affine::IDENTITY, mark, seconds);
         assert_eq!(canvas.bars.len(), pieces.len(), "at {seconds}s");
         for ((drawn, bar), piece) in canvas.bars.iter().zip(&pieces) {
@@ -243,4 +247,43 @@ fn a_train_agrees_across_its_round_and_at_the_wrap() {
     });
     let round = 48.3 / 75.0;
     assert_agree(&mark, &moments(round, &[round, 2.0 * round]));
+}
+
+/// The cap and join of each SVG mask stroke, including SVG's initial values.
+fn mask_styles(svg: &str) -> Vec<(&str, &str)> {
+    svg.split("<mask ")
+        .skip(1)
+        .flat_map(|mask| {
+            mask.split_once("</mask>")
+                .expect("a mask's end")
+                .0
+                .split("<path ")
+                .skip(1)
+        })
+        .map(|path| {
+            (
+                attribute(path, "stroke-linecap").unwrap_or("butt"),
+                attribute(path, "stroke-linejoin").unwrap_or("miter"),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn the_canvas_and_svg_draw_the_same_mask_stroke_ends_and_joins() {
+    let mark = mark(MESSAGE);
+    let svg = archboard_svg::markup(&[Item::Traffic(mark.clone())]);
+    let styles = mask_styles(&svg);
+    let mut canvas = BeamDrawing::default();
+    draw_traffic(
+        &mut canvas,
+        &Palette::of(Theme::Light),
+        Affine::IDENTITY,
+        &mark,
+        0.5,
+    );
+    assert_ne!(styles.len(), 0);
+    assert_eq!(styles, vec![("butt", "miter"); canvas.masks.len()]);
+    let stroke = (kurbo::Cap::Butt, kurbo::Cap::Butt, kurbo::Join::Miter);
+    assert_eq!(canvas.masks, vec![stroke; styles.len()]);
 }

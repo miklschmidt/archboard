@@ -63,7 +63,10 @@ fn draw_piece<C: Canvas>(
     for layer in &piece.mask {
         #[expect(clippy::cast_possible_truncation, reason = "a colour's alpha is f32")]
         let white = Ink::Solid(Color::WHITE.with_alpha(layer.light as f32));
-        let stroke = kurbo::Stroke::new(layer.width);
+        // Match the SVG mask's stroke style.
+        let stroke = kurbo::Stroke::new(layer.width)
+            .with_caps(kurbo::Cap::Butt)
+            .with_join(kurbo::Join::Miter);
         canvas.stroke(&path_of(&layer.path), &stroke, &white);
     }
     canvas.pop();
