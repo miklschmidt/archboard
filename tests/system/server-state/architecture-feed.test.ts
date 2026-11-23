@@ -30,26 +30,29 @@ afterAll(async () => {
 
 test("one socket follows every vault of a tab and names a vault it cannot read", async () => {
 	const socket = new WebSocket(`${server.base.replace("http", "ws")}/api/architecture/events`);
+	const missing = join(root, "missing");
 	const frames: ArchitectureFeedFrame[] = [];
 	const heard = new Promise<void>((settle) => {
 		socket.addEventListener("message", (message) => {
-			frames.push(architectureFeedFrameSchema().parse(JSON.parse(String(message.data))));
-			if (frames.length === 3) settle();
+			const frame = architectureFeedFrameSchema().parse(JSON.parse(String(message.data)));
+			frames.push(frame);
+			if (frame.type === "architecture_unavailable" && frame.vault === missing) settle();
 		});
 	});
 	await new Promise((settle) => socket.addEventListener("open", settle));
-	const missing = join(root, "missing");
-	for (const vault of [first, second, missing])
+	for (const vault of [first, second, "repositories"])
 		socket.send(JSON.stringify({ type: "subscribe", vault }));
+	socket.send(JSON.stringify({ type: "subscribe", topic: "repositories" }));
+	socket.send(JSON.stringify({ type: "subscribe", vault: missing }));
 	await heard;
 	socket.close();
-	expect(frames.map((frame) => ["vault" in frame && frame.vault, frame.type]).toSorted()).toEqual(
-		[
-			[first, "architecture_snapshot"],
-			[missing, "architecture_unavailable"],
-			[second, "architecture_snapshot"],
-		].toSorted(),
-	);
+	expect(frames.map((frame) => ["vault" in frame && frame.vault, frame.type])).toEqual([
+		[first, "architecture_snapshot"],
+		[second, "architecture_snapshot"],
+		["repositories", "architecture_unavailable"],
+		[false, "repositories"],
+		[missing, "architecture_unavailable"],
+	]);
 });
 
 test("a malformed frame ends its own socket and leaves the server serving", async () => {

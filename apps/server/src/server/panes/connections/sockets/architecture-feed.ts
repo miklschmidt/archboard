@@ -9,8 +9,9 @@ import { namedVault } from "@archboard/workbench/host";
 import { frameText } from "#server/panes/connections/sockets/frame-text.ts";
 import { followRepositories } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 
-/** The key a socket follows the repositories under, beside the vaults it follows: no vault is relative. */
-const REPOSITORIES = "repositories";
+/** The key a socket follows the repositories under, distinct from all submitted vault names. */
+const REPOSITORIES = Symbol("repositories");
+type Topic = string | typeof REPOSITORIES;
 
 /**
  * Whether an upgrade asks for the one architecture socket of a tab, not for a pane.
@@ -42,7 +43,7 @@ function feedRequest(raw: RawData) {
  * @param ws The accepted socket.
  */
 function serveArchitectureFeed(ws: WebSocket): void {
-	const watching = new Map<string, () => void>();
+	const watching = new Map<Topic, () => void>();
 	/**
 	 * Send one frame while the socket is open.
 	 * @param frame The frame.
@@ -54,7 +55,7 @@ function serveArchitectureFeed(ws: WebSocket): void {
 	 * Start to follow one topic: the repositories, or a vault the server can read.
 	 * @param topic The vault, or the key of the repositories.
 	 */
-	const follow = (topic: string): void => {
+	const follow = (topic: Topic): void => {
 		if (topic === REPOSITORIES) {
 			const listed = followRepositories(({ revision, repositories }) =>
 				send({ type: "repositories", revision, repositories }),
@@ -66,7 +67,7 @@ function serveArchitectureFeed(ws: WebSocket): void {
 	ws.on("message", (raw) => {
 		const request = feedRequest(raw);
 		if (request === null) return;
-		const topic = "vault" in request ? request.vault : REPOSITORIES;
+		const topic: Topic = "vault" in request ? request.vault : REPOSITORIES;
 		if (request.type === "subscribe") {
 			if (!watching.has(topic)) follow(topic);
 			return;
