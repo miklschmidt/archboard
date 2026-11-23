@@ -12,7 +12,6 @@ use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chain_kind};
 use crate::lanes::channels::{End, Net, NetId};
-use crate::lanes::containers::{Containers, Edges};
 use crate::lanes::jogs::nothing;
 use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
 use crate::lanes::spacing::Rim;
@@ -386,8 +385,8 @@ impl Router<'_> {
         x >= min(pins.iter().copied()) && x <= max(pins.iter().copied())
     }
 
-    /// Whether a lane may stand at an x: a lane clear of every card, label,
-    /// title row and other lane on its band.
+    /// Whether a lane may stand at an x: a lane clear of every card, label
+    /// and other lane on its band.
     fn lane_free(&self, nets: &[NetId], lane: StationId, x: f64) -> bool {
         let band = self.station(lane).band;
         let scene = &*self.scene;
@@ -395,7 +394,6 @@ impl Router<'_> {
             .cards
             .values()
             .chain(scene.labels.values())
-            .chain(scene.titles.values())
             .map(|&item| scene.item(item))
             .filter(|item| item.band == band)
             .map(|item| (item.bx.x - LANE, item.bx.x + item.bx.width + LANE));
@@ -526,7 +524,6 @@ pub(crate) fn route_scene(
         .map(|line| chains[&line.id])
         .collect();
     let all: Vec<ChainId> = chains.values().copied().collect();
-    track.fit_title_rows(&all);
     track.straighten_lanes(&all);
     let kinds: Vec<(ChainId, Rc<str>)> = inner
         .iter()
@@ -553,9 +550,6 @@ pub(crate) fn route_scene(
     }
     track.assign_ports(&nets);
     track.slide_labels(&nets);
-    if track.straighten_into_containers(&all) {
-        track.follow_lanes(&nets);
-    }
     if track.unstrand_lanes(&all) {
         track.follow_lanes(&nets);
     }
@@ -570,20 +564,12 @@ pub(crate) fn route_scene(
         track.turn_to_wall(line, &nets, routed[&line.id].upward);
     }
     track.part_and_close(&all, &routes);
-    let edges: Edges<'_> = lines
-        .iter()
-        .map(|line| (line.id.as_str(), line.placed))
-        .collect();
     let rising: Set<NetId> = routed
         .values()
         .filter(|route| route.upward)
         .map(|route| route.nets[0])
         .collect();
-    let (closings, facing) = {
-        let containers = Containers::new(track.scene, &edges);
-        (containers.closings(), containers.facing())
-    };
-    track.space_bands(&nets, &closings, &facing, &rising, top, rim);
+    track.space_bands(&nets, &rising, top, rim);
     Ok(routed
         .iter()
         .map(|(id, route)| {

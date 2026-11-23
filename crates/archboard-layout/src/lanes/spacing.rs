@@ -1,8 +1,8 @@
 //! How tall each band's channel is: room for the tracks its lines turn on,
-//! for an arrowhead's approach, for the containers that end over it, and, at
-//! a block's own edge rows, for the block's inset.
+//! for an arrowhead's approach, and, at a block's own edge rows, for the
+//! block's inset.
 
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, REGION_INSET};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min};
 use crate::lanes::chains::{LANE, Router};
 use crate::lanes::channels::NetId;
@@ -18,8 +18,6 @@ const TRACK_TOP_RISING: f64 = BEND_RADIUS + APPROACH_STRAIGHT;
 const TRACK_BOTTOM: f64 = APPROACH_STRAIGHT + 2.0 * BEND_RADIUS;
 /// The height of a channel no line turns in.
 pub(crate) const EMPTY_CHANNEL: f64 = 24.0;
-/// Room between a container's bottom edge and the band below it.
-const BELOW_CONTAINER: f64 = 12.0;
 
 /// The room a block that draws its own edge keeps where no line turns.
 #[derive(Clone, Copy, Debug, Default)]
@@ -31,41 +29,28 @@ pub(crate) struct Rim {
 }
 
 /// How far below its band a channel's first track runs.
-fn first_track(closing: f64, rising: bool) -> f64 {
-    js_max(
-        closing + TRACK_TOP,
-        if rising { TRACK_TOP_RISING } else { 0.0 },
-    )
+fn first_track(rising: bool) -> f64 {
+    js_max(TRACK_TOP, if rising { TRACK_TOP_RISING } else { 0.0 })
 }
 
-/// How tall a channel is for the tracks it holds, below the containers that end above it.
-pub(crate) fn channel_height(tracks: usize, closing: f64, rising: bool, facing: bool) -> f64 {
+/// How tall a channel is for the tracks it holds.
+pub(crate) fn channel_height(tracks: usize, rising: bool) -> f64 {
     if tracks == 0 {
-        js_max(
-            EMPTY_CHANNEL,
-            closing
-                + if facing {
-                    CONTAINER_INSET
-                } else {
-                    BELOW_CONTAINER
-                },
-        )
+        EMPTY_CHANNEL
     } else {
-        first_track(closing, rising) + (tracks - 1) as f64 * LANE + TRACK_BOTTOM
+        first_track(rising) + (tracks - 1) as f64 * LANE + TRACK_BOTTOM
     }
 }
 
 /// The height of a channel no line turns in at a block's edge rows.
-fn rim_of(scene: &Placement, index: usize, closing: f64, rim: Option<Rim>) -> Option<f64> {
+fn rim_of(scene: &Placement, index: usize, rim: Option<Rim>) -> Option<f64> {
     let rim = rim?;
     if index == 0 {
         return Some(rim.head);
     }
     let ports = scene.bands.last().expect("a band");
     match rim.foot {
-        Some(foot) if index + 2 == scene.bands.len() => {
-            Some(closing + foot - (ports.bottom - ports.top))
-        }
+        Some(foot) if index + 2 == scene.bands.len() => Some(foot - (ports.bottom - ports.top)),
         _ => None,
     }
 }
@@ -83,8 +68,6 @@ impl Router<'_> {
     pub(crate) fn space_bands(
         &mut self,
         nets: &[NetId],
-        closings: &[f64],
-        facing: &Set<usize>,
         rising: &Set<NetId>,
         margin: f64,
         rim: Option<Rim>,
@@ -96,14 +79,8 @@ impl Router<'_> {
             .chain(self.scene.labels.values())
             .map(|&item| self.scene.item(item).band)
             .collect();
-        let titles: Set<usize> = self
-            .scene
-            .titles
-            .values()
-            .map(|&item| self.scene.item(item).band)
-            .collect();
         let mut top = margin;
-        for (index, &closing) in closings.iter().enumerate() {
+        for index in 0..self.scene.bands.len() {
             self.scene.bands[index].new_top = top;
             let crossing: Vec<NetId> = nets
                 .iter()
@@ -112,30 +89,25 @@ impl Router<'_> {
                 .collect();
             let tracks = self.assign_tracks(&crossing);
             let rises = self.rises_on_first_track(&crossing, rising);
-            self.scene.bands[index].first_track = first_track(closing, rises);
-            let titled = crossing.is_empty() && !held.contains(&index);
-            let faces = facing.contains(&index);
+            self.scene.bands[index].first_track = first_track(rises);
+            // A band no card or label stands on, which a nonnumeric centre leaves, keeps a region's inset.
+            let unheld = crossing.is_empty() && !held.contains(&index);
             let rimmed = if tracks == 0 {
-                rim_of(self.scene, index, closing, rim)
+                rim_of(self.scene, index, rim)
             } else {
                 None
             };
-            let headed = if titles.contains(&index) {
-                CONTAINER_INSET
-            } else {
-                REGION_INSET
-            };
             let channel = rimmed.unwrap_or_else(|| {
-                if titled {
-                    headed
+                if unheld {
+                    REGION_INSET
                 } else {
-                    channel_height(tracks, closing, rises, faces)
+                    channel_height(tracks, rises)
                 }
             });
             let band = self.scene.bands[index];
             top += band.bottom - band.top + channel;
         }
-        self.centre_label_bands(nets, closings);
+        self.centre_label_bands(nets);
     }
 
     /// Whether a net leaves a label room.
@@ -169,11 +141,10 @@ impl Router<'_> {
         if index == 0 || index == scene.bands.len() - 1 {
             return None;
         }
-        let others = scene.cards.values().chain(scene.titles.values()).copied();
-        let captions = scene.regions.iter().map(|region| region.caption);
-        if others
-            .chain(captions)
-            .any(|item| scene.item(item).band == index)
+        if scene
+            .cards
+            .values()
+            .any(|&item| scene.item(item).band == index)
         {
             return None;
         }
@@ -189,7 +160,7 @@ impl Router<'_> {
     /// Stand each band that holds labels alone in the middle of the room
     /// between the bands either side of it, as far as the channel it moves
     /// into is clear of it.
-    fn centre_label_bands(&mut self, nets: &[NetId], closings: &[f64]) {
+    fn centre_label_bands(&mut self, nets: &[NetId]) {
         for index in 0..self.scene.bands.len() {
             let Some(labels) = self.label_row(index) else {
                 continue;
@@ -199,7 +170,7 @@ impl Router<'_> {
             let above = band.new_top - (upper.new_top + upper.bottom - upper.top);
             let below = lower.new_top - (band.new_top + band.bottom - band.top);
             let up = if self.clear_for(&labels, nets, index - 1) {
-                above - channel_height(0, closings[index - 1], false, false)
+                above - EMPTY_CHANNEL
             } else {
                 0.0
             };

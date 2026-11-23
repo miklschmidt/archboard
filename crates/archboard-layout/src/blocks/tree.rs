@@ -1,8 +1,8 @@
 //! The picture, every container and every group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
-//! block into a cluster, so each block holds cards alone or blocks alone. A Lanes
-//! drawing draws its containers and regions inline, as clusters of the picture (`inline.rs`).
+//! block into a cluster, so each block holds cards alone or blocks alone, except
+//! in a Lanes drawing, which ranks those cards with the blocks (`nested.rs`).
 //! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
@@ -44,30 +44,6 @@ pub(crate) enum Kind {
     Region,
     Cluster,
     Column,
-}
-
-/// Whether a cluster is a container or a group region.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ClusterKind {
-    Frame,
-    Region,
-}
-
-/// A container or group region a block of cards draws inline: a cluster of the
-/// block's own Graphviz layout rather than a block of its own.
-#[derive(Clone, Debug)]
-pub(crate) struct Cluster {
-    pub id: String,
-    pub kind: ClusterKind,
-    /// The cluster it sits in, if any.
-    pub parent: Option<String>,
-    /// The group, for a region.
-    pub group: Option<String>,
-    /// A frame's title row or a region's caption; a container alone in its
-    /// group's region heads the region's caption band too.
-    pub header: Header,
-    /// The region round a container alone in it, laid out as the container.
-    pub lone: Option<Lone>,
 }
 
 /// A line inside one block, between two of the block's items.
@@ -122,10 +98,6 @@ pub(crate) struct Block {
     pub lines: Map<String, Line>,
     /// Its ports, by id, with the edge each crosses.
     pub ports: Map<String, Side>,
-    /// The containers and regions it draws inline, outermost first.
-    pub clusters: Map<String, Cluster>,
-    /// The innermost inline cluster around each of its items and clusters.
-    pub cluster_of: Map<String, String>,
 }
 
 impl Block {
@@ -177,34 +149,6 @@ impl Block {
             .iter()
             .any(|(id, &side)| side == Side::Bottom && !self.header_entry(id))
     }
-
-    /// The innermost container a block draws inline around one of its items,
-    /// passing over regions, starting from a cluster.
-    pub(crate) fn frame_around(&self, start: Option<&str>) -> Option<String> {
-        let mut at = start;
-        while let Some(id) = at {
-            let cluster = &self.clusters[id];
-            if cluster.kind != ClusterKind::Region {
-                return Some(id.to_owned());
-            }
-            at = cluster.parent.as_deref();
-        }
-        None
-    }
-
-    /// The clusters around an id, innermost first, starting from the one it stands in.
-    pub(crate) fn clusters_from<'b>(&'b self, start: Option<&'b str>) -> Vec<&'b str> {
-        let mut chain = Vec::new();
-        let mut at = start;
-        while let Some(id) = at {
-            chain.push(id);
-            at = self
-                .clusters
-                .get(id)
-                .and_then(|cluster| cluster.parent.as_deref());
-        }
-        chain
-    }
 }
 
 /// Where one relationship is drawn: its block, and the blocks it leaves and enters.
@@ -254,7 +198,7 @@ pub(crate) fn exit_key(block: &str, way: &str, face: Side, along: &str) -> Strin
 pub(crate) struct BlockTree {
     pub arena: Vec<Block>,
     pub blocks: Map<String, BlockId>,
-    /// The block holding each card, and each container drawn inline, as an item.
+    /// The block holding each card as an item.
     pub holder: Map<String, BlockId>,
     pub root: BlockId,
     pub captions: Map<String, Size>,
@@ -275,8 +219,8 @@ pub(crate) struct BlockTree {
     /// Whether this layout is the drawing itself, not a candidate the planner routes again: its
     /// channels pack their tracks a lane apart, and a door widens for the heads of its lines.
     pub packed: bool,
-    /// Whether this layout is a Lanes drawing, which draws every container and group region inline
-    /// (`inline.rs`), so the whole picture is ranked in one layout and routed in one scene.
+    /// Whether this layout is a Lanes drawing, which rides its lanes everywhere: the cards beside
+    /// a block are ranked with it (`nested.rs`). Blocks' own fallback keeps them apart.
     pub lanes: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
@@ -304,12 +248,7 @@ impl BlockTree {
     /// A loose sink served only from one parent belongs beside its caller.
     fn loose_owner(&self, id: &str) -> Option<BlockId> {
         self.cards.contains_key(id).then_some(())?;
-        let owner = *self.holder.get(id)?;
-        let outer = self.get(owner);
-        outer
-            .frame_around(outer.cluster_of.get(id).map(String::as_str))
-            .is_none()
-            .then_some(owner)
+        self.holder.get(id).copied()
     }
 
     fn peer_candidate(&self, id: &str) -> Option<(BlockId, String)> {
@@ -391,11 +330,7 @@ impl BlockTree {
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
-        if tree.lanes {
-            tree.fill_inline(tree.root, graph.kids())?;
-        } else {
-            tree.fill(tree.root, graph.kids())?;
-        }
+        tree.fill(tree.root, graph.kids())?;
         tree.gather(tree.root, graph.edges.as_deref().unwrap_or(&[]));
         tree.projections = graph
             .edges
@@ -458,8 +393,6 @@ impl BlockTree {
             items: Vec::new(),
             lines: Map::default(),
             ports: Map::default(),
-            clusters: Map::default(),
-            cluster_of: Map::default(),
         });
         self.blocks.insert(id.clone(), made);
         if let Some(parent) = parent {
@@ -495,16 +428,4 @@ impl BlockTree {
         all.push(block);
         all
     }
-}
-
-/// Whether a container or region a block draws inline holds an item, however deep.
-pub(crate) fn holds(block: &Block, cluster: &str, item: &str) -> bool {
-    let mut at = block.cluster_of.get(item);
-    while let Some(around) = at {
-        if around == cluster {
-            return true;
-        }
-        at = block.cluster_of.get(around.as_str());
-    }
-    false
 }

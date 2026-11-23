@@ -146,7 +146,7 @@ struct Earlier {
 }
 
 /// Lay one block out: packed with its child blocks as the pieces when it
-/// holds child blocks alone, with no inline clusters or labels, else as cards.
+/// holds child blocks alone, with no labels, else as cards.
 fn lay_block(
     gv: &mut Engine<'_>,
     picture: &mut Picture,
@@ -156,7 +156,6 @@ fn lay_block(
     let tree = &picture.tree;
     let one = tree.get(block);
     let packs = !one.items.is_empty()
-        && one.clusters.is_empty()
         && one.items.iter().all(|item| tree.block_of(item).is_some())
         && !tree
             .get(block)

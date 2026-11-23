@@ -272,24 +272,46 @@ fn lanes_runs_no_line_round_the_outside_of_the_readme_reading() {
 }
 
 #[test]
-fn lanes_stands_a_card_a_container_calls_beside_the_member_that_calls_it() {
-    // One routing for the whole picture: the card stands a rank below its caller inside the
-    // container, beside the container's lower rows, not below all of it.
-    let graph = json!({"id":"root","layoutOptions":{},
-    "children":[
-        {"id":"box","width":120,"height":36,
-            "layoutOptions":{"archboard.header.size":"36"},
-            "children":[card("first",200),card("second",200),card("third",200)]},
-        card("called",200),
-    ],
-    "edges":[
-        line("down","first","second","call"),
-        line("further","second","third","call"),
-        line("out","first","called","http"),
-    ]});
-    let drawn = drawn_by_lanes(&graph);
+fn lanes_stands_the_doors_round_a_container_in_the_order_their_lines_enter_it() {
+    let drawn = drawn_by_lanes(
+        &serde_json::from_str(include_str!("fixtures/doors-round-a-container.json")).unwrap(),
+    );
+    let frame = &drawn["frames"][0]["box"];
+    let at = |key: &str| frame[key].as_f64().expect("a frame's box");
+    let (left, top, right) = (at("x"), at("y"), at("x") + at("width"));
+    // Each line that comes down into the container: where its door stands, and where it enters.
+    let mut entries: Vec<(f64, f64)> = lines_of(&drawn)
+        .into_iter()
+        .filter_map(|(_, points)| {
+            let door = if points[0].1 < top {
+                points[0]
+            } else {
+                *points.last().expect("an end")
+            };
+            points.windows(2).find_map(|pair| {
+                let ((x, one), (other_x, other)) = (pair[0], pair[1]);
+                (x == other_x
+                    && one.min(other) < top
+                    && top < one.max(other)
+                    && left < x
+                    && x < right)
+                    .then_some((door.0, x))
+            })
+        })
+        .collect();
+    entries.sort_by(|one, other| one.0.total_cmp(&other.0));
+    let (mut pairs, mut swapped) = (0, 0);
+    for (at, one) in entries.iter().enumerate() {
+        for other in &entries[at + 1..] {
+            pairs += 1;
+            if one.0 < other.0 - 1.0 && one.1 > other.1 + 1.0 {
+                swapped += 1;
+            }
+        }
+    }
+    assert!(pairs > 10, "the reading has doors to order");
     assert!(
-        box_of(&drawn, "called").0 < box_of(&drawn, "box").1,
-        "the called card stands beside the container"
+        4 * swapped <= pairs,
+        "{swapped} of {pairs} pairs of doors stand the other way round from where they enter"
     );
 }

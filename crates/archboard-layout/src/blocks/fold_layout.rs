@@ -6,7 +6,7 @@
 //! so the fold reads as one bus from the end of a column to the start of the
 //! next. The block's own ports stand over or under what their lines reach.
 
-use crate::ecma::{abs, js_max, js_min, max, min, number_of, sort_by};
+use crate::ecma::{abs, js_max, js_min, max, number_of, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::lanes::chains::LANE;
 use crate::lanes::channels::spread_ports;
@@ -26,17 +26,12 @@ const GUTTER_MARGIN: f64 = 20.0;
 /// How far apart two ends may be and still be one straight drop.
 const STRAIGHT: f64 = 0.5;
 
-/// How far down a laid-out column the first thing it shows stands: its first
-/// card, or a container or region it draws around its first cards.
+/// How far down a laid-out column its first card stands.
 fn first_card_top(laid: &Laid) -> f64 {
-    let card = laid
-        .bands
+    laid.bands
         .iter()
         .find(|band| !band.items.is_empty())
-        .map_or(0.0, |band| band.top);
-    let frames = laid.frames.iter().flatten().map(|frame| frame.bx.y);
-    let regions = laid.regions.iter().flatten().map(|region| region.bx.y);
-    min(std::iter::once(card).chain(frames).chain(regions))
+        .map_or(0.0, |band| band.top)
 }
 
 /// Where a line of the folded block runs.
@@ -367,10 +362,7 @@ impl<'t> FoldLayout<'t> {
         } else {
             None
         };
-        rim.map_or_else(
-            || channel_height(top.count, 0.0, false, false),
-            |rim| rim.head,
-        )
+        rim.map_or_else(|| channel_height(top.count, false), |rim| rim.head)
     }
 
     /// Put every column, own port and channel at its height. Answers the tops of both channels.
@@ -417,7 +409,7 @@ impl<'t> FoldLayout<'t> {
         let needed = bottom.count > 0 || !ports.is_empty();
         let ports_top = channel_bottom
             + if needed {
-                channel_height(bottom.count, 0.0, false, false)
+                channel_height(bottom.count, false)
             } else {
                 0.0
             };

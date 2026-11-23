@@ -4,15 +4,13 @@
 //! and turns twice more to reach them. Once the labels have slid, each such
 //! run moves onto the column of one of its ends where that is free and
 //! crosses no more lines; once the ports are placed, a run standing less than
-//! a lane off its port moves onto the port's column, and each run to or from
-//! a container onto its straight column where a label stood in its way
-//! before sliding.
+//! a lane off its port moves onto the port's column.
 
 use crate::ecma::{abs, js_max, js_min};
 use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, Router, StationId};
 use crate::lanes::occupancy::Occupancy;
 use crate::lanes::readings::by_band;
-use crate::lanes::scene::{Map, Set, centre_x};
+use crate::lanes::scene::{Map, centre_x};
 
 /// How a run is moved, by [`Router::each_run`].
 #[derive(Clone, Copy)]
@@ -173,50 +171,5 @@ impl Router<'_> {
             .copied();
         let off = x.map_or(0.0, |x| abs(x - self.x(run.lanes[0])));
         if (0.5..LANE).contains(&off) { x } else { None }
-    }
-
-    /// Once the labels have slid, try every run of lanes to or from a
-    /// container on its straight column again.
-    pub(crate) fn straighten_into_containers(&mut self, chains: &[ChainId]) -> bool {
-        let runs = self.lane_runs(chains);
-        let straight: Vec<usize> = (0..runs.len())
-            .filter(|&index| {
-                !self
-                    .straight_on(runs[index].before, runs[index].after)
-                    .is_empty()
-            })
-            .collect();
-        let mut occupancy = Occupancy::new(self.scene, &Set::default());
-        let lanes = runs
-            .iter()
-            .enumerate()
-            .filter(|(index, _)| !straight.contains(index))
-            .flat_map(|(_, run)| run.lanes.iter().copied());
-        occupancy.take_all(self, lanes);
-        let mut moved = false;
-        for index in straight {
-            moved |= self.straighten(&runs[index], &mut occupancy);
-        }
-        moved
-    }
-
-    /// Move one run to or from a container onto its straight column, when that is free.
-    fn straighten(&mut self, run: &LaneRun, occupancy: &mut Occupancy) -> bool {
-        let columns = self.straight_on(run.before, run.after);
-        let x = columns
-            .into_iter()
-            .find(|&column| occupancy.fits(self, run, column));
-        let moved = x.is_some_and(|x| run.lanes.iter().any(|&lane| self.x(lane) != x));
-        if let Some(x) = x
-            && moved
-        {
-            for &lane in &run.lanes {
-                self.set_x(lane, x);
-            }
-        }
-        for &lane in &run.lanes {
-            occupancy.take(self, lane);
-        }
-        moved
     }
 }

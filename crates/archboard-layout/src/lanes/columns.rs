@@ -4,7 +4,6 @@
 //! label moving with it, on a column no other line holds. It moves only to
 //! step fewer times, and never to cross more lines.
 
-use crate::constants::LABEL_CARD_CLEARANCE;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
 use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, Router, StationId};
 use crate::lanes::labels::extent_of;
@@ -314,17 +313,9 @@ impl Router<'_> {
         if let Some(besides) = self.scene.besides.get(&station.band) {
             taken.extend(besides.iter().map(|&(low, high)| (low - LANE, high + LANE)));
         }
-        let headings = self
-            .scene
-            .captions_for(&item)
-            .into_iter()
-            .chain(self.scene.title_bands_for(&item))
-            .map(|one| one.bx)
-            .collect();
         LabelRoom {
             width: item.bx.width,
             taken,
-            headings,
         }
     }
 }
@@ -333,7 +324,6 @@ impl Router<'_> {
 struct LabelRoom {
     width: f64,
     taken: Vec<(f64, f64)>,
-    headings: Vec<crate::geometry::Rect>,
 }
 
 impl LabelRoom {
@@ -349,9 +339,5 @@ impl LabelRoom {
             .all(|&(low, high)| right <= low || left >= high)
             && x - width / 2.0 >= extent.0
             && x + width / 2.0 <= extent.1
-            && self.headings.iter().all(|bx| {
-                x + width / 2.0 <= bx.x - LABEL_CARD_CLEARANCE
-                    || x - width / 2.0 >= bx.x + bx.width + LABEL_CARD_CLEARANCE
-            })
     }
 }

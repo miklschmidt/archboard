@@ -1,20 +1,17 @@
 //! A placed block's lines routed on tracks (TASK-349), and read back into the
-//! laid-out block: its boxes, bands, frames and regions, and its final size.
+//! laid-out block: its boxes and bands, and its final size.
 
 use archboard_scene::paint::design::tab_width;
 
 use crate::ecma::{js_max, max, min};
 use crate::geometry::{Point, Rect};
-use crate::lanes::containers::Edges;
 use crate::lanes::route::{SceneLine, order_of, route_scene, trunk_kind};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
 use crate::lanes::score::laps_of;
-use crate::lanes::sides::fit_sides;
 use crate::placed::PlacedBlock;
 
 use super::laid::{Band, Insets, Laid};
 use super::leaves::{mark_regions, rim_of};
-use super::lone::frame_shape;
 use super::tree::{Block, BlockId, BlockTree, Kind};
 use super::walls::{
     beside_points, beside_walls, channel_wall, enters_by, inner_points, labelled_out, mark_besides,
@@ -64,12 +61,6 @@ pub(super) fn routed(
         }
     }
     mark_regions(&mut scene, block, tree);
-    let edges: Edges<'_> = placed
-        .edges
-        .iter()
-        .map(|edge| (edge.id.as_str(), edge))
-        .collect();
-    crate::lanes::sides::place_headers(&mut scene, &edges);
     let beside = beside_walls(block, tree, &scene);
     let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
     mark_besides(&mut scene, &beside);
@@ -105,7 +96,7 @@ pub(super) fn routed(
     }
     let settled = Map::default();
     let (held, ports) = settling.kept(&settled);
-    let (mut laid, left) = read(block, insets, &scene, routes, &edges, (held, tree.lanes));
+    let (mut laid, left) = read(block, insets, &scene, routes, (held, tree.lanes));
     laid.header = placed.header;
     super::headers::place_header_entries(block, &mut laid, ports);
     Ok((laid, left))
@@ -141,7 +132,6 @@ fn read(
     insets: Insets,
     scene: &Placement,
     lines: Map<String, Vec<Point>>,
-    edges: &Edges<'_>,
     (held, lanes): (f64, bool),
 ) -> (Laid, f64) {
     let Insets { side, bottom, .. } = insets;
@@ -166,27 +156,8 @@ fn read(
                 .collect(),
         })
         .collect();
-    let (mut drawn, mut regions) = {
-        let routes: Vec<&[Point]> = lines.values().map(Vec::as_slice).collect();
-        fit_sides(scene, edges, &routes, side)
-    };
-    // The joined-line simplifier must see titles at their fitted frame,
-    // exactly where the painter puts their words.
-    for frame in &drawn {
-        let title = scene.titles[frame.id.as_str()];
-        let row = scene.moved_id(title, side);
-        boxes.insert(
-            format!("title:{}", frame.id),
-            Rect {
-                x: frame.bx.x,
-                ..row
-            },
-        );
-    }
     let mut walled = lines;
     let mut reach: Vec<Rect> = boxes.values().copied().collect();
-    reach.extend(drawn.iter().map(|frame| frame.bx));
-    reach.extend(regions.iter().map(|region| region.bx));
     let inside = if lanes && block.kind == Kind::Root {
         walled.values().flatten().copied().collect()
     } else {
@@ -209,7 +180,7 @@ fn read(
     .chain(reach.iter().map(|one| one.x + one.width + side + left)));
     // A routed lane can stand left of its Graphviz placement. Keep it inside
     // the block that its parent treats as one obstacle, with the same inset.
-    shift_left(&mut boxes, &mut walled, &mut drawn, &mut regions, left);
+    shift_left(&mut boxes, &mut walled, left);
     let tracks = wall_lines(block, &mut walled, &mut boxes, width);
     let cards: Vec<Rect> = boxes.values().copied().collect();
     let laps = laps_of(walled.values().map(Vec::as_slice), &cards);
@@ -223,19 +194,6 @@ fn read(
             boxes,
             lines: walled,
             bands,
-            frames: Some(
-                drawn
-                    .into_iter()
-                    .map(|shape| {
-                        let lone = block
-                            .clusters
-                            .get(&shape.id)
-                            .and_then(|cluster| cluster.lone.as_ref());
-                        frame_shape(shape, lone)
-                    })
-                    .collect(),
-            ),
-            regions: Some(regions),
             header: None,
             reroute: None,
         },
@@ -244,27 +202,11 @@ fn read(
 }
 
 /// Move every part of a routed block by the same amount.
-fn shift_left(
-    boxes: &mut Map<String, Rect>,
-    walled: &mut Map<String, Vec<Point>>,
-    drawn: &mut [crate::lanes::containers::FrameShape],
-    regions: &mut [crate::lanes::containers::RegionShape],
-    left: f64,
-) {
+fn shift_left(boxes: &mut Map<String, Rect>, walled: &mut Map<String, Vec<Point>>, left: f64) {
     for bx in boxes.values_mut() {
         bx.x += left;
     }
     for point in walled.values_mut().flatten() {
         point.x += left;
-    }
-    for frame in drawn {
-        frame.bx.x += left;
-        if let Some(region) = &mut frame.region {
-            region.x += left;
-        }
-    }
-    for region in regions {
-        region.bx.x += left;
-        region.caption.x += left;
     }
 }

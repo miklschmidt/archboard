@@ -14,8 +14,7 @@ use crate::lanes::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Piece, Pin, Projection, Route, exit_key,
-    header_of, holds,
+    BlockId, BlockTree, Ends, Kind, Line, Piece, Pin, Projection, Route, exit_key, header_of,
 };
 
 impl BlockTree {
@@ -90,28 +89,20 @@ impl BlockTree {
         let header = header_of(block);
         let upward: Vec<bool> = here
             .iter()
-            .map(|projection| {
-                projection.to == header || holds(block, &projection.to, &projection.from)
-            })
+            .map(|projection| projection.to == header)
             .collect();
         let mut walk = CycleWalk::default();
         for (projection, &up) in here.iter().zip(&upward) {
             if !up {
-                walk.add(&projection.from, &projection.to, Some(&projection.edge.id));
+                walk.add(&projection.from, &projection.to, &projection.edge.id);
             }
         }
-        let containment: Vec<(String, String)> = block
-            .cluster_of
-            .iter()
-            .filter(|&(_, around)| block.clusters[around.as_str()].kind == ClusterKind::Frame)
-            .map(|(member, around)| (member.clone(), around.clone()))
-            .collect();
         let mut items = vec![header];
         items.extend(block.items.iter().cloned());
         let walked = if self.lanes {
             walk.fewest_back(&items)
         } else {
-            walk.with_containment(&items, &containment)
+            walk.back_edges(&items)
         };
         let mut back: Set<String> = here
             .iter()

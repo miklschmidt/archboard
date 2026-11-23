@@ -164,7 +164,7 @@ pub(crate) fn beside_walls(block: &Block, tree: &BlockTree, scene: &Placement) -
             if !tree.cards.contains_key(&line.from) {
                 return None;
             }
-            if block.cluster_of.contains_key(&line.from) || !outermost(scene, item, wall) {
+            if !outermost(scene, item, wall) {
                 return None;
             }
             Some(Beside {
@@ -207,7 +207,6 @@ fn outermost(scene: &Placement, item: ItemId, wall: Side) -> bool {
         .cards
         .values()
         .chain(scene.labels.values())
-        .chain(scene.titles.values())
         .all(|&one| {
             let other = scene.item(one);
             if one == item || other.band != card.band || other.bx.width <= PORT {

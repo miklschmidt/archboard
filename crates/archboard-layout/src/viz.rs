@@ -143,7 +143,7 @@ impl Node {
     }
 }
 
-/// A subgraph: a cluster, or a rank of nodes held together.
+/// A subgraph: a rank of nodes held together.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Subgraph {
     pub name: Option<String>,
