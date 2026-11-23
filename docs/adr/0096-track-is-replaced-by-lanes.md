@@ -110,6 +110,17 @@ Blocks keeps its planned and fallback drawings.
   repository and leaves no clear run onto Agent CLI's side. A wall entry to a card closer to the
   wall than an arrowhead's length draws the head across the wall: the advisors kept it, the tip
   still touches the card, and a wider side inset for container frames is a follow-up.
+- A channel is only as tall as the runs that use it (owner, 2026-11-23: "why we're wasting space
+  here"). Each run takes its own lanes, so a hand-off between two lines that read as one no longer
+  pushes the rows below it down. Lines of two kinds never read as one and keep no hand-off; the
+  advisors chose parting a pair sideways over leaving lanes empty. The room under a channel's last
+  track keeps the arrow's approach only where a line ends on a card there.
+- Lines between the same two cards the same way travel as one bus, a lane apart over where they
+  land, where that crosses and bends no more. A line whose turn ties a knot of join dots and hops
+  runs out of its trunk where that unties more knots than it ties and crosses no more lines: the
+  advisors chose giving each join its own place over drawing one dot for several. A line that
+  crosses a bus because its card stands on the far side of it keeps the route with the fewest
+  crossings; placement is the fix there.
 
 Tests hold the bus look, not equality with the fallback: no line words, the lines between two
 cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
