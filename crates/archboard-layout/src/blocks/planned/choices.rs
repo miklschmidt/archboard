@@ -339,7 +339,7 @@ fn connect(
                 &mut points,
             );
             if points.len() >= 2
-                && super::channel::approaches(&points, model.half(edge))
+                && super::channel::approaches(&points, model.ink(edge))
                 && super::channel::attached(points[0], points[1], a)
                 && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
             {

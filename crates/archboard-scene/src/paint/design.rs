@@ -218,11 +218,6 @@ pub fn far_line_widths() -> [(f64, f64); 4] {
     FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
 }
 
-/// How far back from its ends a strand in echelon stands its marks.
-pub const fn echelon() -> f64 {
-    super::heads::ECHELON
-}
-
 /// The straight run a line needs after its last bend, so the mark at its end
 /// lies along it: the longest mark and a little body before it.
 pub const fn approach_straight() -> f64 {

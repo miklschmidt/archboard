@@ -462,7 +462,10 @@ pub(super) fn redraw(grids: &Grids<'_>, candidate: Candidate, room: f64, asked: 
     let (stacked, settled) = grids.placement(candidate.index);
     let none = Room::default();
     let sets: Vec<Set> = (reading.blocks.iter().zip(settled).enumerate())
-        .map(|(at, (block, grid))| block.set(grid, room, asked.get(at).unwrap_or(&none)))
+        .map(|(at, (block, grid))| {
+            let reserved = room::reserved(reading.graph, &block.items, grid);
+            block.set(grid, room, &reserved.plus(asked.get(at).unwrap_or(&none)))
+        })
         .collect();
     reading.drawing(&sets, stacked, room, candidate.page)
 }

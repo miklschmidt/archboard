@@ -94,7 +94,7 @@ pub(super) fn aligned(
     let coordinate = |p: Point| if vertical { p.x } else { p.y };
     let (a_start, a_size) = extent(a);
     let (b_start, b_size) = extent(b);
-    let half = model.half(edge);
+    let half = model.reach(edge);
     let low = (a_start + 12.0).max(b_start + 20.0) + half;
     let high = (b_start + b_size - 20.0).min(a_start + a_size - 12.0) - half;
     let (one, two) = (coordinate(tail.attachment), coordinate(head.attachment));
@@ -181,7 +181,7 @@ fn turns(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
             (turns.iter())
                 .filter(move |(far, _)| upright(*far) != upright(side))
                 .map(move |&(_, turn)| {
-                    let half = model.half(edge);
+                    let half = model.reach(edge);
                     super::ports::on_wall(at, side, turn, margin + half).reaching(half)
                 })
         })
@@ -205,7 +205,7 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     for side in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
         if walls.contains(&side) {
             let at = shape.wall(endpoint, side);
-            let half = model.half(edge);
+            let half = model.reach(edge);
             ports.push(super::ports::on_wall(at, side, toward, margin + half).reaching(half));
             let slot = wall_slot(model, shape, &incidents, (edge, source), (side, at));
             ports.push(super::ports::on_wall(at, side, slot, 20.0 + half).reaching(half));

@@ -46,7 +46,7 @@ pub(super) fn settled(
         .collect();
     let inks: rustc_hash::FxHashMap<&str, f64> = (model.edges.iter().enumerate())
         .filter(|&(edge, _)| model.girth[edge] > 0.0)
-        .map(|(edge, line)| (line.id.as_str(), model.half(edge)))
+        .map(|(edge, line)| (line.id.as_str(), model.reach(edge)))
         .collect();
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
         if let Some(drawing) = super::compact::drawing(shape, clear, (&two_way, &inks))
@@ -259,14 +259,14 @@ impl<'a> Meeting<'a> {
                 edge: other,
                 line,
                 peer: super::port_spacing::Peer::of(model, edge, line),
-                reach: inflate(bounds(&line.points), 1.0 + model.half(other)),
+                reach: inflate(bounds(&line.points), 1.0 + model.reach(other)),
                 kept: line.label.map(|r| inflate(r, 12.01)),
-                half: model.half(other),
+                half: model.reach(other),
             }
         };
         Self {
             routes: routes.iter().map(met).collect(),
-            half: model.half(edge),
+            half: model.reach(edge),
             junctions: super::channel::Junctions::new(model, topology, edge, routes),
         }
     }

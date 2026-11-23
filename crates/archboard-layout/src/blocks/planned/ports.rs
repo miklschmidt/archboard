@@ -47,7 +47,7 @@ pub(super) fn port(
     side: Side,
     shape: &Shape,
 ) -> Option<Port> {
-    choose_port(model, edge, source, side, shape).map(|port| port.reaching(model.half(edge)))
+    choose_port(model, edge, source, side, shape).map(|port| port.reaching(model.reach(edge)))
 }
 
 /// A line's end on one wall of its endpoint. Every kind of line the endpoint takes in, then
@@ -81,7 +81,7 @@ fn choose_port(
         return None;
     }
     let point = centred(at, index, &widths);
-    Some(on_wall(at, side, point, margin + model.half(edge)))
+    Some(on_wall(at, side, point, margin + model.reach(edge)))
 }
 
 /// How far a door keeps its ports from its rounded corners, which are rounder than a card's.
@@ -145,13 +145,14 @@ fn slot(
     Some((index, widths))
 }
 
-/// How wide each kind's port is: as wide as the cable of that kind, all of whose lines share it.
+/// How wide each kind's port is: as wide as the cable of that kind fans out, all of whose lines
+/// share it.
 fn widths_of(model: &Model<'_>, incidents: &[usize], kinds: &[&str]) -> Vec<f64> {
     (kinds.iter())
         .map(|&kind| {
             (incidents.iter())
                 .find(|&&edge| model.treatments[edge] == kind)
-                .map_or(0.0, |&edge| model.girth[edge])
+                .map_or(0.0, |&edge| model.fan[edge])
         })
         .collect()
 }
@@ -337,21 +338,31 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
     kinds
 }
 
-/// The graph with each door as wide as one wall needs to hold its slots (`slot`): a port
-/// for each kind of line the door takes in and for each it sends out, a lane apart. A door's
-/// words set its width only while its lines need less.
+/// The graph with each door, and each card that a cable ends on, as wide as one wall needs to hold
+/// its slots (`slot`): a port for each kind of line it takes in and for each it sends out, a lane
+/// apart, each as wide as its cable fans out. Its words set its width only while its lines need
+/// less.
 pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
     let widths: rustc_hash::FxHashMap<String, f64> = Model::new(graph)
         .map(|model| {
             (model.endpoints.iter().enumerate())
-                .filter(|(_, end)| end.door)
+                .filter(|(_, end)| end.node.children.as_ref().is_none_or(Vec::is_empty))
                 .filter_map(|(at, end)| {
                     let (incoming, outgoing) = (&model.incoming[at], &model.outgoing[at]);
-                    let mut slots = widths_of(&model, incoming, &kinds_of(&model, incoming));
-                    slots.extend(widths_of(&model, outgoing, &kinds_of(&model, outgoing)));
-                    let width = 2.0 * DOOR_MARGIN
-                        + slots.iter().sum::<f64>()
-                        + slots.len().saturating_sub(1) as f64 * LANE;
+                    let cables = incoming
+                        .iter()
+                        .chain(outgoing)
+                        .any(|&edge| model.fan[edge] > 0.0);
+                    if !end.door && !cables {
+                        return None;
+                    }
+                    let group = |slots: Vec<f64>| {
+                        slots.iter().sum::<f64>() + slots.len().saturating_sub(1) as f64 * LANE
+                    };
+                    let heads = widths_of(&model, incoming, &kinds_of(&model, incoming));
+                    let tails = widths_of(&model, outgoing, &kinds_of(&model, outgoing));
+                    let margin = if end.door { DOOR_MARGIN } else { PORT_MARGIN };
+                    let width = 2.0 * margin + group([heads, tails].concat());
                     (width > end.node.width.unwrap_or_default())
                         .then(|| (end.node.id.clone(), width))
                 })
