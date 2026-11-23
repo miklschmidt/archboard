@@ -4,7 +4,7 @@ import type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/
 import { drawingOf } from "#shared/compare/rules/drawing.ts";
 import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import type { OverviewLine } from "#shared/rules/scope.ts";
+import { cablePlates, type OverviewLine } from "#shared/rules/scope.ts";
 import { expansions, toggles } from "#shared/rules/model-expansion.ts";
 import { foldedScope } from "#shared/rules/module-fold.ts";
 import { drawingContent, type DrawnContent } from "#shared/rules/model-drawing.ts";
@@ -117,7 +117,12 @@ function projectScope(
 	const lensed = relevant.filter(choices.lens.draws);
 	const throughLens = linesOf(lensed, every, relevant.length);
 	const shown = lensed.filter(choices.shown);
-	const connections = linesOf(shown, throughLens, lensed.length);
+	const connections = cablePlates(
+		complete,
+		linesOf(shown, throughLens, lensed.length),
+		endsOf,
+		(line) => standing[line.id] ?? "unchanged",
+	);
 	// A card whose every line the lens or a hidden kind leaves out leaves the picture with them.
 	const stranded = strandedCards(every, connections, open);
 	const children = complete.nodes.filter(
@@ -457,7 +462,12 @@ function projectFocused(
 	const shown = relevant.filter((edge) => choices.lens.draws(edge) && choices.shown(edge));
 	const allConnections = joinedLines(complete, relevant, ends, openSelf, standing);
 	const joined = joinedLines(complete, shown, ends, openSelf, standing);
-	const connections = drawnLines(complete, joined, open);
+	const connections = cablePlates(
+		complete,
+		drawnLines(complete, joined, open),
+		ends,
+		(line) => standing[line.id] ?? "unchanged",
+	);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
 	const visible = new Set([...anchors, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));

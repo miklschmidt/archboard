@@ -201,6 +201,28 @@ describe("the words on a joined line", () => {
 	});
 });
 
+describe("a cable of lines between one pair of cards", () => {
+	const model = modelOf(
+		[...closed("loud", []), ...closed("quiet", [])],
+		[
+			{ id: "calls", from: "loud", to: "quiet", kind: "sync", label: "first" },
+			{ id: "tells", from: "loud", to: "quiet", kind: "event", label: "second" },
+			{ id: "asks", from: "loud", to: "quiet", kind: "rpc", label: "third" },
+			{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
+		],
+	);
+
+	test("keeps a line of each kind, and wears one plate on its first line", () => {
+		const edges = projectModel(model).content.edges;
+		expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+			["calls", "sync", "first +2"],
+			["tells", "event", undefined],
+			["asks", "rpc", undefined],
+			["back", "storage", "back"],
+		]);
+	});
+});
+
 describe("doors", () => {
 	const model = modelOf(
 		[
