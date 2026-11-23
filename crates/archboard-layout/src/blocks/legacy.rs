@@ -92,7 +92,9 @@ fn lay_cards(
         .ports
         .values()
         .any(|side| matches!(side, Side::Left | Side::Right));
-    let plan = if walled {
+    // A Lanes drawing folds no ranks: a line between two folded columns could only leave the
+    // bottom of one and enter the top of the other, round the page.
+    let plan = if walled || tree.lanes {
         None
     } else {
         fold_plan(tree.get(block), &whole, insets, &weighed(&whole))

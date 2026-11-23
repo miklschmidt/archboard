@@ -340,3 +340,32 @@ fn lanes_lays_a_wrapped_rank_inside_a_container_in_whole_rows() {
     rows.dedup();
     assert_eq!(rows.len(), 3, "the stage and two whole rows: {rows:?}");
 }
+
+#[test]
+fn lanes_folds_no_ranks_so_no_line_laps_round_the_page() {
+    // The Archboard server reading, which Blocks' placement folds into two columns side by side.
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/folded-ranks.json")).unwrap());
+    let tops: Vec<(f64, f64)> = drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .map(|card| {
+            let y = card["box"]["y"].as_f64().expect("a top");
+            (y, y + card["box"]["height"].as_f64().expect("a height"))
+        })
+        .collect();
+    let top = tops.iter().map(|one| one.0).fold(f64::INFINITY, f64::min);
+    let bottom = tops
+        .iter()
+        .map(|one| one.1)
+        .fold(f64::NEG_INFINITY, f64::max);
+    for (id, points) in lines_of(&drawn) {
+        assert!(
+            points
+                .iter()
+                .all(|&(_, y)| y >= top - 1.0 && y <= bottom + 1.0),
+            "{id} runs between the highest and the lowest card"
+        );
+    }
+}

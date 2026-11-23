@@ -1,0 +1,729 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.layout.engine": "lanes"
+	},
+	"children": [
+		{
+			"id": "vKEsyHFk#EuaJBisP",
+			"width": 163.42000000000002,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.door": "true",
+				"archboard.order-group": "6"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+			"width": 167.22,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "1",
+				"archboard.door": "true",
+				"archboard.order-group": "11003"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+			"width": 356.76,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.order-group": "[\"service\",\"Hosts the local HTTP and socket service for architecture and local agents\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "5",
+						"archboard.order-group": "[\"function\",\"The process entry that archboard start spawns: it starts the server and reports a startup failure\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+					"width": 340,
+					"height": 146.602,
+					"layoutOptions": {
+						"archboard.order": "6",
+						"archboard.order-group": "[\"module\",\"Takes every HTTP call: mounts the routes on one application and listener, refuses foreign browser origins and calls that name no vault, and opens a node's code.\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "7",
+						"archboard.order-group": "[\"module\",\"Starts the server from the entry that archboard start spawns and stops it in order: the pidfile, the listener and the admitted writes that a stop waits for.\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "8",
+						"archboard.order-group": "[\"module\",\"Keeps the panes on screen with their sockets, tabs and model news\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+			"width": 151.51999999999998,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "3",
+				"archboard.door": "true",
+				"archboard.order-group": "11005"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+			"width": 340,
+			"height": 122,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.order-group": "[\"external\",\"Paints an SVG and answers with the bitmap, or opens the Archboard server's page to record a walkthrough's talk or draw it frame by frame, when a command asks\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk#MsDSuIFY",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "20",
+				"archboard.relationship.kind": "spawn",
+				"archboard.relationship.effect": "query",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "spawn",
+				"archboard.relationship.held-effect": "query"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#MsDSuIFY:label",
+					"text": "Spawn \u00b7 to workbench, model +6",
+					"width": 175.72999572753906,
+					"height": 31,
+					"narrow": {
+						"width": 76.27999877929688,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa:label",
+					"text": "with Route handlers,\nHTTP application +2",
+					"width": 118.41999816894531,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq:label",
+					"text": "Async \u00b7 to Route\nhandlers, HTTP listener +1",
+					"width": 142.4800033569336,
+					"height": 46,
+					"narrow": {
+						"width": 96.43000030517578,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "4000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "event",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#UxINwpn6:label",
+					"text": "Event \u00b7 to workbench, workspace +2",
+					"width": 192.88999938964844,
+					"height": 31,
+					"narrow": {
+						"width": 85.98999786376953,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "5000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#6nZjwK9W"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"layoutOptions": {
+				"archboard.order": "5000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#wH0rE1x7:label",
+					"text": "HTTP \u00b7 reports, readings and calls,\neach naming the pane's vault",
+					"width": 182.64999389648438,
+					"height": 46,
+					"narrow": {
+						"width": 106.97000122070312,
+						"height": 76
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"targets": [
+				"vKEsyHFk/vKEsyHFk#6nZjwK9W"
+			],
+			"layoutOptions": {
+				"archboard.order": "6000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "event",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#gK39PRbo:label",
+					"text": "Event \u00b7 with Panes and workspace,\nWalkthrough recordings",
+					"width": 186.27000427246094,
+					"height": 46,
+					"narrow": {
+						"width": 107.97000122070312,
+						"height": 76
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
+			"sources": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+			],
+			"layoutOptions": {
+				"archboard.order": "9000",
+				"archboard.relationship.kind": "spawn",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "spawn",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#SoK3eMhj:label",
+					"text": "Spawn \u00b7 one per run, on its own port",
+					"width": 193.60000610351562,
+					"height": 31,
+					"narrow": {
+						"width": 113.5,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#vKDw0TwV",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#t7W7wJHv"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "10000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "query",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "query"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#vKDw0TwV:label",
+					"text": "HTTP \u00b7 the recording\nand replay pages",
+					"width": 118.41000366210938,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#6nZjwK9W"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "11000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "query",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "query"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#k5pgt4eX:label",
+					"text": "HTTP \u00b7 to Route handlers,\nHTTP application",
+					"width": 141.73999786376953,
+					"height": 46,
+					"narrow": {
+						"width": 95.19000244140625,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "query",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "query"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#4GkwbIhi:label",
+					"text": "HTTP \u00b7 to Route handlers,\nHTTP application",
+					"width": 141.73999786376953,
+					"height": 46,
+					"narrow": {
+						"width": 95.19000244140625,
+						"height": 61
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#elH6AHHL:label",
+					"text": "Async \u00b7 to telemetry, workbench",
+					"width": 175.17999267578125,
+					"height": 31,
+					"narrow": {
+						"width": 119.52999877929688,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl:label",
+					"text": "HTTP \u00b7 to Pane connections",
+					"width": 151.94000244140625,
+					"height": 31,
+					"narrow": {
+						"width": 90.58999633789062,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "13000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#trvs8oQv:label",
+					"text": "HTTP",
+					"width": 45.96999931335449,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#6nZjwK9W"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "33000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#poDLrJ2M:label",
+					"text": "HTTP",
+					"width": 45.96999931335449,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#CfLy7gvx",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+			],
+			"layoutOptions": {
+				"archboard.order": "57000",
+				"archboard.relationship.kind": "spawn",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "spawn",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#CfLy7gvx:label",
+					"text": "Spawn \u00b7 from Entry point, Commands",
+					"width": 197.16000366210938,
+					"height": 31,
+					"narrow": {
+						"width": 111.73999786376953,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"layoutOptions": {
+				"archboard.order": "62000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.effect": "query",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http",
+				"archboard.relationship.held-effect": "query"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw:label",
+					"text": "HTTP",
+					"width": 45.96999931335449,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#9Py1rCVf",
+			"sources": [
+				"vKEsyHFk/vKEsyHFk#TBnOCNx2"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+			],
+			"layoutOptions": {
+				"archboard.order": "69000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#9Py1rCVf:label",
+					"text": "Async",
+					"width": 49.77000045776367,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#4Uvqzrek",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+			],
+			"layoutOptions": {
+				"archboard.order": "70045",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#4Uvqzrek:label",
+					"text": "start pane socket ownership",
+					"width": 156.69000244140625,
+					"height": 31,
+					"narrow": {
+						"width": 103.63999938964844,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"layoutOptions": {
+				"archboard.order": "79000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+			],
+			"targets": [
+				"vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+			],
+			"layoutOptions": {
+				"archboard.order": "92000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#PKAaizYP:label",
+					"text": "Async \u00b7 start the server",
+					"width": 131.58999633789062,
+					"height": 31,
+					"narrow": {
+						"width": 80.66999816894531,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
+			"sources": [
+				"vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+			],
+			"targets": [
+				"vKEsyHFk#EuaJBisP"
+			],
+			"layoutOptions": {
+				"archboard.order": "98000",
+				"archboard.relationship.kind": "async",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "async",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#iXs0a5bj:label",
+					"text": "Async",
+					"width": 49.77000045776367,
+					"height": 31
+				}
+			]
+		}
+	]
+}
