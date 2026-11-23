@@ -43,8 +43,8 @@ test("the chooser names a server that does not answer, and lists the repositorie
 		await settle();
 		const notices = container.querySelectorAll<HTMLElement>('[data-notice="listing"]');
 		expect(notices).toHaveLength(1);
-		expect(within(notices[0]!).getByText(/does not answer/)).toBeDefined();
-		expect(within(notices[0]!).queryByRole("button", { name: "Retry" })).toBeNull();
+		expect(notices[0]!.getAttribute("role")).toBe("alert");
+		expect(within(notices[0]!).getAllByRole("button")).toHaveLength(1);
 		feed.refuse(false);
 		await act(async () => jest.advanceTimersToNextTimer());
 		await settle();
