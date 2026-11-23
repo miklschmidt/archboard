@@ -317,14 +317,21 @@ pub(super) fn route_cost(path: &[Point]) -> f64 {
 /// How a route ranks among the routes of its line. A route that meets a door on a side that
 /// faces its far end comes before every route that does not, so a line meets a door from
 /// behind only when no other route passes the guards.
+/// What an end that stands off its wall's centred port (`ports::port`) costs a route: more than a
+/// bend, so an end leaves the centre to save a way round, never to save a few units.
+const OFF_CENTRE: f64 = 200.0;
+
+/// How a candidate route of a line ranks: a route that meets a door from behind last, then its
+/// length, each end off its centred port as costly as `OFF_CENTRE`, and the page it takes.
 pub(super) fn route_rank(
     (model, shape, edge): (&Model<'_>, &Shape, usize),
     bounds: Rect,
     path: &[Point],
 ) -> (bool, u64, u64) {
     let behind = !super::ports::faces_far_end(model, shape, edge, path);
+    let off = super::ports::off_centre(model, shape, edge, path) as f64;
     let page = page_cost(bounds, path).to_bits();
-    let route = route_cost(path).to_bits();
+    let route = (route_cost(path) + OFF_CENTRE * off).to_bits();
     if model.edges.len() <= super::REFINEMENT_LIMIT {
         (behind, route, page)
     } else {

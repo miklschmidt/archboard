@@ -19,12 +19,9 @@ pub(super) fn ends(
     guide: Option<&PlacedLine>,
     search: Search,
 ) -> Vec<super::ports::Port> {
-    let (from, to) = model.ends[edge];
-    let a = center(shape.endpoints[&from]);
-    let b = center(shape.endpoints[&to]);
     let mut ports: Vec<_> = [Side::Bottom, Side::Right, Side::Top, Side::Left]
         .into_iter()
-        .filter_map(|side| port(model, edge, source, side, shape, if source { b } else { a }))
+        .filter_map(|side| port(model, edge, source, side, shape))
         .collect();
     ports.extend(turns(model, edge, source, shape));
     if search == Search::Ports {
@@ -159,7 +156,7 @@ fn wall_slot(
 /// holds this end alone moves its port: lines that share an end share its port as a fan.
 fn turns(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<super::ports::Port> {
     let (from, to) = model.ends[edge];
-    let (endpoint, far) = if source { (from, to) } else { (to, from) };
+    let endpoint = if source { from } else { to };
     let sharing = if source {
         &model.outgoing[from]
     } else {
@@ -168,29 +165,21 @@ fn turns(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     if sharing.len() > 1 {
         return Vec::new();
     }
-    let (mine, theirs) = (
-        center(shape.endpoints[&endpoint]),
-        center(shape.endpoints[&far]),
-    );
     let margin = if source { 12.0 } else { 20.0 };
     let sides = [Side::Bottom, Side::Right, Side::Top, Side::Left];
     let upright = |side: Side| matches!(side, Side::Top | Side::Bottom);
     let turns: Vec<_> = (sides.into_iter())
-        .filter_map(|side| {
-            Some((
-                side,
-                port(model, edge, !source, side, shape, mine)?.approach,
-            ))
-        })
+        .filter_map(|side| Some((side, port(model, edge, !source, side, shape)?.approach)))
         .collect();
     (sides.into_iter())
-        .filter(|&side| port(model, edge, source, side, shape, theirs).is_some())
+        .filter(|&side| port(model, edge, source, side, shape).is_some())
         .flat_map(|side| {
             let at = shape.wall(endpoint, side);
             (turns.iter())
                 .filter(move |(far, _)| upright(*far) != upright(side))
                 .map(move |&(_, turn)| {
-                    super::ports::on_wall(at, side, turn, margin).reaching(model.half(edge))
+                    let half = model.half(edge);
+                    super::ports::on_wall(at, side, turn, margin + half).reaching(half)
                 })
         })
         .collect()
@@ -214,9 +203,9 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
         if walls.contains(&side) {
             let at = shape.wall(endpoint, side);
             let half = model.half(edge);
-            ports.push(super::ports::on_wall(at, side, toward, margin).reaching(half));
+            ports.push(super::ports::on_wall(at, side, toward, margin + half).reaching(half));
             let slot = wall_slot(model, shape, &incidents, (edge, source), (side, at));
-            ports.push(super::ports::on_wall(at, side, slot, 20.0).reaching(half));
+            ports.push(super::ports::on_wall(at, side, slot, 20.0 + half).reaching(half));
         }
     }
     ports

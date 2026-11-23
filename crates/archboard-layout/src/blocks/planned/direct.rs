@@ -24,11 +24,11 @@ pub(super) fn route(
     let b = center(shape.endpoints[&to]);
     let mut choices = Vec::new();
     for source in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
-        let Some(tail) = port(model, edge, true, source, shape, b) else {
+        let Some(tail) = port(model, edge, true, source, shape) else {
             continue;
         };
         for target in [Side::Top, Side::Left, Side::Bottom, Side::Right] {
-            let Some(head) = port(model, edge, false, target, shape, a) else {
+            let Some(head) = port(model, edge, false, target, shape) else {
                 continue;
             };
             let cost = length(&[tail.approach, head.approach])

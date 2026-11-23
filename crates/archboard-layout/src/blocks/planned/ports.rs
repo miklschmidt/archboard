@@ -37,87 +37,79 @@ impl Port {
     }
 }
 
-/// One treatment shares a port only in one direction at one endpoint.
+/// The port of one end of a line on one wall of its endpoint (`choose_port`), reaching as far
+/// from the wall as the line's approach needs.
 pub(super) fn port(
     model: &Model<'_>,
     edge: usize,
     source: bool,
     side: Side,
     shape: &Shape,
-    toward: Point,
 ) -> Option<Port> {
-    choose_port(model, edge, source, side, shape, toward)
-        .map(|port| port.reaching(model.half(edge)))
+    choose_port(model, edge, source, side, shape).map(|port| port.reaching(model.half(edge)))
 }
 
+/// A line's end on one wall of its endpoint. Every kind of line the endpoint takes in, then
+/// every kind it sends out, holds a slot, each as wide as its cable and a lane from the next,
+/// and the slots stand together as one group in the middle of the wall: a port leaves the middle
+/// only as far as the others need it to, never to shorten its line. One treatment shares a slot
+/// only in one direction at one endpoint.
 fn choose_port(
     model: &Model<'_>,
     edge: usize,
     source: bool,
     side: Side,
     shape: &Shape,
-    toward: Point,
 ) -> Option<Port> {
-    let (endpoint, incidents) = if source {
-        let endpoint = model.ends[edge].0;
-        (endpoint, &model.outgoing[endpoint])
+    let endpoint = if source {
+        model.ends[edge].0
     } else {
-        let endpoint = model.ends[edge].1;
-        (endpoint, &model.incoming[endpoint])
+        model.ends[edge].1
     };
     if !model.endpoints[endpoint].walls.contains(&side) {
         return None;
     }
     let at = shape.wall(endpoint, side);
-    let kinds = kinds_of(model, incidents);
-    let half = model.half(edge);
-    if model.endpoints[endpoint].door
-        && let Some((index, widths)) = door_slot(model, shape, (edge, endpoint, source), side)
-    {
-        if !room(at, side, &widths, DOOR_MARGIN, LANE) {
-            return None;
-        }
-        let point = slot_of(at, index, &widths, DOOR_MARGIN);
-        return Some(on_wall(at, side, point, DOOR_MARGIN + half));
-    }
-    let widths = widths_of(model, incidents, &kinds);
-    let (margin, spacing) = spacing(source, model.endpoints[endpoint].door);
-    if !room(at, side, &widths, margin, spacing) {
+    let (index, widths) = slot(model, shape, (edge, endpoint, source), side)?;
+    let margin = if model.endpoints[endpoint].door {
+        DOOR_MARGIN
+    } else {
+        PORT_MARGIN
+    };
+    if !room(at, side, &widths, margin, LANE) {
         return None;
     }
-    let index = kinds
-        .iter()
-        .position(|kind| *kind == model.treatments[edge])?;
-    let point = distributed(at, index, &widths, incidents.len(), toward, margin);
-    let selected = on_wall(at, side, point, margin + half);
-    if kinds.len() != 1 {
-        return Some(selected);
-    }
-    separate_roles(model, endpoint, source, side, shape, selected)
+    let point = centred(at, index, &widths);
+    Some(on_wall(at, side, point, margin + model.half(edge)))
 }
 
-/// How far a door keeps its ports from its rounded corners.
+/// How far a door keeps its ports from its rounded corners, which are rounder than a card's.
 const DOOR_MARGIN: f64 = 12.0;
 
-/// The slot of a line's end on a door's wall, and the width of each slot the wall holds: one for
-/// each kind of line the door takes in, then one for each it sends out, a lane apart and each as
-/// wide as its cable. A head and a tail then never stand within a lane of each other on opposite
-/// walls, where they would read as one line through the door. Within the heads and within the
-/// tails, the kinds stand in the order their far ends stand along the wall, so the lines leave
-/// the door already sorted and do not cross before they reach anything. A door that joins one
-/// kind of line in one direction has no slots.
-fn door_slot(
+/// The slot of a line's end on an endpoint's wall, and the width of each slot the wall holds:
+/// one for each kind of line that stands on the wall (`face_of`) and comes in, then one for each
+/// that goes out, a lane apart and each as wide as its cable. A head and a tail then never stand within a lane of each other
+/// on opposite walls, where they would read as one line through the box. Within the heads and
+/// within the tails, the kinds stand in the order their far ends stand along the wall, so the
+/// lines leave the box already sorted and do not cross before they reach anything.
+fn slot(
     model: &Model<'_>,
     shape: &Shape,
     (edge, endpoint, source): (usize, usize, bool),
     side: Side,
 ) -> Option<(usize, Vec<f64>)> {
-    let (incoming, outgoing) = (&model.incoming[endpoint], &model.outgoing[endpoint]);
+    // The lines that stand on this wall: those whose far end lies beyond it, and this one.
+    let own =
+        |line: usize, far: usize| line == edge || face_of(model, shape, endpoint, far) == side;
+    let incoming: Vec<usize> = (model.incoming[endpoint].iter().copied())
+        .filter(|&line| own(line, model.ends[line].0))
+        .collect();
+    let outgoing: Vec<usize> = (model.outgoing[endpoint].iter().copied())
+        .filter(|&line| own(line, model.ends[line].1))
+        .collect();
+    let (incoming, outgoing) = (incoming.as_slice(), outgoing.as_slice());
     let mut heads = kinds_of(model, incoming);
     let mut tails = kinds_of(model, outgoing);
-    if heads.len() + tails.len() <= 1 {
-        return None;
-    }
     let along = |far: usize| {
         let at = center(shape.endpoints[&far]);
         if matches!(side, Side::Top | Side::Bottom) {
@@ -163,103 +155,71 @@ fn widths_of(model: &Model<'_>, incidents: &[usize], kinds: &[&str]) -> Vec<f64>
         .collect()
 }
 
-fn separate_roles(
-    model: &Model<'_>,
-    endpoint: usize,
-    source: bool,
-    side: Side,
-    shape: &Shape,
-    selected: Port,
-) -> Option<Port> {
-    let primary_source = matches!(side, Side::Bottom | Side::Right);
-    let (others, own_margin) = if source {
-        (&model.incoming[endpoint], 12.0)
-    } else {
-        (&model.outgoing[endpoint], 20.0)
-    };
-    if source == primary_source || others.is_empty() || kinds_of(model, others).len() != 1 {
-        return Some(selected);
-    }
-    let other = others[0];
-    let peer = if source {
-        model.ends[other].0
-    } else {
-        model.ends[other].1
-    };
-    let toward = center(shape.endpoints[&peer]);
-    let at = shape.wall(endpoint, side);
-    let margin = if primary_source { 12.0 } else { 20.0 };
-    let primary = on_wall(
-        at,
-        side,
-        distributed(at, 0, &[0.0], others.len(), toward, margin),
-        margin,
+/// The wall of an endpoint that a line to a far endpoint stands on: of the walls it may take,
+/// the one the far end lies most beyond, for the box's own shape.
+fn face_of(model: &Model<'_>, shape: &Shape, endpoint: usize, far: usize) -> Side {
+    let at = shape.endpoints[&endpoint];
+    let (middle, there) = (center(at), center(shape.endpoints[&far]));
+    let (dx, dy) = (
+        (there.x - middle.x) / at.width.max(1.0),
+        (there.y - middle.y) / at.height.max(1.0),
     );
-    shifted_port(at, side, selected, primary, own_margin)
-}
-fn shifted_port(at: Rect, side: Side, selected: Port, primary: Port, margin: f64) -> Option<Port> {
-    let vertical = matches!(side, Side::Top | Side::Bottom);
-    let value = |p: Point| if vertical { p.x } else { p.y };
-    let origin = value(primary.attachment);
-    if (value(selected.attachment) - origin).abs() >= LANE {
-        return Some(selected);
-    }
-    let (low, high) = if vertical {
-        (at.x + margin, at.x + at.width - margin)
-    } else {
-        (at.y + margin, at.y + at.height - margin)
+    let beyond = |side: Side| match side {
+        Side::Top => -dy,
+        Side::Bottom => dy,
+        Side::Left => -dx,
+        Side::Right => dx,
     };
-    let position = [origin - LANE, origin + LANE]
-        .into_iter()
-        .filter(|&p| p >= low && p <= high)
-        .min_by(|a, b| {
-            (a - value(selected.attachment))
-                .abs()
-                .total_cmp(&(b - value(selected.attachment)).abs())
-        })?;
-    let toward = if vertical {
-        Point {
-            x: position,
-            ..center(at)
-        }
-    } else {
-        Point {
-            y: position,
-            ..center(at)
-        }
-    };
-    Some(on_wall(at, side, toward, margin))
+    (model.endpoints[endpoint].walls.into_iter())
+        .max_by(|one, other| beyond(*one).total_cmp(&beyond(*other)))
+        .unwrap_or(Side::Bottom)
 }
 
-fn distributed(
-    at: Rect,
-    index: usize,
-    widths: &[f64],
-    incidents: usize,
-    toward: Point,
-    margin: f64,
-) -> Point {
-    if widths.len() > 1 {
-        slot_of(at, index, widths, margin)
-    } else if incidents > 1 {
-        center(at)
-    } else {
-        toward
-    }
-}
-
-/// The middle of one of some slots of these widths along a box's wall, a margin in from each
-/// end, with the room the slots leave shared evenly between them.
-fn slot_of(at: Rect, index: usize, widths: &[f64], margin: f64) -> Point {
-    let gaps = widths.len().saturating_sub(1).max(1) as f64;
-    let before: f64 = widths[..index].iter().sum();
-    let along = |length: f64| {
-        let gap = (length - 2.0 * margin - widths.iter().sum::<f64>()) / gaps;
-        margin + before + index as f64 * gap + widths[index] / 2.0
-    };
+/// The middle of one of some slots of these widths along a box's wall, the slots standing a
+/// lane apart as one group in the middle of the wall.
+fn centred(at: Rect, index: usize, widths: &[f64]) -> Point {
+    let group: f64 = widths.iter().sum::<f64>() + widths.len().saturating_sub(1) as f64 * LANE;
+    let before: f64 = widths[..index].iter().sum::<f64>() + index as f64 * LANE;
+    let offset = before + widths[index] / 2.0 - group / 2.0;
+    let middle = center(at);
     Point {
-        x: at.x + along(at.width),
-        y: at.y + along(at.height),
+        x: middle.x + offset,
+        y: middle.y + offset,
+    }
+}
+
+/// How many of a route's two ends stand off the centred port of the wall they end on.
+pub(super) fn off_centre(model: &Model<'_>, shape: &Shape, edge: usize, points: &[Point]) -> usize {
+    let (from, to) = model.ends[edge];
+    let last = points.len() - 1;
+    [
+        (true, from, points[0], points[1]),
+        (false, to, points[last], points[last - 1]),
+    ]
+    .into_iter()
+    .filter(|&(source, endpoint, at, next)| {
+        let side = wall_of(shape.endpoints[&endpoint], at, next);
+        let centred = side.and_then(|side| port(model, edge, source, side, shape));
+        !centred.is_some_and(|port| {
+            (port.attachment.x - at.x).abs() + (port.attachment.y - at.y).abs() < 0.5
+        })
+    })
+    .count()
+}
+
+/// The wall of a box that a route's end leaves from toward its next point.
+fn wall_of(at: Rect, end: Point, next: Point) -> Option<Side> {
+    let near = |a: f64, b: f64| (a - b).abs() < 0.1;
+    if next.y < end.y && near(end.y, at.y) {
+        Some(Side::Top)
+    } else if next.y > end.y && near(end.y, at.y + at.height) {
+        Some(Side::Bottom)
+    } else if next.x < end.x && near(end.x, at.x) {
+        Some(Side::Left)
+    } else if next.x > end.x && near(end.x, at.x + at.width) {
+        Some(Side::Right)
+    } else {
+        None
     }
 }
 
@@ -376,18 +336,7 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
     kinds
 }
 
-/// How far a wall keeps the ports of one end of its lines from its corners, and how far apart:
-/// a head a lane from the next, as wide as it is, and a tail closer. A door's corners are
-/// rounder than a card's, so its ports stand nearer them.
-fn spacing(source: bool, door: bool) -> (f64, f64) {
-    match (source, door) {
-        (true, _) => (12.0, 8.0),
-        (false, true) => (12.0, LANE),
-        (false, false) => (PORT_MARGIN, LANE),
-    }
-}
-
-/// The graph with each door as wide as one wall needs to hold its slots (`door_slot`): a port
+/// The graph with each door as wide as one wall needs to hold its slots (`slot`): a port
 /// for each kind of line the door takes in and for each it sends out, a lane apart. A door's
 /// words set its width only while its lines need less.
 pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
@@ -445,6 +394,24 @@ fn room(at: Rect, side: Side, widths: &[f64], margin: f64, spacing: f64) -> bool
 mod tests {
     use super::{Port, along, on_wall};
     use crate::geometry::{Point, Rect, Side};
+
+    /// A wall's slots stand together in its middle, a lane apart and each as wide as its cable,
+    /// however wide the wall: a port leaves the middle only as far as the others need it to.
+    #[test]
+    fn a_walls_slots_stand_as_one_group_a_lane_apart_in_its_middle() {
+        let wall = Rect {
+            x: 100.0,
+            y: 0.0,
+            width: 600.0,
+            height: 40.0,
+        };
+        let widths = [0.0, 16.0, 0.0];
+        let at: Vec<f64> = (0..3)
+            .map(|index| super::centred(wall, index, &widths).x)
+            .collect();
+        assert_eq!(at, [376.0, 400.0, 424.0]);
+        assert_eq!(super::centred(wall, 0, &[0.0]).x, 400.0);
+    }
 
     #[test]
     fn a_cables_port_reaches_as_far_from_its_wall_as_its_approach_needs() {

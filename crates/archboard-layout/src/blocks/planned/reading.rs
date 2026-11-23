@@ -94,8 +94,14 @@ const NEAR_SCALE: f64 = 0.6;
 const LONG_DETOUR: f64 = 300.0;
 
 fn is_long(line: &PlacedLine) -> bool {
-    let (length, direct) = distances(&line.points);
-    length > direct * 1.5 && length - direct > LONG_DETOUR
+    runs_beyond(&line.points, 1.5)
+}
+
+/// Whether a route runs a long way round: more than `times` its direct way, and more than
+/// `LONG_DETOUR` past it.
+pub(super) fn runs_beyond(points: &[Point], times: f64) -> bool {
+    let (length, direct) = distances(points);
+    length > direct * times && length - direct > LONG_DETOUR
 }
 
 fn long_detours(lines: &[PlacedLine]) -> usize {
