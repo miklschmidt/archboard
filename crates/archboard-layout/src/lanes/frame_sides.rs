@@ -247,8 +247,11 @@ fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[R
     !bused
         && !blocked(placed, &outside, &door.card)
         && !others.iter().any(|&other| meets(head, other) > 0)
-        && !side_approaches(placed, door.line)
-            .any(|approach| new_runs.iter().any(|&run| meets(approach, run) > 0))
+        && !side_approaches(placed, door.line).any(|approach| {
+            runs_of(&points[start..])
+                .iter()
+                .any(|&run| meets(approach, run) > 0)
+        })
         && length(points) <= length(&old)
         && !worse(met(&runs_of(points), others), old_meets)
         && bends(points) < bends(&old)
