@@ -100,9 +100,10 @@ fn a_group_caption_leaves_the_full_width_of_each_lanes_ribbon() {
         })
         .collect();
     ports.sort_by(f64::total_cmp);
-    // Five strands span 32 units. Compress the gap between ribbons and keep their widths.
-    assert!(ports[1] - ports[0] > 32.0, "{ports:?}");
-    assert!(ports[0] - 16.0 >= caption_end, "{ports:?}");
+    // Five strands fan out over 64 units at their card. The card widens past the caption until
+    // both fans fit beside it, apart.
+    assert!(ports[1] - ports[0] > 64.0, "{ports:?}");
+    assert!(ports[0] - 32.0 >= caption_end, "{ports:?}");
 }
 
 #[test]
