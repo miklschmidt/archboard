@@ -36,6 +36,7 @@ import box from "remixicon/icons/Others/box-3-line.svg?raw";
 import codeLine from "remixicon/icons/Development/code-line.svg?raw";
 import database from "remixicon/icons/Device/database-2-line.svg?raw";
 import external from "remixicon/icons/System/external-link-line.svg?raw";
+import focus from "remixicon/icons/Design/focus-3-line.svg?raw";
 import flashlight from "remixicon/icons/Weather/flashlight-line.svg?raw";
 import server from "remixicon/icons/Device/server-line.svg?raw";
 import store from "remixicon/icons/Buildings/store-2-line.svg?raw";
@@ -91,6 +92,7 @@ export const icons = {
 	database,
 	external,
 	flashlight,
+	focus,
 	server,
 	store,
 	timer,
