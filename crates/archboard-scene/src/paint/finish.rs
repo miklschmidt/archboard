@@ -84,7 +84,7 @@ pub(super) fn finish_of(color: Option<PaletteColor>) -> Finish {
 fn gradient(color: Option<PaletteColor>) -> Definition {
     let finish = finish_of(color);
     let stop = |offset: f64, colour: Colour| Stop {
-        offset: offset,
+        offset,
         colour,
         opacity: 1.0,
     };

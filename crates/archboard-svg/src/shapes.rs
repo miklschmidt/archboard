@@ -3,7 +3,7 @@
 //! the same scene is the same bytes.
 
 use archboard_scene::names::word;
-use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
+use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape, Stroke as Outline};
 
 use crate::css::paint;
 use crate::definitions::{Names, marker_id};
@@ -164,9 +164,36 @@ pub(crate) fn listed(numbers: &[f64]) -> String {
         .join(" ")
 }
 
+/// One attribute of a shape's stroke.
+fn outline_key(outline: &Outline, key: Key, out: &mut Attributes) {
+    match key {
+        Stroke => {
+            out.set("stroke", paint(&outline.paint));
+        }
+        Width => {
+            stated(out, "stroke-width", outline.width);
+        }
+        Opacity => {
+            stated(out, "stroke-opacity", outline.opacity);
+        }
+        Cap => {
+            stated(out, "stroke-linecap", word(&outline.cap));
+        }
+        Join => {
+            stated(out, "stroke-linejoin", word(&outline.join));
+        }
+        Dash if !outline.dashes.is_empty() => {
+            out.set("stroke-dasharray", listed(&outline.dashes));
+        }
+        Offset => {
+            stated(out, "stroke-dashoffset", outline.dash_offset);
+        }
+        _ => {}
+    }
+}
+
 /// One attribute of a shape, when the shape has it.
 fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut Attributes) {
-    let stroke = shape.stroke.as_ref();
     match key {
         Class => {
             out.set("class", HALO_CLASS);
@@ -183,40 +210,9 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
         FillOpacity => {
             stated(out, "fill-opacity", shape.fill_opacity);
         }
-        Stroke => {
-            out.maybe("stroke", stroke.map(|stroke| paint(&stroke.paint)));
-        }
-        Width => {
-            if let Some(stroke) = stroke {
-                stated(out, "stroke-width", stroke.width);
-            }
-        }
-        Opacity => {
-            if let Some(stroke) = stroke {
-                stated(out, "stroke-opacity", stroke.opacity);
-            }
-        }
-        Cap => {
-            if let Some(stroke) = stroke {
-                stated(out, "stroke-linecap", word(&stroke.cap));
-            }
-        }
-        Join => {
-            if let Some(stroke) = stroke {
-                stated(out, "stroke-linejoin", word(&stroke.join));
-            }
-        }
-        Dash => {
-            out.maybe(
-                "stroke-dasharray",
-                stroke
-                    .filter(|stroke| !stroke.dashes.is_empty())
-                    .map(|stroke| listed(&stroke.dashes)),
-            );
-        }
-        Offset => {
-            if let Some(stroke) = stroke {
-                stated(out, "stroke-dashoffset", stroke.dash_offset);
+        Stroke | Width | Opacity | Cap | Join | Dash | Offset => {
+            if let Some(outline) = &shape.stroke {
+                outline_key(outline, key, out);
             }
         }
         Pointer => {

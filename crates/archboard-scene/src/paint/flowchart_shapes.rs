@@ -248,7 +248,7 @@ fn jump_letter(end: JumpEnd, rect: Rect, words: &[String], fill: &Colour) -> Ite
 /// One stop of the gold.
 fn gold(offset: f64, token: Token) -> Stop {
     Stop {
-        offset: offset,
+        offset,
         colour: token.into(),
         opacity: 1.0,
     }

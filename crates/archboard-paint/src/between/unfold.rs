@@ -220,7 +220,7 @@ impl Inside {
             return Vec::new();
         }
         let mut group = self.item.clone();
-        group.opacity = group.opacity * visible;
+        group.opacity *= visible;
         group.transform = then(self.unfold.at(progress), group.transform);
         vec![Item::Group(group)]
     }

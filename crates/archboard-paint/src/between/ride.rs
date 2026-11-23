@@ -95,7 +95,7 @@ impl Ride {
             route: route.unwrap_or_else(|| mark.route.clone()),
             ..mark.clone()
         })];
-        group.opacity = group.opacity * visible;
+        group.opacity *= visible;
         Item::Group(group)
     }
 

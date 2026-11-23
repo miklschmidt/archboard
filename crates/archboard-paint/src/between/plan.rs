@@ -111,7 +111,7 @@ fn faded_in(item: &Item, visible: f64) -> Item {
     match item {
         Item::Group(group) => {
             let mut group = group.clone();
-            group.opacity = group.opacity * visible;
+            group.opacity *= visible;
             Item::Group(group)
         }
         other => {

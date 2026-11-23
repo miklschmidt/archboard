@@ -251,7 +251,7 @@ impl Opening {
         };
         let span = way.far - way.near;
         let shown = ease_out(phase(reach, way.near, way.near + span * SHOWN_BY));
-        group.opacity = group.opacity * shown;
+        group.opacity *= shown;
         group.items = vec![Item::Viewport(Viewport {
             frame: area,
             view: area,
