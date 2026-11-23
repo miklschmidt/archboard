@@ -90,6 +90,13 @@ draws. Blocks' planned drawings and its fallback do not change. Lanes differs in
   so Graphviz stands each door over the port its line enters by.
 - The pass that pulls a line lapping the drawing back inside prices a crossing at 8 lanes, not
   25: a line crossing a bus square reads at a glance, and a lap round the page does not.
+- Lanes folds no ranks into columns side by side: a line between folded columns could only
+  leave the bottom of one and enter the top of the other, round the page.
+- The ends on each card face stand as one group a lane apart, centred on the face, in the order
+  their lines come from; they spread only as far as they need to fit, and no port slides to
+  shorten a line (the owner's rule, 2026-11-23). Every line still lands on a top or bottom face:
+  the advisors found no reading where a side face would read better, since no two connected cards
+  share a row and lines running back up are as direct as lines running down.
 
 Tests hold the bus look, not equality with the fallback: no line words, the lines between two
 cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
