@@ -72,7 +72,7 @@ fn choose_port(
     let kinds = kinds_of(model, incidents);
     let half = model.half(edge);
     if model.endpoints[endpoint].door
-        && let Some((index, widths)) = door_slot(model, edge, endpoint, source)
+        && let Some((index, widths)) = door_slot(model, shape, (edge, endpoint, source), side)
     {
         if !room(at, side, &widths, DOOR_MARGIN, LANE) {
             return None;
@@ -99,23 +99,48 @@ fn choose_port(
 /// How far a door keeps its ports from its rounded corners.
 const DOOR_MARGIN: f64 = 12.0;
 
-/// The slot of a line's end on a door, and the width of each slot the door holds: one for each
-/// kind of line the door takes in, then one for each it sends out, a lane apart and each as wide
-/// as its cable. A head and a tail then never stand within a lane of each other on opposite
-/// walls, where they would read as one line through the door. A door that joins one kind of
-/// line in one direction has no slots.
+/// The slot of a line's end on a door's wall, and the width of each slot the wall holds: one for
+/// each kind of line the door takes in, then one for each it sends out, a lane apart and each as
+/// wide as its cable. A head and a tail then never stand within a lane of each other on opposite
+/// walls, where they would read as one line through the door. Within the heads and within the
+/// tails, the kinds stand in the order their far ends stand along the wall, so the lines leave
+/// the door already sorted and do not cross before they reach anything. A door that joins one
+/// kind of line in one direction has no slots.
 fn door_slot(
     model: &Model<'_>,
-    edge: usize,
-    endpoint: usize,
-    source: bool,
+    shape: &Shape,
+    (edge, endpoint, source): (usize, usize, bool),
+    side: Side,
 ) -> Option<(usize, Vec<f64>)> {
     let (incoming, outgoing) = (&model.incoming[endpoint], &model.outgoing[endpoint]);
-    let heads = kinds_of(model, incoming);
-    let tails = kinds_of(model, outgoing);
+    let mut heads = kinds_of(model, incoming);
+    let mut tails = kinds_of(model, outgoing);
     if heads.len() + tails.len() <= 1 {
         return None;
     }
+    let along = |far: usize| {
+        let at = center(shape.endpoints[&far]);
+        if matches!(side, Side::Top | Side::Bottom) {
+            at.x
+        } else {
+            at.y
+        }
+    };
+    // Where the far ends of a kind's lines stand along the wall, on average.
+    let bearing = |kind: &str, lines: &[usize], far: fn(&Model<'_>, usize) -> usize| {
+        let ats: Vec<f64> = (lines.iter())
+            .filter(|&&line| model.treatments[line] == kind)
+            .map(|&line| along(far(model, line)))
+            .collect();
+        ats.iter().sum::<f64>() / ats.len().max(1) as f64
+    };
+    let by_bearing = |kinds: &mut Vec<&str>,
+                      lines: &[usize],
+                      far: fn(&Model<'_>, usize) -> usize| {
+        kinds.sort_by(|one, other| bearing(one, lines, far).total_cmp(&bearing(other, lines, far)));
+    };
+    by_bearing(&mut heads, incoming, |model, line| model.ends[line].0);
+    by_bearing(&mut tails, outgoing, |model, line| model.ends[line].1);
     let mut widths = widths_of(model, incoming, &heads);
     widths.extend(widths_of(model, outgoing, &tails));
     let kind = model.treatments[edge].as_str();
