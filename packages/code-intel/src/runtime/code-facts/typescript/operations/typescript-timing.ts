@@ -34,15 +34,30 @@ const TYPESCRIPT_TIMING: TimingSyntax = {
 		["finally", "pass"],
 	]),
 	/**
-	 * A timer's or the microtask queue's call starts what its arguments hold.
+	 * A timer or microtask queue runs its callback later. Its other arguments
+	 * and calls that compute the callback are evaluated before scheduling.
 	 * @param holder The syntax.
 	 * @param held Its child.
-	 * @returns Whether it starts it.
+	 * @param site The call or name being classified.
+	 * @returns Whether the scheduler runs it.
 	 */
-	starts: (holder, held) =>
-		holder.type === "call_expression" &&
-		holder.childForFieldName("arguments")?.id === held.id &&
-		STARTERS.has(lastWord(holder.childForFieldName("function"))),
+	starts: (holder, held, site) => {
+		if (
+			holder.type !== "call_expression" ||
+			holder.childForFieldName("arguments")?.id !== held.id ||
+			!STARTERS.has(lastWord(holder.childForFieldName("function")))
+		) {
+			return false;
+		}
+		const callback = held.namedChildren.find((child) => child.type !== "comment");
+		if (callback === undefined) return false;
+		if (callback.id === site.id) return !TYPESCRIPT_TIMING.calls.has(site.type);
+		return (
+			(callback.type === "arrow_function" || callback.type === "function_expression") &&
+			callback.startIndex <= site.startIndex &&
+			site.endIndex <= callback.endIndex
+		);
+	},
 	/**
 	 * A construction is plain; any other call is as its callee is.
 	 * @param call The call.
