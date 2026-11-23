@@ -10,11 +10,22 @@ const GO_TIMING: TimingSyntax = {
 	wrappers: new Set(["parenthesized_expression"]),
 	continuations: new Map(),
 	/**
-	 * A `go` statement starts what it holds.
+	 * A `go` statement starts its call and runs an inline function in the goroutine.
 	 * @param holder The syntax.
+	 * @param held Its call.
+	 * @param site The call or name being classified.
 	 * @returns Whether it starts it.
 	 */
-	starts: (holder) => holder.type === "go_statement",
+	starts: (holder, held, site) => {
+		if (holder.type !== "go_statement" || held.type !== "call_expression") return false;
+		if (held.id === site.id) return true;
+		const callee = held.childForFieldName("function");
+		return (
+			callee?.type === "func_literal" &&
+			callee.startIndex <= site.startIndex &&
+			site.endIndex <= callee.endIndex
+		);
+	},
 	/**
 	 * A bare call is plain.
 	 * @returns The call site.

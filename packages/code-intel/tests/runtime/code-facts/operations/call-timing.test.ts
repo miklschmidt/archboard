@@ -108,13 +108,20 @@ test("Go starts with go, and every other call is plain", async () => {
 		await timingsOf("shop.go", [
 			"package shop",
 			"func Checkout() {",
-			"\tgo notify()",
-			"\tgo func() { audit() }()",
+			"\tgo notify(format())",
+			"\tgo func(value int) { audit(value) }(count())",
 			"\tdefer total()",
 			"\tledger.Post()",
 			"}",
 		]),
-	).toMatchObject({ notify: "started", audit: "started", total: "plain", "ledger.Post": "plain" });
+	).toMatchObject({
+		notify: "started",
+		format: "plain",
+		audit: "started",
+		count: "plain",
+		total: "plain",
+		"ledger.Post": "plain",
+	});
 });
 
 test("C# awaits with await, starts with Task.Run and a thread, and marks async and task methods", async () => {
