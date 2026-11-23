@@ -1,6 +1,5 @@
 //! A shape as the walk draws it: filled, then stroked, under the clip it
-//! names, with the markers its stroke ends in grown to the least size a head
-//! keeps on screen.
+//! names, with the markers its stroke ends in.
 
 use archboard_scene::paint::design::{far_line_scale, widens_far};
 use archboard_scene::scene::{Colour, Geometry, Marker, Paint, Purpose, Shape, Stroke, Token};
@@ -8,16 +7,13 @@ use kurbo::{Affine, BezPath, Rect};
 
 use super::{Inside, Walk};
 use crate::canvas::Canvas;
-use crate::path::{end_of, outline_of, path_of, straightened, stroke_of, trimmed};
+use crate::path::{end_of, outline_of, path_of, straightened, stroke_of};
 
-/// A marker laid on one end of a line: where it is drawn, and how far the
-/// line's body gives way to it because it grew.
+/// A marker laid on one end of a line, and where it is drawn.
 struct Mark<'m> {
     marker: &'m Marker,
     /// Whether it ends the line's start.
     start: bool,
-    /// How far the body gives way to it at its end.
-    back: f64,
     /// Where it is drawn, under the line's own transform.
     transform: Affine,
 }
@@ -121,21 +117,12 @@ impl<C: Canvas> Walk<'_, C> {
             .filter_map(|(marker, start)| {
                 let marker = self.definitions.marker(marker.as_ref()?)?;
                 let (at, angle) = end_of(path, start)?;
-                Some(self.mark(marker, width, (at, angle), start))
+                Some(mark(marker, (at, angle), start))
             })
             .collect();
-        // A mark grown past its size keeps its hold in place, so the body
-        // gives way to it by as much as it grew.
-        let give = |start: bool| {
-            marks
-                .iter()
-                .find(|mark| mark.start == start)
-                .map_or(0.0, |mark| mark.back)
-        };
-        let body = trimmed(path, give(true), give(false));
-        let straight = (!stroke.dashes.is_empty()).then(|| straightened(&body));
+        let straight = (!stroke.dashes.is_empty()).then(|| straightened(path));
         self.canvas.stroke(
-            straight.as_ref().unwrap_or(&body),
+            straight.as_ref().unwrap_or(path),
             &stroke_of(stroke, grown),
             &ink,
         );
@@ -143,7 +130,7 @@ impl<C: Canvas> Walk<'_, C> {
             .play
             .filter(|_| inside.line && shape.purpose == Purpose::Line)
         {
-            self.spark(&body, &stroke.paint, width, play, inside);
+            self.spark(path, &stroke.paint, width, play, inside);
         }
         for mark in marks {
             let held = Inside {
@@ -157,28 +144,16 @@ impl<C: Canvas> Walk<'_, C> {
             }
         }
     }
+}
 
-    /// A marker laid on one end of a line of some width: drawn at its size, or
-    /// grown about its hold to the least size a head keeps on screen.
-    fn mark<'m>(
-        &self,
-        marker: &'m Marker,
-        width: f64,
-        (at, angle): (kurbo::Point, f64),
-        start: bool,
-    ) -> Mark<'m> {
-        let drawn = marker.size * width / marker.view;
-        let scale = drawn * self.presentation.mark_growth.unwrap_or(1.0);
-        let back = (marker.hold.x - marker.reference.x) * (scale - drawn);
-        Mark {
-            marker,
-            start,
-            back,
-            transform: Affine::translate(at.to_vec2())
-                * Affine::rotate(angle)
-                * Affine::translate((-back, 0.0))
-                * Affine::scale(scale)
-                * Affine::translate((-marker.reference.x, -marker.reference.y)),
-        }
+/// A marker laid on one end of a line, at its own size in the picture's units.
+fn mark(marker: &Marker, (at, angle): (kurbo::Point, f64), start: bool) -> Mark<'_> {
+    Mark {
+        marker,
+        start,
+        transform: Affine::translate(at.to_vec2())
+            * Affine::rotate(angle)
+            * Affine::scale(marker.size / marker.view)
+            * Affine::translate((-marker.reference.x, -marker.reference.y)),
     }
 }

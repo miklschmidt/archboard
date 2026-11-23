@@ -41,8 +41,8 @@ pub(super) fn arrowhead_reach(head: Head) -> f64 {
 }
 
 /// A mark in one ink as a marker for the end of a line of a weight.
-pub(super) fn arrowhead_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
-    mark_marker(id, head, weight, ink)
+pub(super) fn arrowhead_marker(id: MarkerId, head: Head, ink: &Colour) -> Marker {
+    mark_marker(id, head, ink)
 }
 
 /// The route with its body cut short of its marks: by `end` at its end and by
@@ -218,12 +218,7 @@ pub(super) fn paint_edge_line(
         if !defined.contains(&id) {
             defined.push(id.clone());
             parts.push(vec![Item::Definitions {
-                definitions: vec![Definition::Marker(arrowhead_marker(
-                    id.clone(),
-                    mark,
-                    weight,
-                    &ink,
-                ))],
+                definitions: vec![Definition::Marker(arrowhead_marker(id.clone(), mark, &ink))],
             }]);
         }
         id

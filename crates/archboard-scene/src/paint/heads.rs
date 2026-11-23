@@ -4,17 +4,15 @@
 //! that states none, and a hollow ring at the caller of a query. A flow step
 //! and a reading from before effects keep the classic filled and open heads.
 //!
-//! Each mark is drawn in a square of its own. A new mark is drawn in the
-//! picture's own units, so it is as big on every line whatever the line's
-//! weight, and the line's body stops short of it. Its hold is the point a
-//! viewer keeps in place when it grows the mark to its least size on screen:
-//! the tip of a head, the centre of a ring.
+//! Each mark is drawn in a square of its own, in the picture's own units, so
+//! it is as big on every line whatever the line's weight, and it scales with
+//! the picture as the line does. A new mark's line stops short of it. Its end
+//! is the point that stands on the end of the line's route: the tip of a head,
+//! the centre of a ring.
 
-use crate::drawing::Emphasis;
 use crate::geometry::Point;
-use crate::paint::styles::{HEAD_LENGTH, stroke_width};
+use crate::paint::styles::HEAD_LENGTH;
 use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, Shape, Stroke};
-use crate::sizes::THIN_BODY;
 
 /// The side of the square a new mark is drawn in, in its own units.
 const MARK_BOX: f64 = 16.0;
@@ -75,25 +73,25 @@ const fn back(along: f64, aside: f64) -> Point {
 }
 
 /// A mark's square, the point laid on the end of the line's body, and the
-/// point a viewer keeps in place when it grows the mark.
+/// point that stands on the end of the line's route.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Place {
     pub view: f64,
     pub reference: Point,
-    pub hold: Point,
+    pub end: Point,
 }
 
 /// Where a mark stands in its square.
 pub(super) fn place_of(head: Head) -> Place {
-    let new = |reference: Point, hold: Point| Place {
+    let new = |reference: Point, end: Point| Place {
         view: MARK_BOX,
         reference,
-        hold,
+        end,
     };
     let classic = |x: f64| Place {
         view: CLASSIC_BOX,
         reference: at(x, CLASSIC_BOX / 2.0),
-        hold: at(CLASSIC_BOX, CLASSIC_BOX / 2.0),
+        end: at(CLASSIC_BOX, CLASSIC_BOX / 2.0),
     };
     match head {
         Head::Filled => classic(8.0),
@@ -124,12 +122,6 @@ pub(super) fn ring_reach() -> f64 {
     (RING_RADIUS + OUTLINE / 2.0) * MARK_UNIT
 }
 
-/// The side of a relationship mark's square in picture units: what a viewer
-/// keeps at its least size on screen.
-pub(super) fn mark_side() -> f64 {
-    MARK_BOX * MARK_UNIT
-}
-
 /// How far the body of a line stops short of its end for a mark: none for a
 /// classic head, which lies over the body's end.
 pub(super) fn body_short_of(head: Head) -> f64 {
@@ -137,7 +129,7 @@ pub(super) fn body_short_of(head: Head) -> f64 {
         Head::Filled | Head::Open => 0.0,
         _ => {
             let place = place_of(head);
-            (place.hold.x - place.reference.x) * MARK_UNIT
+            (place.end.x - place.reference.x) * MARK_UNIT
         }
     }
 }
@@ -260,50 +252,23 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
     }
 }
 
-/// A mark as a marker in one ink, for the end of a line of a weight. A classic
-/// head is sized in widths of its line's stroke, so it is 11 units long at
-/// every weight; a new mark is drawn in the picture's units.
-pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
+/// A mark as a marker in one ink, drawn at its own length in the picture's
+/// units on a line of every weight.
+pub(super) fn mark_marker(id: MarkerId, head: Head, ink: &Colour) -> Marker {
     let place = place_of(head);
-    let length = mark_length(head);
-    let width = stroke_width(weight);
-    let body_width = if head == Head::Detached {
-        THIN_BODY * width
-    } else {
-        width
-    };
     Marker {
         id,
         view: place.view,
         reference: place.reference,
-        hold: place.hold,
-        size: crate::geometry::round_coord(length / body_width),
+        size: mark_length(head),
         shapes: mark_shapes(head, ink),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{APPROACH, STRAIGHT_RUN, body_short_of, mark_length, mark_marker, stroke_width};
-    use crate::drawing::Emphasis;
+    use super::{APPROACH, STRAIGHT_RUN, body_short_of};
     use crate::scene::Head;
-    use crate::scene::{HeadInk, MarkerId, Token};
-    use crate::sizes::THIN_BODY;
-
-    #[test]
-    fn a_thinner_body_keeps_its_chevron_at_the_route_end() {
-        for weight in [Emphasis::Normal, Emphasis::Hero] {
-            let head = Head::Detached;
-            let id = MarkerId::Shared {
-                head,
-                weight,
-                ink: HeadInk::Neutral,
-            };
-            let marker = mark_marker(id, head, weight, &Token::Border.into());
-            let size = marker.size * stroke_width(weight) * THIN_BODY;
-            assert!((size - mark_length(head)).abs() < 0.01);
-        }
-    }
 
     #[test]
     fn every_mark_and_a_little_body_fit_the_straight_approach_and_a_straight_line() {

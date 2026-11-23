@@ -30,10 +30,9 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Draw a glow: an oval about its line, as broad as its stroke and reaching
     /// half that past each end, solid at its heart and fading to nothing at
-    /// its rim. It grows as the marks grow when the picture is seen from far,
-    /// and brightens as `lit` rises.
+    /// its rim. It brightens as `lit` rises.
     fn glow(&mut self, shape: &Shape, inside: Inside, lit: f64) {
-        let Some((from, to, stroke, width)) = self.stripe(shape) else {
+        let Some((from, to, stroke, width)) = stripe(shape) else {
             return;
         };
         let ink = self.lit_colour(&stroke.paint, lit);
@@ -59,7 +58,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Draw a stripe, solid through its middle and fading at both ends.
     fn stripe_fading(&mut self, shape: &Shape, inside: Inside, lit: f64) {
-        let Some((from, to, stroke, width)) = self.stripe(shape) else {
+        let Some((from, to, stroke, width)) = stripe(shape) else {
             return;
         };
         let colour = self.lit_colour(&stroke.paint, lit);
@@ -72,21 +71,19 @@ impl<C: Canvas> Walk<'_, C> {
         self.canvas
             .stroke(&path, &round, &Ink::Gradient(fading, Affine::IDENTITY));
     }
+}
 
-    /// The ends of a shape drawn along a line, its stroke, and how wide it is
-    /// drawn as the marks grow.
-    fn stripe<'s>(&self, shape: &'s Shape) -> Option<(Point, Point, &'s Stroke, f64)> {
-        let (Geometry::Line { from, to }, Some(stroke)) = (&shape.geometry, &shape.stroke) else {
-            return None;
-        };
-        let grown = self.presentation.mark_growth.unwrap_or(1.0);
-        Some((
-            Point::new(from.x, from.y),
-            Point::new(to.x, to.y),
-            stroke,
-            stroke.width.unwrap_or(1.0) * grown,
-        ))
-    }
+/// The ends of a shape drawn along a line, its stroke, and how wide it is.
+fn stripe(shape: &Shape) -> Option<(Point, Point, &Stroke, f64)> {
+    let (Geometry::Line { from, to }, Some(stroke)) = (&shape.geometry, &shape.stroke) else {
+        return None;
+    };
+    Some((
+        Point::new(from.x, from.y),
+        Point::new(to.x, to.y),
+        stroke,
+        stroke.width.unwrap_or(1.0),
+    ))
 }
 
 /// A colour's alpha, no more than solid.

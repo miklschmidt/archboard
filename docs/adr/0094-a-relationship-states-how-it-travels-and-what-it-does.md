@@ -194,10 +194,12 @@ colors already need the same modern CSS that its blur does. The ring of a query 
 of a compute stops before its bars.
 
 The body is solid for every effect but declared-only. The owner decided it: "Dashes / dots make
-busy diagrams harder to follow, so use sparsely." The ends carry the effect. A head, a ring and
-the bars keep a minimum size on screen, and the openings, the ring round the eye's dot and the gap of the "=",
-keep at least 2 clear pixels, so that they survive the opening zoom of a wide scope. Every line
-draws thicker than before, and the weight of emphasis stands on top of that base.
+busy diagrams harder to follow, so use sparsely." The ends carry the effect. Every mark scales
+with the picture, as its line does, one size in picture units at every zoom, near or far. A viewer
+once grew the marks to a least size on screen when the picture was seen from far, and the far view
+grew them with its wider lines; the owner dropped both: "they barely change anyway so they only
+complicate things." Every line draws thicker than before, and the weight of emphasis stands on top
+of that base.
 
 Everything is drawn in the kind's ink. A comparison's standing color replaces the ink and keeps
 the shapes, so the effect still reads under a comparison. Emphasis thickens the body and keeps
