@@ -29,7 +29,7 @@ Read the ADR for the decision. Read this note before you change a painter, a mov
 | CSS far view                             | `Stage::set_far`, a blend from 0 to 1 over `picture.farViewSwap`.                                |
 | `:hover` on a control                    | The stage's own `pointermove` listener and `setHoveredToggle`.                                   |
 | Search, copy and screen readers          | The SVG, which stays in the page under the canvas with its ink hidden.                           |
-| SMIL traffic                             | `TrafficClock` and `traffic.rs`, on the frame clock.                                             |
+| SMIL traffic                             | `traffic/mod.rs` draws the scene's beam at the time set by `TrafficClock`.                       |
 
 ## How to compare the painters with the SVG
 
