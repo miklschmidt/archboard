@@ -14,22 +14,42 @@ export interface MeasureRow {
 	unjoined: number;
 }
 
-// Unjoined comes first: the table opens sorted by it, and a phone shows only the first columns.
-export const measureColumns = [
+// The two tables of the app's Measures dialog that this data answers, in the app's order and
+// words: what a module exposes, then what changes together. Each opens sorted by its first
+// column, most first.
+export const measureTabs = [
 	{
-		key: "unjoined",
-		label: "Unjoined",
-		hint: "Modules that change with this one and have no authored relationship",
+		key: "interface",
+		icon: "stack",
+		label: "What a module exposes",
+		columns: [
+			{ key: "entries", label: "Entries", hint: "Parts that outside relationships reach" },
+			{ key: "hidden", label: "Hidden", hint: "Parts that nothing outside reaches" },
+			{ key: "passThrough", label: "Pass-through", hint: "Entries that only pass a call on" },
+			{ key: "callers", label: "Callers", hint: "Modules outside that call in" },
+		],
 	},
-	{ key: "changesWith", label: "Changes with", hint: "Modules that change in the same commits" },
-	{ key: "commits", label: "Commits", hint: "Commits in the last year" },
-	{ key: "entries", label: "Entries", hint: "Parts that outside relationships reach" },
-	{ key: "hidden", label: "Hidden", hint: "Parts that nothing outside reaches" },
-	{ key: "passThrough", label: "Pass-through", hint: "Entries that only pass a call on" },
-	{ key: "callers", label: "Callers", hint: "Modules outside that call in" },
+	{
+		key: "changes",
+		icon: "commit",
+		label: "What changes together",
+		columns: [
+			{
+				key: "changesWith",
+				label: "Changes with",
+				hint: "Modules that change in the same commits",
+			},
+			{
+				key: "unjoined",
+				label: "Unjoined",
+				hint: "Modules that change with this one and have no authored relationship",
+			},
+			{ key: "commits", label: "Commits", hint: "Commits in the last year" },
+		],
+	},
 ] as const;
 
-export type MeasureKey = (typeof measureColumns)[number]["key"];
+export type MeasureKey = (typeof measureTabs)[number]["columns"][number]["key"];
 
 export const measureRows: MeasureRow[] = [
 	{

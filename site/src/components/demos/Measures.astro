@@ -1,13 +1,22 @@
 ---
-// The Measures tab, rebuilt for the page over Archboard's own numbers. Each column header sorts
-// the rows, as in the shell. No score: every count describes the model or its commits.
-import { measureColumns, measureRows } from "../../lib/measures";
+// The Measures dialog's two tables that Archboard's own numbers answer, rebuilt for the page:
+// what a module exposes and what changes together, one tab each, in the app's words. Each column
+// header sorts its table, as in the shell. No score: every count describes the model or its
+// commits. A module with no parts has no interface, so its interface counts stand blank.
+import Icon from "../Icon.astro";
+import { measureRows, measureTabs } from "../../lib/measures";
+import type { MeasureKey, MeasureRow } from "../../lib/measures";
 
-const sortKey = "unjoined";
-const sorted = [...measureRows].sort((a, b) => (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
-const most = Object.fromEntries(
-	measureColumns.map((column) => [column.key, Math.max(1, ...measureRows.map((row) => row[column.key] ?? 0))]),
-);
+/**
+ * The rows sorted by one column, most first, the blanks last.
+ * @param key The column.
+ * @returns The rows.
+ */
+const sortedBy = (key: MeasureKey): MeasureRow[] =>
+	[...measureRows].sort(
+		(a, b) => (b[key] ?? Number.NEGATIVE_INFINITY) - (a[key] ?? Number.NEGATIVE_INFINITY),
+	);
+const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[key] ?? 0));
 ---
 
 <div class="measures table" data-measures>
@@ -15,44 +24,79 @@ const most = Object.fromEntries(
 		<p class="title">Measures</p>
 		<p class="note">Archboard's own model, a year of its Git history</p>
 	</div>
-	<div class="scroll">
-		<table>
-			<caption class="sr-only">Measures of Archboard's own modules. Select a column header to sort.</caption>
-			<thead>
-				<tr>
-					<th scope="col" class="name-col">Module</th>
-					{
-						measureColumns.map((column) => (
-							<th scope="col" aria-sort={column.key === sortKey ? "descending" : "none"}>
-								<button type="button" data-sort={column.key} title={column.hint}>
-									{column.label}
-									<span class="arrow" aria-hidden="true" />
-								</button>
-							</th>
-						))
-					}
-				</tr>
-			</thead>
-			<tbody>
-				{
-					sorted.map((row) => (
-						<tr data-row={JSON.stringify(row)}>
-							<th scope="row" class="name-col">{row.name}</th>
-							{measureColumns.map((column) => (
-								<td
-									data-key={column.key}
-									class:list={{ "is-sorted": column.key === sortKey }}
-									style={`--r: ${((row[column.key] ?? 0) / (most[column.key] ?? 1)).toFixed(3)}`}
-								>
-									{row[column.key] ?? "–"}
-								</td>
-							))}
-						</tr>
-					))
-				}
-			</tbody>
-		</table>
+	<div class="tabs" role="tablist" aria-label="Measures">
+		{
+			measureTabs.map((tab, index) => (
+				<button
+					type="button"
+					role="tab"
+					class="tab"
+					id={`measures-tab-${tab.key}`}
+					aria-controls={`measures-panel-${tab.key}`}
+					aria-selected={index === 0 ? "true" : "false"}
+					tabindex={index === 0 ? 0 : -1}
+					data-tab={tab.key}
+				>
+					<Icon name={tab.icon} size={16} />
+					{tab.label}
+				</button>
+			))
+		}
 	</div>
+	{
+		measureTabs.map((tab, index) => {
+			const sortKey = tab.columns[0].key;
+			return (
+				<div
+					class="scroll"
+					role="tabpanel"
+					id={`measures-panel-${tab.key}`}
+					aria-labelledby={`measures-tab-${tab.key}`}
+					data-panel={tab.key}
+					data-sorted={sortKey}
+					hidden={index !== 0}
+				>
+					<table>
+						<caption class="sr-only">
+							{tab.label}, for Archboard's own modules. Select a column header to sort.
+						</caption>
+						<thead>
+							<tr>
+								<th scope="col" class="name-col">Module</th>
+								{tab.columns.map((column) => (
+									<th scope="col" aria-sort={column.key === sortKey ? "descending" : "none"}>
+										<button type="button" data-sort={column.key} title={column.hint}>
+											{column.label}
+											<span class="arrow" aria-hidden="true" />
+										</button>
+									</th>
+								))}
+							</tr>
+						</thead>
+						<tbody>
+							{sortedBy(sortKey).map((row) => (
+								<tr data-row={JSON.stringify(row)}>
+									<th scope="row" class="name-col">{row.name}</th>
+									{tab.columns.map((column) => (
+										<td
+											data-key={column.key}
+											class:list={{ "is-sorted": column.key === sortKey }}
+											style={`--r: ${((row[column.key] ?? 0) / most(column.key)).toFixed(3)}`}
+										>
+											{row[column.key] ?? ""}
+										</td>
+									))}
+								</tr>
+							))}
+						</tbody>
+					</table>
+					{tab.key === "interface" && (
+						<p class="foot">0 is none. A blank has no count: a module with no parts has no interface.</p>
+					)}
+				</div>
+			);
+		})
+	}
 </div>
 
 <style>
@@ -76,6 +120,46 @@ const most = Object.fromEntries(
 		font-size: 0.8125rem;
 		color: var(--ink-muted);
 	}
+	.tabs {
+		display: flex;
+		gap: 4px;
+		padding: 0 6px 10px;
+	}
+	.tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 12px;
+		border: 0;
+		border-radius: 5px;
+		background: none;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition:
+			background 200ms var(--ease-out),
+			color 200ms var(--ease-out);
+	}
+	.tab:hover {
+		color: var(--ink);
+		background: oklch(1 0.01 85 / 0.04);
+	}
+	.tab[aria-selected="true"] {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.tab[aria-selected="true"] :global(svg) {
+		color: var(--gold-mark);
+	}
+	.foot {
+		padding: 10px 14px 6px;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
 	.scroll {
 		overflow-x: auto;
 		border-radius: 6px;
@@ -84,7 +168,7 @@ const most = Object.fromEntries(
 	}
 	table {
 		width: 100%;
-		min-width: 680px;
+		min-width: 420px;
 		border-collapse: separate;
 		border-spacing: 0;
 		font-size: 0.8125rem;
@@ -181,46 +265,51 @@ const most = Object.fromEntries(
 
 <script>
 	import type { MeasureKey, MeasureRow } from "../../lib/measures";
+	import { mountTabs } from "../../scripts/tabs";
 
 	for (const root of document.querySelectorAll<HTMLElement>("[data-measures]")) {
-		const body = root.querySelector("tbody");
-		const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-sort]")];
-		if (!body) continue;
-		let current: MeasureKey = "unjoined";
-		let descending = true;
-		const sort = (key: MeasureKey) => {
-			descending = key === current ? !descending : true;
-			current = key;
-			const rows = [...body.querySelectorAll<HTMLTableRowElement>("tr")];
-			const value = (row: HTMLTableRowElement) => {
-				const data = JSON.parse(row.dataset["row"] ?? "{}") as MeasureRow;
-				return data[key] ?? (descending ? -1 : Number.POSITIVE_INFINITY);
+		mountTabs(root);
+		for (const panel of root.querySelectorAll<HTMLElement>("[data-panel]")) {
+			const body = panel.querySelector("tbody");
+			const buttons = [...panel.querySelectorAll<HTMLButtonElement>("[data-sort]")];
+			if (!body) continue;
+			let current = panel.dataset["sorted"] as MeasureKey;
+			let descending = true;
+			const sort = (key: MeasureKey) => {
+				descending = key === current ? !descending : true;
+				current = key;
+				const rows = [...body.querySelectorAll<HTMLTableRowElement>("tr")];
+				// A blank has no count, so it stands last whichever way the column sorts.
+				const value = (row: HTMLTableRowElement) => {
+					const data = JSON.parse(row.dataset["row"] ?? "{}") as MeasureRow;
+					return data[key] ?? (descending ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
+				};
+				rows.sort((a, b) => (descending ? value(b) - value(a) : value(a) - value(b)));
+				const before = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+				body.append(...rows);
+				for (const row of rows) {
+					for (const cell of row.querySelectorAll<HTMLElement>("td")) {
+						cell.classList.toggle("is-sorted", cell.dataset["key"] === key);
+					}
+					const moved = (before.get(row) ?? 0) - row.getBoundingClientRect().top;
+					if (moved && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+						row.animate([{ transform: `translateY(${moved}px)` }, { transform: "none" }], {
+							duration: 420,
+							easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+						});
+					}
+				}
+				for (const button of buttons) {
+					const th = button.closest("th");
+					th?.setAttribute(
+						"aria-sort",
+						button.dataset["sort"] === key ? (descending ? "descending" : "ascending") : "none",
+					);
+				}
 			};
-			rows.sort((a, b) => (descending ? value(b) - value(a) : value(a) - value(b)));
-			const before = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
-			body.append(...rows);
-			for (const row of rows) {
-				for (const cell of row.querySelectorAll<HTMLElement>("td")) {
-					cell.classList.toggle("is-sorted", cell.dataset["key"] === key);
-				}
-				const moved = (before.get(row) ?? 0) - row.getBoundingClientRect().top;
-				if (moved && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-					row.animate([{ transform: `translateY(${moved}px)` }, { transform: "none" }], {
-						duration: 420,
-						easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-					});
-				}
-			}
 			for (const button of buttons) {
-				const th = button.closest("th");
-				th?.setAttribute(
-					"aria-sort",
-					button.dataset["sort"] === key ? (descending ? "descending" : "ascending") : "none",
-				);
+				button.addEventListener("click", () => sort(button.dataset["sort"] as MeasureKey));
 			}
-		};
-		for (const button of buttons) {
-			button.addEventListener("click", () => sort(button.dataset["sort"] as MeasureKey));
 		}
 	}
 </script>
