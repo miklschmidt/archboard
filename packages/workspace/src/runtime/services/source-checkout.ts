@@ -164,6 +164,13 @@ function archboardCheckoutOf(cwd: string): string | null {
 	return found !== null && isArchboardCheckout(found) ? fs.realpathSync(found) : null;
 }
 
+/**
+ * Set on the command that a hand-off starts, naming the `bin/archboard` it ran. A command that
+ * carries it hands off no further, so a checkout whose packages resolve into another checkout
+ * cannot hand a command back and forth forever.
+ */
+const HANDED_OFF = "ARCHBOARD_HANDED_OFF";
+
 /** The signals that end a command, which the command that runs instead must get too. */
 const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
 
@@ -177,6 +184,10 @@ const FORWARDED_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
  * process runs the command itself.
  */
 async function handOff(argv: readonly string[]): Promise<number | null> {
+	// Consume the marker before any early return. Bun's spawn needs an explicit current env
+	// because its default uses the environment from process startup.
+	const handedTo = process.env[HANDED_OFF];
+	delete process.env[HANDED_OFF];
 	let cwd: string;
 	try {
 		cwd = process.cwd();
@@ -184,13 +195,22 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 		// A working directory that was deleted stands in no checkout.
 		return null;
 	}
-	const target = handOffTarget(cwd, installation().root, process.env["ARCHBOARD_URL"]);
+	const running = installation().root;
+	const target = handOffTarget(cwd, running, process.env["ARCHBOARD_URL"]);
 	if (target === null) {
 		return null;
 	}
 	// Every checkout installs its own packages (TESTING.md). Bun would otherwise
 	// fail on the first import, with a message that names no checkout.
 	const root = path.dirname(path.dirname(target));
+	if (handedTo !== undefined) {
+		process.stderr.write(
+			`Error: archboard handed this command to ${handedTo}, but it runs source from ${running} while the working directory is in ${root}. ` +
+				`A linked node_modules can cause this. ` +
+				`Run \`bun install\` in ${root} so that it has packages of its own, then run the command again.\n`,
+		);
+		return 1;
+	}
 	if (!fs.existsSync(path.join(root, "node_modules"))) {
 		process.stderr.write(
 			`Error: archboard runs the source of ${root}, the archboard checkout you are in, ` +
@@ -222,7 +242,10 @@ async function runInstead(target: string, argv: readonly string[]): Promise<numb
 	for (const signal of FORWARDED_SIGNALS) {
 		process.on(signal, forward);
 	}
-	const child = spawn(target, argv, { stdio: "inherit" });
+	const child = spawn(target, argv, {
+		stdio: "inherit",
+		env: { ...process.env, [HANDED_OFF]: target },
+	});
 	running = child;
 	const ended = await new Promise<Error | { code: number | null; signal: NodeJS.Signals | null }>(
 		(resolve) => {
