@@ -262,7 +262,7 @@ fn near_parallel(one: &[Point], other: &[Point], (horizontal, spread): (bool, f6
         )
     };
     gap > 0.0
-        && ((gap <= 1.01 && a.max(b).min(c.max(d)) > a.min(b).max(c.min(d)))
+        && ((gap <= spread + 1.01 && a.max(b).min(c.max(d)) > a.min(b).max(c.min(d)))
             || (gap < 12.0 + spread && a.max(b).min(c.max(d)) - a.min(b).max(c.min(d)) > 16.0))
 }
 
@@ -279,6 +279,14 @@ mod tests {
     fn a_cable_keeps_its_strands_a_lane_gap_from_a_line_beside_it() {
         let one = path(&[(0.0, 0.0), (200.0, 0.0)]);
         let other = path(&[(0.0, 14.0), (200.0, 14.0)]);
+        assert!(ordered(&one, &other, (false, 0.0)));
+        assert!(!ordered(&one, &other, (false, 8.0)));
+    }
+
+    #[test]
+    fn cables_cannot_overdraw_strands_on_a_short_run() {
+        let one = path(&[(0.0, 0.0), (200.0, 0.0)]);
+        let other = path(&[(188.0, 8.0), (300.0, 8.0)]);
         assert!(ordered(&one, &other, (false, 0.0)));
         assert!(!ordered(&one, &other, (false, 8.0)));
     }
