@@ -167,7 +167,7 @@ async function drainChildren(state: ProcessOwnerState): Promise<CodexProcessErro
 		if (!(error instanceof TimedOut)) throw error;
 		throw shutdownError(
 			state,
-			"The composed Codex shutdown deadline expired. Recovery: inspect retained process ownership and retry stop.",
+			`${error.message} Recovery: inspect retained process ownership and retry stop.`,
 		);
 	}
 	return shutdownIssue;
