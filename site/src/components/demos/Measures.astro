@@ -62,7 +62,7 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 							<tr>
 								<th scope="col" class="name-col">Module</th>
 								{tab.columns.map((column) => (
-									<th scope="col" aria-sort={column.key === sortKey ? "descending" : "none"}>
+									<th scope="col" aria-sort={column.key === sortKey ? "descending" : undefined}>
 										<button type="button" data-sort={column.key} title={column.hint}>
 											{column.label}
 											<span class="arrow" aria-hidden="true" />
@@ -296,10 +296,11 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 				}
 				for (const button of buttons) {
 					const th = button.closest("th");
-					th?.setAttribute(
-						"aria-sort",
-						button.dataset["sort"] === key ? (descending ? "descending" : "ascending") : "none",
-					);
+					if (button.dataset["sort"] === key) {
+						th?.setAttribute("aria-sort", descending ? "descending" : "ascending");
+					} else {
+						th?.removeAttribute("aria-sort");
+					}
 				}
 			};
 			for (const button of buttons) {
