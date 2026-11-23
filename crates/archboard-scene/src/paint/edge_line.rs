@@ -24,7 +24,7 @@ use crate::request::{Dash, LineAppearance, Standing};
 use crate::route::{Walk, route_length, shortened_by};
 use crate::scene::{
     Cap, Colour, Definition, Geometry, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId,
-    Purpose, Role, Shape, Stroke, SubjectKind,
+    PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
 };
 use crate::sizes::PILL_RADIUS;
 
@@ -156,6 +156,25 @@ fn stubs(
         .collect()
 }
 
+/// The standing swipe also leaves a gap where the caller's ring sits in a bare run.
+fn swipe_around_ring(routed: &Edge, tail: Option<Head>) -> Option<Vec<PathStep>> {
+    if tail != Some(Head::Ring) || !routed.echelon {
+        return None;
+    }
+    let reach = body_short_of(Head::Ring);
+    let length = route_length(&routed.curve);
+    if length <= ECHELON + reach {
+        return None;
+    }
+    let mut path = route(&body_between(
+        &routed.curve,
+        0.0,
+        length - (ECHELON - reach),
+    ));
+    path.extend(route(&body_between(&routed.curve, ECHELON + reach, 0.0)));
+    Some(path)
+}
+
 /// One final route, its head, its halo and the insides of the ports it runs into.
 pub(super) fn paint_edge_line(
     routed: &Edge,
@@ -214,7 +233,13 @@ pub(super) fn paint_edge_line(
     if look.is_some_and(|look| look.imprint) && !step {
         parts.extend(imprint(&routed.curve, imprint_reach, &ink).map(shape));
     }
-    parts.push(standing_swipe(&path, width, standing, palette));
+    let ring_swipe = standing.and_then(|_| swipe_around_ring(routed, tail));
+    parts.push(standing_swipe(
+        ring_swipe.as_deref().unwrap_or(&path),
+        width,
+        standing,
+        palette,
+    ));
     parts.push(shape(
         Shape::path(Purpose::Halo, path)
             .unfilled()
@@ -327,6 +352,7 @@ pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<St
 mod tests {
     use super::*;
     use crate::geometry::Segment;
+    use crate::request::{Arrowhead, LineEffect};
 
     fn strand(echelon: bool) -> Edge {
         Edge {
@@ -381,9 +407,53 @@ mod tests {
         };
         assert_eq!(
             steps.last(),
-            Some(&crate::scene::PathStep::Line {
+            Some(&PathStep::Line {
                 to: point(ECHELON - crate::paint::heads::ring_reach(), 0.0),
             }),
         );
+    }
+
+    #[test]
+    fn a_compared_strand_keeps_its_caller_ring_hollow() {
+        let painted = paint_edge_line(
+            &strand(true),
+            &Palette::of_page(),
+            Some(Standing::Added),
+            &LineAppearance {
+                name: "Sync".to_owned(),
+                color: None,
+                dash: Dash::Solid,
+                arrowhead: Arrowhead::Eye,
+                effect: Some(LineEffect::Query),
+            },
+            None,
+            false,
+            (&[], 0.0),
+        );
+        let [Item::Group(line)] = painted.as_slice() else {
+            panic!("the strand is a group");
+        };
+        let steps = line.items.iter().find_map(|item| match item {
+            Item::Shape(Shape {
+                purpose: Purpose::Swipe,
+                geometry: Geometry::Path { steps },
+                ..
+            }) => Some(steps.as_slice()),
+            _ => None,
+        });
+        let Some(
+            [
+                _,
+                PathStep::Line { to: before },
+                PathStep::Move { to: after },
+                _,
+            ],
+        ) = steps
+        else {
+            panic!("the standing swipe has a gap at the caller ring");
+        };
+        let reach = crate::paint::heads::ring_reach();
+        assert!(before.x <= ECHELON - reach + 0.01);
+        assert!(after.x >= ECHELON + reach - 0.01);
     }
 }
