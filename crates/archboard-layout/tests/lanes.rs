@@ -543,8 +543,11 @@ fn lanes_runs_the_lines_between_two_cards_one_way_as_one_bus() {
 }
 
 #[test]
-fn lanes_keeps_no_lane_of_a_channel_that_no_line_runs_across() {
-    // Packages: the channel between the top row and the frame held empty lanes between its runs.
+fn lanes_keeps_no_lanes_of_a_channel_that_no_line_runs_across() {
+    // Packages: the channel between the top row and the frame held runs of three empty lanes
+    // between its runs, where a hand-off pushed every row below it down. One lane may stay empty,
+    // where a run stands two lanes below a trunk so the hop where it crosses the trunk's branch
+    // stands clear of the trunk's join.
     let drawn =
         drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/packages.json")).unwrap());
     let mut boxes: Vec<(f64, f64)> = Vec::new();
@@ -587,7 +590,7 @@ fn lanes_keeps_no_lane_of_a_channel_that_no_line_runs_across() {
             .iter()
             .any(|&(other, ..)| other > y + 8.0 && other < below - 8.0);
         assert!(
-            edged || used || below - y < 32.0,
+            edged || used || below - y < 48.0,
             "no line runs across the lanes between {y} and {below}"
         );
     }
