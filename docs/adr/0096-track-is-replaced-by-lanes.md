@@ -94,7 +94,10 @@ draws. Blocks' planned drawings and its fallback do not change. Lanes differs in
   leave the bottom of one and enter the top of the other, round the page.
 - The ends on each card face stand as one group a lane apart, centred on the face, in the order
   their lines come from; they spread only as far as they need to fit, and no port slides to
-  shorten a line (the owner's rule, 2026-11-23). Every line still lands on a top or bottom face:
+  shorten a line (the owner's rule, 2026-11-23). Where a centred port stands a kink (up to two
+  lanes) off the line it meets, its card or container door slides instead, when its row has room:
+  each kink left standing costs the channel a hand-off of tracks, and the taller page loses a wide
+  rank's wrap. Every line still lands on a top or bottom face:
   the advisors found no reading where a side face would read better, since no two connected cards
   share a row and lines running back up are as direct as lines running down.
 
