@@ -94,12 +94,15 @@ pub(super) fn aligned(
     let coordinate = |p: Point| if vertical { p.x } else { p.y };
     let (a_start, a_size) = extent(a);
     let (b_start, b_size) = extent(b);
-    let low = (a_start + 12.0).max(b_start + 20.0);
-    let high = (b_start + b_size - 20.0).min(a_start + a_size - 12.0);
+    let half = model.half(edge);
+    let low = (a_start + 12.0).max(b_start + 20.0) + half;
+    let high = (b_start + b_size - 20.0).min(a_start + a_size - 12.0) - half;
     let (one, two) = (coordinate(tail.attachment), coordinate(head.attachment));
-    let position = sliding_position(source_slides, target_slides, low, high, one, two)
-        .or_else(|| straightened(model, edge, one, two));
-    if let Some(position) = position.filter(|&p| low <= p && p <= high) {
+    let mut positions = sliding_positions(source_slides, target_slides, low, high, one, two);
+    if positions.is_empty() {
+        positions.extend(straightened(model, edge, one, two));
+    }
+    for position in positions.into_iter().filter(|&p| low <= p && p <= high) {
         let (mut one, mut two) = (tail, head);
         if vertical {
             one.attachment.x = position;
@@ -112,7 +115,7 @@ pub(super) fn aligned(
             two.attachment.y = position;
             two.approach.y = position;
         }
-        if (one, two) != (tail, head) {
+        if (one, two) != (tail, head) && !pairs.contains(&(one, two)) {
             pairs.push((one, two));
         }
     }
@@ -231,22 +234,25 @@ fn straightened(model: &Model<'_>, edge: usize, one: f64, two: f64) -> Option<f6
     }
 }
 
-fn sliding_position(
+/// Where a straight line between two walls can stand on the span they share. Two ends that
+/// both slide stand in the span's middle, or at either end of it, where the middle runs into
+/// something that a side of the span clears. One end that slides lines up with the other.
+fn sliding_positions(
     source_slides: bool,
     target_slides: bool,
     low: f64,
     high: f64,
     one: f64,
     two: f64,
-) -> Option<f64> {
+) -> Vec<f64> {
     if source_slides && target_slides {
-        Some(f64::midpoint(low, high))
+        vec![f64::midpoint(low, high), low, high]
     } else if source_slides {
-        Some(two)
+        vec![two]
     } else if target_slides {
-        Some(one)
+        vec![one]
     } else {
-        None
+        Vec::new()
     }
 }
 
