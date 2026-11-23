@@ -7,6 +7,7 @@ import {
 	removeRoot,
 	startReady,
 	temporaryRoot,
+	waitForState,
 } from "#tests/runtime/support/process-support.ts";
 import {
 	driveManual,
@@ -72,6 +73,45 @@ describe("Codex process group KILL", () => {
 			if (owner) {
 				await owner.stop().catch(() => undefined);
 			}
+			removeRoot(root);
+		}
+	});
+
+	test("recovers when KILL proves the group gone at the cleanup bound", async () => {
+		const root = temporaryRoot();
+		const lifecycle = fakeLifecycle();
+		const group = lifecycle.dependencies.processGroup;
+		const owner = createCodexProcess({
+			...options(root, fixture(root, `process.stdin.resume();`)),
+			dependencies: {
+				...lifecycle.dependencies,
+				processGroup: {
+					...group,
+					signal: (identity, signal) => {
+						if (signal === "SIGKILL") {
+							// Let the bound expire while the kill and its proof are still in flight.
+							jest.advanceTimersByTime(
+								REVIEWED_SHUTDOWN_MS.composedShutdown - lifecycle.clock.now(),
+							);
+						}
+						group.signal(identity, signal);
+					},
+				},
+			},
+		});
+		try {
+			await startReady(owner);
+			const recovered = waitForState(
+				owner,
+				(state) => state === "backoff" || state === "terminal_failure",
+			);
+			lifecycle.closeChild();
+			expect(owner.snapshot().state).toBe("group_cleanup");
+			await driveManual(recovered, lifecycle.clock);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
+			expect(owner.snapshot().state).toBe("backoff");
+		} finally {
+			await driveManual(owner.stop(), lifecycle.clock).catch(() => undefined);
 			removeRoot(root);
 		}
 	});

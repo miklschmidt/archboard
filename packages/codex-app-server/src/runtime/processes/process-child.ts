@@ -39,6 +39,23 @@ function markGroupQuiescent(state: ProcessOwnerState, record: ChildRecord): void
 }
 
 /**
+ * Give background cleanup a bound, then let it finish its escalation and final inspection.
+ * @param state - The owner state.
+ * @param record - The child generation.
+ * @returns The cleanup's proof or failure.
+ */
+function cleanGroupInBackground(state: ProcessOwnerState, record: ChildRecord): Promise<void> {
+	let cleanup: Promise<void> | undefined;
+	return within("codex.composedShutdown", (signal) => {
+		cleanup = state.processGroupCleanup.cleanup({ identity: record.group, signal });
+		return cleanup;
+	}).catch((cause: unknown) => {
+		if (cause instanceof TimedOut && cleanup !== undefined) return cleanup;
+		throw cause;
+	});
+}
+
+/**
  * Start, or join, the process-group cleanup for a child generation.
  * @param state - The owner state.
  * @param record - The child generation.
@@ -56,11 +73,10 @@ function ensureGroupCleanup(
 		return Promise.resolve();
 	}
 	if (record.groupCleanup) return record.groupCleanup;
-	const pending = within(
-		"codex.composedShutdown",
-		(composed) => state.processGroupCleanup.cleanup({ identity: record.group, signal: composed }),
-		{ signal },
-	);
+	const pending =
+		signal === undefined
+			? cleanGroupInBackground(state, record)
+			: state.processGroupCleanup.cleanup({ identity: record.group, signal });
 	record.groupCleanup = pending;
 	void pending.then(
 		() => markGroupQuiescent(state, record),
