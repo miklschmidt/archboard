@@ -74,8 +74,8 @@ Blocks' fallback:
 
 > lanes is supposed to have a bus look.
 
-Lanes still starts from the lanes' placement, but it no longer has to draw what Blocks' fallback
-draws. Blocks' planned drawings and its fallback do not change. Lanes differs in three ways:
+Lanes starts from the lanes' placement and applies its own placement and routing rules.
+Blocks keeps its planned and fallback drawings.
 
 - The cards beside a container are ranked with the container, so a caller stands above it and
   what the container calls stands below. Blocks' fallback gathers them into a block of their own,
@@ -84,20 +84,18 @@ draws. Blocks' planned drawings and its fallback do not change. Lanes differs in
   direction and the one line against it turns. Blocks' fallback turns whichever line a
   depth-first walk meets last.
 - The page holds every point of every line.
-- The ends on each card face gather into one group a lane apart, round where their lines come
-  from, so the lines bound for one card run together in parallel lanes and land as one bus.
-- The parent ranks a container as a record whose fields are its ports in the order they stand,
-  so Graphviz stands each door over the port its line enters by.
+- The parent ranks a container as a Graphviz record with one field per port in port order.
+  Each line aims at its port's field so that Graphviz can order the doors around the container.
 - The pass that pulls a line lapping the drawing back inside prices a crossing at 8 lanes, not
   25: a line crossing a bus square reads at a glance, and a lap round the page does not.
 - Lanes folds no ranks into columns side by side: a line between folded columns could only
   leave the bottom of one and enter the top of the other, round the page.
-- The ends on each card face stand as one group a lane apart, centred on the face, in the order
-  their lines come from; they spread only as far as they need to fit, and no port slides to
-  shorten a line (the owner's rule, 2026-11-23). Where a centred port stands a kink (up to two
-  lanes) off the line it meets, its card or container door slides instead, when its row has room:
-  each kink left standing costs the channel a hand-off of tracks, and the taller page loses a wide
-  rank's wrap.
+- When a block has ports on its bottom, each wrapped row drops by one rank. This keeps a card
+  that connects to a bottom port from standing between rows.
+- The ends on each card face form one bus around the center, one lane apart. Their order follows
+  the lines that reach them. A narrow face can pack the ends closer. When a port and its lane
+  stand up to two lanes apart, the card or container door can slide to line up with the lane.
+  The card needs room on its row to move, and its ports keep their positions on the face.
 - A line end may land on a card's left or right face, and a line may come through a container's
   side wall onto the card nearest that wall (the owner asked to try it on 2026-11-23, and both
   advisors chose it over top and bottom faces alone, on the paired pictures). An end goes to a
