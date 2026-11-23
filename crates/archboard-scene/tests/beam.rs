@@ -2,9 +2,7 @@
 //! where the painters meet it.
 
 use archboard_scene::geometry::{Curve, Point, Segment};
-use archboard_scene::scene::{
-    Beam, BeamPiece, Colour, Motion, PulseLook, Slide, Token, TrafficMark,
-};
+use archboard_scene::scene::{BeamPiece, Colour, Motion, PulseLook, Slide, Token, TrafficMark};
 
 const fn at(x: f64, y: f64) -> Point {
     Point { x, y }
@@ -31,7 +29,7 @@ fn route() -> Curve {
     }
 }
 
-fn beam(motion: Motion) -> Beam {
+fn mark(motion: Motion) -> TrafficMark {
     TrafficMark {
         look: PulseLook {
             head: Colour::Token {
@@ -43,7 +41,6 @@ fn beam(motion: Motion) -> Beam {
         route: route(),
         motion,
     }
-    .beam()
 }
 
 const TURN: Motion = Motion::Turn {
@@ -54,7 +51,7 @@ const TURN: Motion = Motion::Turn {
 
 #[test]
 fn a_piece_too_short_for_light_carries_no_beam() {
-    let pieces = beam(TURN).pieces;
+    let pieces = mark(TURN).beam().pieces;
     assert_eq!(pieces.len(), 3);
     assert!(
         pieces
@@ -99,7 +96,7 @@ const TRAIN: Motion = Motion::Steady {
 
 #[test]
 fn a_train_slides_one_spacing_a_round_on_a_repeating_gradient() {
-    let beam = beam(TRAIN);
+    let beam = mark(TRAIN).beam();
     assert!(beam.gradient.repeat);
     assert!((beam.gradient.span - 40.0).abs() < 1e-9);
     let first = &beam.pieces[0];
@@ -112,7 +109,7 @@ fn a_train_slides_one_spacing_a_round_on_a_repeating_gradient() {
 
 #[test]
 fn a_trains_bar_covers_its_piece_wherever_it_slides() {
-    let first = &beam(TRAIN).pieces[0];
+    let first = &mark(TRAIN).beam().pieces[0];
     let (_, round) = round_of(first);
     for step in 0..40 {
         let (back, front) = bar_at(first, round * f64::from(step) / 40.0);
@@ -122,7 +119,7 @@ fn a_trains_bar_covers_its_piece_wherever_it_slides() {
 
 #[test]
 fn a_message_stands_off_its_piece_outside_its_window() {
-    let first = &beam(TURN).pieces[0];
+    let first = &mark(TURN).beam().pieces[0];
     let (cycle, enter, leave) = window_of(first);
     // Before its entry, the front stands short of the piece's start.
     assert!(bar_at(first, 0.0).1 < 0.0 && bar_at(first, enter).1 < 0.0);
@@ -135,7 +132,7 @@ fn a_message_stands_off_its_piece_outside_its_window() {
 
 #[test]
 fn a_message_rides_its_pieces_in_order_at_its_speed() {
-    let beam = beam(TURN);
+    let beam = mark(TURN).beam();
     assert!(!beam.gradient.repeat);
     let first = &beam.pieces[0];
     let (_, enter, leave) = window_of(first);

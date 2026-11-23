@@ -60,12 +60,12 @@ fn with_light_room(length: f64) -> f64 {
 
 /// How long a clock runs on after a message's pulse has left its route: the
 /// whole pulse and the room its light takes.
-pub fn pulse_clearance() -> f64 {
+pub(crate) fn pulse_clearance() -> f64 {
     with_light_room(pulse_span())
 }
 
 /// How thick a pulse's core is on a line of one width.
-pub fn pulse_breadth(line_width: f64) -> f64 {
+pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
     js::js_max(1.5, line_width + 0.6)
 }
 

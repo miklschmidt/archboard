@@ -35,9 +35,9 @@ pub use group::{
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
 pub use text::{GlyphPlace, Icon, Text, Viewport};
 pub use traffic::{
-    Beam, BeamGradient, BeamPiece, Frame, MaskLayer, Motion, PulseLook, Slide, TrafficMark,
-    pulse_breadth, pulse_clearance,
+    BeamGradient, BeamPiece, Frame, MaskLayer, Motion, PulseLook, Slide, TrafficMark,
 };
+pub(crate) use traffic::{pulse_breadth, pulse_clearance};
 
 /// One thing in a scene's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]

@@ -2,7 +2,6 @@
 //! SVG's animation puts it, as a browser plays SMIL.
 
 use archboard_scene::geometry::{Curve, Point, Segment};
-use archboard_scene::js::within;
 use archboard_scene::scene::{Colour, Item, Motion, PulseLook, Token, TrafficMark};
 use kurbo::{Affine, BezPath, Shape as _};
 
@@ -75,7 +74,7 @@ impl Written {
     /// Where the bar's slide stands at a moment, as SMIL plays a linear animation.
     fn slide_at(&self, seconds: f64) -> f64 {
         let duration = numbers(attribute(&self.motion, "dur").expect("a duration"))[0];
-        let share = within(seconds, duration) / duration;
+        let share = seconds.rem_euclid(duration) / duration;
         let Some(values) = attribute(&self.motion, "values") else {
             let from = numbers(attribute(&self.motion, "from").expect("a start"))[0];
             let to = numbers(attribute(&self.motion, "to").expect("an end"))[0];

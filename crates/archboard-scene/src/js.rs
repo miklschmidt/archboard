@@ -101,7 +101,7 @@ pub fn fixed_number(value: f64, places: usize) -> String {
 
 /// Where a value falls within one period from zero: ECMAScript's remainder,
 /// moved up by the period where it is negative.
-pub fn within(value: f64, period: f64) -> f64 {
+pub(crate) fn within(value: f64, period: f64) -> f64 {
     ((value % period) + period) % period
 }
 
