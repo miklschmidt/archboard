@@ -185,6 +185,7 @@ fn lay_all(
         graph,
         Kept {
             expanded: way.expanded,
+            packed: way.packed,
             ..earlier.kept.clone()
         },
     )?;
@@ -287,6 +288,7 @@ pub(super) fn place(
         graph,
         &Way {
             expanded: false,
+            packed: true,
             room: Vec::new(),
             extra: 0.0,
             complete_repair: false,
@@ -371,6 +373,7 @@ pub(super) fn candidates<'g>(
     let mut gv = Engine::new(host);
     let way = Way {
         expanded: false,
+        packed: false,
         room: room.to_vec(),
         extra,
         complete_repair,
@@ -465,6 +468,8 @@ fn expanded_candidates(
 #[derive(Clone)]
 struct Way {
     expanded: bool,
+    /// The layout is the drawing itself (`BlockTree::packed`).
+    packed: bool,
     room: Vec<String>,
     extra: f64,
     complete_repair: bool,

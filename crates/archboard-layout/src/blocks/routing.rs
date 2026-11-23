@@ -83,8 +83,14 @@ pub(super) fn routed(
         .collect();
     let reserve = matches!(settling, Settling::First);
     let rim = rim_of(block, insets);
-    let mut routes = route_scene(&mut scene, &lines, (insets.side, insets.top), rim, reserve)
-        .map_err(|widths| by_card(&scene, &widths))?;
+    let mut routes = route_scene(
+        &mut scene,
+        &lines,
+        (insets.side, insets.top),
+        rim,
+        (reserve, tree.packed),
+    )
+    .map_err(|widths| by_card(&scene, &widths))?;
     for (key, points) in beside_points(&scene, &beside, insets.side) {
         routes.insert(key, points);
     }

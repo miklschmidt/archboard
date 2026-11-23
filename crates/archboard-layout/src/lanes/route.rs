@@ -500,15 +500,17 @@ fn routed_of(
 /// moves, `top` where the first band starts, and `rim` the room the block
 /// keeps at its edge rows where no line turns. Answers each line's points,
 /// from its source to its target. With `reserve`, a crowded card stops the
-/// routing before anything settles, and the answer is the widths it needs.
+/// routing before anything settles, and the answer is the widths it needs. With `packed`, the
+/// channels pack their tracks a lane apart.
 pub(crate) fn route_scene(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
     (margin, top): (f64, f64),
     rim: Option<Rim>,
-    reserve: bool,
+    (reserve, packed): (bool, bool),
 ) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
     let mut track = Router::new(scene);
+    track.packed = packed;
     let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
     let chains: Map<String, ChainId> = inner
         .iter()

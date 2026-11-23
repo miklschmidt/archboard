@@ -215,6 +215,9 @@ pub(crate) struct BlockTree {
     pub exits: Map<String, Side>,
     /// Whether this candidate compares all wraps and geometric packings.
     pub expanded: bool,
+    /// Whether this layout is the drawing itself, not a candidate the planner routes again: its
+    /// channels pack their tracks a lane apart, and a door widens for the heads of its lines.
+    pub packed: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
     pub(super) fanouts: Set<(BlockId, String)>,
@@ -227,6 +230,8 @@ pub(crate) struct BlockTree {
 pub(crate) struct Kept {
     /// Try the wider packing and axial frame approaches as a complete candidate.
     pub expanded: bool,
+    /// The layout is the drawing itself (`BlockTree::packed`).
+    pub packed: bool,
     /// The wall each port moves to, keyed by `exit_key` (`sides.rs`).
     pub exits: Map<String, Side>,
     /// The ports each block holds in an order on a face, keyed `block|face`.
@@ -312,6 +317,7 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             expanded: kept.expanded,
+            packed: kept.packed,
             feedback: Set::default(),
             fanouts: Set::default(),
             orders: kept.orders,

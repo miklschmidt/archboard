@@ -433,15 +433,20 @@ impl Router<'_> {
         }
     }
 
-    /// Assign the tracks of one channel, and answer how many lanes they take. The rows of
-    /// tracks pack a lane apart, two where a row holds a detour, which turns on the track
-    /// under its own. Two lines that read as one, the first turning off a column where the
-    /// second turns onto it, keep a hand-off apart, so the gap between their turns parts them.
+    /// Assign the tracks of one channel, and answer how many lanes they take. A packed
+    /// router's rows of tracks pack a lane apart, two where a row holds a detour, which turns on
+    /// the track under its own. Two lines that read as one, the first turning off a column where
+    /// the second turns onto it, keep a hand-off apart, so the gap between their turns parts
+    /// them. Otherwise every row of a channel stands as far apart as its widest gap needs.
     pub(crate) fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
-        let lanes = self.lanes_of(&units, &tracks);
+        let lanes = if self.packed {
+            self.lanes_of(&units, &tracks)
+        } else {
+            self.spread(nets, &tracks)
+        };
         for &(unit, row) in &tracks {
             for &net in &units[unit].1 {
                 self.net_mut(net).track = lanes[row];
@@ -478,6 +483,27 @@ impl Router<'_> {
         lanes
     }
 
+    /// The lane each row of tracks stands on, every row as far from the next as the channel's
+    /// widest gap needs, and last how many lanes the rows take.
+    fn spread(&self, nets: &[NetId], tracks: &[(usize, usize)]) -> Vec<usize> {
+        let detours = nets.iter().any(|&id| self.net(id).detour_x().is_some());
+        let handed = nets
+            .iter()
+            .any(|&one| nets.iter().any(|&other| self.collinear(one, other)));
+        let spacing = if handed {
+            4
+        } else if detours {
+            3
+        } else {
+            1
+        };
+        let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
+        let mut lanes: Vec<usize> = (0..rows).map(|row| row * spacing).collect();
+        let taken = if detours { 2 } else { 1 };
+        lanes.push(rows.checked_sub(1).map_or(0, |last| last * spacing + taken));
+        lanes
+    }
+
     /// Whether a net of one unit and a net of another read as one line.
     fn handed(&self, one: &[NetId], other: &[NetId]) -> bool {
         (one.iter()).any(|&a| (other.iter()).any(|&b| self.collinear(a, b) || self.collinear(b, a)))
@@ -492,10 +518,25 @@ mod tests {
 
     #[test]
     fn only_two_lines_that_read_as_one_keep_a_hand_off_apart() {
+        let [one, other, third] = three_lines(true);
+        assert!(one.abs_diff(other) >= HAND_OFF);
+        assert_eq!(third.abs_diff(one).min(third.abs_diff(other)), 1);
+    }
+
+    #[test]
+    fn a_router_that_does_not_pack_keeps_every_row_a_hand_off_apart() {
+        let mut lanes = three_lines(false);
+        lanes.sort_unstable();
+        assert_eq!(lanes, [0, HAND_OFF, 2 * HAND_OFF]);
+    }
+
+    /// The track of each of three lines in one channel, laid by a router that packs or not.
+    /// One line comes down at 0 and turns right; the next turns down at 5, within a lane of
+    /// it; the third crosses both and reads as neither.
+    fn three_lines(packed: bool) -> [usize; 3] {
         let mut scene = Placement::default();
         let mut track = Router::new(&mut scene);
-        // One line comes down at 0 and turns right; the next turns down at 5, within a lane of
-        // it; the third crosses both and reads as neither.
+        track.packed = packed;
         let nets: Vec<NetId> = [(0.0, 100.0), (200.0, 5.0), (50.0, 150.0)]
             .into_iter()
             .enumerate()
@@ -520,8 +561,6 @@ mod tests {
             .collect();
         assert!(track.collinear(nets[0], nets[1]));
         track.assign_tracks(&nets);
-        let at = |net: usize| track.net(nets[net]).track;
-        assert!(at(0).abs_diff(at(1)) >= HAND_OFF);
-        assert_eq!(at(2).abs_diff(at(0)).min(at(2).abs_diff(at(1))), 1);
+        [0, 1, 2].map(|net| track.net(nets[net]).track)
     }
 }
