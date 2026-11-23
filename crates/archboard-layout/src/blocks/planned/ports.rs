@@ -45,6 +45,19 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
+    if model.endpoints[endpoint].door
+        && let Some((index, count)) = door_slot(model, edge, endpoint, source)
+    {
+        if !room(at, side, count, DOOR_MARGIN, LANE) {
+            return None;
+        }
+        return Some(on_wall(
+            at,
+            side,
+            fraction_of(at, index, count, DOOR_MARGIN),
+            DOOR_MARGIN,
+        ));
+    }
     let (margin, spacing) = spacing(source, model.endpoints[endpoint].door);
     if !room(at, side, kinds.len(), margin, spacing) {
         return None;
@@ -58,6 +71,34 @@ fn choose_port(
         return Some(selected);
     }
     separate_roles(model, endpoint, source, side, shape, selected)
+}
+
+/// How far a door keeps its ports from its rounded corners.
+const DOOR_MARGIN: f64 = 12.0;
+
+/// The slot of a line's end on a door, and how many slots the door holds: one for each kind of
+/// line the door takes in, then one for each it sends out, a lane apart. A head and a tail then
+/// never stand within a lane of each other on opposite walls, where they would read as one line
+/// through the door. A door that joins one kind of line in one direction has no slots.
+fn door_slot(
+    model: &Model<'_>,
+    edge: usize,
+    endpoint: usize,
+    source: bool,
+) -> Option<(usize, usize)> {
+    let heads = kinds_of(model, &model.incoming[endpoint]);
+    let tails = kinds_of(model, &model.outgoing[endpoint]);
+    let count = heads.len() + tails.len();
+    if count <= 1 {
+        return None;
+    }
+    let kind = model.treatments[edge].as_str();
+    let index = if source {
+        heads.len() + tails.iter().position(|&one| one == kind)?
+    } else {
+        heads.iter().position(|&one| one == kind)?
+    };
+    Some((index, count))
 }
 
 fn separate_roles(
@@ -277,23 +318,18 @@ fn spacing(source: bool, door: bool) -> (f64, f64) {
     }
 }
 
-/// The graph with each door as wide as one wall needs to hold a port for each kind of line the
-/// door takes in, and one for each it sends out, each head a lane from the next. A door's words
-/// set its width only while its lines need less.
+/// The graph with each door as wide as one wall needs to hold its slots (`door_slot`): a port
+/// for each kind of line the door takes in and for each it sends out, a lane apart. A door's
+/// words set its width only while its lines need less.
 pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
     let widths: rustc_hash::FxHashMap<String, f64> = Model::new(graph)
         .map(|model| {
             (model.endpoints.iter().enumerate())
                 .filter(|(_, end)| end.door)
                 .filter_map(|(at, end)| {
-                    let width = [(true, &model.outgoing[at]), (false, &model.incoming[at])]
-                        .map(|(source, lines)| {
-                            let (margin, spacing) = spacing(source, true);
-                            let ports = kinds_of(&model, lines).len().saturating_sub(1);
-                            2.0 * margin + ports as f64 * spacing
-                        })
-                        .into_iter()
-                        .fold(0.0, f64::max);
+                    let slots = kinds_of(&model, &model.incoming[at]).len()
+                        + kinds_of(&model, &model.outgoing[at]).len();
+                    let width = 2.0 * DOOR_MARGIN + slots.saturating_sub(1) as f64 * LANE;
                     (width > end.node.width.unwrap_or_default())
                         .then(|| (end.node.id.clone(), width))
                 })
