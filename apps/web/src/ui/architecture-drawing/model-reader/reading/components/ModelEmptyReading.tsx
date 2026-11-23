@@ -6,6 +6,7 @@ import {
 	type AcceptedScene,
 } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { hiddenKinds } from "@archboard/model/policy";
 import { effectKey } from "@archboard/renderer/picture";
 
 /** What an empty reading says, and what its key does. */
@@ -121,7 +122,7 @@ function hiddenNames(scene: AcceptedScene): readonly string[] {
 	const look = kindLookOf(scene.model.policy, new Map());
 	const words = new Map(effectKey().map(({ effect, word }) => [effect, word]));
 	return [
-		...hideKinds.map((kind) => look.relationship(kind).name),
+		...hiddenKinds(hideKinds, scene.model.policy).map((kind) => look.relationship(kind).name),
 		...hideEffects.map((effect) => words.get(effect) ?? effect),
 	];
 }
