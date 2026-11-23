@@ -8,8 +8,11 @@
 // corridor how long two routes run side by side. A cable's strands are one
 // route to trace: crossings and corridors count each cable once, by its first
 // strand, while route length, bends and lane ink count every strand's ink, and
-// the cable count and the widest cable say how many lines were joined. The
-// invariants at the end must stay zero.
+// the cable count and the widest cable say how many lines were joined, and junction knots how
+// many join marks stand too near another mark or a hop to read, and empty track bands how many
+// lanes of a channel no line uses, and stray lines how many lines leave their bus between the
+// same two cards or kink for no reason. The invariants at the end must
+// stay zero.
 //
 // Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
 // for every document and compares two runs measure by measure.
@@ -17,6 +20,9 @@
 import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
+import { strayLines } from "#tests/runtime/support/drawn-strays.ts";
+import { emptyTrackBands } from "#tests/runtime/support/drawn-channels.ts";
+import { junctionKnots } from "#tests/runtime/support/drawn-junctions.ts";
 import { endsOffWalls, wallsOffCentre } from "#tests/runtime/support/drawn-ports.ts";
 import {
 	fitOf,
@@ -208,6 +214,27 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 			digits: 0,
 			better: "lower",
 			meaning: "walls with room whose ends do not stand as one group in the middle",
+		},
+		{
+			name: "junction knots",
+			value: junctionKnots(drawing).length,
+			digits: 0,
+			better: "lower",
+			meaning: "join marks too near another join mark or a hop to read as one clear join",
+		},
+		{
+			name: "empty track bands",
+			value: emptyTrackBands(drawing).length,
+			digits: 0,
+			better: "lower",
+			meaning: "lanes of a channel no line runs across while lines run above and below them",
+		},
+		{
+			name: "stray lines",
+			value: strayLines(drawing, content).length,
+			digits: 0,
+			better: "lower",
+			meaning: "lines drawn apart from their bus between the same two cards, and lines that kink",
 		},
 		{
 			name: "cables",
