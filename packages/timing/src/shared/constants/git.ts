@@ -13,6 +13,9 @@ import { bound, delay, handed, polled } from "#shared/constants/uses.ts";
  */
 const GROUP_CLEANUP_MS = 3000;
 
+/** Default for both the bounded Git runner and the runners that accept a number. */
+const COMMAND_MS = 5000;
+
 /** One Git command: its bound, and the end of its detached process group. */
 const GIT = {
 	/**
@@ -24,7 +27,9 @@ const GIT = {
 	 * most three, are synchronous for a synchronous check, so each can block the event loop this long.
 	 * Handed to the command runner, which a caller may give a longer bound of its own.
 	 */
-	"git.command": handed(5000),
+	"git.command": handed(COMMAND_MS),
+	/** The asynchronous runner's bound before it starts termination and proves cleanup. */
+	"git.commandRun": bound(COMMAND_MS, "a Git command to finish"),
 	/** How long a terminated Git command's output and exit may take to settle. */
 	"git.groupCleanup": bound(GROUP_CLEANUP_MS, "a terminated Git command to settle"),
 	/** How long a terminated Git group may take to disappear. */

@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { ms, pollUntil, TimedOut, within } from "@archboard/timing";
+import { pollUntil, TimedOut, within } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -159,11 +159,10 @@ async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
 	try {
 		return await within("git.groupCleanup", () => complete);
 	} catch (error) {
-		if (!(error instanceof TimedOut)) throw error;
+		if (!(error instanceof TimedOut) || error.wait !== "git.groupCleanup") throw error;
+		run.termination ??= { failure: "cleanup", cause: error };
+		await Promise.all([handles.stdout.cancel(error), handles.stderr.cancel(error)]);
 	}
-	const cancellation = new Error("Git process-group cleanup exceeded its grace.");
-	run.termination ??= { failure: "cleanup", cause: cancellation };
-	await Promise.all([handles.stdout.cancel(cancellation), handles.stderr.cancel(cancellation)]);
 	return complete;
 }
 
@@ -332,27 +331,42 @@ function startCommand(cwd: string, args: readonly string[], options: GitOptions)
 }
 
 /**
- * Wait for the command to settle, under a timeout and the caller's own
- * cancellation, taking both back down whichever way it ends.
+ * Bound the running command, and wait for termination to settle if the bound expires.
+ * @param command The running command.
+ * @param timeoutMs An override of the command bound, or null to wait without one.
+ * @returns Every outcome.
+ */
+async function settleWithinCommandLimit(
+	command: RunningCommand,
+	timeoutMs: GitOptions["timeoutMs"],
+): Promise<Settled> {
+	const settled = settleRun(command.run, command.handles);
+	if (timeoutMs === null) return await settled;
+	try {
+		return await within("git.commandRun", () => settled, { ms: timeoutMs });
+	} catch (error) {
+		if (!(error instanceof TimedOut) || error.wait !== "git.commandRun") throw error;
+		command.run.terminate("timeout", error);
+		return await settled;
+	}
+}
+
+/**
+ * While the command settles, listen for the caller to cancel it.
  * @param command The running command.
  * @param options The timeout, and the caller's signal.
  * @returns Every outcome.
  */
 async function settleWithLimits(command: RunningCommand, options: GitOptions): Promise<Settled> {
 	const { run } = command;
-	const timeout =
-		options.timeoutMs === null
-			? undefined
-			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? ms("git.command"));
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");
 	};
 	options.signal?.addEventListener("abort", abort, { once: true });
 	try {
-		return await settleRun(run, command.handles);
+		return await settleWithinCommandLimit(command, options.timeoutMs);
 	} finally {
-		clearTimeout(timeout);
 		options.signal?.removeEventListener("abort", abort);
 	}
 }

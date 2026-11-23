@@ -412,7 +412,10 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 		]);
 		expect(outcome.kind).toBe("rejected");
 		if (outcome.kind === "rejected") {
-			expect(outcome.error).toMatchObject({ failure: "timeout" });
+			expect(outcome.error).toMatchObject({
+				failure: "timeout",
+				message: "Timed out after 1 s waiting for a Git command to finish.",
+			});
 		}
 		await expectPidAbsent(recordedPid(`${marker}.leader`));
 	} finally {

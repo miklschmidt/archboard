@@ -28,6 +28,7 @@ const RELATIONS: readonly Relation[] = [
 	["git.groupCleanup", "=", "git.groupFreeze"],
 	// Failed cleanup is diagnosed before the command timeout would be.
 	["git.groupCleanup", "<", "git.command"],
+	["git.commandRun", "=", "git.command"],
 	// An interrupted CLI never pre-empts Git's termination and its absence proof, plus a margin.
 	[["git.groupCleanup", "git.groupGone", "git.groupCleanup"], "<=", "git.cliInterruptCleanup"],
 	// Two network fetches and three local commands of a running fetch end before its directory is stale.
