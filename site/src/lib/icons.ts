@@ -46,6 +46,8 @@ import chart from "remixicon/icons/Business/bar-chart-2-line.svg?raw";
 import chevronDown from "remixicon/icons/Arrows/arrow-down-s-line.svg?raw";
 import close from "remixicon/icons/System/close-line.svg?raw";
 import fullscreen from "remixicon/icons/Media/fullscreen-line.svg?raw";
+import captions from "remixicon/icons/Media/closed-captioning-line.svg?raw";
+import phone from "remixicon/icons/Device/phone-fill.svg?raw";
 import openai from "remixicon/icons/Logos/openai-line.svg?raw";
 import settings from "remixicon/icons/System/settings-3-line.svg?raw";
 import shapes from "remixicon/icons/Design/shapes-line.svg?raw";
@@ -102,6 +104,8 @@ export const icons = {
 	close,
 	fullscreen,
 	openai,
+	captions,
+	phone,
 	settings,
 	shapes,
 	share,
