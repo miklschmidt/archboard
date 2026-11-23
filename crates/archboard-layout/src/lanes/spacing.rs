@@ -75,8 +75,9 @@ impl Router<'_> {
     }
 
     /// How much of a channel's room below its last track a net does not need: the arrow's
-    /// approach where it runs on past the band's top (into a lane, or a container's door) and
-    /// ends on no card there, or a container's title, where its face stands lower.
+    /// approach where it runs on into a lane past the band's top; a lane where it runs on into a
+    /// container's door, so a join on the last track stands clear of a hop below it; or a
+    /// container's title, where the face it ends on stands lower.
     fn lift_of(&self, net: NetId) -> f64 {
         let station = self.station(self.net(net).bottom);
         let Some(item) = station.item.filter(|_| station.kind == Kind::Card) else {
@@ -89,7 +90,7 @@ impl Router<'_> {
                     .any(|at| name.starts_with(at))
         });
         if door {
-            APPROACH_STRAIGHT
+            LANE
         } else {
             self.scene.item(item).face_top
         }

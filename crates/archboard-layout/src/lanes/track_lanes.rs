@@ -7,6 +7,16 @@ use crate::lanes::chains::{LANE, Router};
 use crate::lanes::channels::{HAND_OFF, NetId};
 use crate::lanes::tracks::{Unit, overlap, stack_units};
 
+/// How many lanes a unit stands below a trunk above it: two where the trunk's branches drop
+/// through its run, or its own branches rise through the trunk's, so the hop where they cross
+/// stands clear of the trunk's join; none else.
+fn knot_room((above, upper): &(Unit, Vec<NetId>), (below, lower): &(Unit, Vec<NetId>)) -> usize {
+    let through = |pins: &[f64], run: &Unit| pins.iter().any(|&x| x > run.low && x < run.high);
+    let drops = upper.len() > 1 && through(&above.bottoms, below);
+    let rises = lower.len() > 1 && through(&below.tops, above);
+    if drops || rises { 2 } else { 0 }
+}
+
 impl Router<'_> {
     /// Assign the tracks of one channel, and answer how many lanes they take. The rows of
     /// tracks pack a lane apart, two where a row holds a detour, which turns on the track
@@ -47,7 +57,7 @@ impl Router<'_> {
                 .filter_map(|&(other, _)| first[other].map(|at| (other, at)))
                 .map(|(other, at)| {
                     let below = if overlap(&units[unit].0, &units[other].0) {
-                        at + spans[other]
+                        at + spans[other].max(knot_room(&units[other], &units[unit]))
                     } else {
                         0
                     };
