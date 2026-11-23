@@ -1,0 +1,30 @@
+{
+  "order": 907100,
+  "name": "Repositories hook",
+  "kind": "function",
+  "responsibility": "Gives a component the repositories of this machine, kept current by the server while it reads them",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/panes/model-catalog/hooks/use-repositories.ts",
+    "symbol": "useRepositories"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#XgbMgsBz",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "sync",
+      "effect": "query",
+      "label": "read the tab's repository mirror",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-repositories.ts",
+        "symbol": "repositoryMirror"
+      },
+      "to": "vKEsyHFk#dneK7oM5",
+      "id": "vKEsyHFk#oWFUfEdB"
+    }
+  ]
+}

@@ -214,14 +214,14 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
       "name": "A person chooses a repository's checkout",
-      "summary": "Makes one known checkout with a vault the repository's chosen one. Panes left in an unchosen checkout move with their model, and every tab hears repositories_changed.",
+      "summary": "Makes one known checkout with a vault the repository's chosen one. Every tab that follows the repositories is sent the new listing, panes left in an unchosen checkout move with their model, and the person who chose gets the listing back.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
         "vKEsyHFk/HBlhIeSD#nLp2hILd",
         "vKEsyHFk/HBlhIeSD#KLt72lWa",
         "vKEsyHFk#CgXCbunb",
-        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+        "vKEsyHFk#Sm3yVuE3",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw"
       ],
       "steps": [
@@ -340,6 +340,18 @@
                   }
                 },
                 {
+                  "id": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk#Sm3yVuE3",
+                  "label": "the listing, to every tab that follows",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                    "symbol": "publish"
+                  }
+                },
+                {
                   "id": "vKEsyHFk/HBlhIeSD#IMvOQpab",
                   "kind": "loop",
                   "condition": "for each pane of the machine",
@@ -412,22 +424,10 @@
                   ]
                 },
                 {
-                  "id": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
-                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
-                  "label": "repositories_changed to every tab",
-                  "kind": "async",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "broadcastEverywhere"
-                  }
-                },
-                {
                   "id": "vKEsyHFk/HBlhIeSD#lTkrf1jq",
                   "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
                   "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
-                  "label": "the repository and the root chosen",
+                  "label": "the listing",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",

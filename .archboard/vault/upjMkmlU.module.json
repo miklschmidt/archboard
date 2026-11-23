@@ -1,48 +1,4 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk#i32p6taI",
-      "order": 5010,
-      "kind": "sync",
-      "effect": "query",
-      "label": "read registered repositories",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
-        "symbol": "repositoriesQuery"
-      },
-      "to": "vKEsyHFk#dneK7oM5"
-    },
-    {
-      "id": "vKEsyHFk#7EsWuSSD",
-      "order": 5020,
-      "kind": "sync",
-      "effect": "query",
-      "label": "read model authority",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
-        "symbol": "architectureSummaryQuery"
-      },
-      "to": "vKEsyHFk#guvtYApo"
-    },
-    {
-      "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",
-      "order": 44000,
-      "kind": "http",
-      "effect": "mutation",
-      "label": "list the repositories; choose a checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-        "symbol": "mountRepositoryRoutes"
-      },
-      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    }
-  ],
   "order": 907000,
   "name": "Catalogue hook",
   "kind": "function",
@@ -54,5 +10,49 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#upjMkmlU",
-  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "outgoing": [
+    {
+      "order": 5010,
+      "kind": "sync",
+      "effect": "query",
+      "label": "read the repositories the server sends",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
+        "symbol": "useRepositories"
+      },
+      "id": "vKEsyHFk#i32p6taI",
+      "to": "vKEsyHFk#XgbMgsBz"
+    },
+    {
+      "order": 5020,
+      "kind": "sync",
+      "effect": "query",
+      "label": "read model authority",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
+        "symbol": "architectureSummaryQuery"
+      },
+      "id": "vKEsyHFk#7EsWuSSD",
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "order": 44000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "list the repositories; choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "mountRepositoryRoutes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    }
+  ]
 }
