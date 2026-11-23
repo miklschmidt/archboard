@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
-    constants::{BEND_RADIUS, ECHELON, STRAIGHT_RUN},
+    constants::{BEND_RADIUS, STRAIGHT_RUN, apron},
     geometry::{Point, Rect, inflate},
 };
 
@@ -208,17 +208,20 @@ fn spot_on(
     narrow: bool,
 ) -> Option<(Rect, bool)> {
     let size = plate(model, own.edge, narrow)?;
-    let half = model.half(own.edge);
-    // A cable's inner strand bends half the cable's width nearer its words than its middle does,
-    // and its corner ends a bend's radius further on.
+    let (half, reach) = model.ink(own.edge);
+    // A cable's inner strand bends as much nearer its words than its middle does as the run beyond
+    // the bend stands its strands out, at most half its fan, and its corner ends a bend's radius
+    // further on. At its cards a cable that bends steps its strands out over the apron, and a
+    // strand's jog rounds a bend beyond it; a straight one only keeps its marks clear.
+    let mark_room = match (reach > 0.0, own.path.len()) {
+        (false, _) => 0.0,
+        (true, 2) => STRAIGHT_RUN,
+        (true, _) => apron(half, reach) + BEND_RADIUS,
+    };
     let plate = Plate {
         size,
-        bend_room: BEND_ROOM.max(BEND_RADIUS + half + CORNER_CLEAR),
-        mark_room: if half > 0.0 {
-            ECHELON + STRAIGHT_RUN
-        } else {
-            0.0
-        },
+        bend_room: BEND_ROOM.max(BEND_RADIUS + reach + CORNER_CLEAR),
+        mark_room,
     };
     if shape.trunk.contains_key(&own.edge) {
         return nearest(spans, plate, shape, own, index, labels).map(|at| (at, false));
@@ -599,9 +602,11 @@ fn update(
 #[cfg(test)]
 mod tests;
 
+/// A straight cable holds its plate only with a mark's straight run clear at each end: 40 of plate
+/// and 23 at each end need 86 of the 80 a short cable has.
 #[cfg(test)]
 #[test]
-fn a_cables_plate_needs_room_between_its_set_back_marks() {
+fn a_cables_plate_needs_room_between_its_marks() {
     use crate::blocks::{assembly::Placed, planned::shape::ScopePlacement};
     use serde_json::json;
 
@@ -643,7 +648,7 @@ fn a_cables_plate_needs_room_between_its_set_back_marks() {
             &[Point { x: 100.0, y: 100.0 }, Point { x: 100.0, y: to }],
         )
     };
-    assert!(slot(188.0).is_none());
+    assert!(slot(180.0).is_none());
     let (label, _) = slot(250.0).expect("the plate fits between the cable's marks");
     assert_eq!(label.y, 155.0);
 }

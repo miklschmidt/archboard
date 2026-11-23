@@ -3,7 +3,7 @@
 //! block's inset.
 
 use crate::constants::{
-    APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, REGION_INSET, STRAIGHT_RUN, STRAND, approach_of,
+    APPROACH_STRAIGHT, BEND_RADIUS, REGION_INSET, STRAIGHT_RUN, STRAND, approach_of,
 };
 use crate::ecma::{abs, js_max, js_min};
 use crate::lanes::chains::{Kind, LANE, Router};
@@ -136,7 +136,7 @@ impl Router<'_> {
                 channel += first - first_track(rises) + last - TRACK_BOTTOM;
             }
             if crossing.iter().any(|&id| self.net(id).kind.contains(';')) {
-                channel = channel.max(STRAIGHT_RUN + 2.0 * ECHELON);
+                channel = channel.max(STRAIGHT_RUN);
             }
             let band = self.scene.bands[index];
             top += band.bottom - band.top + channel;

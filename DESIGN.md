@@ -493,10 +493,18 @@ lines fit keeps its measured size. Parallel lines pack a lane apart. When Blocks
 placement as long parallel runs, and draws no line words there: the shell's selection lists each
 line's relationships.
 
-Relationships between the same two drawn ends join into one line only when they share their kind
-and their effect, and every other pair draws a line of its own, so a line never claims a pair that
-none of its relationships has. A joined line's label keeps its "+N", and selecting it lists each
-relationship with its kind and effect.
+In Blocks, the relationships between the same two drawn ends travel as one cable: one route, with
+a strand for each relationship in its own kind and effect, so a line never claims a pair that none
+of its relationships has. The strands run half a lane (8) apart as one ribbon, with one plate for
+their words. Where a cable reaches a card its strands fan out a lane (16) apart, so that every
+strand's mark lands on a port of its own, side by side with the others at the same depth. No mark
+stands back from its card. A short end run spreads at the bend before the card; on a longer one each
+outer strand steps out to its port inside the apron at the card (its mark's straight approach and
+two bends), the outermost furthest from the card, so that strands never cross and each glow runs
+cleanly to its own mark. A cable holds its own ports, never shared with another cable. A card that
+a cable ends on widens until its ports fit one wall, and the grid keeps room above and below a card
+whose side walls are too short for a fan. Selecting a strand lists its relationship with its kind
+and effect.
 
 Nothing on a line moves by default. Pointing at a line or a card plays its effect once, in the
 spark's look, its ink toward the text, one pass and never a train of pulses: a mutation runs to the

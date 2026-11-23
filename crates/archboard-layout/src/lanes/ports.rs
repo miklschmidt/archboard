@@ -177,7 +177,7 @@ impl Router<'_> {
             order: min(members.iter().map(|&net| self.net(net).order)),
             half: members
                 .iter()
-                .map(|&net| self.net(net).half_width())
+                .map(|&net| self.net(net).reach())
                 .fold(0.0, f64::max),
         }
     }

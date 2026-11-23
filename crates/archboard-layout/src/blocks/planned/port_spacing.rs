@@ -151,7 +151,7 @@ impl<'a> Peer<'a> {
         });
         walls.iter().flatten().any(Option::is_some).then_some(Self {
             line,
-            apart: APART + model.half(edge) + model.half(other),
+            apart: APART + model.reach(edge) + model.reach(other),
             walls,
         })
     }
@@ -293,7 +293,7 @@ fn wall_span(
 ) -> (f64, f64) {
     let card = shape.endpoints[&endpoint(model, edge, source)];
     // The corner margin belongs to the outer strand of a cable.
-    let margin = (if source { 12.0 } else { 20.0 }) + model.half(edge);
+    let margin = (if source { 12.0 } else { 20.0 }) + model.reach(edge);
     let (start, span) = if horizontal {
         (card.y, card.height)
     } else {

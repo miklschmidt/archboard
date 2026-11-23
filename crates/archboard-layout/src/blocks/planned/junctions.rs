@@ -111,59 +111,107 @@ pub(super) fn readable(a: &[Point], b: &[Point], start: bool, target: bool) -> b
     (!start || clear(common_prefix(a, b))) && (!target || clear(common_suffix(a, b)))
 }
 
-/// Whether two routes, whose ink reaches `spread` further between them than two lone lines',
-/// cross only clear of their bends and run nowhere close beside each other.
-pub(super) fn ordered(a: &[Point], b: &[Point], (sharing, spread): (bool, f64)) -> bool {
-    let run = |at: usize| Envelope::new(&b[at..at + 2]);
-    ordered_by(a, b, Envelope::new(b), run, (sharing, spread))
+/// One straight piece of a route, how far its ink reaches to either side of it, and its envelope.
+#[derive(Clone, Copy)]
+pub(super) struct Piece {
+    ends: [Point; 2],
+    ink: f64,
+    envelope: Envelope,
 }
 
-/// The envelope of each run of a route, which `ordered_runs` reads for the route that a
-/// guard compares many candidates with.
-pub(super) fn runs(points: &[Point]) -> Vec<Envelope> {
-    points.windows(2).map(Envelope::new).collect()
+impl Piece {
+    /// How far its ink reaches to either side of it.
+    pub(super) fn ink(self) -> f64 {
+        self.ink
+    }
+
+    /// Its two ends.
+    pub(super) fn ends(self) -> [Point; 2] {
+        self.ends
+    }
 }
 
-/// `ordered` for a route `b` whose envelope and run envelopes are known.
-pub(super) fn ordered_runs(
-    a: &[Point],
-    b: &[Point],
-    (around, runs): (Envelope, &[Envelope]),
-    sharing: (bool, f64),
+/// The straight pieces of a route, each with its ink: a cable's fan (`reach`) on the part of its
+/// first and last runs where its strands stand a lane apart, the apron at each card or the whole
+/// run where it fans out whole (`constants::fans_whole`), and its body (`half`) elsewhere. A lone
+/// line has no ink past its own.
+pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> {
+    let piece = |ends: [Point; 2], ink: f64| Piece {
+        ends,
+        ink,
+        envelope: Envelope::new(&ends),
+    };
+    let runs = points.len().saturating_sub(1);
+    let toward = |from: Point, to: Point, by: f64| {
+        let length = (to.x - from.x).abs() + (to.y - from.y).abs();
+        Point {
+            x: from.x + (to.x - from.x) * by / length,
+            y: from.y + (to.y - from.y) * by / length,
+        }
+    };
+    (0..runs)
+        .flat_map(|run| {
+            let (from, to) = (points[run], points[run + 1]);
+            let length = (to.x - from.x).abs() + (to.y - from.y).abs();
+            let (first, last) = (run == 0, run + 1 == runs);
+            if runs == 1 {
+                return vec![piece([from, to], reach)];
+            }
+            if !(first || last) {
+                return vec![piece([from, to], half)];
+            }
+            if reach <= half || crate::constants::fans_whole(length, half, reach) {
+                return vec![piece([from, to], reach)];
+            }
+            let apron = crate::constants::apron(half, reach);
+            if first {
+                let cut = toward(from, to, apron);
+                vec![piece([from, cut], reach), piece([cut, to], half)]
+            } else {
+                let cut = toward(to, from, apron);
+                vec![piece([from, cut], half), piece([cut, to], reach)]
+            }
+        })
+        .collect()
+}
+
+/// Whether two routes, inked as `pieces` gives them, cross only clear of their bends and run
+/// nowhere close beside each other.
+pub(super) fn ordered(a: &[Point], b: &[Point], (sharing, inks): (bool, [(f64, f64); 2])) -> bool {
+    let theirs = pieces(b, inks[1]);
+    ordered_pieces(&pieces(a, inks[0]), (Envelope::new(b), &theirs), sharing)
+}
+
+/// `ordered` for two routes already cut into inked pieces, the second with its envelope.
+pub(super) fn ordered_pieces(
+    ours: &[Piece],
+    (around, theirs): (Envelope, &[Piece]),
+    sharing: bool,
 ) -> bool {
-    ordered_by(a, b, around, |at| runs[at], sharing)
-}
-
-fn ordered_by(
-    a: &[Point],
-    b: &[Point],
-    around: Envelope,
-    run: impl Fn(usize) -> Envelope + Copy,
-    (sharing, spread): (bool, f64),
-) -> bool {
+    let most = theirs.iter().map(|piece| piece.ink).fold(0.0, f64::max);
     // Runs twelve or more apart neither cross, share ink nor run close beside each other, so
     // only the runs of one route that come near the other route are compared.
     let near = || {
-        a.windows(2)
-            .map(|p| (p, Envelope::new(p)))
-            .filter(move |&(_, at)| !at.apart_by(around, spread))
+        ours.iter()
+            .filter(move |piece| !piece.envelope.apart_by(around, piece.ink + most))
     };
-    let beside = move |at: Envelope| {
-        b.windows(2)
-            .enumerate()
-            .filter(move |&(index, _)| !run(index).apart_by(at, spread))
-            .map(|(_, q)| q)
+    let beside = move |one: &Piece| {
+        let (at, ink) = (one.envelope, one.ink);
+        theirs.iter()
+            .filter(move |other| !other.envelope.apart_by(at, ink + other.ink))
+            .map(move |other| (ink + other.ink, &other.ends[..]))
     };
     let shared: Vec<_> = if sharing {
         near()
-            .flat_map(|(p, at)| beside(at).filter_map(move |q| shared_ends(p, q)))
+            .flat_map(|one| beside(one).filter_map(move |(_, q)| shared_ends(&one.ends, q)))
             .flatten()
             .collect()
     } else {
         Vec::new()
     };
-    near().all(|(p, at)| {
-        beside(at).all(|q| {
+    near().all(|one| {
+        let p = &one.ends[..];
+        beside(one).all(|(spread, q)| {
             let ph = p[0].y == p[1].y;
             let qh = q[0].y == q[1].y;
             if ph == qh {
@@ -279,16 +327,19 @@ mod tests {
     fn a_cable_keeps_its_strands_a_lane_gap_from_a_line_beside_it() {
         let one = path(&[(0.0, 0.0), (200.0, 0.0)]);
         let other = path(&[(0.0, 14.0), (200.0, 14.0)]);
-        assert!(ordered(&one, &other, (false, 0.0)));
-        assert!(!ordered(&one, &other, (false, 8.0)));
+        // A single run is a cable's first and last at once, so its fan reaches between them.
+        let wide = [(4.0, 8.0), (0.0, 0.0)];
+        assert!(ordered(&one, &other, (false, [(0.0, 0.0); 2])));
+        assert!(!ordered(&one, &other, (false, wide)));
     }
 
     #[test]
     fn cables_cannot_overdraw_strands_on_a_short_run() {
         let one = path(&[(0.0, 0.0), (200.0, 0.0)]);
         let other = path(&[(188.0, 8.0), (300.0, 8.0)]);
-        assert!(ordered(&one, &other, (false, 0.0)));
-        assert!(!ordered(&one, &other, (false, 8.0)));
+        let wide = [(4.0, 8.0), (0.0, 0.0)];
+        assert!(ordered(&one, &other, (false, [(0.0, 0.0); 2])));
+        assert!(!ordered(&one, &other, (false, wide)));
     }
 
     /// The owner's knot on the card `renderer`: callers from above and below met

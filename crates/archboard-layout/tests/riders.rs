@@ -61,15 +61,29 @@ fn pair() -> Value {
         {"id":"back","from":"other","to":"one","kind":"sync","order":2}]})
 }
 
+/// The strands of a cable fan out where they reach a card: each end lands on the card's wall at
+/// the same depth as the others, on a port of its own a lane from the next, so their marks stand
+/// side by side.
 #[test]
-fn the_second_strand_of_a_cable_stands_its_marks_in_echelon_with_the_first() {
+fn a_cables_strands_end_side_by_side_a_lane_apart() {
     let drawn = drawing(pair(), &Here::default());
-    let echelon = |id: &str| {
+    let curve = |id: &str| {
         (drawn.drawing.edges.iter())
             .find(|line| line.edge.id == id)
-            .is_some_and(|line| line.echelon)
+            .map(|line| line.curve.clone())
+            .expect("each relationship is drawn")
     };
-    assert!(!echelon("sync") && echelon("event") && !echelon("back"));
+    let (sync, event) = (curve("sync"), curve("event"));
+    for (one, other) in [(sync.from, event.from), (sync.end(), event.end())] {
+        let (across, along) = ((one.x - other.x).abs(), (one.y - other.y).abs());
+        let (apart, depth) = if across > along {
+            (across, along)
+        } else {
+            (along, across)
+        };
+        assert!((apart - 16.0).abs() < 1e-6, "{one:?} {other:?}");
+        assert!(depth < 1e-6, "{one:?} {other:?}");
+    }
 }
 
 #[test]
@@ -89,10 +103,10 @@ fn relationships_between_two_parts_are_laid_out_as_one_line_and_drawn_as_its_str
             .map(|line| line.curve.clone())
             .expect("each relationship is drawn")
     };
-    // The two strands of the cable stand half a lane apart, each end on its own spot.
+    // The two strands of the cable end a lane apart, each on its own port.
     let (sync, event) = (curve("sync"), curve("event"));
     for (one, other) in [(sync.from, event.from), (sync.end(), event.end())] {
-        assert!(((one.x - other.x).hypot(one.y - other.y) - 8.0).abs() < 1e-6);
+        assert!(((one.x - other.x).hypot(one.y - other.y) - 16.0).abs() < 1e-6);
     }
     assert_ne!(curve("back"), sync);
 }

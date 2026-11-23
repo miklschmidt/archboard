@@ -68,7 +68,7 @@ impl StrokeIndex {
         }
         Self {
             strokes,
-            max_half: self.max_half.max(model.half(edge)),
+            max_half: self.max_half.max(model.reach(edge)),
             clearance: std::cell::RefCell::default(),
         }
     }
@@ -197,15 +197,17 @@ impl StrokeIndex {
     }
 }
 
-/// The strokes of a route of a line, each as wide as the line's ink.
+/// The strokes of a route of a line, each as wide as the line's ink on that piece: a cable's fan
+/// where its strands stand a lane apart at its cards, its body elsewhere (`junctions::pieces`).
 fn strokes_of<'p>(
     model: &Model<'_>,
     edge: usize,
     path: &'p [Point],
 ) -> impl Iterator<Item = (bool, Stroke)> + 'p {
-    let half = model.half(edge);
-    path.windows(2)
-        .map(move |pair| Stroke::of((edge, half), pair))
+    let pieces = super::super::junctions::pieces(path, model.ink(edge));
+    pieces
+        .into_iter()
+        .map(move |piece| Stroke::of((edge, piece.ink()), &piece.ends()))
 }
 
 impl Stroke {

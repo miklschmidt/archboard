@@ -27,9 +27,6 @@ pub(super) const APPROACH: f64 = 30.0;
 /// ring at its start, and a little of the body between them. Such a line has
 /// no bend for a head to sit on, so it needs no approach.
 pub(super) const STRAIGHT_RUN: f64 = 23.0;
-/// How far back from its end a strand in echelon stands its mark: a mark's whole square, so
-/// that its mark clears the marks of the strands beside it, which stand at the end.
-pub(super) const ECHELON: f64 = MARK_BOX * MARK_UNIT;
 
 /// How many picture units one unit of a new mark's square is: a wedge 15
 /// units long and as wide, about six times as long as its line is thick, so it

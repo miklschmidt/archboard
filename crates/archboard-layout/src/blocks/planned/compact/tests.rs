@@ -485,8 +485,8 @@ fn transpose(drawing: &mut Placed) {
     }
 }
 
-/// A cable that turns off its approach above the card it enters keeps the approach its set-back
-/// marks and its inner strand need, where a lone line keeps a lone line's.
+/// A cable that turns off its approach above the card it enters keeps the approach its inner
+/// strand needs, where a lone line keeps a lone line's.
 #[test]
 fn a_cable_keeps_the_approach_its_strands_need() {
     let line = |id: &str| PlacedLine {
@@ -513,8 +513,8 @@ fn a_cable_keeps_the_approach_its_strands_need() {
     };
     let none = rustc_hash::FxHashMap::default();
     let inks: rustc_hash::FxHashMap<&str, f64> = std::iter::once(("cable", 12.0)).collect();
-    assert!(approach(&none, "lone") < APPROACH + ECHELON);
-    assert!(approach(&inks, "cable") >= APPROACH + 12.0 + ECHELON);
+    assert!(approach(&none, "lone") < APPROACH + 12.0);
+    assert!(approach(&inks, "cable") >= APPROACH + 12.0);
 }
 
 #[test]
@@ -536,5 +536,5 @@ fn a_straight_cable_keeps_room_for_its_marks_when_the_cards_move_together() {
     let inks = std::iter::once(("cable", 4.0)).collect();
     let drawn = drawing(&shape, 8.0, (&[], &inks)).expect("a gap to close");
     let gap = drawn.edges[0].points[1].x - drawn.edges[0].points[0].x;
-    assert!((crate::constants::STRAIGHT_RUN + 2.0 * ECHELON..300.0).contains(&gap));
+    assert!((STRAIGHT_RUN..300.0).contains(&gap));
 }

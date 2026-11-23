@@ -1,7 +1,9 @@
 // The cables of a rendered picture: the lines that start on one card and end on another and run
-// side by side as one ribbon, which Blocks draws as the strands of one cable, half a lane apart,
-// with one plate for them all.
+// side by side as one ribbon, which Blocks draws as the strands of one cable, half a lane apart
+// along its body and a lane apart where it reaches its cards, where each strand fans out to a port
+// of its own, with one plate for them all.
 
+import type { DiagramBox } from "@archboard/model/render-reply";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import {
 	type DrawnPoint,
@@ -9,8 +11,11 @@ import {
 	distanceToFrame,
 } from "#tests/runtime/support/drawn-routes.ts";
 
-/** How far apart a cable's strands stand: half a lane. */
+/** How far apart a cable's strands stand along its body: half a lane. */
 const STRAND = 8;
+
+/** How far apart a cable's strands stand where they reach a card and fan out: a lane. */
+const FAN = 16;
 
 /** How far a route's end may stand off its card's edge and still end on it. */
 const ON_EDGE = 0.5;
@@ -19,26 +24,65 @@ const ON_EDGE = 0.5;
 const SNAP = 1;
 
 /**
- * Whether two routes run as neighbouring strands of one ribbon: as many runs each, run for run
- * parallel, and each straight run a strand's pitch from its neighbour's across their lane. A
- * rounded corner's pieces only run parallel, since each strand rounds its own corner.
+ * The nearest distance from a point to a route.
+ * @param point The point.
+ * @param route The route.
+ * @returns The distance, in page units.
+ */
+function distanceTo(point: DrawnPoint, route: readonly DrawnPoint[]): number {
+	return route.slice(1).reduce((nearest, end, index) => {
+		const start = route[index]!;
+		const [dx, dy] = [end.x - start.x, end.y - start.y];
+		const length = dx * dx + dy * dy;
+		const share =
+			length === 0
+				? 0
+				: Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / length));
+		const [x, y] = [start.x + share * dx, start.y + share * dy];
+		return Math.min(nearest, Math.hypot(point.x - x, point.y - y));
+	}, Number.POSITIVE_INFINITY);
+}
+
+/**
+ * Points along a route, a unit or so apart.
+ * @param route The route.
+ * @returns The points.
+ */
+function along(route: readonly DrawnPoint[]): DrawnPoint[] {
+	return route.slice(1).flatMap((end, index) => {
+		const start = route[index]!;
+		const steps = Math.max(1, Math.ceil(Math.hypot(end.x - start.x, end.y - start.y)));
+		return Array.from({ length: steps }, (_, step) => ({
+			x: start.x + ((end.x - start.x) * step) / steps,
+			y: start.y + ((end.y - start.y) * step) / steps,
+		}));
+	});
+}
+
+/**
+ * Whether two routes run as neighbouring strands of one ribbon: every point of each stands within
+ * two lanes of the other, as near as neighbouring strands come where one has stepped out to its
+ * port and the next not yet, and never nearer than half a lane, so the two never touch.
  * @param one A route, without its bridges.
  * @param other Another route, without its bridges.
  * @returns True when they run side by side the whole way.
  */
 function besideAllTheWay(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): boolean {
-	if (one.length !== other.length || one.length < 2) return false;
-	return one.slice(1).every((end, index) => {
-		const [start, otherStart, otherEnd] = [one[index]!, other[index]!, other[index + 1]!];
-		const [dx, dy] = [end.x - start.x, end.y - start.y];
-		const [ox, oy] = [otherEnd.x - otherStart.x, otherEnd.y - otherStart.y];
-		const parallel =
-			Math.abs(dx * oy - dy * ox) <= SNAP * (Math.hypot(dx, dy) + Math.hypot(ox, oy));
-		const level = dy === 0 && oy === 0;
-		const upright = dx === 0 && ox === 0;
-		if (!level && !upright) return parallel;
-		const across = level ? Math.abs(start.y - otherStart.y) : Math.abs(start.x - otherStart.x);
-		return Math.abs(across - STRAND) <= SNAP;
+	if (one.length < 2 || other.length < 2) return false;
+	return staysBeside(one, other) && staysBeside(other, one);
+}
+
+/**
+ * Whether every point of a route stands within two lanes of another route and no nearer than
+ * half a lane.
+ * @param route The route.
+ * @param next The other route.
+ * @returns True when it stays beside the other the whole way.
+ */
+function staysBeside(route: readonly DrawnPoint[], next: readonly DrawnPoint[]): boolean {
+	return along(route).every((point) => {
+		const distance = distanceTo(point, next);
+		return distance >= STRAND - SNAP && distance <= 2 * FAN + SNAP;
 	});
 }
 
@@ -98,13 +142,60 @@ function cablesOf(drawing: RenderedDiagram): Map<string, string[]> {
 }
 
 /**
- * How far a cable's plate may stand to either side of one of its strands: the plate stands on
- * the cable's middle, half the cable's width from its outermost strand.
+ * Whether a cable's plate stands on the cable's middle: each strand has a straight run that
+ * carries the whole plate across its centre, all the same way, and the plate's centre stands
+ * half way between the outermost of those runs. A lone line's plate stands on its own run.
+ * @param strands The cable's strands.
+ * @param routes Each line's route, by id, without its bridges.
+ * @param plate The plate's box.
+ * @returns True when the plate stands on the middle.
+ */
+function onCableMiddle(
+	strands: readonly string[],
+	routes: ReadonlyMap<string, readonly DrawnPoint[]>,
+	plate: DiagramBox,
+): boolean {
+	const centre = { x: plate.x + plate.width / 2, y: plate.y + plate.height / 2 };
+	const reach = ((strands.length - 1) * FAN) / 2 + SNAP;
+	const runs = strands.map((strand) => {
+		const route = routes.get(strand) ?? [];
+		return route.slice(1).flatMap((end, index) => {
+			const start = route[index]!;
+			const level = start.y === end.y && Math.abs(start.y - centre.y) <= reach;
+			const upright = start.x === end.x && Math.abs(start.x - centre.x) <= reach;
+			const carries = level
+				? Math.min(start.x, end.x) <= plate.x && Math.max(start.x, end.x) >= plate.x + plate.width
+				: upright &&
+					Math.min(start.y, end.y) <= plate.y &&
+					Math.max(start.y, end.y) >= plate.y + plate.height;
+			return carries ? [{ level, across: level ? start.y : start.x }] : [];
+		});
+	});
+	return [true, false].some((level) => {
+		const across = runs.map((each) => each.filter((run) => run.level === level));
+		if (across.some((each) => each.length === 0)) return false;
+		const near = across.map((each) =>
+			each.reduce((best, run) =>
+				Math.abs(run.across - (level ? centre.y : centre.x)) <
+				Math.abs(best.across - (level ? centre.y : centre.x))
+					? run
+					: best,
+			),
+		);
+		const positions = near.map((run) => run.across);
+		const middle = (Math.min(...positions) + Math.max(...positions)) / 2;
+		return Math.abs(middle - (level ? centre.y : centre.x)) < SNAP;
+	});
+}
+
+/**
+ * How far a cable's plate may stand to either side of its nearest strand: half the cable at its
+ * widest, where its strands fan out a lane apart.
  * @param strands The cable's strands.
  * @returns The distance, in page units.
  */
 function plateReach(strands: readonly string[]): number {
-	return ((strands.length - 1) * STRAND) / 2;
+	return ((strands.length - 1) * FAN) / 2;
 }
 
-export { cablesOf, plateReach };
+export { cablesOf, onCableMiddle, plateReach };
