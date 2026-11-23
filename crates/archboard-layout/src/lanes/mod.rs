@@ -2,6 +2,7 @@
 //! items, and every line inside it drawn on tracks of its own in the channels
 //! between them.
 
+pub(crate) mod card_steps;
 pub(crate) mod chains;
 pub(crate) mod channels;
 pub(crate) mod clear;

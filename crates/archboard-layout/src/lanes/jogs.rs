@@ -11,13 +11,13 @@
 //!
 //! Drawn as blocks, a step at a label of any width that turns its line back
 //! against its last step is closed the same way. A card a line enters on top
-//! and another leaves at the bottom a few points over is such a step too.
+//! and another leaves at the bottom a few points over is such a step too (`card_steps.rs`).
 //!
 //! A step no move can close is opened instead to the shortest step its two
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
-use crate::ecma::{abs, js_min, sign, to_fixed};
+use crate::ecma::{abs, js_min, sign};
 use crate::geometry::Rect;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId};
@@ -94,7 +94,7 @@ pub(crate) fn kinked(track: &Router<'_>, net: NetId) -> bool {
 }
 
 /// Whether two x stand closer than a line's two bends can turn between, yet apart.
-fn too_short(one: f64, other: f64) -> bool {
+pub(super) fn too_short(one: f64, other: f64) -> bool {
     let gap = abs(one - other);
     gap > STRAIGHT && gap < 2.0 * BEND_RADIUS
 }
@@ -290,49 +290,6 @@ impl Router<'_> {
         }
     }
 
-    /// The nets among some that end on a card below, by that card, in order.
-    fn cards_below(&self, nets: &[NetId]) -> Map<Option<usize>, Vec<NetId>> {
-        let mut into: Map<Option<usize>, Vec<NetId>> = Map::default();
-        for &net in nets {
-            let one = self.net(net);
-            let bottom = self.station(one.bottom);
-            if one.wall.is_none() && bottom.kind == Kind::Card {
-                into.entry(bottom.item.map(|item| item.0))
-                    .or_default()
-                    .push(net);
-            }
-        }
-        into
-    }
-
-    /// A key for every card step among some nets, to tell a new one from an old one.
-    fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
-        let into = self.cards_below(nets);
-        let mut keys = Vec::new();
-        for &net in nets {
-            let one = self.net(net);
-            let top = self.station(one.top);
-            if one.wall.is_some() || top.kind != Kind::Card {
-                continue;
-            }
-            for &other in into
-                .get(&top.item.map(|item| item.0))
-                .map_or(&[][..], Vec::as_slice)
-            {
-                let bottom_x = self.net(other).bottom_x;
-                if too_short(bottom_x, one.top_x) {
-                    keys.push(format!(
-                        "{}|{}|{}",
-                        one.edge,
-                        one.channel,
-                        to_fixed(bottom_x, 2)
-                    ));
-                }
-            }
-        }
-        keys
-    }
-
     /// Move one station onto a column: a run of lanes onto it where it is
     /// free, a label box where it stays clear, and a card by its own port.
     fn move_station(
@@ -429,7 +386,7 @@ impl Router<'_> {
     }
 
     /// Move some stations onto a column, where nothing the pass keeps grows.
-    fn move_kept(
+    pub(super) fn move_kept(
         &mut self,
         chains: &[ChainId],
         nets: &[NetId],
@@ -445,117 +402,6 @@ impl Router<'_> {
             better: Some(&better),
         };
         self.move_stretch(chains, nets, moved, x, keeping)
-    }
-
-    /// The lines that run straight on through a card laid out as the region
-    /// round it from where a stretch ends on it: each line that leaves its
-    /// other face at the same x, and the straight stretch beyond.
-    fn through_card(&self, routes: &[Vec<NetId>], last: Reach) -> Vec<Reach> {
-        let station = self.station(last.station);
-        if station.kind != Kind::Card
-            || self
-                .scene
-                .item(station.item.expect("a card"))
-                .inset
-                .is_none()
-        {
-            return Vec::new();
-        }
-        let beyond = last.end.other();
-        let x = self.net(last.net).x_at(last.end);
-        let mut through = Vec::new();
-        for (route, nets) in routes.iter().enumerate() {
-            for (index, &other) in nets.iter().enumerate() {
-                let one = self.net(other);
-                if self.station(one.at(beyond)).item == station.item
-                    && one.wall.is_none()
-                    && abs(one.x_at(beyond) - x) <= STRAIGHT
-                {
-                    through.extend(self.card_side(routes, Place { route, index }, beyond));
-                }
-            }
-        }
-        through
-    }
-
-    /// Every card a line enters on top and another leaves at the bottom, their
-    /// two ends a step too short to turn apart.
-    fn card_steps(&self, routes: &[Vec<NetId>]) -> Vec<(Place, Place)> {
-        let places: Vec<(Place, NetId)> = routes
-            .iter()
-            .enumerate()
-            .flat_map(|(route, nets)| {
-                nets.iter()
-                    .enumerate()
-                    .map(move |(index, &net)| (Place { route, index }, net))
-            })
-            .filter(|&(_, net)| self.net(net).wall.is_none())
-            .collect();
-        let into: Vec<&(Place, NetId)> = places
-            .iter()
-            .filter(|(_, net)| self.station(self.net(*net).bottom).kind == Kind::Card)
-            .collect();
-        let out_of: Vec<&(Place, NetId)> = places
-            .iter()
-            .filter(|(_, net)| self.station(self.net(*net).top).kind == Kind::Card)
-            .collect();
-        let mut steps = Vec::new();
-        for &&(one, one_net) in &into {
-            for &&(other, other_net) in &out_of {
-                let (a, b) = (self.net(one_net), self.net(other_net));
-                if self.station(b.top).item == self.station(a.bottom).item
-                    && too_short(b.top_x, a.bottom_x)
-                {
-                    steps.push((one, other));
-                }
-            }
-        }
-        steps
-    }
-
-    /// The end of a net at a card, and the straight stretch beyond it when the
-    /// net runs straight from the card.
-    fn card_side(&self, routes: &[Vec<NetId>], place: Place, end: End) -> Vec<Reach> {
-        let net = routes[place.route][place.index];
-        let mut side = vec![Reach {
-            station: self.net(net).at(end),
-            net,
-            end,
-        }];
-        if step(self, net) <= STRAIGHT {
-            side.extend(self.stretch_beyond(&routes[place.route], place.index, end.other()));
-        }
-        side
-    }
-
-    /// Close one card step: move the line out of the card, and the straight
-    /// stretch below it, onto the line in's column; else the line in onto the line out's.
-    fn close_card_step(
-        &mut self,
-        chains: &[ChainId],
-        routes: &[Vec<NetId>],
-        nets: &[NetId],
-        into: Place,
-        out_of: Place,
-        kept: Kept<'_>,
-    ) -> bool {
-        let (in_net, out_net) = (
-            routes[into.route][into.index],
-            routes[out_of.route][out_of.index],
-        );
-        if !too_short(self.net(in_net).bottom_x, self.net(out_net).top_x) {
-            return false;
-        }
-        let (out, inward) = (
-            self.card_side(routes, out_of, End::Top),
-            self.card_side(routes, into, End::Bottom),
-        );
-        let x = self.net(in_net).bottom_x;
-        if self.move_kept(chains, nets, &out, x, kept) {
-            return true;
-        }
-        let x = self.net(out_net).top_x;
-        self.move_kept(chains, nets, &inward, x, kept)
     }
 
     /// Close every step too short for its two bends that a move can close,
