@@ -97,9 +97,21 @@ draws. Blocks' planned drawings and its fallback do not change. Lanes differs in
   shorten a line (the owner's rule, 2026-11-23). Where a centred port stands a kink (up to two
   lanes) off the line it meets, its card or container door slides instead, when its row has room:
   each kink left standing costs the channel a hand-off of tracks, and the taller page loses a wide
-  rank's wrap. Every line still lands on a top or bottom face:
-  the advisors found no reading where a side face would read better, since no two connected cards
-  share a row and lines running back up are as direct as lines running down.
+  rank's wrap.
+- A line end may land on a card's left or right face, and a line may come through a container's
+  side wall onto the card nearest that wall (the owner asked to try it on 2026-11-23, and both
+  advisors chose it over top and bottom faces alone, on the paired pictures). An end goes to a
+  side only where its line would otherwise leave the face just to turn and run on past the card,
+  and only where the picture then bends less, crosses no more lines, and no line crosses the end
+  within an arrowhead's length of the card; a wall entry also runs no longer and overlaps no
+  line. A line in a bus between two cards lands with the bus. The ends on one side face stand
+  centred a lane apart. Over the 111 Lanes readings this cut bends by 7%, area by 3% and line
+  length by 4%, with one crossing fewer. Two places the owner named stay as they were: Agent CLI
+  to Vault repository, because moving its end off Agent CLI's bottom face re-centres the ends
+  there and bends another line, and the climb from Codex app-server, whose way up passes Vault
+  repository and leaves no clear run onto Agent CLI's side. A wall entry to a card closer to the
+  wall than an arrowhead's length draws the head across the wall: the advisors kept it, the tip
+  still touches the card, and a wider side inset for container frames is a follow-up.
 
 Tests hold the bus look, not equality with the fallback: no line words, the lines between two
 cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
