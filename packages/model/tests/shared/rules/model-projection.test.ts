@@ -201,7 +201,7 @@ describe("the words on a joined line", () => {
 	});
 });
 
-describe("a cable of lines between one pair of cards", () => {
+test("a cable keeps one line of each kind and one plate in ordinary and exact views", () => {
 	const model = modelOf(
 		[...closed("loud", []), ...closed("quiet", [])],
 		[
@@ -211,16 +211,16 @@ describe("a cable of lines between one pair of cards", () => {
 			{ id: "back", from: "quiet", to: "loud", kind: "storage", label: "back" },
 		],
 	);
-
-	test("keeps a line of each kind, and wears one plate on its first line", () => {
-		const edges = projectModel(model).content.edges;
-		expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
-			["calls", "sync", "first +2"],
-			["tells", "event", undefined],
-			["asks", "rpc", undefined],
-			["back", "storage", "back"],
-		]);
-	});
+	const relationships = model.relationships.map(({ id }) => id);
+	const visibility = { modules: ["loud", "quiet"], relationships, flows: [] };
+	const edges = projectModel(model).content.edges;
+	expect(projectModel(model, null, null, {}, undefined, visibility).content.edges).toEqual(edges);
+	expect(edges.map(({ id, kind, label }) => [id, kind, label])).toEqual([
+		["calls", "sync", "first +2"],
+		["tells", "event", undefined],
+		["asks", "rpc", undefined],
+		["back", "storage", "back"],
+	]);
 });
 
 describe("doors", () => {
