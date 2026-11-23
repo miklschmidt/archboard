@@ -240,10 +240,10 @@ test("concurrent snapshot re-reads share one read, and a looping client is floor
 	await harness.options.projection.refresh?.(harness.context);
 	expect(reads).toBe(1);
 
-	// Past the floor, the server reads again.
-	clock = expiresAt("codex.queueRereadFloor", clock) + 1;
-	const past = harness.options.projection.refresh?.(harness.context);
+	// The server reads again as soon as the floor ends.
+	clock = expiresAt("codex.queueRereadFloor", clock);
+	const atFloor = harness.options.projection.refresh?.(harness.context);
 	expect(reads).toBe(2);
 	release();
-	await past;
+	await atFloor;
 });
