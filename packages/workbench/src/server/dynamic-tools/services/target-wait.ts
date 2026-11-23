@@ -88,22 +88,23 @@ async function waitForTargetsWith(
 	workbench: CodexWorkbenchComponents,
 	input: WaitInput,
 ): Promise<DynamicWaitEvent> {
+	/**
+	 * One look at the awaited threads.
+	 * @returns What they reported, or undefined while nothing has.
+	 */
+	const look = async (): Promise<DynamicWaitEvent | undefined> => {
+		if (input.signal.aborted) {
+			throw Object.assign(new Error("The dynamic wait was cancelled."), { code: "cancellation" });
+		}
+		return (await observeTargetsOnce(workbench, input)) ?? undefined;
+	};
+	// The first look always finishes, so a wait of no length still reads the threads once.
+	const first = await look();
+	if (first !== undefined) return first;
 	try {
 		return await within(
 			"codex.dynamicWait",
-			(signal) =>
-				pollUntil(
-					"codex.dynamicWaitLook",
-					async () => {
-						if (input.signal.aborted) {
-							throw Object.assign(new Error("The dynamic wait was cancelled."), {
-								code: "cancellation",
-							});
-						}
-						return (await observeTargetsOnce(workbench, input)) ?? undefined;
-					},
-					{ signal },
-				),
+			(signal) => pollUntil("codex.dynamicWaitLook", look, { signal }),
 			{ ms: input.timeoutMs },
 		);
 	} catch (error) {
