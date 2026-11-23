@@ -16,7 +16,7 @@ use crate::paint::styles::{
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash, LineEffect, PaletteColor, Standing};
-use crate::scene::traffic::pulse_breadth;
+use crate::scene::pulse_breadth;
 use crate::scene::{Colour, Item};
 
 /// Every colour a relationship kind can be drawn in: none, for the neutral line, then the palette's.

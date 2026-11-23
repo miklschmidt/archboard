@@ -1,6 +1,6 @@
 //! A scene's geometry as the paths a canvas takes.
 
-use archboard_scene::geometry::{Point, Rect, Segment};
+use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Cap, Geometry, Join, PathStep, Stroke};
 use std::borrow::Cow;
 
@@ -109,16 +109,6 @@ pub(crate) fn path_of(steps: &[PathStep]) -> BezPath {
         }
     }
     path
-}
-
-/// One piece of a route, added to a path.
-pub(crate) fn segment_onto(path: &mut BezPath, segment: &Segment) {
-    match *segment {
-        Segment::Line { to } => path.line_to(point_of(to)),
-        Segment::Cubic { first, second, to } => {
-            path.curve_to(point_of(first), point_of(second), point_of(to));
-        }
-    }
 }
 
 /// A geometry as a path, with the box a gradient or a clip measures it by.

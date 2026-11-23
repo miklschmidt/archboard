@@ -75,6 +75,7 @@ name = "archboard-paint"
 version = "0.0.0"
 dependencies = [
  "archboard-scene",
+ "archboard-svg",
  "archboard-text",
  "kurbo",
  "peniko",
@@ -153,7 +154,6 @@ version = "0.0.0"
 dependencies = [
  "archboard-scene",
  "archboard-text",
- "libm",
  "serde",
  "ts-rs",
 ]

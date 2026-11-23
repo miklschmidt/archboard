@@ -22,4 +22,6 @@ serde = { version = "1", features = ["derive"] }
 vello_cpu = { version = "0.3", default-features = false, features = ["std", "u8_pipeline"] }
 
 [dev-dependencies]
+# The parity tests hold the canvas to the SVG that the SVG painter writes.
+archboard-svg = { path = "../archboard-svg" }
 serde_json = { version = "1", features = ["float_roundtrip"] }

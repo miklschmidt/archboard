@@ -1,14 +1,18 @@
-//! Traffic as data: the route a train of pulses rides, how fast
-//! and how far apart they fly, and what one pulse looks like. Each painter
-//! animates the pulses as it can; the painter of the scene and every frontend
-//! share these dimensions of a pulse.
+//! Traffic as data: the route a train of pulses rides, how fast and how far
+//! apart they fly, and what one pulse looks like. A mark answers the beam that
+//! every painter draws ([`TrafficMark::beam`]): one gradient, and the route cut
+//! into pieces, each with its soft mask, its bar and how that bar slides. A
+//! painter only spells the beam in its medium, so the shape and the timing of a
+//! pulse live here alone.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::Curve;
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_length, segment_start};
 use crate::js;
 use crate::scene::colour::Colour;
+use crate::scene::definition::Stop;
+use crate::scene::shape::PathStep;
 
 /// How long a pulse's hot front is, along its line.
 const PULSE_FRONT: f64 = 3.0;
@@ -20,69 +24,44 @@ const PULSE_TAIL: f64 = 56.0;
 const PULSE_MASK_ROOM: f64 = 2.0;
 /// The share of the room between pulses that a pulse fills.
 const PULSE_FILL: f64 = 0.8;
-
-/// The longest tail a pulse has, where nothing crowds it.
-pub const fn longest_tail() -> f64 {
-    PULSE_TAIL
-}
+/// How a pulse falls off across its line: how much wider than its core each
+/// layer of the glow is, and how much light it lets through.
+const GLOW: [(f64, f64); 4] = [(6.0, 0.07), (3.4, 0.2), (1.3, 0.5), (0.0, 0.9)];
+/// A layer wider than this stops exactly at the ends of its piece.
+const HALO_OVER: f64 = 1.0;
+/// How sharply a tail fades.
+const TAIL_CURVE: f64 = 2.3;
+/// How bright a tail is where it meets the head.
+const TAIL_LIGHT: f64 = 0.6;
+/// How many stops describe a tail.
+const TAIL_STEPS: u32 = 9;
+/// How far a bar overruns the mask of its piece.
+const BAR_ROOM: f64 = 1.0;
+/// The shortest piece of a route worth a beam of its own.
+const LEAST_PIECE: f64 = 0.5;
+/// How far the narrow, bright layers of a piece's mask run into the next piece.
+const OVERLAP: f64 = 0.5;
 
 /// How long a pulse's tail is where pulses are `room` apart: a train fills
 /// most of that room, and a tail never runs past its longest.
-pub fn pulse_tail(room: f64) -> f64 {
+fn pulse_tail(room: f64) -> f64 {
     (room * PULSE_FILL - PULSE_HEAD - PULSE_FRONT).clamp(0.0, PULSE_TAIL)
 }
 
-/// How long a pulse is with a tail of some length: its front, its head and that tail.
-pub fn pulse_reach(tail: f64) -> f64 {
-    PULSE_FRONT + PULSE_HEAD + tail
-}
-
 /// How long a pulse with its longest tail is.
-pub fn pulse_span() -> f64 {
+const fn pulse_span() -> f64 {
     PULSE_FRONT + PULSE_HEAD + PULSE_TAIL
 }
 
-/// A length with the room a pulse's light takes past it added: how far the
-/// light of a line reaches, or what a clock leaves after a pulse has left.
-pub fn with_light_room(length: f64) -> f64 {
+/// A length with the room a pulse's light takes past it added.
+fn with_light_room(length: f64) -> f64 {
     length + PULSE_MASK_ROOM
 }
 
-/// The stops of a pulse's body, behind its tail: where its head starts, its
-/// hot middle, its front, and the dark past its front. Each stop is how far
-/// behind the front it stands, whether it takes the pulse's hot colour (else
-/// its head colour), and how much light it lets through, from 0 to 1.
-pub fn body_stops(head_light: f64) -> [(f64, bool, f64); 4] {
-    [
-        (PULSE_FRONT + PULSE_HEAD, false, head_light),
-        (PULSE_FRONT + PULSE_HEAD * 0.45, true, 0.9),
-        (PULSE_FRONT, true, 1.0),
-        (0.0, true, 0.0),
-    ]
-}
-
-/// Where a steady train's bar starts on a piece that starts `along` its
-/// route, for a train `phase` along and pulses `period` apart.
-pub fn train_shift(phase: f64, along: f64, period: f64) -> f64 {
-    js::within(phase - along + PULSE_FRONT, period) - period
-}
-
-/// How far a message's bar has slid on a piece that starts `along` its
-/// route, at a moment of its turn.
-pub fn turn_slide(moment: f64, start: f64, speed: f64, along: f64) -> f64 {
-    (moment - start) * speed - along + PULSE_FRONT - pulse_span()
-}
-
-/// The moment of its turn a message's bar starts onto a piece that starts
-/// `along` its route: its whole pulse and a unit more short of the piece.
-pub fn turn_entry(start: f64, speed: f64, along: f64) -> f64 {
-    turn_moment(-pulse_span() - 1.0, start, speed, along)
-}
-
-/// The moment of its turn a message's bar has slid some way on a piece that
-/// starts `along` its route.
-pub fn turn_moment(slide: f64, start: f64, speed: f64, along: f64) -> f64 {
-    start + (slide + along - PULSE_FRONT + pulse_span()) / speed
+/// How long a clock runs on after a message's pulse has left its route: the
+/// whole pulse and the room its light takes.
+pub fn pulse_clearance() -> f64 {
+    with_light_room(pulse_span())
 }
 
 /// How thick a pulse's core is on a line of one width.
@@ -137,4 +116,384 @@ pub struct TrafficMark {
     pub route: Curve,
     /// How the pulses move.
     pub motion: Motion,
+}
+
+/// The light a train of pulses casts, ready to draw: what every bar is painted
+/// with, and the pieces of the route it shows through.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Beam {
+    /// What the bar of every piece is painted with.
+    pub gradient: BeamGradient,
+    /// The route cut into pieces, each a straight run or one bend, in the
+    /// order the pulses ride them.
+    pub pieces: Vec<BeamPiece>,
+}
+
+/// A pulse's colours along the x axis of a piece's frame, from 0 to `span`,
+/// its front at the far end.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BeamGradient {
+    /// How long the gradient is.
+    pub span: f64,
+    /// Whether it starts over every `span`, as a train does. Else its end
+    /// colours run on past its ends.
+    pub repeat: bool,
+    /// Its stops from its back to its front, each with its offset and opacity.
+    pub stops: Vec<Stop>,
+}
+
+/// One piece of a beam: a bar that slides in the piece's frame, and the soft
+/// shape of the piece, which lets the bar's light through.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BeamPiece {
+    /// The frame the bar is drawn in, its x axis along the piece.
+    pub frame: Frame,
+    /// The box in the picture that the piece's light stays inside.
+    pub bounds: Rect,
+    /// The layers of the mask, widest and faintest first.
+    pub mask: Vec<MaskLayer>,
+    /// The bar in the frame, before it rests and slides.
+    pub bar: Rect,
+    /// How far along the frame's x axis the bar rests before it slides.
+    pub rest: f64,
+    /// How the bar slides from its rest.
+    pub slide: Slide,
+}
+
+/// The frame a piece is drawn in: moved to the piece's start, turned along
+/// the straight line to its end, and stretched along that line so that the
+/// piece's length along its ink spans it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Frame {
+    /// Where the piece starts.
+    pub origin: Point,
+    /// How far the x axis turns, in radians, from the picture's x axis
+    /// towards its y axis.
+    pub angle: f64,
+    /// How far the x axis stretches: the straight distance between the ends
+    /// of the piece over its length along its ink.
+    pub stretch: f64,
+}
+
+/// One layer of a piece's mask: a white stroke along the piece.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MaskLayer {
+    /// The stroked path, in the picture's own units.
+    pub path: Vec<PathStep>,
+    /// How wide the stroke is.
+    pub width: f64,
+    /// How much light the stroke lets through, from 0 to 1.
+    pub light: f64,
+}
+
+/// How a bar slides along its frame's x axis as the traffic's clock runs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Slide {
+    /// Again and again: `length` at `speed`, then back to where it started.
+    /// A train's gradient repeats every `length`, so the jump back shows no seam.
+    Loop {
+        /// How far the bar slides before it starts over, in diagram units.
+        length: f64,
+        /// How fast it slides, in diagram units a second.
+        speed: f64,
+    },
+    /// Once in every `cycle` seconds. The bar stands at `from` until `enter`
+    /// seconds into the cycle, slides steadily to `to` until `leave`, and
+    /// stands at `to` until the cycle ends. Each stand is past an end of the
+    /// piece, unless the cycle cuts the trip short there.
+    Pass {
+        /// How long one turn of the clock is, in seconds.
+        cycle: f64,
+        /// When in the turn the bar starts to slide.
+        enter: f64,
+        /// When in the turn the bar stops.
+        leave: f64,
+        /// Where the bar stands before it slides.
+        from: f64,
+        /// Where the bar stands after it stops.
+        to: f64,
+    },
+}
+
+impl Slide {
+    /// How far the bar has slid at a moment of the traffic's clock, in seconds.
+    pub fn at(&self, seconds: f64) -> f64 {
+        match *self {
+            Slide::Loop { length, speed } => js::within(seconds * speed, length),
+            Slide::Pass {
+                cycle,
+                enter,
+                leave,
+                from,
+                to,
+            } => {
+                let moment = js::within(seconds, cycle);
+                if moment <= enter {
+                    from
+                } else if moment >= leave {
+                    to
+                } else {
+                    from + (to - from) * (moment - enter) / (leave - enter)
+                }
+            }
+        }
+    }
+}
+
+impl TrafficMark {
+    /// The beam that every painter draws for this train of pulses, on its
+    /// route as it stands.
+    pub fn beam(&self) -> Beam {
+        let core = pulse_breadth(self.look.line_width);
+        let legs = legs_of(&self.route);
+        match self.motion {
+            Motion::Steady {
+                speed,
+                spacing,
+                phase,
+            } => {
+                let period = round_coord(spacing);
+                let slide = Slide::Loop {
+                    length: period,
+                    speed,
+                };
+                Beam {
+                    gradient: gradient_of(&self.look, period, pulse_tail(period), true),
+                    pieces: legs
+                        .iter()
+                        .map(|leg| {
+                            // The bar covers the piece and a pulse past each end,
+                            // so the repeating gradient fills it wherever it slides.
+                            let bar = (-period - 1.0, leg.length + 2.0 * period + 2.0);
+                            let rest = js::within(phase - leg.along + PULSE_FRONT, period) - period;
+                            piece_of(leg, core, bar, rest, slide)
+                        })
+                        .collect(),
+                }
+            }
+            Motion::Turn {
+                speed,
+                cycle,
+                start,
+            } => {
+                let span = pulse_span();
+                Beam {
+                    gradient: gradient_of(&self.look, span, PULSE_TAIL, false),
+                    pieces: legs
+                        .iter()
+                        .map(|leg| {
+                            let slide = pass_of(leg, speed, cycle, start);
+                            piece_of(leg, core, (0.0, span), 0.0, slide)
+                        })
+                        .collect(),
+                }
+            }
+        }
+    }
+}
+
+/// One piece of a route, where it starts along the route, and how long it is.
+struct Leg {
+    from: Point,
+    segment: Segment,
+    along: f64,
+    length: f64,
+}
+
+/// A route cut into the pieces a beam is drawn on: each straight run and each
+/// bend that is long enough to carry light.
+fn legs_of(curve: &Curve) -> Vec<Leg> {
+    let mut legs = Vec::new();
+    let mut along = 0.0;
+    for (index, segment) in curve.segments.iter().enumerate() {
+        let from = segment_start(curve, index);
+        let length = segment_length(from, segment);
+        if length >= LEAST_PIECE && direction_of(from, segment.to()).is_some() {
+            legs.push(Leg {
+                from,
+                segment: *segment,
+                along,
+                length,
+            });
+        }
+        along += length;
+    }
+    legs
+}
+
+/// How a message's bar slides on one piece: it enters a whole pulse and a
+/// unit short of the piece, and leaves a unit past its end, within the turn.
+fn pass_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Slide {
+    let slid = |moment: f64| (moment - start) * speed - leg.along + PULSE_FRONT - pulse_span();
+    let moment_of = |slide: f64| start + (slide + leg.along - PULSE_FRONT + pulse_span()) / speed;
+    let enter = js::js_max(0.0, moment_of(-pulse_span() - 1.0));
+    let leave = js::js_min(cycle, moment_of(leg.length + 1.0));
+    Slide::Pass {
+        cycle,
+        enter,
+        leave,
+        from: slid(enter),
+        to: slid(leave),
+    }
+}
+
+/// One piece of a beam, its bar starting and reaching as far as `bar` says.
+fn piece_of(leg: &Leg, core: f64, bar: (f64, f64), rest: f64, slide: Slide) -> BeamPiece {
+    let height = core + GLOW[0].0 + 2.0 * sag_of(leg.from, &leg.segment) + 2.0 * BAR_ROOM;
+    let joined = leg_path(leg, true);
+    let exact = leg_path(leg, false);
+    let to = leg.segment.to();
+    BeamPiece {
+        frame: Frame {
+            origin: leg.from,
+            angle: libm::atan2(to.y - leg.from.y, to.x - leg.from.x),
+            stretch: js::hypot(to.x - leg.from.x, to.y - leg.from.y) / leg.length,
+        },
+        bounds: bounds_of(leg, core),
+        mask: GLOW
+            .iter()
+            .map(|&(over, light)| MaskLayer {
+                path: if over > HALO_OVER {
+                    exact.clone()
+                } else {
+                    joined.clone()
+                },
+                width: core + over,
+                light,
+            })
+            .collect(),
+        bar: Rect {
+            x: bar.0,
+            y: -height / 2.0,
+            width: bar.1,
+            height,
+        },
+        rest,
+        slide,
+    }
+}
+
+/// The unit direction from one point to another, or none when they are one.
+fn direction_of(from: Point, to: Point) -> Option<Point> {
+    let length = js::hypot(to.x - from.x, to.y - from.y);
+    if length < 1e-9 {
+        return None;
+    }
+    Some(Point {
+        x: (to.x - from.x) / length,
+        y: (to.y - from.y) / length,
+    })
+}
+
+/// How far a segment's own control points stray from the line between its ends.
+fn sag_of(from: Point, segment: &Segment) -> f64 {
+    let Segment::Cubic { first, second, to } = segment else {
+        return 0.0;
+    };
+    let chord = js::hypot(to.x - from.x, to.y - from.y);
+    js::max([*first, *second].map(|point| {
+        (((point.x - from.x) * (to.y - from.y) - (point.y - from.y) * (to.x - from.x)) / chord)
+            .abs()
+    }))
+}
+
+/// The way a piece leaves its start, or arrives at its end.
+fn tangent_of(leg: &Leg, end: bool) -> Option<Point> {
+    let ways = match leg.segment {
+        Segment::Cubic { first, second, to } if end => {
+            [direction_of(second, to), direction_of(first, to)]
+        }
+        Segment::Cubic { first, second, .. } => [
+            direction_of(leg.from, first),
+            direction_of(leg.from, second),
+        ],
+        Segment::Line { .. } => [None, None],
+    };
+    ways.into_iter()
+        .flatten()
+        .next()
+        .or_else(|| direction_of(leg.from, leg.segment.to()))
+}
+
+/// One piece of a route as a path, run a hair past each end, or cut off
+/// exactly at its ends.
+fn leg_path(leg: &Leg, overlapping: bool) -> Vec<PathStep> {
+    let segment = match leg.segment {
+        Segment::Line { to } => PathStep::Line { to },
+        Segment::Cubic { first, second, to } => PathStep::Cubic { first, second, to },
+    };
+    if !overlapping {
+        return vec![PathStep::Move { to: leg.from }, segment];
+    }
+    let zero = Point { x: 0.0, y: 0.0 };
+    let start = tangent_of(leg, false).unwrap_or(zero);
+    let end = tangent_of(leg, true).unwrap_or(zero);
+    let to = leg.segment.to();
+    vec![
+        PathStep::Move {
+            to: Point {
+                x: leg.from.x - start.x * OVERLAP,
+                y: leg.from.y - start.y * OVERLAP,
+            },
+        },
+        PathStep::Line { to: leg.from },
+        segment,
+        PathStep::Line {
+            to: Point {
+                x: to.x + end.x * OVERLAP,
+                y: to.y + end.y * OVERLAP,
+            },
+        },
+    ]
+}
+
+/// The box the light of a piece stays inside: its ends and control points,
+/// and the reach of its widest light past them.
+fn bounds_of(leg: &Leg, core: f64) -> Rect {
+    let reach = with_light_room(f64::midpoint(core, GLOW[0].0));
+    let mut points = vec![leg.from, leg.segment.to()];
+    if let Segment::Cubic { first, second, .. } = leg.segment {
+        points.push(first);
+        points.push(second);
+    }
+    let x = js::min(points.iter().map(|point| point.x)) - reach;
+    let y = js::min(points.iter().map(|point| point.y)) - reach;
+    Rect {
+        x,
+        y,
+        width: js::max(points.iter().map(|point| point.x)) + reach - x,
+        height: js::max(points.iter().map(|point| point.y)) + reach - y,
+    }
+}
+
+/// The gradient of a pulse with a tail of some length, `span` long.
+fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> BeamGradient {
+    let reach = PULSE_FRONT + PULSE_HEAD + tail;
+    let stop = |behind: f64, colour: &Colour, light: f64| Stop {
+        offset: Some((span - behind) / span),
+        colour: colour.clone(),
+        opacity: Some(light),
+    };
+    let mut stops = Vec::new();
+    if tail >= 1.0 {
+        for step in 0..TAIL_STEPS {
+            let share = f64::from(step) / f64::from(TAIL_STEPS);
+            stops.push(stop(
+                reach - tail * share,
+                &look.head,
+                TAIL_LIGHT * js::pow(share, TAIL_CURVE),
+            ));
+        }
+    }
+    // The body behind the tail: where the head starts, its hot middle, its
+    // front, and the dark past its front.
+    stops.push(stop(PULSE_FRONT + PULSE_HEAD, &look.head, TAIL_LIGHT));
+    stops.push(stop(PULSE_FRONT + PULSE_HEAD * 0.45, &look.hot, 0.9));
+    stops.push(stop(PULSE_FRONT, &look.hot, 1.0));
+    stops.push(stop(0.0, &look.hot, 0.0));
+    BeamGradient {
+        span,
+        repeat,
+        stops,
+    }
 }
