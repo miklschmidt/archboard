@@ -115,6 +115,25 @@ impl Net {
             End::Bottom => self.bottom_x = x,
         }
     }
+
+    /// Tracks between the bends of a fixed short step, including room for a cable's inner strand.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a whole count of lanes for a nonnegative distance"
+    )]
+    pub(crate) fn detour_lanes(&self) -> usize {
+        use crate::constants::{BEND_RADIUS, STRAND};
+
+        if self.detour_x().is_none() {
+            return 0;
+        }
+        let girth = self.kind.matches(';').count() as f64 * STRAND;
+        if girth == 0.0 {
+            return 1;
+        }
+        ((girth + 2.0 * BEND_RADIUS + STRAND) / LANE).ceil() as usize
+    }
 }
 
 /// A line's two end items: its first net's upper station's, and its last net's lower one's.
@@ -488,12 +507,8 @@ impl Router<'_> {
         let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
         let mut takes = vec![1; rows];
         for &(unit, row) in tracks {
-            if units[unit]
-                .1
-                .iter()
-                .any(|&net| self.net(net).detour_x().is_some())
-            {
-                takes[row] = 2;
+            for &net in &units[unit].1 {
+                takes[row] = takes[row].max(1 + self.net(net).detour_lanes());
             }
         }
         let mut lanes: Vec<usize> = vec![0];
