@@ -16,6 +16,7 @@ import { frontendBuild } from "#runtime/services/staleness.ts";
 async function buildFrontend(): Promise<string | null> {
 	const build = Bun.spawn([process.execPath, "run", "build"], {
 		cwd: installation().root,
+		env: process.env,
 		stdin: "ignore",
 		stdout: 2,
 		stderr: "inherit",

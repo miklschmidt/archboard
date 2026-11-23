@@ -72,7 +72,7 @@ async function pickRunner(
  * @returns Its exit code, and no output, because the person saw it.
  */
 async function talkingRun(command: string[]): Promise<{ exit: number; output: string }> {
-	const child = Bun.spawn(command, { stdio: ["inherit", "inherit", "inherit"] });
+	const child = Bun.spawn(command, { env: process.env, stdio: ["inherit", "inherit", "inherit"] });
 	return { exit: await child.exited, output: "" };
 }
 
@@ -82,7 +82,12 @@ async function talkingRun(command: string[]): Promise<{ exit: number; output: st
  * @returns Its exit code and its output.
  */
 async function quietRun(command: string[]): Promise<{ exit: number; output: string }> {
-	const child = Bun.spawn(command, { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+	const child = Bun.spawn(command, {
+		env: process.env,
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+	});
 	const [exit, out, err] = await Promise.all([
 		child.exited,
 		new Response(child.stdout).text(),

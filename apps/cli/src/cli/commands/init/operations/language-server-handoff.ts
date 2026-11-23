@@ -50,6 +50,7 @@ async function handOffLanguageServers(
 	if (chosen === undefined) return { next: brief };
 	const child = Bun.spawn([chosen.path, brief], {
 		cwd: repo,
+		env: process.env,
 		stdio: ["inherit", "inherit", "inherit"],
 	});
 	await child.exited;
