@@ -3,7 +3,7 @@ import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { across, along, breadth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
-import { cablesOf, plateReach } from "#tests/runtime/support/drawn-cables.ts";
+import { cablesOf, onCableMiddle } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	corridorPoints,
 	routeCrosses,
@@ -193,34 +193,6 @@ function inkOf(drawing: RenderedDiagram, traced: ReadonlySet<string>): Ink {
 }
 
 /**
- * Whether a label lies on one straight axis-aligned run of a route.
- * @param points The route without its bridges.
- * @param label The label's box.
- * @returns True when one run carries the whole label through its centre.
- */
-function onStraightRun(points: readonly DrawnPoint[], label: DiagramBox, beside = 0): boolean {
-	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
-	// The engine centres an inline label at a rounded width and snaps routes to
-	// whole units, so a label on its run can sit up to about a unit off it
-	// (0.88 on Archboard server): invisible, and not a label off its line. A
-	// cable's plate stands `beside` its strands, on the cable's middle.
-	const snap = 1 + beside;
-	return points.slice(1).some((end, index) => {
-		const start = points[index]!;
-		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < snap;
-		const vertical = start.x === end.x && Math.abs(start.x - centre.x) < snap;
-		return (
-			(horizontal &&
-				Math.min(start.x, end.x) <= label.x &&
-				Math.max(start.x, end.x) >= label.x + label.width) ||
-			(vertical &&
-				Math.min(start.y, end.y) <= label.y &&
-				Math.max(start.y, end.y) >= label.y + label.height)
-		);
-	});
-}
-
-/**
  * The labelled relationships whose label does not sit on a straight run of
  * its own route, or, for a cable's plate, on the middle of its strands.
  * @param drawing The rendered document.
@@ -232,12 +204,8 @@ function labelsOffRuns(drawing: RenderedDiagram): string[] {
 	const found: string[] = [];
 	for (const [id, label] of routeLabels(drawing.svg)) {
 		const strands = cables.get(id) ?? [id];
-		const reach = plateReach(strands);
-		const on = strands.every((strand) => {
-			const route = routes.get(strand);
-			return route === undefined || onStraightRun(route, label, reach);
-		});
-		if (!on) found.push(id);
+		if (strands.some((strand) => !routes.has(strand))) continue;
+		if (!onCableMiddle(strands, routes, label)) found.push(id);
 	}
 	return found;
 }
