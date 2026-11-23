@@ -174,6 +174,18 @@ describe("pollUntil", () => {
 		await expect(pending).rejects.toThrow("interrupted");
 		expect(jest.getTimerCount()).toBe(0);
 	});
+
+	test("cancellation ends a wait during a look and observes its later rejection", async () => {
+		const caller = new AbortController();
+		const look = Promise.withResolvers<undefined>();
+		const pending = pollUntil("server.stopConfirm", () => look.promise, { signal: caller.signal });
+		const reason = new Error("request cancelled during a look");
+		caller.abort(reason);
+		await expect(pending).rejects.toBe(reason);
+		expect(jest.getTimerCount()).toBe(0);
+		look.reject(new Error("the look later failed"));
+		await settle();
+	});
 });
 
 test("every bound carries its wait's name to the timer, so a preload can shorten it by name", async () => {

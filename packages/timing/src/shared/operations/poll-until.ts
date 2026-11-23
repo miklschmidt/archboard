@@ -22,7 +22,7 @@ interface PollOptions {
 /** The end of the wait, as one timer that carries the wait's name. */
 interface Expiry {
 	readonly expired: () => boolean;
-	/** Resolve after a pause, or as soon as the wait runs out or the caller aborts. */
+	/** Resolve after a pause, or as soon as the wait ends. */
 	readonly pause: (ms: number) => Promise<void>;
 	readonly release: () => void;
 }
@@ -50,22 +50,16 @@ function startExpiry(wait: Polled, signal: AbortSignal | undefined): Expiry {
 	 * @returns Resolves after it, or as soon as the wait runs out.
 	 */
 	const pause = (ms: number): Promise<void> => {
-		return new Promise<void>((resolve, reject) => {
-			/** Stop the pause for the caller's reason. */
-			const abandon = (): void => {
-				clearTimeout(rest);
-				reject(signal?.reason);
-			};
-			/** End the pause and let go of the caller's signal. */
+		signal?.throwIfAborted();
+		return new Promise<void>((resolve) => {
+			/** End the pause and drop its timer. */
 			const done = (): void => {
 				clearTimeout(rest);
-				signal?.removeEventListener("abort", abandon);
 				wake = undefined;
 				resolve();
 			};
 			const rest = setTimeout(done, ms);
 			wake = done;
-			signal?.addEventListener("abort", abandon, { once: true });
 		});
 	};
 	/**
@@ -73,9 +67,10 @@ function startExpiry(wait: Polled, signal: AbortSignal | undefined): Expiry {
 	 * @returns True once its timer fired.
 	 */
 	const expiredYet = (): boolean => expired;
-	/** Let go of the wait's timer. */
+	/** Drop the wait's timer and any pending pause. */
 	const release = (): void => {
 		clearTimeout(timer);
+		wake?.();
 	};
 	return { expired: expiredYet, pause, release };
 }
@@ -87,7 +82,7 @@ function startExpiry(wait: Polled, signal: AbortSignal | undefined): Expiry {
  * timeout. A look is never interrupted: one in flight when the wait runs out is that last look.
  * @param wait The wait.
  * @param look Returns what the caller waits for, or undefined while it does not hold yet.
- * @param options The caller's signal.
+ * @param options The caller's signal, which ends the wait even if a look is still in flight.
  * @returns What the look returned once the condition held.
  * @throws {TimedOut} When the last look found that it still does not hold.
  */
@@ -97,8 +92,18 @@ async function pollUntil<T>(
 	options: PollOptions = {},
 ): Promise<T> {
 	const { signal } = options;
+	signal?.throwIfAborted();
 	const expiry = startExpiry(wait, signal);
-	try {
+	const cancelled = Promise.withResolvers<never>();
+	/** Reject the wait for the caller's reason. */
+	const abandon = (): void => {
+		cancelled.reject(signal?.reason);
+	};
+	/**
+	 * Look in series until the condition holds, the wait ends, or the caller cancels.
+	 * @returns The first value found.
+	 */
+	const observe = async (): Promise<T> => {
 		for (let pause = FIRST_PAUSE_MS; ; pause = Math.min(2 * pause, LONGEST_PAUSE_MS)) {
 			signal?.throwIfAborted();
 			// oxlint-disable-next-line no-await-in-loop -- one look after another until the condition holds
@@ -108,8 +113,13 @@ async function pollUntil<T>(
 			// oxlint-disable-next-line no-await-in-loop -- the pause between two looks
 			await expiry.pause(pause);
 		}
+	};
+	signal?.addEventListener("abort", abandon, { once: true });
+	try {
+		return await (signal === undefined ? observe() : Promise.race([cancelled.promise, observe()]));
 	} finally {
 		expiry.release();
+		signal?.removeEventListener("abort", abandon);
 	}
 }
 
