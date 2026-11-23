@@ -198,11 +198,7 @@ function inkOf(drawing: RenderedDiagram, traced: ReadonlySet<string>): Ink {
  * @param label The label's box.
  * @returns True when one run carries the whole label through its centre.
  */
-function onStraightRun(
-	points: readonly DrawnPoint[],
-	label: { x: number; y: number; width: number; height: number },
-	beside = 0,
-): boolean {
+function onStraightRun(points: readonly DrawnPoint[], label: DiagramBox, beside = 0): boolean {
 	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
 	// The engine centres an inline label at a rounded width and snaps routes to
 	// whole units, so a label on its run can sit up to about a unit off it
