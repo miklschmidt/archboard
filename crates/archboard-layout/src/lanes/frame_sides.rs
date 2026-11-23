@@ -165,6 +165,76 @@ fn among_cards(placed: &Picture<'_>, x: f64) -> bool {
     cards.clone().any(|bx| bx.x < x) && cards.any(|bx| bx.x + bx.width > x)
 }
 
+#[cfg(test)]
+mod approach_clearance {
+    use super::*;
+
+    #[test]
+    fn a_wall_door_keeps_other_side_approaches_clear() {
+        let at = |x, y| Point { x, y };
+        let bx = |x, y, width, height| Rect {
+            x,
+            y,
+            width,
+            height,
+        };
+        let cards = [
+            bx(0.0, 0.0, 100.0, 32.0),
+            bx(120.0, 170.0, 100.0, 60.0),
+            bx(48.0, 110.0, 25.0, 30.0),
+            bx(130.0, 30.0, 40.0, 32.0),
+        ];
+        let frames = [(bx(100.0, 100.0, 200.0, 220.0), 0)];
+        let mut lines = [
+            vec![
+                at(30.0, 32.0),
+                at(30.0, 70.0),
+                at(190.0, 70.0),
+                at(190.0, 140.0),
+                at(170.0, 140.0),
+                at(170.0, 170.0),
+            ],
+            vec![
+                at(73.0, 125.0),
+                at(95.0, 125.0),
+                at(95.0, 55.0),
+                at(130.0, 55.0),
+            ],
+            vec![at(180.0, 90.0), at(200.0, 90.0)],
+        ];
+        enter_by_frame_sides(&mut Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        });
+        assert_eq!(lines[0].last(), Some(&at(170.0, 170.0)));
+    }
+}
+
+/// The protected approaches to side ports on other lines already in the picture.
+fn side_approaches(placed: &Picture<'_>, line: usize) -> impl Iterator<Item = Run> {
+    placed
+        .lines
+        .iter()
+        .enumerate()
+        .filter(move |&(other, _)| other != line)
+        .flat_map(|(_, points)| {
+            let runs = points.windows(2);
+            let first = runs.clone().next().map(|pair| (pair[0], pair[1]));
+            let last = runs.last().map(|pair| (pair[1], pair[0]));
+            [first, last].into_iter().flatten()
+        })
+        .filter_map(|(end, next)| {
+            let side = abs(end.y - next.y) < 0.5
+                && placed.cards.iter().any(|card| {
+                    (abs(end.x - card.x) < 0.5 || abs(end.x - card.x - card.width) < 0.5)
+                        && end.y > card.y
+                        && end.y < card.y + card.height
+                });
+            side.then(|| at_face(end.x, next.x, end.y))
+        })
+}
+
 /// Whether a line through a wall reads better than the line it replaces, against the others.
 fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[Run]) -> bool {
     let old = outside_first(placed, door.line, door.leaving);
@@ -177,6 +247,8 @@ fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[R
     !bused
         && !blocked(placed, &outside, &door.card)
         && !others.iter().any(|&other| meets(head, other) > 0)
+        && !side_approaches(placed, door.line)
+            .any(|approach| new_runs.iter().any(|&run| meets(approach, run) > 0))
         && length(points) <= length(&old)
         && !worse(met(&runs_of(points), others), old_meets)
         && bends(points) < bends(&old)
