@@ -31,17 +31,22 @@ impl Room {
         self.columns.get(at).copied().unwrap_or(0.0)
     }
 
-    /// A lane of room in each row room and each column room of some ranges, and whether that
-    /// is any room at all.
-    fn add(&mut self, grid: &Grid, (rows, columns): (Range<usize>, Range<usize>)) -> bool {
+    /// A lane of room, and as much again as the asking line is wide, in each row room and each
+    /// column room of some ranges, and whether that is any room at all.
+    fn add(
+        &mut self,
+        grid: &Grid,
+        (rows, columns): (Range<usize>, Range<usize>),
+        girth: f64,
+    ) -> bool {
         self.rows.resize(grid.rows() + 1, 0.0);
         self.columns.resize(grid.columns + 1, 0.0);
         let asks = !rows.is_empty() || !columns.is_empty();
         for at in rows {
-            self.rows[at] += LANE_ROOM;
+            self.rows[at] += LANE_ROOM + girth;
         }
         for at in columns {
-            self.columns[at] += LANE_ROOM;
+            self.columns[at] += LANE_ROOM + girth;
         }
         asks
     }
@@ -178,13 +183,38 @@ impl Grids<'_> {
             return false;
         };
         rooms.resize(self.reading.blocks.len(), Room::default());
-        rooms[frame].add(grid, asked)
+        rooms[frame].add(grid, asked, girth(self.reading.graph, ends))
     }
+}
+
+/// How wide the widest line between two ends is: a cable as wide as its strands stand apart.
+fn girth(graph: &crate::graph::Node, [one, other]: [&str; 2]) -> f64 {
+    (graph.edges.iter().flatten())
+        .filter(|edge| {
+            (edge.source(), edge.target()) == (one, other)
+                || (edge.source(), edge.target()) == (other, one)
+        })
+        .filter_map(|edge| edge.option(crate::graph::CABLE))
+        .map(|cable| (cable.split(';').count() - 1) as f64 * crate::constants::STRAND)
+        .fold(0.0, f64::max)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_cable_asks_for_room_as_wide_as_its_strands_either_way_round() {
+        let graph: crate::graph::Node = serde_json::from_value(serde_json::json!({
+            "id": "root", "children": [{"id": "a"}, {"id": "b"}, {"id": "c"}],
+            "edges": [
+                {"id": "cable", "sources": ["a"], "targets": ["b"],
+                    "layoutOptions": {"archboard.cable": "sync;event;rpc"}},
+                {"id": "lone", "sources": ["a"], "targets": ["c"]}]}))
+        .expect("a graph");
+        assert_eq!(girth(&graph, ["b", "a"]), 2.0 * crate::constants::STRAND);
+        assert_eq!(girth(&graph, ["a", "c"]), 0.0);
+    }
 
     const WALL: Rect = Rect {
         x: 0.0,
