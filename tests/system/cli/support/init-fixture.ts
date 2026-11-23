@@ -112,6 +112,7 @@ function scratchPath(root: string): { bin: string; calls: string; fails: string 
 		[
 			"#!/bin/sh",
 			'if [ "$1" = "x" ]; then',
+			'  if [ "${ARCHBOARD_HANDED_OFF+x}" ]; then echo "unexpected hand-off marker" >&2; exit 4; fi',
 			`  printf '%s\\t' "$@" >> ${quote(calls)}`,
 			`  printf '\\n' >> ${quote(calls)}`,
 			`  if [ -e ${quote(fails)} ]; then echo 'registry unreachable' >&2; exit 3; fi`,
@@ -125,7 +126,7 @@ function scratchPath(root: string): { bin: string; calls: string; fails: string 
 	return { bin, calls, fails };
 }
 
-function createInitFixture(): InitFixture {
+function createInitFixture(handedTo?: string): InitFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-init-"));
 	const home = join(root, "home");
 	const state = join(root, "state");
@@ -144,6 +145,7 @@ function createInitFixture(): InitFixture {
 	const environment = {
 		...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))),
 		...clearedEnvironment,
+		ARCHBOARD_HANDED_OFF: handedTo,
 		PATH: bin,
 		HOME: home,
 		GIT_CONFIG_GLOBAL: gitConfiguration,
