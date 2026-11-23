@@ -352,7 +352,10 @@ function bundleAt(run: Run, runs: readonly Run[]): number {
  * @param runs The runs to measure: every route's, unless the caller names fewer.
  * @returns The longest shared stretch, the widest bundle and the share of ink drawn beside another route.
  */
-function sharedCorridorOf(drawing: RenderedDiagram, runs: readonly Run[] = runsOf(drawing)): Corridor {
+function sharedCorridorOf(
+	drawing: RenderedDiagram,
+	runs: readonly Run[] = runsOf(drawing),
+): Corridor {
 	let total = 0,
 		beside = 0,
 		longest = 0,
