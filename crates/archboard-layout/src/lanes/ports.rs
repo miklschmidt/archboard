@@ -49,18 +49,17 @@ fn fanned(face: &Rect, wanted: &[f64]) -> Vec<f64> {
     asked
 }
 
-/// The ports of a face gathered into one group a lane apart, in the order asked, round the middle
-/// of what they ask for and inside the face's reach; spread as asked when the group does not fit.
-fn gathered((low, high): (f64, f64), wanted: &[f64]) -> Vec<f64> {
-    let span = (wanted.len().saturating_sub(1)) as f64 * LANE;
-    if wanted.len() < 2 || span > high - low {
-        return spread_along((low, high), wanted);
-    }
-    let middle = wanted.iter().sum::<f64>() / wanted.len() as f64;
-    let start = js_min(high - span, js_max(low, middle - span / 2.0));
-    (0..wanted.len())
-        .map(|at| start + at as f64 * LANE)
-        .collect()
+/// The ports of a face gathered into one group a lane apart, in the order asked, centred on the
+/// face's reach: a port leaves the middle only to make room for the others, never to stand nearer
+/// its line's other end. A group longer than the face packs closer, still centred.
+fn gathered((low, high): (f64, f64), count: usize) -> Vec<f64> {
+    let gap = if count > 1 {
+        js_min(LANE, (high - low) / (count - 1) as f64)
+    } else {
+        0.0
+    };
+    let start = f64::midpoint(low, high) - gap * (count.saturating_sub(1)) as f64 / 2.0;
+    (0..count).map(|at| start + at as f64 * gap).collect()
 }
 
 /// Spread two or more ports evenly over a stretch of a face, the last at its
@@ -175,7 +174,7 @@ impl Router<'_> {
         let (low, high) = self.face_reach(item, &face, fan);
         let reach = (low.min(high), high);
         let ports = if self.bus {
-            gathered(reach, &wanted)
+            gathered(reach, wanted.len())
         } else {
             spread_along(reach, &if fan { fanned(&face, &wanted) } else { wanted })
         };

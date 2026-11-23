@@ -133,11 +133,12 @@ impl Router<'_> {
 
     /// Move a card's own port along its face to an x, when the port is no
     /// trunk's and clear of the face's corners and its
-    /// other ports.
+    /// other ports. A bus's ports stand centred on their face (`place_ports`) and never move
+    /// to close a jog.
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
         let item = self.station(station).item;
-        if self.shared_at(net, end).is_some() || !self.on_face(station, x) {
+        if self.bus || self.shared_at(net, end).is_some() || !self.on_face(station, x) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {

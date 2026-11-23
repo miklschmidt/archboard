@@ -221,7 +221,7 @@ fn line(id: &str, from: &str, to: &str, kind: &str) -> Value {
 }
 
 #[test]
-fn lanes_lands_the_lines_bound_for_one_card_together_a_lane_apart() {
+fn lanes_lands_the_lines_bound_for_one_card_together_a_lane_apart_centred_on_its_face() {
     let graph = json!({"id":"root","layoutOptions":{},
     "children":[card("left",200),card("middle",200),card("right",200),card("target",900)],
     "edges":[
@@ -240,6 +240,18 @@ fn lanes_lands_the_lines_bound_for_one_card_together_a_lane_apart() {
             .windows(2)
             .all(|pair| (pair[1] - pair[0] - LANE).abs() < 0.01),
         "the heads stand together a lane apart: {heads:?}"
+    );
+    let target = &drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .find(|card| card["id"] == "target")
+        .expect("the target is drawn")["box"];
+    let middle =
+        target["x"].as_f64().expect("an x") + target["width"].as_f64().expect("a width") / 2.0;
+    assert!(
+        (f64::midpoint(heads[0], heads[heads.len() - 1]) - middle).abs() < 0.01,
+        "the heads stand round the middle of the target's face: {heads:?}, middle {middle}"
     );
 }
 
@@ -367,5 +379,35 @@ fn lanes_folds_no_ranks_so_no_line_laps_round_the_page() {
                 .all(|&(_, y)| y >= top - 1.0 && y <= bottom + 1.0),
             "{id} runs between the highest and the lowest card"
         );
+    }
+}
+
+#[test]
+fn lanes_stands_the_ends_on_every_face_round_its_middle() {
+    let drawn =
+        drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/readme-all.json")).unwrap());
+    let lines = lines_of(&drawn);
+    for card in drawn["cards"].as_array().expect("its cards") {
+        let at = |key: &str| card["box"][key].as_f64().expect("a card's box");
+        let (left, top, width, height) = (at("x"), at("y"), at("width"), at("height"));
+        for face in [top, top + height] {
+            let ends: Vec<f64> = lines
+                .iter()
+                .flat_map(|(_, points)| [points[0], *points.last().expect("an end")])
+                .filter(|&(x, y)| (y - face).abs() < 0.01 && left <= x && x <= left + width)
+                .map(|(x, _)| x)
+                .collect();
+            let (Some(low), Some(high)) = (
+                ends.iter().copied().reduce(f64::min),
+                ends.iter().copied().reduce(f64::max),
+            ) else {
+                continue;
+            };
+            assert!(
+                (f64::midpoint(low, high) - (left + width / 2.0)).abs() < 0.5,
+                "the ends on {} at {face} stand round its middle: {ends:?}",
+                card["id"]
+            );
+        }
     }
 }
