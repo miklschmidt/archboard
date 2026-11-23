@@ -385,13 +385,14 @@ function projectVisible(
 	const allConnections = complete.edges
 		.filter((edge) => relationships.has(edge.id) && visible.has(edge.from) && visible.has(edge.to))
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
-	const connections = cablePlates(
+	const connections = drawnLines(
 		complete,
-		drawnLines(
-			complete,
-			allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
-			visible,
-		),
+		allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
+		visible,
+	);
+	const drawn = cablePlates(
+		complete,
+		connections,
 		(edge) => [edge.from, edge.to],
 		(line) => standing[line.id] ?? "unchanged",
 	);
@@ -402,7 +403,7 @@ function projectVisible(
 		context: [],
 		connections,
 		allConnections,
-		content: drawingContent(complete, visible, connections, { parents: visible, doors: [] }),
+		content: drawingContent(complete, visible, drawn, { parents: visible, doors: [] }),
 	};
 }
 
