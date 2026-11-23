@@ -332,7 +332,7 @@ async function stealContested(
  * @throws {ModelLockCancelledError} When the request goes away while waiting.
  */
 async function holdModel(request: LockRequest): Promise<LockHold> {
-	const startedAt = Date.now();
+	const startedAt = performance.now();
 	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
 	const look = lockAttempt(request, wait);
 	const first =
@@ -342,7 +342,7 @@ async function holdModel(request: LockRequest): Promise<LockHold> {
 		throw new ModelHeldError(
 			request.model,
 			wait.blocker ? holderOf(wait.blocker) : null,
-			Date.now() - startedAt,
+			Math.round(performance.now() - startedAt),
 		);
 	}
 	return outcome;

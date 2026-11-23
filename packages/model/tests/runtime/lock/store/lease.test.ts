@@ -40,6 +40,26 @@ async function cleanup(): Promise<void> {
 	rmSync(vault, { recursive: true, force: true });
 }
 
+test("a wall clock correction does not change the elapsed lock wait", async () => {
+	const model = "wall-clock-correction";
+	jest.useFakeTimers();
+	try {
+		await lock.holdModel({ vault, model, holder: human("user"), waits: false });
+		const startedAt = performance.now();
+		const refusal = lock
+			.holdModel({ vault, model, holder: agent("later") })
+			.catch((error: unknown) => error);
+		jest.setSystemTime(Date.now() - 60_000);
+		jest.advanceTimersToNextTimer();
+		const elapsed = performance.now() - startedAt;
+		expect(elapsed).toBeGreaterThan(0);
+		expect(await refusal).toMatchObject({ code: "MODEL_HELD", waitedMs: elapsed });
+	} finally {
+		lock.releaseHold(vault, model, "user");
+		jest.useRealTimers();
+	}
+});
+
 test("post-attempt cancellation preserves a reentrant claim for explicit release", async () => {
 	const model = "cancelled-reentrant-claim";
 	models.add(model);
