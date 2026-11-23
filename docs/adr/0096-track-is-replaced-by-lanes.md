@@ -66,3 +66,25 @@ block, and no entry-point row or peer row is kept.
 
 Removing Track's code changed no Blocks drawing: 542 corpus drawings, a full native picture, and
 the layout fixtures, a fallback drawing among them, are byte-identical before and after.
+
+## Amendment: Lanes is an engine of its own (2026-11-23)
+
+The owner decided that Lanes has a bus look of its own, and that its pictures may differ from
+Blocks' fallback:
+
+> lanes is supposed to have a bus look.
+
+Lanes still starts from the lanes' placement, but it no longer has to draw what Blocks' fallback
+draws. Blocks' planned drawings and its fallback do not change. Lanes differs in three ways:
+
+- The cards beside a container are ranked with the container, so a caller stands above it and
+  what the container calls stands below. Blocks' fallback gathers them into a block of their own,
+  which wraps them into a grid above the container.
+- A cycle turns as few lines as a greedy order finds, so a bundle of many lines keeps its
+  direction and the one line against it turns. Blocks' fallback turns whichever line a
+  depth-first walk meets last.
+- The page holds every point of every line.
+
+Tests hold the bus look, not equality with the fallback: no line words, the lines between two
+cards in one bundle a lane apart, cards ranked with the container they talk to, and every line on
+its page.
