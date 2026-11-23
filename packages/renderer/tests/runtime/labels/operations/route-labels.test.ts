@@ -229,7 +229,7 @@ describe("a label belongs to one line", () => {
 		});
 	}
 
-	test("parallel labelled skips reserve measured room beside their tracks", async () => {
+	test("parallel labelled skips draw as one cable with one plate, with room beside its strands", async () => {
 		const content = orderedFixture({
 			...LABELLED_FORK,
 			edges: [
@@ -245,7 +245,8 @@ describe("a label belongs to one line", () => {
 		});
 		for (const theme of ["light", "dark"] as const) {
 			const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
-			expect(routeLabels(drawn.svg).size).toBe(4);
+			// The two lines from graph to layout draw as one cable, which wears one plate.
+			expect(routeLabels(drawn.svg).size).toBe(3);
 			expect(detached(drawn)).toEqual([]);
 			expect(covering(drawn)).toEqual([]);
 			expect(overlaps(drawn, content)).toEqual([]);

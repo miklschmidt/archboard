@@ -1,6 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-// Relationships may share ports and trunks. Their identities, words, and
-// semantic endpoints must remain legible even when their geometry coincides.
+// Relationships may share ports and trunks, and those between the same two cards draw as the
+// strands of one cable. Their identities, words, and semantic endpoints must remain legible even
+// when their geometry coincides.
 
 import { expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/model/content";
@@ -11,7 +12,10 @@ import { distanceToFrame, routeLabels, routePoints } from "#tests/runtime/suppor
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-/** Each relationship starts and ends at the frame of the subject it names. */
+/**
+ * Each relationship starts and ends at the frame of the subject it names, and each cable wears
+ * one plate, on its first relationship.
+ */
 async function expectReadableRoutes(
 	content: VariantContent,
 ): Promise<{ paths: ReturnType<typeof routePoints> }> {
@@ -29,7 +33,10 @@ async function expectReadableRoutes(
 		// Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
 		expect(distanceToFrame(path![0]!, drawing.atlas.nodes[edge.from]!)).toBeLessThan(0.03);
 		expect(distanceToFrame(path!.at(-1)!, drawing.atlas.nodes[edge.to]!)).toBeLessThan(0.03);
-		if (edge.label) {
+		const first = content.edges.find(({ from, to }) => from === edge.from && to === edge.to);
+		if (first?.id !== edge.id) {
+			expect(labels.has(edge.id), `${edge.id} wears its cable's plate`).toBe(false);
+		} else if (edge.label) {
 			expect(labels.has(edge.id), `${edge.id} keeps its label`).toBe(true);
 			expect(
 				words
@@ -48,7 +55,7 @@ async function expectReadableRoutes(
 }
 
 for (const framed of [false, true]) {
-	test(`parallel relationships keep both identities and labels ${framed ? "across a frame" : "between cards"}`, async () => {
+	test(`parallel relationships keep both identities and one plate ${framed ? "across a frame" : "between cards"}`, async () => {
 		const content = orderedFixture({
 			nodes: [
 				...(framed ? [{ id: "frame", name: "Frame", kind: "service" }] : []),
