@@ -1,7 +1,8 @@
 ---
 // The left column of the mock shell: the repository switcher, the keys of History and Measures,
 // and one list with a section for modules, flows and walkthroughs. The rows and counts are the
-// example shop's, as the shell lists them at its root with Checkout API selected.
+// example shop's, as the shell lists them at its root. The column marks only where the reader is,
+// and the root is no row, so Checkout API, selected on the picture, marks no row.
 import Icon from "../Icon.astro";
 import SectionLabel from "./SectionLabel.astro";
 import type { IconName } from "../../lib/icons";
@@ -56,7 +57,6 @@ const sections: { title: string; icon: IconName; count: number; rows: Row[] }[] 
 		],
 	},
 ];
-const selected = "Checkout API";
 ---
 
 <aside class="navigator" aria-hidden="true">
@@ -79,7 +79,7 @@ const selected = "Checkout API";
 					</p>
 					<ul class="rows">
 						{section.rows.map((row) => (
-							<li class:list={["row", { "is-on": row.name === selected, owner: row.owner, child: row.child }]}>
+							<li class:list={["row", { owner: row.owner, child: row.child }]}>
 								<span class="fold">
 									{row.branch && <Icon name="chevronRight" size={15} />}
 									{row.owner && <Icon name="chevronDown" size={15} />}
@@ -266,11 +266,6 @@ const selected = "Checkout API";
 		top: 14px;
 		width: 8px;
 		height: 1px;
-	}
-	.row.is-on {
-		background: var(--raised);
-		color: var(--ink);
-		box-shadow: var(--shadow-raised);
 	}
 	.fold {
 		display: inline-flex;
