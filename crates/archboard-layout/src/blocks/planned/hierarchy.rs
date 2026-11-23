@@ -63,14 +63,7 @@ impl Channels<'_, '_> {
         let source = shape.endpoints[&from];
         let mut paths = Vec::new();
         for side in [Side::Top, Side::Bottom, Side::Left, Side::Right] {
-            let Some(end) = port(
-                model,
-                edge,
-                false,
-                side,
-                shape,
-                *tail.last().expect("a departure"),
-            ) else {
+            let Some(end) = port(model, edge, false, side, shape) else {
                 continue;
             };
             let head = vec![end.attachment, end.approach];

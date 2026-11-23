@@ -52,6 +52,26 @@ pub(super) struct Model<'a> {
     pub incoming: Vec<Vec<usize>>,
 }
 
+/// How many strands a line carries: a cable as many as it names, a lone line one.
+pub(super) fn strands(edge: &Edge) -> usize {
+    edge.option(crate::graph::CABLE)
+        .map_or(1, |cable| cable.split(';').count())
+}
+
+/// How much a line of some strands weighs when a placement or a drawing is priced: more than a
+/// lone line, as its strands are lines a reader traces, but less than as many lone lines, so that
+/// one wide cable cannot dictate the grid (both advisors settled `sqrt(n)` over `n`).
+pub(super) fn weight_of(strands: usize) -> f64 {
+    (strands as f64).sqrt()
+}
+
+/// Each line's weight by its id, for pricing drawings that name their lines only by id.
+pub(super) fn weights(graph: &Node) -> rustc_hash::FxHashMap<&str, f64> {
+    (graph.edges.iter().flatten())
+        .map(|edge| (edge.id.as_str(), weight_of(strands(edge))))
+        .collect()
+}
+
 impl<'a> Model<'a> {
     /// How far a line's ink reaches to either side of its route.
     pub(super) fn half(&self, edge: usize) -> f64 {
@@ -118,12 +138,15 @@ impl<'a> Model<'a> {
                 .ends
                 .push((model.ending(from, to), model.ending(to, from)));
         }
+        // A cable is a kind of its own: two cables never share a port or a fan, because the
+        // order of a ribbon's strands turns with the side it comes from, and two ribbons that
+        // met on one port from two sides would cross their strands beside it.
         model.treatments = model
             .edges
             .iter()
             .map(|edge| {
                 if let Some(cable) = edge.option(crate::graph::CABLE) {
-                    return cable.to_owned();
+                    return format!("{cable}|{}", edge.id);
                 }
                 format!(
                     "{}|{}|{}",
@@ -135,12 +158,7 @@ impl<'a> Model<'a> {
             })
             .collect();
         model.girth = (model.edges.iter())
-            .map(|edge| {
-                let strands = edge
-                    .option(crate::graph::CABLE)
-                    .map_or(1, |cable| cable.split(';').count());
-                (strands - 1) as f64 * crate::constants::STRAND
-            })
+            .map(|edge| (strands(edge) - 1) as f64 * crate::constants::STRAND)
             .collect();
         model.outgoing = vec![Vec::new(); model.endpoints.len()];
         model.incoming = vec![Vec::new(); model.endpoints.len()];

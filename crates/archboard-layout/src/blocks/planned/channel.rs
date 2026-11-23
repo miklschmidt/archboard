@@ -4,12 +4,12 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
 use super::model::Model;
-use super::ports::{center, port};
+use super::ports::port;
 use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
 
@@ -392,6 +392,10 @@ pub(super) fn approach_of(half: f64) -> f64 {
     APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
 }
 
+/// How many times its direct way a cable's route may run, past the long detour's length: a
+/// ring round the page is refused, and placement makes room for the direct way instead.
+const CABLE_DETOUR: f64 = 2.5;
+
 /// Rounded corners must leave the complete arrow approach after painting (`approach_of`). A
 /// line with no bend needs only the room its marks take.
 pub(super) fn approaches(points: &[Point], half: f64) -> bool {
@@ -405,7 +409,9 @@ pub(super) fn approaches(points: &[Point], half: f64) -> bool {
 
 /// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
 /// that turn the same way, the inner strand's run is shorter by the girth, and still holds both
-/// rounded corners.
+/// rounded corners with a straight between them as long as the strands stand apart. Corners
+/// that met with no straight between them would turn the inner strand in one S, unlike the
+/// strands beside it.
 fn turns_clear(points: &[Point], girth: f64) -> bool {
     let turn = |at: usize| {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
@@ -413,7 +419,8 @@ fn turns_clear(points: &[Point], girth: f64) -> bool {
     };
     girth == 0.0
         || (1..points.len().saturating_sub(2)).all(|at| {
-            turn(at) != turn(at + 1) || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS
+            turn(at) != turn(at + 1)
+                || length(&points[at..at + 2]) >= girth + 2.0 * BEND_RADIUS + STRAND
         })
 }
 
@@ -431,25 +438,30 @@ pub(super) fn foreign(model: &Model<'_>, topology: &Topology, edge: usize, scope
 
 /// Source approaches depend on the endpoint geometry.
 pub(super) fn tails(model: &Model<'_>, index: usize, shape: &Shape) -> Vec<Vec<Point>> {
-    let target = center(shape.endpoints[&model.ends[index].1]);
     model.endpoints[model.ends[index].0]
         .walls
         .into_iter()
-        .filter_map(|side| port(model, index, true, side, shape, target))
+        .filter_map(|side| port(model, index, true, side, shape))
         .map(|port| vec![port.attachment, port.approach])
         .collect()
 }
 
 pub(super) fn attached(at: Point, next: Point, bounds: Rect) -> bool {
+    attached_by(at, next, bounds, 0.0)
+}
+
+/// `attached` for a line whose ink reaches `half` to either side: a cable's every strand ends on
+/// the wall, so its middle stands half its width in from each end of the wall.
+fn attached_by(at: Point, next: Point, bounds: Rect, half: f64) -> bool {
     let near = |a: f64, b: f64| (a - b).abs() < 0.1;
     if at.x == next.x {
-        at.x >= bounds.x
-            && at.x <= bounds.x + bounds.width
+        at.x >= bounds.x + half
+            && at.x <= bounds.x + bounds.width - half
             && (near(at.y, bounds.y) && next.y < at.y
                 || near(at.y, bounds.y + bounds.height) && next.y > at.y)
     } else if at.y == next.y {
-        at.y >= bounds.y
-            && at.y <= bounds.y + bounds.height
+        at.y >= bounds.y + half
+            && at.y <= bounds.y + bounds.height - half
             && (near(at.x, bounds.x) && next.x < at.x
                 || near(at.x, bounds.x + bounds.width) && next.x > at.x)
     } else {
@@ -511,10 +523,20 @@ fn basic(
     if meets_itself(points) {
         return Some("loop");
     }
-    if !attached(points[0], points[1], source)
-        || !attached(points[points.len() - 1], points[points.len() - 2], target)
+    let half = girth / 2.0;
+    if !attached_by(points[0], points[1], source, half)
+        || !attached_by(
+            points[points.len() - 1],
+            points[points.len() - 2],
+            target,
+            half,
+        )
     {
         return Some("attachment wall");
+    }
+    // A cable a reader follows as one ribbon takes no long way round its direct one.
+    if girth > 0.0 && super::reading::runs_beyond(points, CABLE_DETOUR) {
+        return Some("detour");
     }
     if !points.iter().all(|point| {
         contains(

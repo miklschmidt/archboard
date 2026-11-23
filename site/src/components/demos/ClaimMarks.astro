@@ -1,7 +1,8 @@
 ---
 // An agent's claim as the shell shows it: a pulsing mark on the claimed model and on each claimed
-// row of the left column, and the Claimed badge in the head of the selected subject. A claim is
-// status, so the reader has nothing to act on. The demo plays the agent's release, the real
+// row of the left column, and the Claimed badge in the head of the open module, on the line under
+// its name that the shell draws only while a claim holds it. A claim is status, so the reader has
+// nothing to act on. The demo plays the agent's release, the real
 // `Claims  none` answer prints, and the marks leave.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
@@ -12,6 +13,7 @@ const rows = [
 	{ name: "Checkout API", claimed: true, open: true },
 	{ name: "Place order", claimed: true, child: true },
 	{ name: "Basket route", child: true },
+	{ name: "Timeout guard", child: true },
 	{ name: "Orders DB" },
 ];
 ---
@@ -42,8 +44,7 @@ const rows = [
 				<KindChip kind="service" size={24} look="panel" />
 				<div class="title">
 					<p class="subject-name">Checkout API</p>
-					<p class="kind">
-						Service
+					<p class="claim-line">
 						<span class="badge"><span class="dot mark"></span>Claimed</span>
 					</p>
 				</div>
@@ -194,7 +195,7 @@ const rows = [
 		text-transform: uppercase;
 		color: var(--ink);
 	}
-	.kind {
+	.claim-line {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -202,6 +203,9 @@ const rows = [
 		font-size: 12px;
 		line-height: 16px;
 		color: var(--ink-muted);
+		transition:
+			opacity 300ms var(--ease-out),
+			display 300ms allow-discrete;
 	}
 	/* The badge keeps to the line of the words beside it, so a claim moves nothing under it. */
 	.badge {
@@ -219,8 +223,15 @@ const rows = [
 	.summary {
 		color: var(--ink-body);
 	}
+	/* The pulse would hold a mark's opacity, so a released mark stops pulsing as it leaves. */
 	.claimed.is-released .mark,
 	.claimed.is-released .badge {
+		opacity: 0;
+		animation: none;
+	}
+	/* With no claim and no code path, the shell draws no line under the name. */
+	.claimed.is-released .claim-line {
+		display: none;
 		opacity: 0;
 	}
 	.side {

@@ -26,7 +26,6 @@ import play from "remixicon/icons/Media/play-fill.svg?raw";
 import playCircle from "remixicon/icons/Media/play-circle-line.svg?raw";
 import plug from "remixicon/icons/Others/plug-line.svg?raw";
 import priceTag from "remixicon/icons/Finance/price-tag-3-line.svg?raw";
-import question from "remixicon/icons/Communication/question-answer-line.svg?raw";
 import route from "remixicon/icons/Map/route-line.svg?raw";
 import search from "remixicon/icons/System/search-line.svg?raw";
 import stack from "remixicon/icons/Business/stack-line.svg?raw";
@@ -36,6 +35,7 @@ import box from "remixicon/icons/Others/box-3-line.svg?raw";
 import codeLine from "remixicon/icons/Development/code-line.svg?raw";
 import database from "remixicon/icons/Device/database-2-line.svg?raw";
 import external from "remixicon/icons/System/external-link-line.svg?raw";
+import focus from "remixicon/icons/Design/focus-3-line.svg?raw";
 import flashlight from "remixicon/icons/Weather/flashlight-line.svg?raw";
 import server from "remixicon/icons/Device/server-line.svg?raw";
 import store from "remixicon/icons/Buildings/store-2-line.svg?raw";
@@ -45,6 +45,8 @@ import chart from "remixicon/icons/Business/bar-chart-2-line.svg?raw";
 import chevronDown from "remixicon/icons/Arrows/arrow-down-s-line.svg?raw";
 import close from "remixicon/icons/System/close-line.svg?raw";
 import fullscreen from "remixicon/icons/Media/fullscreen-line.svg?raw";
+import captions from "remixicon/icons/Media/closed-captioning-line.svg?raw";
+import phone from "remixicon/icons/Device/phone-fill.svg?raw";
 import openai from "remixicon/icons/Logos/openai-line.svg?raw";
 import settings from "remixicon/icons/System/settings-3-line.svg?raw";
 import shapes from "remixicon/icons/Design/shapes-line.svg?raw";
@@ -79,7 +81,6 @@ export const icons = {
 	playCircle,
 	plug,
 	priceTag,
-	question,
 	route,
 	search,
 	stack,
@@ -91,6 +92,7 @@ export const icons = {
 	database,
 	external,
 	flashlight,
+	focus,
 	server,
 	store,
 	timer,
@@ -100,6 +102,8 @@ export const icons = {
 	close,
 	fullscreen,
 	openai,
+	captions,
+	phone,
 	settings,
 	shapes,
 	share,

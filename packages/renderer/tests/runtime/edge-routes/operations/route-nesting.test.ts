@@ -8,6 +8,7 @@ import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { covering, detached, masking, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
+import { endsOffWalls } from "#tests/runtime/support/drawn-ports.ts";
 import { distanceToFrame, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
@@ -47,6 +48,7 @@ async function expectReadableRoutes(
 		}
 	}
 	expect(routesThroughCards(drawing, content)).toEqual([]);
+	expect(endsOffWalls(drawing, content), "ends that point past their card").toEqual([]);
 	expect(detached(drawing)).toEqual([]);
 	expect(covering(drawing)).toEqual([]);
 	expect(masking(drawing)).toEqual([]);
