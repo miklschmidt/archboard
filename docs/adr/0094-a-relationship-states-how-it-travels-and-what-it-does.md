@@ -213,6 +213,13 @@ kind name is `sync`, the most common kind, and its labels would otherwise grow a
 Relationships between the same two drawn ends join into one line only when they share both their
 kind and their effect. Different pairs draw as separate lines. A joined line's label keeps its
 "+N" count, and selecting a line lists each relationship it joins, with its kind and its effect.
+
+Update: in Blocks, every relationship between the same two drawn ends rides one route as a strand
+of a cable, each strand in its own kind and effect, half a lane apart along the route. Where the
+cable reaches a card, its strands fan out a lane apart, so every strand's mark lands on a port of
+its own at the same depth. The earlier echelon, which set every other strand's mark back by a
+mark's length, is retired: it was hard to read, and it broke the glow that runs along a line to its
+mark. Two cables never share a port.
 The double-rail line of mixed kinds is retired, with its mark in the legend: a line now has one
 kind and one effect, so it never claims a pair that none of its relationships has, such as an
 async mutation made of an async query and a sync mutation.
