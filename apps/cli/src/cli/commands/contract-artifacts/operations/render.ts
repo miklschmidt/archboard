@@ -28,6 +28,7 @@ function format(root: string, name: string, content: string): string {
 		],
 		{
 			cwd: root,
+			env: process.env,
 			stdin: new TextEncoder().encode(content),
 			stdout: "pipe",
 			stderr: "pipe",
