@@ -279,9 +279,7 @@ fn paint_label(
     };
     let rule = shape(Shape {
         purpose: Purpose::Halo,
-        ..plate_of(rect)
-            .unfilled()
-            .stroked(styles.ring(LIT_RULE_WIDTH))
+        ..plate_of(rect).stroked(styles.ring(LIT_RULE_WIDTH))
     });
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
         text(
@@ -367,9 +365,7 @@ pub(super) fn paint_step(
     let width = stroke_width(STEP_WEIGHT);
     let line = Shape {
         marker: Some(marker_for(STEP_WEIGHT, head, mark)),
-        ..Shape::path(Purpose::Line, path.clone())
-            .unfilled()
-            .stroked(step_stroke(kind, palette, mark))
+        ..Shape::path(Purpose::Line, path.clone()).stroked(step_stroke(kind, palette, mark))
     };
     let lit = Shape {
         marker: Some(MarkerId::Shared {
@@ -388,7 +384,7 @@ pub(super) fn paint_step(
             Role::Line(None),
             lines(vec![
                 shape(
-                    Shape::path(Purpose::Halo, path).unfilled().stroked(
+                    Shape::path(Purpose::Halo, path).stroked(
                         styles
                             .ring(width + STEP_HALO_EXTRA)
                             .at(STEP_HALO_OPACITY)

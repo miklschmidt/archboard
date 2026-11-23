@@ -357,7 +357,6 @@ pub(super) fn port_inside(
                     },
                 )
                 .pointer(Pointer::None)
-                .unfilled()
                 .stroked(stroke.clone().capped(Cap::Butt)),
             ),
             outlined(

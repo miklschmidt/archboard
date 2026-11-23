@@ -203,7 +203,6 @@ pub(super) fn standing_pin_at(
             ),
             shape(
                 Shape::path(Purpose::Line, pin_glyph(standing))
-                    .unfilled()
                     .stroked(Stroke::new(&palette.background, PIN_STROKE).capped(Cap::Round)),
             ),
         ]),
@@ -221,15 +220,13 @@ pub(super) fn standing_swipe(
         return Items::new();
     };
     shape(
-        Shape::path(Purpose::Swipe, path.to_vec())
-            .unfilled()
-            .stroked(Stroke {
-                cap: Cap::Butt,
-                ..Stroke::new(ink, width + SWIPE_EXTRA)
-                    .rounded()
-                    .at(SWIPE_OPACITY)
-                    .dashed(outline_dash(standing))
-            }),
+        Shape::path(Purpose::Swipe, path.to_vec()).stroked(Stroke {
+            cap: Cap::Butt,
+            ..Stroke::new(ink, width + SWIPE_EXTRA)
+                .rounded()
+                .at(SWIPE_OPACITY)
+                .dashed(outline_dash(standing))
+        }),
     )
 }
 
@@ -267,7 +264,6 @@ pub(super) fn warning_glyph(palette: &Palette) -> Items {
         shape(Shape::path(Purpose::Line, badge_glyph()).filled(&palette.warning)),
         shape(
             Shape::path(Purpose::Line, badge_bang_and_dot())
-                .unfilled()
                 .stroked(Stroke::new(&palette.background, PIN_STROKE).capped(Cap::Round)),
         ),
     ])

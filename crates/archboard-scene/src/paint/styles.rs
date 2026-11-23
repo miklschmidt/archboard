@@ -304,7 +304,7 @@ impl<'p> Styles<'p> {
             None => self.ring(1.0),
         };
         Shape {
-            fill: Some(Paint::None),
+            fill: Paint::None,
             stroke: Some(stroke),
             ..shape
         }

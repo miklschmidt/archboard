@@ -274,11 +274,7 @@ pub(super) fn edge(area: Rect, solid: f64) -> Item {
             opacity: most * solid,
             ..Stroke::new(Token::DiagramText, width)
         };
-        Item::Shape(
-            Shape::rect(Purpose::Plate, area, EDGE_CORNER)
-                .unfilled()
-                .stroked(stroke),
-        )
+        Item::Shape(Shape::rect(Purpose::Plate, area, EDGE_CORNER).stroked(stroke))
     };
     Item::Group(Group::new(Role::Marks, EDGE.map(layer).to_vec()))
 }

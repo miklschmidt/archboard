@@ -178,7 +178,7 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             out.maybe("marker-end", shape.marker.as_ref().map(url));
         }
         Fill => {
-            out.maybe("fill", shape.fill.as_ref().map(paint));
+            out.set("fill", paint(&shape.fill));
         }
         FillOpacity => {
             stated(out, "fill-opacity", shape.fill_opacity);

@@ -170,10 +170,10 @@ pub(super) fn paint_fragment(
         ..Group::new(
             Role::Fragment,
             lines(vec![
-                shape(outline.clone().unfilled().stroked(Stroke::new(ink, 1.0))),
+                shape(outline.clone().stroked(Stroke::new(ink, 1.0))),
                 shape(Shape {
                     purpose: Purpose::Halo,
-                    ..outline.unfilled().stroked(Styles::of(palette).ring(2.0))
+                    ..outline.stroked(Styles::of(palette).ring(2.0))
                 }),
                 tab_path(frame, ink, &palette.pill),
                 row_words(

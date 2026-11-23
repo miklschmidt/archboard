@@ -160,9 +160,7 @@ fn run(points: &[Point]) -> Vec<PathStep> {
 
 /// A stroked run in one ink.
 fn stroked(points: &[Point], ink: &Colour, width: f64) -> Shape {
-    Shape::path(Purpose::Arrowhead, run(points))
-        .unfilled()
-        .stroked(Stroke::new(ink, width).rounded())
+    Shape::path(Purpose::Arrowhead, run(points)).stroked(Stroke::new(ink, width).rounded())
 }
 
 /// A point that opens toward the tip, two arms long `along` and `aside` wide.
@@ -190,7 +188,6 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
         }
         Head::Open => vec![
             Shape::path(Purpose::Arrowhead, classic_outline(head))
-                .unfilled()
                 .stroked(Stroke::new(ink, OPEN_ARM).rounded()),
         ],
         Head::Wedge => {
@@ -216,9 +213,7 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
             ];
             steps.push(PathStep::Close);
             vec![
-                Shape::path(Purpose::Arrowhead, steps)
-                    .unfilled()
-                    .stroked(Stroke::new(ink, OUTLINE).rounded()),
+                Shape::path(Purpose::Arrowhead, steps).stroked(Stroke::new(ink, OUTLINE).rounded()),
                 Shape::new(
                     Purpose::Arrowhead,
                     Geometry::Circle {
@@ -245,7 +240,6 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
                     radius: RING_RADIUS,
                 },
             )
-            .unfilled()
             .stroked(Stroke::new(ink, OUTLINE)),
         ],
     }

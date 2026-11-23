@@ -269,11 +269,7 @@ mod tests {
                 to: Point { x: 240.0, y: 0.0 },
             },
         ];
-        Item::Shape(
-            Shape::path(purpose, steps)
-                .unfilled()
-                .stroked(Stroke::new(Token::Border, 1.2)),
-        )
+        Item::Shape(Shape::path(purpose, steps).stroked(Stroke::new(Token::Border, 1.2)))
     }
 
     fn edge(id: &str) -> Item {

@@ -242,7 +242,7 @@ impl Cuts {
             mask.map_or_else(Vec::new, |mask| {
                 mask.shapes
                     .iter()
-                    .filter(|shape| shape.fill != Some(white()))
+                    .filter(|shape| shape.fill != white())
                     .cloned()
                     .collect()
             })

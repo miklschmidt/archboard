@@ -62,7 +62,6 @@ fn run_across(from: f64, y: f64, to: f64) -> Vec<PathStep> {
 fn line_at(x: f64, y: f64, stroke: Stroke, end: f64) -> Items {
     shape(
         Shape::path(Purpose::Sample, run_across(x + 1.0, y, x + GLYPH - end))
-            .unfilled()
             .stroked(stroke.capped(Cap::Round)),
     )
 }
@@ -143,7 +142,6 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
                     },
                 ],
             )
-            .unfilled()
             .stroked(Stroke::new(ink, IMPRINT_WIDTH)),
         ));
     }
@@ -310,14 +308,9 @@ fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Items {
             line_at(x, y, plain, 1.0),
             shape(
                 Shape::path(Purpose::Sample, run.clone())
-                    .unfilled()
                     .stroked(pulse(pulse_breadth(width) + PULSE_GLOW).at(0.25)),
             ),
-            shape(
-                Shape::path(Purpose::Sample, run)
-                    .unfilled()
-                    .stroked(pulse(pulse_breadth(width))),
-            ),
+            shape(Shape::path(Purpose::Sample, run).stroked(pulse(pulse_breadth(width)))),
         ]),
     })]
 }

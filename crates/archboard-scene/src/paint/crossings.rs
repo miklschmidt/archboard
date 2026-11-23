@@ -46,7 +46,6 @@ pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec
             width + BRIDGE_INK_GAP * 2.0
         };
         let shape = Shape::path(Purpose::Line, route(&bridge.curve))
-            .unfilled()
             .stroked(Stroke::new(Colour::Black, stroke).rounded());
         for edge_id in &bridge.under {
             cutouts.push(Cutout {
@@ -103,7 +102,6 @@ pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
                     Purpose::Cutout,
                     route(&past_end(&piece, end, width + BRIDGE_INK_GAP)),
                 )
-                .unfilled()
                 .stroked(Stroke::new(Colour::Black, breadth).capped(Cap::Butt)),
             });
         }

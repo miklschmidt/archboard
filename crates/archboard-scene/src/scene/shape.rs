@@ -217,10 +217,8 @@ pub struct Shape {
     pub purpose: Purpose,
     /// Where it is.
     pub geometry: Geometry,
-    /// What fills it; black when it states none, as a mask reads it.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub fill: Option<Paint>,
+    /// What fills it; nothing for [`Paint::None`].
+    pub fill: Paint,
     /// How solid its fill is, from 0 to 1.
     pub fill_opacity: f64,
     /// How its outline is stroked; not at all when it states none.
@@ -248,12 +246,12 @@ pub struct Shape {
 }
 
 impl Shape {
-    /// A shape of some purpose and geometry, painted with nothing yet.
+    /// A shape of some purpose and geometry, unfilled and unstroked.
     pub fn new(purpose: Purpose, geometry: Geometry) -> Self {
         Shape {
             purpose,
             geometry,
-            fill: None,
+            fill: Paint::None,
             fill_opacity: 1.0,
             stroke: None,
             pointer: None,
@@ -277,14 +275,7 @@ impl Shape {
     /// The shape filled.
     #[must_use]
     pub fn filled(mut self, paint: impl Into<Paint>) -> Self {
-        self.fill = Some(paint.into());
-        self
-    }
-
-    /// The shape unfilled.
-    #[must_use]
-    pub fn unfilled(mut self) -> Self {
-        self.fill = Some(Paint::None);
+        self.fill = paint.into();
         self
     }
 

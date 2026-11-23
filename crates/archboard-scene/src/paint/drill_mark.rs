@@ -79,12 +79,10 @@ pub(super) fn corner_drill_mark(
                             radius: DRILL_MARK_RADIUS,
                         },
                     )
-                    .unfilled()
                     .stroked(Stroke::new(ink, RING_STROKE).at(0.75)),
                 ),
                 shape(
                     Shape::path(Purpose::Line, arrow(direction))
-                        .unfilled()
                         .stroked(Stroke::new(ink, 1.4).rounded()),
                 ),
             ]),

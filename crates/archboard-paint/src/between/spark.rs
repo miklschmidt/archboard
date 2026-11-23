@@ -214,7 +214,6 @@ pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> 
                 height: card.height + RIM_ROOM * 2.0,
             };
             let mut shape = Shape::rect(Purpose::Plate, edge, RIM_CORNER)
-                .unfilled()
                 .stroked(Stroke::new(sparked(&paint, RIM_TOWARD_TEXT), 1.0));
             shape.members = vec![id.to_owned()];
             let (landed, edge) = along_outline(&shape.geometry, point);
@@ -446,9 +445,8 @@ mod tests {
             width: 100.0,
             height: 50.0,
         };
-        let shape = Shape::rect(Purpose::Plate, card, 6.0)
-            .unfilled()
-            .stroked(Stroke::new(Token::DiagramText, 1.0));
+        let shape =
+            Shape::rect(Purpose::Plate, card, 6.0).stroked(Stroke::new(Token::DiagramText, 1.0));
         let (landed, edge) = along_outline(&shape.geometry, Point { x: 100.0, y: 25.0 });
         let start = 0.5;
         let rim = Rim {

@@ -117,11 +117,7 @@ fn route(x: f64) -> Vec<Item> {
         },
     ];
     let line = |purpose| {
-        Item::Shape(
-            Shape::path(purpose, steps.clone())
-                .unfilled()
-                .stroked(Stroke::new(Token::Border, 1.2)),
-        )
+        Item::Shape(Shape::path(purpose, steps.clone()).stroked(Stroke::new(Token::Border, 1.2)))
     };
     vec![line(Purpose::Halo), line(Purpose::Line)]
 }
@@ -254,9 +250,7 @@ fn bar(x: f64, members: &[&str]) -> Item {
     ];
     Item::Shape(Shape {
         members: members.iter().map(|&id| id.to_owned()).collect(),
-        ..Shape::path(Purpose::Line, steps)
-            .unfilled()
-            .stroked(Stroke::new(Token::Border, 6.0))
+        ..Shape::path(Purpose::Line, steps).stroked(Stroke::new(Token::Border, 6.0))
     })
 }
 
@@ -479,7 +473,6 @@ fn masked_line() -> Painting {
                 },
             ],
         )
-        .unfilled()
         .stroked(Stroke::new(Token::Border, 7.0).capped(cap))
     };
     let mut line =
@@ -599,7 +592,6 @@ fn headed_line() -> Vec<Item> {
             },
         ],
     )
-    .unfilled()
     .stroked(Stroke::new(Token::Border, 2.0));
     line.marker = Some(head.clone());
     vec![

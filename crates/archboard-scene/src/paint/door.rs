@@ -126,7 +126,6 @@ fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
             Role::DoorArrow,
             shape(
                 Shape::path(Purpose::Line, arrow_steps(way))
-                    .unfilled()
                     .stroked(Stroke::new(ink, ARROW_WIDTH).rounded().capped(Cap::Round)),
             ),
         )

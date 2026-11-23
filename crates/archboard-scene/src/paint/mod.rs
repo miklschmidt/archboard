@@ -378,7 +378,7 @@ mod tests {
         let edge = Paint::from(Colour::from(Token::SlabEdge));
         let edges = items
             .iter()
-            .filter(|item| matches!(item, Item::Shape(shape) if shape.fill.as_ref() == Some(&edge)))
+            .filter(|item| matches!(item, Item::Shape(shape) if shape.fill == edge))
             .count();
         let shadows = items
             .iter()

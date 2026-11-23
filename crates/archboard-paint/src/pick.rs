@@ -179,7 +179,7 @@ impl Finder<'_> {
             return;
         }
         let all = pointer == Some(Pointer::All);
-        let filled = all || shape.fill.as_ref().is_none_or(|fill| *fill != Paint::None);
+        let filled = all || shape.fill != Paint::None;
         let stroke = shape
             .stroke
             .as_ref()
@@ -349,7 +349,6 @@ mod tests {
                                 },
                             ],
                         )
-                        .unfilled()
                         .stroked(Stroke::new(paint, 6.0)),
                     )],
                 )
@@ -433,7 +432,6 @@ mod tests {
                         },
                         0.0,
                     )
-                    .unfilled()
                     .pointer(Pointer::All),
                 )],
             )

@@ -49,7 +49,6 @@ fn picture() -> Vec<Item> {
             },
         ],
     )
-    .unfilled()
     .stroked(Stroke::new(Token::DiagramText, 2.0));
     vec![
         card("old", 150.0),

@@ -161,7 +161,6 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
             },
             10.0,
         )
-        .unfilled()
         .stroked(Stroke::new(&palette.muted, 1.5).at(0.6).dashed(&[6.0, 4.0])),
     );
     let clearing = shape(

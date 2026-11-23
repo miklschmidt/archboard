@@ -235,9 +235,7 @@ mod tests {
         Group::new(
             Role::Line(None),
             vec![Item::Shape(
-                Shape::path(Purpose::Line, steps)
-                    .unfilled()
-                    .stroked(Stroke::new(Token::Border, 1.0)),
+                Shape::path(Purpose::Line, steps).stroked(Stroke::new(Token::Border, 1.0)),
             )],
         )
         .drawing(subject(SubjectKind::Edge, "e"))

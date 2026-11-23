@@ -277,12 +277,9 @@ mod tests {
             &appearance,
         );
         let removed_shapes = shapes(&removed);
-        assert!(
-            removed_shapes
-                .iter()
-                .any(|shape| shape.fill == Some(Paint::from(&palette.slab_face))
-                    && shape.fill_opacity == 0.5)
-        );
+        assert!(removed_shapes.iter().any(
+            |shape| shape.fill == Paint::from(&palette.slab_face) && shape.fill_opacity == 0.5
+        ));
         assert!(removed_shapes.iter().any(|shape| {
             shape.purpose == Purpose::Solid
                 && shape.stroke.as_ref().is_some_and(|stroke| {

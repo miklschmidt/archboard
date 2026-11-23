@@ -150,7 +150,7 @@ pub(super) fn slab_seat(rect: Rect, radius: f64) -> Items {
 
 /// A shape as a seat: unpainted, taking the pointer for the whole of it.
 fn seat(shape: Shape) -> Shape {
-    shape.unfilled().pointer(Pointer::All)
+    shape.pointer(Pointer::All)
 }
 
 /// A plate that stays unseen until the reader's stylesheet lights it under the pointer.
@@ -191,7 +191,6 @@ pub(super) fn standing_border(
             }),
             round_coord(js::js_max(0.0, radius - half)),
         )
-        .unfilled()
         .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing)))
         .pointer(Pointer::None),
     )
@@ -328,7 +327,6 @@ fn solid_border(
     let half = OUTLINE_WIDTH / 2.0;
     shape(
         solid(&inset(face, half), js::js_max(0.0, radius - half))
-            .unfilled()
             .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing))),
     )
 }

@@ -11,9 +11,9 @@ use crate::path::{outline_of, rect_of, stroke_of};
 fn cuts(shape: &Shape) -> bool {
     !matches!(
         &shape.fill,
-        Some(Paint::Colour {
+        Paint::Colour {
             colour: Colour::White
-        })
+        }
     )
 }
 
@@ -52,7 +52,7 @@ impl<C: Canvas> Walk<'_, C> {
                 continue;
             }
             let (path, _) = outline_of(&shape.geometry);
-            if shape.fill.as_ref().is_some_and(|fill| *fill != Paint::None) {
+            if shape.fill != Paint::None {
                 self.canvas.fill(&path, &black(shape.fill_opacity), false);
             }
             if let Some(stroke) = &shape.stroke {

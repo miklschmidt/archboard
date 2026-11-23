@@ -3,7 +3,7 @@
 
 use archboard_scene::paint::design::{far_line_scale, widens_far};
 use archboard_scene::scene::{
-    Colour, Geometry, Group, Icon, Item, Marker, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
+    Geometry, Group, Icon, Item, Marker, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
     Transform, Viewport,
 };
 use kurbo::{Affine, BezPath, Rect, Shape as _};
@@ -529,12 +529,8 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Fill a shape, then stroke it.
     fn paint(&mut self, shape: &Shape, path: &BezPath, bounds: Rect, ring: bool, inside: Inside) {
-        let black = Paint::Colour {
-            colour: Colour::Black,
-        };
-        let fill = shape.fill.as_ref().unwrap_or(&black);
         let alpha = shape.fill_opacity * self.shown_with_members(shape);
-        if let Some(ink) = self.ink(fill, alpha, bounds) {
+        if let Some(ink) = self.ink(&shape.fill, alpha, bounds) {
             let ink = self.glowing(ink, inside.glow);
             self.canvas.fill(path, &ink, false);
         }

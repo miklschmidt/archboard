@@ -78,11 +78,9 @@ fn route(points: &[(f64, f64)]) -> Vec<archboard_scene::scene::PathStep> {
 /// A line along some points, with a halo, a port and an arrowhead.
 pub(super) fn line(id: &str, points: &[(f64, f64)]) -> Item {
     let halo = Shape::path(Purpose::Halo, route(points))
-        .unfilled()
         .stroked(Stroke::new(Token::DiagramSelection, 8.0));
-    let mut stroke = Shape::path(Purpose::Line, route(points))
-        .unfilled()
-        .stroked(Stroke::new(Token::Border, 2.0));
+    let mut stroke =
+        Shape::path(Purpose::Line, route(points)).stroked(Stroke::new(Token::Border, 2.0));
     stroke.marker = Some(MarkerId::Shared {
         head: Head::Filled,
         weight: Emphasis::Normal,
