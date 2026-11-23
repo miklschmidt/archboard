@@ -11,6 +11,7 @@ import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routeLabels, routePoints, distanceToFrame } from "#tests/runtime/support/drawn-routes.ts";
 import { detached, covering, overlaps, masking } from "#tests/runtime/support/drawn-labels.ts";
+import { labelsOffRuns } from "#tests/runtime/support/drawn-ink.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
@@ -247,6 +248,7 @@ describe("a label belongs to one line", () => {
 			const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
 			// The two lines from graph to layout draw as one cable, which wears one plate.
 			expect(routeLabels(drawn.svg).size).toBe(3);
+			expect(labelsOffRuns(drawn)).toEqual([]);
 			expect(detached(drawn)).toEqual([]);
 			expect(covering(drawn)).toEqual([]);
 			expect(overlaps(drawn, content)).toEqual([]);
