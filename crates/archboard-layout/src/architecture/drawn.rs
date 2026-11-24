@@ -285,3 +285,45 @@ pub(crate) fn drawing_of(
         edges,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::constants::apron;
+    use archboard_scene::geometry::{Segment, segment_start};
+
+    #[test]
+    fn the_cable_returns_to_its_body_width_at_the_end_of_each_apron() {
+        let points = [
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 200.0, y: 0.0 },
+            Point { x: 200.0, y: 200.0 },
+            Point { x: 400.0, y: 200.0 },
+        ];
+        for count in [2, 3, 5, 7] {
+            let place = (count - 1) as f64 / 2.0;
+            let half = place * STRAND;
+            let reach = place * FAN;
+            let curve = curve_through(&strand(&points, place, count), true);
+            let bends: Vec<_> = curve
+                .segments
+                .iter()
+                .enumerate()
+                .filter_map(|(index, segment)| match segment {
+                    Segment::Cubic { to, .. } => Some((segment_start(&curve, index), *to)),
+                    Segment::Line { .. } => None,
+                })
+                .collect();
+            let apron = apron(half, reach);
+            assert_eq!(bends[1].1, Point { x: apron, y: half }, "{count} strands");
+            assert_eq!(
+                bends[bends.len() - 2].0,
+                Point {
+                    x: 400.0 - apron,
+                    y: 200.0 + half
+                },
+                "{count} strands"
+            );
+        }
+    }
+}
