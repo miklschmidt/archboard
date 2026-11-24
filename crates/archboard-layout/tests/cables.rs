@@ -104,6 +104,24 @@ fn a_group_caption_leaves_the_full_width_of_each_lanes_ribbon() {
     // both fans fit beside it, apart.
     assert!(ports[1] - ports[0] > 64.0, "{ports:?}");
     assert!(ports[0] - 32.0 >= caption_end, "{ports:?}");
+    let target = placed["cards"]
+        .as_array()
+        .expect("the cards")
+        .iter()
+        .find(|card| card["id"] == "target")
+        .expect("the target card");
+    let face = &target["box"];
+    let left = face["x"].as_f64().expect("the left wall");
+    let width = face["width"].as_f64().expect("the card width");
+    assert!(
+        width > 200.0,
+        "the card's visible face should widen: {width}"
+    );
+    let right = left + width;
+    assert!(
+        ports[0] - 32.0 >= left && ports[1] + 32.0 <= right,
+        "{ports:?} outside {left}..{right}"
+    );
 }
 
 #[test]

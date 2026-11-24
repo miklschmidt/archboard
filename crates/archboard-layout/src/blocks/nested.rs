@@ -21,7 +21,7 @@ impl BlockTree {
     pub(super) fn fill(&mut self, block: BlockId, nodes: &[Node]) -> Result<(), String> {
         let nodes = by_order(nodes);
         for &node in &nodes {
-            let group = placing_group(&mut self.lone, &self.captions, node, &nodes);
+            let group = placing_group(&mut self.lone, &self.captions, node, &nodes, self.lanes);
             let holder = match group {
                 None => block,
                 Some(group) => self.region(block, &group),
