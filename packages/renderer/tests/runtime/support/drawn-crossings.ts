@@ -39,6 +39,15 @@ const SHARED_INK = 2;
 /** Clear space two arcs keep between them before they read as one knot. */
 const ARC_SPACE = 6;
 
+/** A crossing hop's radius in picture units. */
+const ARC_RADIUS = 7;
+
+/** How far apart two crossings can be along a line while their single hops touch. */
+const CLUSTER_REACH = 2 * ARC_RADIUS + ARC_SPACE;
+
+/** The extra reach of a crest over several crossings. */
+const CREST_MARGIN = ARC_SPACE / 2;
+
 /** Clear space an arc keeps from a junction mark. */
 const MARK_SPACE = 3;
 
@@ -381,6 +390,53 @@ function cornerOf(box: Box): string {
 }
 
 /**
+ * Whether two arc baselines cross the same local cluster on one perpendicular run.
+ * A cable can pass over a long run more than once.
+ * @param one The first arc.
+ * @param other The second arc.
+ * @param crossed The straight line under both arcs.
+ * @param baselines The drawing's straight runs, including arc baselines.
+ * @returns True when the crossings belong to the same cluster.
+ */
+function shareCrossedCluster(
+	one: DrawnArc,
+	other: DrawnArc,
+	crossed: Stretch,
+	baselines: readonly Stretch[],
+): boolean {
+	const fixed = one.axis;
+	if (Math.abs(crossed[0][fixed] - crossed[1][fixed]) >= STRAIGHT) return false;
+	const first = crossingOf(one.feet, crossed);
+	const second = crossingOf(other.feet, crossed);
+	if (first === undefined || second === undefined) return false;
+	const along = fixed === "x" ? "y" : "x";
+	const positions = new Set<number>();
+	for (const stretch of baselines) {
+		if (Math.abs(stretch[0][along] - stretch[1][along]) >= STRAIGHT) continue;
+		const at = crossingOf(stretch, crossed);
+		if (at !== undefined) positions.add(at[along]);
+	}
+	const clusters: { low: number; high: number; several: boolean }[] = [];
+	for (const at of [...positions].toSorted((a, b) => a - b)) {
+		const cluster = { low: at, high: at, several: false };
+		for (let previous = clusters.at(-1); previous !== undefined; previous = clusters.at(-1)) {
+			const reach =
+				CLUSTER_REACH +
+				(previous.several ? CREST_MARGIN : 0) +
+				(cluster.several ? CREST_MARGIN : 0);
+			if (cluster.low - previous.high > reach) break;
+			cluster.low = previous.low;
+			cluster.several = true;
+			clusters.pop();
+		}
+		clusters.push(cluster);
+	}
+	const low = Math.min(first[along], second[along]);
+	const high = Math.max(first[along], second[along]);
+	return clusters.some((cluster) => cluster.low <= low && cluster.high >= high);
+}
+
+/**
  * Every place where the strands of one cable hop over the same crossing and their arcs do not
  * all bulge to one side: the hops of a cable read as one parallel set, never as a tube with one
  * arc turned out.
@@ -393,6 +449,7 @@ function mixedCableHops(drawing: RenderedDiagram): string[] {
 	if (arcs.length < 2) return [];
 	const cables = cablesOf(drawing);
 	const routes = paths.map(([id, d]) => ({ id, ink: inkOf(d) }));
+	const baselines = routes.flatMap(({ ink }) => ink).concat(arcs.map((arc) => arc.feet));
 	const found: string[] = [];
 	for (const [index, one] of arcs.entries())
 		for (const other of arcs.slice(index + 1)) {
@@ -407,7 +464,7 @@ function mixedCableHops(drawing: RenderedDiagram): string[] {
 				({ id, ink }) =>
 					id !== one.id &&
 					id !== other.id &&
-					ink.some((stretch) => crossingOf(one.feet, stretch) && crossingOf(other.feet, stretch)),
+					ink.some((stretch) => shareCrossedCluster(one, other, stretch, baselines)),
 			);
 			if (shared) found.push(`${one.id} and ${other.id} bulging apart at ${cornerOf(one.box)}`);
 		}
