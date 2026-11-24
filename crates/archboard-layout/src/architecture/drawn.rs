@@ -143,6 +143,26 @@ fn strand(points: &[Point], place: f64, count: usize) -> Vec<Point> {
     moved
 }
 
+/// Extend the straight ends of a strand to its frame's shoulder. The cable keeps the apron
+/// and bends that layout cleared on the route up to the frame's top edge.
+fn land_on_shoulders(points: &mut [Point], route: &[Point], tabs: [Option<Rect>; 2]) {
+    let last = route.len() - 1;
+    let ends = [
+        (route[0], route[1], 0),
+        (route[last], route[last - 1], points.len() - 1),
+    ];
+    for ((end, next, strand_end), tab) in ends.into_iter().zip(tabs) {
+        if let Some(tab) = tab
+            && end.x == next.x
+            && next.y < end.y
+            && (end.y - tab.y).abs() < 1.0
+            && end.x > tab.x + tab.width
+        {
+            points[strand_end].y = tab.y + tab.height;
+        }
+    }
+}
+
 /// How far apart two points are along a run.
 fn length(a: Point, b: Point) -> f64 {
     (b.x - a.x).abs() + (b.y - a.y).abs()
@@ -184,6 +204,14 @@ fn edges_of(
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
     let strands = strands(content, riders);
+    let tab_of = |id: &str| {
+        let frame = placed.frames.iter().find(|frame| frame.id == id)?;
+        placed
+            .titles
+            .iter()
+            .map(|title| title.band)
+            .find(|tab| tab.x == frame.bounds.x && tab.y == frame.bounds.y)
+    };
     ecma::sorted_by(&content.edges.iter().collect::<Vec<_>>(), |one, other| {
         one.order - other.order
     })
@@ -196,7 +224,16 @@ fn edges_of(
                 let points = strands.get(&edge.id).map_or_else(
                     || route.points.clone(),
                     |&(at, count)| {
-                        strand(&route.points, at as f64 - (count - 1) as f64 / 2.0, count)
+                        let mut points =
+                            strand(&route.points, at as f64 - (count - 1) as f64 / 2.0, count);
+                        if placed.planned {
+                            land_on_shoulders(
+                                &mut points,
+                                &route.points,
+                                [tab_of(&edge.from), tab_of(&edge.to)],
+                            );
+                        }
+                        points
                     },
                 );
                 curve_through(&points, true)
@@ -291,6 +328,29 @@ mod tests {
     use super::*;
     use crate::constants::apron;
     use archboard_scene::geometry::{Segment, segment_start};
+
+    #[test]
+    fn a_frame_shoulder_extends_a_strands_port_without_reversing_its_short_middle_run() {
+        let route = [
+            Point { x: 160.0, y: 200.0 },
+            Point { x: 160.0, y: 135.0 },
+            Point { x: 166.0, y: 135.0 },
+            Point { x: 166.0, y: 70.0 },
+        ];
+        let tab = Rect {
+            x: 20.0,
+            y: 200.0,
+            width: 100.0,
+            height: 36.0,
+        };
+        // Both end runs spread at their bends. If the first only stepped out at its apron,
+        // the two offsets would shorten this strand's six-unit middle run by eight units.
+        let mut points = strand(&route, -1.0, 3);
+        land_on_shoulders(&mut points, &route, [Some(tab), None]);
+        assert_eq!(points[0], Point { x: 144.0, y: 236.0 });
+        assert_eq!(points[1], Point { x: 144.0, y: 127.0 });
+        assert_eq!(points[2], Point { x: 150.0, y: 127.0 });
+    }
 
     #[test]
     fn the_cable_returns_to_its_body_width_at_the_end_of_each_apron() {

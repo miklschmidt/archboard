@@ -128,3 +128,56 @@ fn opposite_wall_ports_keep_distinct_routes_off_one_line() {
             .all(|card| card.bx.width == 160.0 && card.bx.height == 80.0)
     );
 }
+
+#[test]
+fn a_cable_leaving_a_frame_shoulder_emits_the_route_its_fan_was_guarded_on() {
+    let graph = serde_json::from_value(json!({
+        "id": "root", "children": [
+            {"id": "frame", "children": [{"id": "child"}]},
+            {"id": "target"}
+        ],
+        "edges": [{"id": "cable", "sources": ["frame"], "targets": ["target"],
+            "layoutOptions": {"archboard.cable": "sync;event;rpc"}}]
+    }))
+    .expect("a measured graph");
+    let model = Model::new(&graph).expect("known endpoints");
+    let topology = Topology::new(&model);
+    let card = |id: &str, x, y, width, height| PlacedCard {
+        id: id.into(),
+        bx: Rect {
+            x,
+            y,
+            width,
+            height,
+        },
+        depth: 0,
+        header: None,
+    };
+    let tab = card("tab", 20.0, 200.0, 100.0, 36.0).bx;
+    let points = [
+        Point { x: 160.0, y: 200.0 },
+        Point { x: 160.0, y: 135.0 },
+        Point { x: 166.0, y: 135.0 },
+        Point { x: 166.0, y: 70.0 },
+    ];
+    let drawing = Placed {
+        width: 400.0,
+        height: 400.0,
+        cards: vec![
+            card("child", 54.0, 265.0, 80.0, 50.0),
+            card("target", 110.0, 20.0, 120.0, 50.0),
+        ],
+        frames: vec![card("frame", 20.0, 200.0, 300.0, 140.0)],
+        regions: vec![],
+        edges: vec![PlacedLine {
+            id: "cable".into(),
+            points: points.to_vec(),
+            label: None,
+        }],
+        titles: vec![crate::blocks::assembly::Title { bx: tab, band: tab }],
+        routed: None,
+    };
+    let mut shape = placement(&model, drawing).expect("placed frame and cards");
+    let result = finish(&model, &topology, &mut shape).expect("the short middle run fits");
+    assert_eq!(result.edges[0].points, points);
+}

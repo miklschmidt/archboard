@@ -93,7 +93,12 @@ fn reach_shoulders(model: &Model<'_>, shape: &Shape, mut drawing: Placed) -> Pla
         }
     };
     for line in &mut drawing.edges {
-        let (from, to) = model.ends[model.edge_index[line.id.as_str()]];
+        let edge = model.edge_index[line.id.as_str()];
+        // A cable lands each strand on the shoulder after giving it the bends guarded above.
+        if model.half(edge) > 0.0 {
+            continue;
+        }
+        let (from, to) = model.ends[edge];
         if let Some(end) = line.points.first_mut() {
             shoulder(end, from);
         }
