@@ -118,9 +118,18 @@ pub(super) fn search<'a>(
     search: Search,
 ) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
+    let (from, to) = model.ends[edge];
+    let geom = (
+        shape.endpoints[&from],
+        shape.endpoints[&to],
+        bounds,
+        model.ink(edge),
+    );
     let mut paths = PathSet::default();
     for path in guide_paths(guide) {
-        paths.insert_vec(path);
+        if super::channel::basic_ok((&path, geom.3), geom.0, geom.1, geom.2) {
+            paths.insert_vec(path);
+        }
     }
     let obstacles = super::clearance::Clearance::new(obstacles(model, topology, edge, shape));
     let sources: Vec<_> = super::endpoint_choices::ends(model, edge, true, shape, guide, search)
@@ -131,8 +140,6 @@ pub(super) fn search<'a>(
         .into_iter()
         .map(|port| (port, port_usable(bounds, &obstacles, &port)))
         .collect();
-    let (from, to) = model.ends[edge];
-    let geom = (shape.endpoints[&from], shape.endpoints[&to], bounds, model.ink(edge));
     let base = CorridorBase::new(bounds, shape, guide, hint);
     let mut scratch = CorridorScratch::default();
     let mut points = Vec::with_capacity(7);
@@ -173,7 +180,7 @@ fn add_pair(
         // A bend approach can extend past the opposite wall of a straight span.
         let span = [tail.attachment, head.attachment];
         if (span[0].x == span[1].x || span[0].y == span[1].y)
-            && super::channel::approaches(&span, geom.3)
+            && super::channel::basic_ok((&span, geom.3), geom.0, geom.1, geom.2)
             && obstacles.clear(&span)
         {
             state.2.insert_slice(&span);
@@ -183,59 +190,110 @@ fn add_pair(
     connect(geom, (tail, head), (base, obstacles, search), state);
 }
 
+type RankEntry = std::cmp::Reverse<((bool, u64, u64), usize)>;
+
+struct SelectIter<'a> {
+    model: &'a Model<'a>,
+    edge: usize,
+    shape: &'a Shape,
+    paths: Vec<Vec<Point>>,
+    heap: std::collections::BinaryHeap<RankEntry>,
+    beside: Vec<usize>,
+    beside_at: usize,
+    pool: Pool,
+    slots: OnceCell<super::route_labels::Slots<'a>>,
+    probe: super::channel::Probe<'a, 'a>,
+    has_label: bool,
+    remaining: usize,
+}
+
+impl SelectIter<'_> {
+    fn try_primary(&mut self, at: usize) -> Option<PlacedLine> {
+        let points = &self.paths[at];
+        if self.probe.refusal_checked(points).is_some() {
+            return None;
+        }
+        let label = if self.has_label {
+            let slots = self
+                .slots
+                .get_or_init(|| super::route_labels::Slots::new(self.model, self.shape));
+            let Some((label, _)) = slots.slot(self.model, self.edge, points) else {
+                self.beside.push(at);
+                return None;
+            };
+            Some(label)
+        } else {
+            None
+        };
+        self.pool.keep(self.model, self.edge, points, label)
+    }
+
+    fn try_beside(&mut self, at: usize) -> Option<PlacedLine> {
+        let points = &self.paths[at];
+        let slots = self
+            .slots
+            .get_or_init(|| super::route_labels::Slots::new(self.model, self.shape));
+        let label = Some(slots.beside(self.model, self.edge, points)?.0);
+        self.pool.keep(self.model, self.edge, points, label)
+    }
+}
+
+impl Iterator for SelectIter<'_> {
+    type Item = PlacedLine;
+
+    fn next(&mut self) -> Option<PlacedLine> {
+        if self.remaining == 0 {
+            return None;
+        }
+        while let Some(std::cmp::Reverse((_, at))) = self.heap.pop() {
+            if let Some(line) = self.try_primary(at) {
+                self.remaining -= 1;
+                return Some(line);
+            }
+        }
+        while self.beside_at < self.beside.len() {
+            let at = self.beside[self.beside_at];
+            self.beside_at += 1;
+            if let Some(line) = self.try_beside(at) {
+                self.remaining -= 1;
+                return Some(line);
+            }
+        }
+        None
+    }
+}
+
 fn select<'a>(
     model: &'a Model<'_>,
     topology: &'a Topology,
     edge: usize,
     shape: &'a Shape,
-    mut paths: Vec<Vec<Point>>,
+    paths: Vec<Vec<Point>>,
 ) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
     let ink_bounds = page_bounds(shape);
     let mut ranker = RouteRanker::new(model, shape, edge, ink_bounds);
-    paths.sort_by_cached_key(|path| ranker.rank(path));
-    let mut pool = Pool::default();
-    let slots: OnceCell<super::route_labels::Slots<'a>> = OnceCell::new();
-    let probe = super::channel::Probe::new(model, topology, edge, shape, bounds);
-    let limit = if model.edges.len() > 64 { 64 } else { 128 };
-    // A route that keeps its words off its own other stretches comes first, whatever its rank.
-    let has_label = model.edges[edge].label().is_some();
-    let passes: &[bool] = if has_label { &[false, true] } else { &[false] };
-    let count = paths.len();
-    // What the first pass found of each route. The second pass can only add a route that the
-    // guard passed and whose words found no spot clear of its other stretches: it finds any
-    // other route as the first pass did, refused or already in the pool.
-    let mut words_beside = vec![false; if has_label { count } else { 0 }];
-    passes
+    // O(N) heapify preserves exact stable rank order lazily without sorting unconsumed candidates.
+    let ranked: Vec<RankEntry> = paths
         .iter()
-        .flat_map(move |&beside| (0..count).map(move |at| (beside, at)))
-        .filter_map(move |(beside, at)| {
-            let points = &paths[at];
-            let label = if beside {
-                if !words_beside[at] {
-                    return None;
-                }
-                let slots = slots.get_or_init(|| super::route_labels::Slots::new(model, shape));
-                Some(slots.beside(model, edge, points)?.0)
-            } else {
-                if probe.refusal(points).is_some() {
-                    return None;
-                }
-                if has_label {
-                    let slots =
-                        slots.get_or_init(|| super::route_labels::Slots::new(model, shape));
-                    let Some((label, _)) = slots.slot(model, edge, points) else {
-                        words_beside[at] = true;
-                        return None;
-                    };
-                    Some(label)
-                } else {
-                    None
-                }
-            };
-            pool.keep(model, edge, points, label)
-        })
-        .take(limit)
+        .enumerate()
+        .map(|(at, path)| std::cmp::Reverse((ranker.rank(path), at)))
+        .collect();
+    let limit = if model.edges.len() > 64 { 64 } else { 128 };
+    SelectIter {
+        model,
+        edge,
+        shape,
+        paths,
+        heap: std::collections::BinaryHeap::from(ranked),
+        beside: Vec::new(),
+        beside_at: 0,
+        pool: Pool::default(),
+        slots: OnceCell::new(),
+        probe: super::channel::Probe::new(model, topology, edge, shape, bounds),
+        has_label: model.edges[edge].label().is_some(),
+        remaining: limit,
+    }
 }
 
 #[derive(Default)]
@@ -429,7 +487,7 @@ fn connect(
         scratch,
         |middle| {
             super::geometry::clean_with_ends(tail.attachment, middle, head.attachment, points);
-            if super::channel::basic((points, ink), source, target, bounds).is_none() {
+            if super::channel::basic_ok((points, ink), source, target, bounds) {
                 paths.insert_slice(points);
             }
         },

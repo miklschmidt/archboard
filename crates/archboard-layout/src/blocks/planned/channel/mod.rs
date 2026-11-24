@@ -181,16 +181,21 @@ impl<'a, 'g> Probe<'a, 'g> {
         }
     }
     pub(super) fn refusal(&self, points: &[Point]) -> Option<&'static str> {
-        let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
-        let (from, to) = model.ends[index];
+        let (from, to) = self.model.ends[self.index];
         if let Some(reason) = basic(
-            (points, model.ink(index)),
-            shape.endpoints[&from],
-            shape.endpoints[&to],
+            (points, self.model.ink(self.index)),
+            self.shape.endpoints[&from],
+            self.shape.endpoints[&to],
             self.bounds,
         ) {
             return Some(reason);
         }
+        self.refusal_checked(points)
+    }
+
+    /// `refusal` for a candidate already verified with `basic_ok`.
+    pub(super) fn refusal_checked(&self, points: &[Point]) -> Option<&'static str> {
+        let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
         if (self.words.then(|| shape.labels.get(&index)).flatten())
             .is_some_and(|&label| !label_run(points, label))
         {
@@ -571,6 +576,45 @@ fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
         })
 }
 
+fn in_bounds(points: &[Point], bounds: Rect) -> bool {
+    points.iter().all(|point| {
+        contains(
+            bounds,
+            Rect {
+                x: point.x,
+                y: point.y,
+                width: 0.0,
+                height: 0.0,
+            },
+        )
+    })
+}
+
+/// Fast boolean equivalent of `basic(...).is_none()`, ordered cheapest and most selective first.
+pub(super) fn basic_ok(
+    (points, ink): (&[Point], (f64, f64)),
+    source: Rect,
+    target: Rect,
+    bounds: Rect,
+) -> bool {
+    points.len() >= 2
+        && in_bounds(points, bounds)
+        && !super::reading::runs_beyond(points, DETOUR_LIMIT)
+        && approaches(points, ink)
+        && turns_clear(points, ink)
+        && points
+            .windows(2)
+            .all(|p| p[0].x == p[1].x || p[0].y == p[1].y)
+        && attached_by(points[0], points[1], source, ink.1)
+        && attached_by(
+            points[points.len() - 1],
+            points[points.len() - 2],
+            target,
+            ink.1,
+        )
+        && !meets_itself(points)
+}
+
 pub(super) fn basic(
     (points, ink): (&[Point], (f64, f64)),
     source: Rect,
@@ -603,17 +647,7 @@ pub(super) fn basic(
     if super::reading::runs_beyond(points, DETOUR_LIMIT) {
         return Some("detour");
     }
-    if !points.iter().all(|point| {
-        contains(
-            bounds,
-            Rect {
-                x: point.x,
-                y: point.y,
-                width: 0.0,
-                height: 0.0,
-            },
-        )
-    }) {
+    if !in_bounds(points, bounds) {
         return Some("bounds");
     }
     None
