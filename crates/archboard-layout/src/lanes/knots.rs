@@ -114,8 +114,9 @@ fn hops_of(lines: &[Vec<Run>]) -> Vec<Point> {
         .collect()
 }
 
-/// The knots of a picture: marks closer than `KNOT`, and marks closer than `HOP_REACH` to a hop.
-fn knots_of(lines: &[Vec<Run>]) -> Vec<Point> {
+/// The knots of a picture, each as the two places that tie it: two marks closer than `KNOT`, or
+/// a mark closer than `HOP_REACH` to a hop.
+fn knots_of(lines: &[Vec<Run>]) -> Vec<(Point, Point)> {
     let (marks, hops) = (marks_of(lines), hops_of(lines));
     let apart = |one: Point, other: Point| (one.x - other.x).hypot(one.y - other.y);
     let mut knots = Vec::new();
@@ -124,12 +125,12 @@ fn knots_of(lines: &[Vec<Run>]) -> Vec<Point> {
             marks[index + 1..]
                 .iter()
                 .filter(|&&other| apart(mark, other) < KNOT)
-                .map(|_| mark),
+                .map(|&other| (mark, other)),
         );
         knots.extend(
             hops.iter()
                 .filter(|&&hop| apart(mark, hop) < HOP_REACH)
-                .map(|_| mark),
+                .map(|&hop| (mark, hop)),
         );
     }
     knots
@@ -148,12 +149,11 @@ pub(crate) fn knots_in(routes: &Map<String, Vec<Point>>) -> usize {
     knots_of(&runs_by_line(routes)).len()
 }
 
-/// The lines of a block with a turn in a knot, each once.
+/// The lines of a block with a turn near either place that ties a knot, each once.
 pub(crate) fn knotted_lines(routes: &Map<String, Vec<Point>>) -> Vec<String> {
     let knots = knots_of(&runs_by_line(routes));
     let near = |point: Point| {
-        knots
-            .iter()
+        (knots.iter().flat_map(|&(one, other)| [one, other]))
             .any(|knot| (knot.x - point.x).hypot(knot.y - point.y) <= KNOT)
     };
     (routes.iter())
@@ -184,5 +184,23 @@ mod tests {
         .map(|(id, points)| (id.to_owned(), points))
         .collect();
         assert_eq!(knots_in(&routes), 1);
+    }
+
+    #[test]
+    fn a_line_that_turns_by_the_hop_of_a_knot_is_named() {
+        let at = |x, y| Point { x, y };
+        // The line across turns a lane and more from the join mark, but beside the hop it makes.
+        let routes = [
+            ("one", vec![at(0.0, 0.0), at(0.0, 90.0), at(60.0, 90.0)]),
+            ("two", vec![at(0.0, 0.0), at(0.0, 100.0), at(60.0, 100.0)]),
+            (
+                "across",
+                vec![at(-30.0, 40.0), at(-30.0, 70.0), at(60.0, 70.0)],
+            ),
+        ]
+        .into_iter()
+        .map(|(id, points)| (id.to_owned(), points))
+        .collect();
+        assert!(knotted_lines(&routes).contains(&"across".to_owned()));
     }
 }
