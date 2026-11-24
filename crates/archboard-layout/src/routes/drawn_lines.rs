@@ -265,19 +265,42 @@ pub(super) fn line_runs<'a>(runs: &'a [Run], run: &'a Run) -> Vec<&'a Run> {
     line
 }
 
-/// Whether a drawn line runs straight and alone through a stretch: every run
-/// on that line which reaches into the stretch holds all of it, so nothing
-/// bends, joins, parts or ends there. With `rooms`, the stretch also stays
-/// clear of end approaches.
-pub(super) fn straight_through(runs: &[Run], run: &Run, low: f64, high: f64, rooms: bool) -> bool {
-    line_runs(runs, run).into_iter().all(|other| {
+/// How a line goes through a stretch where a hop could stand.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Passage {
+    /// The line stays straight and clear of its end approaches.
+    Clear,
+    /// The line stays straight but enters a reserved end approach.
+    Approach,
+    /// The line bends, joins, parts or ends in the stretch.
+    Interrupted,
+}
+
+impl Passage {
+    /// Whether a hop keeps the full room of the line's end approaches.
+    pub(super) fn is_clear(self) -> bool {
+        self == Self::Clear
+    }
+}
+
+/// How a drawn line runs through a stretch: every run on that line which
+/// reaches into the stretch must hold all of it.
+pub(super) fn straight_through(runs: &[Run], run: &Run, low: f64, high: f64) -> Passage {
+    let covers = |extent: Extent| extent.low <= low + EPSILON && extent.high >= high - EPSILON;
+    let mut passage = Passage::Clear;
+    for other in line_runs(runs, run) {
         let whole = extent_of(other, false);
         if whole.high <= low + EPSILON || whole.low >= high - EPSILON {
-            return true;
+            continue;
         }
-        let clear = extent_of(other, rooms);
-        clear.low <= low + EPSILON && clear.high >= high - EPSILON
-    })
+        if !covers(whole) {
+            return Passage::Interrupted;
+        }
+        if !covers(extent_of(other, true)) {
+            passage = Passage::Approach;
+        }
+    }
+    passage
 }
 
 /// Whether a drawn line joins or parts within reach of a coordinate: one of

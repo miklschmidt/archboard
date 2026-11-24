@@ -3,8 +3,8 @@
 
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, bridge_crossings};
 use super::{
-    BTreeMap, DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from,
-    drawing, drawn, hops, lines_of, points,
+    Arrowhead, BTreeMap, Dash, DrawingBridge, Emphasis, LineLook, across, across_from, bridged,
+    curve_bounds, down, down_from, drawing, drawn, hops, lines_of, points,
 };
 
 /// The hops among a crossing pass's bridges.
@@ -426,4 +426,28 @@ fn a_cable_hops_one_way_across_a_lines_end_approach() {
     let bulges_left = |hop| super::bulge_of(hop).0 < 0.0;
     assert_eq!(bulges_left(hops[0]), bulges_left(hops[1]));
     assert_eq!(result.edges[2].curve, cable.edges[2].curve);
+}
+
+#[test]
+fn a_cable_hop_does_not_turn_into_the_crossed_lines_arrowhead() {
+    let mut cable = drawing(&[down(50.0), down(58.0), across_from(50.0, -100.0, 73.0)]);
+    cable.edges[1].edge.from = cable.edges[0].edge.from.clone();
+    cable.edges[1].edge.to = cable.edges[0].edge.to.clone();
+    let riders = BTreeMap::from([("1".to_owned(), "0".to_owned())]);
+    let lines = BTreeMap::from([(
+        "2".to_owned(),
+        LineLook {
+            arrowhead: Arrowhead::Equals,
+            dash: Dash::Solid,
+        },
+    )]);
+    let result = bridge_crossings(&cable, &lines, &riders);
+
+    let hop = hops_of(&result.bridges)
+        .into_iter()
+        .find(|hop| hop.edge_id == "0")
+        .expect("the first strand still hops the crossing");
+    let bounds = curve_bounds(&hop.curve);
+    // The compute mark has a bar 16.8 units back from its tip at x=73.
+    assert!(bounds.x + bounds.width < 56.2);
 }
