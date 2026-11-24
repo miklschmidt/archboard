@@ -537,10 +537,13 @@ fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
                         [r.y, r.y + r.height],
                     )
                 };
-                hi.min(end) - lo.max(start) > 16.0
-                    && walls
-                        .iter()
-                        .any(|wall| (at - wall).abs() < 16.0 + half - 1e-6)
+                let overlap = hi.min(end) - lo.max(start);
+                walls.iter().any(|wall| {
+                    let gap = (at - wall).abs();
+                    // Even a short overlap can put outer strands on the wrong side of the wall.
+                    (overlap > 16.0 && gap < 16.0 + half - 1e-6)
+                        || (overlap > 0.0 && half > 0.0 && gap <= half)
+                })
             })
         })
 }

@@ -25,6 +25,8 @@ mod ports;
 mod reading;
 mod room;
 mod runs;
+#[cfg(test)]
+mod scope_wall_tests;
 mod shape;
 mod swaps;
 mod topology;
