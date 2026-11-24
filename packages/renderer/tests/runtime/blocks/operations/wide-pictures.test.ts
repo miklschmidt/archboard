@@ -58,13 +58,13 @@ function repositoryReadings() {
 }
 
 /**
- * Local first layouts keep three times the 1 s render budget (TASK-377).
+ * Local first layouts keep twice the 1 s render budget (TASK-377).
  * Hosted CI recorded 45.3 s layouts, so both rendering limits allow 60 s
  * there (TASK-451). CI measures completion on a shared runner. The local
  * bound still catches a layout grown several times slower.
  */
 const HOSTED_RENDER_TIMEOUT_MS = 60_000;
-const LOADED_LAYOUT_BOUND_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIMEOUT_MS : 3 * 1000;
+const LOADED_LAYOUT_BOUND_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIMEOUT_MS : 2 * 1000;
 const RENDER_CASE_TIMEOUT_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIMEOUT_MS : 20_000;
 
 // Canonical scopes carry the complete model for container interface meaning.
