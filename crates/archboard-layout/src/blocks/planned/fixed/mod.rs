@@ -326,21 +326,35 @@ pub(super) fn route_cost(path: &[Point]) -> f64 {
 /// bend, so an end leaves the centre to save a way round, never to save a few units.
 const OFF_CENTRE: f64 = 200.0;
 
-/// How a candidate route of a line ranks: a route that meets a door from behind last, then its
-/// length, each end off its centred port as costly as `OFF_CENTRE`, and the page it takes.
-pub(super) fn route_rank(
-    (model, shape, edge): (&Model<'_>, &Shape, usize),
+/// Ranks candidate routes of one line, caching its endpoint boxes and centred ports across all
+/// candidates so each wall is priced at most once per line.
+pub(super) struct RouteRanker<'a, 'g> {
+    ports: super::ports::EdgePorts<'a, 'g>,
     bounds: Rect,
-    path: &[Point],
-) -> (bool, u64, u64) {
-    let behind = !super::ports::faces_far_end(model, shape, edge, path);
-    let off = super::ports::off_centre(model, shape, edge, path) as f64;
-    let page = page_cost(bounds, path).to_bits();
-    let route = (route_cost(path) + OFF_CENTRE * off).to_bits();
-    if model.edges.len() <= super::REFINEMENT_LIMIT {
-        (behind, route, page)
-    } else {
-        (behind, page, route)
+    small: bool,
+}
+
+impl<'a, 'g> RouteRanker<'a, 'g> {
+    pub(super) fn new(model: &'a Model<'g>, shape: &'a Shape, edge: usize, bounds: Rect) -> Self {
+        Self {
+            ports: super::ports::EdgePorts::new(model, shape, edge),
+            bounds,
+            small: model.edges.len() <= super::REFINEMENT_LIMIT,
+        }
+    }
+
+    /// How a candidate route of the line ranks: a route that meets a door from behind last, then
+    /// its length, each end off its centred port as costly as `OFF_CENTRE`, and the page it takes.
+    pub(super) fn rank(&mut self, path: &[Point]) -> (bool, u64, u64) {
+        let behind = !self.ports.faces_far_end(path);
+        let off = self.ports.off_centre(path) as f64;
+        let page = page_cost(self.bounds, path).to_bits();
+        let route = (route_cost(path) + OFF_CENTRE * off).to_bits();
+        if self.small {
+            (behind, route, page)
+        } else {
+            (behind, page, route)
+        }
     }
 }
 
@@ -451,7 +465,8 @@ fn candidates(
         if choices.is_empty() {
             return Err(blocked(model, &[edge]));
         }
-        choices.sort_by_cached_key(|line| route_rank((model, shape, edge), bounds, &line.points));
+        let mut ranker = RouteRanker::new(model, shape, edge, bounds);
+        choices.sort_by_cached_key(|line| ranker.rank(&line.points));
         candidates.push(choices);
     }
     Ok(candidates)

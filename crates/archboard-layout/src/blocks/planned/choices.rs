@@ -1,6 +1,6 @@
 //! Candidate channels between fixed endpoint ports.
 use super::{
-    fixed::{page_bounds, route_rank},
+    fixed::{RouteRanker, page_bounds},
     geometry::{clean, contains, length},
     model::Model,
     ports::center,
@@ -97,7 +97,8 @@ fn select<'a>(
 ) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
     let ink_bounds = page_bounds(shape);
-    paths.sort_by_cached_key(|path| route_rank((model, shape, edge), ink_bounds, path));
+    let mut ranker = RouteRanker::new(model, shape, edge, ink_bounds);
+    paths.sort_by_cached_key(|path| ranker.rank(path));
     paths.dedup();
     let mut pool = Pool::default();
     let slots = super::route_labels::Slots::new(model, shape);
