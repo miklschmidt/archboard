@@ -12,14 +12,47 @@ use std::rc::Rc;
 use archboard_flows::{Step, every_step};
 use archboard_layout::{Edge, Measured, Node, Standings, draw};
 use archboard_scene::drawing::Painted;
-use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
-use archboard_scene::{CardWords, measure_label, measure_node, narrow_label};
+use archboard_scene::request::{ArchitecturePicture, GroupTag, PaintRequest, Picture, Standing};
+use archboard_scene::{CardWords, fit_card, measure_label, measure_node, narrow_label};
 
 use crate::appearance::{label_words, line_appearance, line_look, node_appearances, tags_of};
 use crate::memo::Layouts;
 use crate::request::{Policy, Reading, RenderRequest};
 use crate::steps::with_step_lines;
 use crate::{Host, Outline, document_request, icons_of, page_request};
+
+/// What a part says on its card, as its words are measured and then fitted.
+fn card_words<'a>(node: &'a Node, tags: &'a [GroupTag]) -> CardWords<'a> {
+    CardWords {
+        name: &node.name,
+        responsibility: node.responsibility.as_deref(),
+        path: node.code_path.as_deref(),
+        tags,
+        drills: node.drills,
+        door: node.door.is_some(),
+        toggle: node.toggle,
+    }
+}
+
+/// Each card's words stood in the box the layout gave it, which can be wider
+/// or taller than the least box its words were measured at.
+fn fit_cards(painted: &mut Painted, laid: &Reading, policy: &Policy) {
+    let nodes: HashMap<&str, &Node> = (laid.nodes.iter())
+        .map(|node| (node.id.as_str(), node))
+        .collect();
+    for card in &mut painted.drawing.cards {
+        let Some(node) = nodes.get(card.measured.node.id.as_str()) else {
+            continue;
+        };
+        if node.door.is_some() {
+            continue;
+        }
+        let tags = tags_of(node, policy);
+        let bounds = card.bounds;
+        let facts = card.measured.node.clone();
+        card.measured = fit_card(facts, &card_words(node, &tags), bounds.width, bounds.height);
+    }
+}
 
 /// Every word of a reading measured before the layout places anything: each
 /// part's box, each label, and how each line is drawn.
@@ -34,19 +67,10 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
         .iter()
         .map(|node| {
             let tags = tags_of(node, policy);
-            let words = CardWords {
-                name: &node.name,
-                responsibility: node.responsibility.as_deref(),
-                path: node.code_path.as_deref(),
-                tags: &tags,
-                drills: node.drills,
-                door: node.door.is_some(),
-                toggle: node.toggle,
-            };
             let container = containers.contains(node.id.as_str());
             (
                 node.id.clone(),
-                measure_node(node.facts(), &words, container),
+                measure_node(node.facts(), &card_words(node, &tags), container),
             )
         })
         .collect();
@@ -195,7 +219,12 @@ async fn laid_out<H: Host>(
         .collect();
     let key = layout_key(request, laid, steps, standings.as_ref());
     let content = laid.content();
-    let solving = draw(&content, &measure, standings.as_ref(), request.layout, host);
+    let solving = async {
+        let mut painted =
+            draw(&content, &measure, standings.as_ref(), request.layout, host).await?;
+        fit_cards(&mut painted, laid, &request.policy);
+        Ok(painted)
+    };
     layouts.laid(&key, solving).await
 }
 

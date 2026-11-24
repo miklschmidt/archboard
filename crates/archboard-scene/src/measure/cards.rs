@@ -137,7 +137,7 @@ pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -
         most: CARD_MOST,
         height: CARD_HEIGHT,
     };
-    slab(node, words, size, TITLE)
+    slab(node, words, size)
 }
 
 /// Where a tab's words stand on its one line: their baseline and sizes.
@@ -326,16 +326,12 @@ pub(crate) fn path_runs(path: &str, room: f64, x: f64, baseline: f64, size: f64)
     dim.into_iter().chain(bright).collect()
 }
 
-/// A card's slab: its name and responsibility inside the card's padding, beside its
-/// type chip, and its code path at its foot, as far from its foot as its name's
-/// capitals stand from its top. The tags stand on the name's row.
-fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> MeasuredNode<N> {
+/// A card's slab at its least box: as wide as its words ask, within `size`.
+fn slab<N>(node: N, words: &CardWords<'_>, size: Size) -> MeasuredNode<N> {
     let padding = ARCHITECTURE_CARD_PADDING;
     let left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
     let marked = words.marked();
-    let names: Vec<&str> = words.tags.iter().map(|tag| tag.name.as_str()).collect();
-    let tags = tags_width(&names, 1.0);
-    let title = paragraph(words.name, title_style.font, title_style.size);
+    let title = paragraph(words.name, TITLE.font, TITLE.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let far = far_name_width(words.name);
     let name = title.natural_width() + marked;
@@ -349,30 +345,57 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     };
     // Tags stand on the name's row and the card widens for them, so the name
     // keeps the room it has without them.
-    let beside = tags_beside(tags);
     let width = js_max(
         plain,
-        left + js_min(name, plain - left - padding) + beside + padding,
+        left + js_min(name, plain - left - padding) + beside(words) + padding,
     );
+    stand(node, words, (&title, &note), width, size.height)
+}
+
+/// The room a card's tags take beside its name.
+fn beside(words: &CardWords<'_>) -> f64 {
+    let names: Vec<&str> = words.tags.iter().map(|tag| tag.name.as_str()).collect();
+    tags_beside(tags_width(&names, 1.0))
+}
+
+/// A card's words stood in the box the layout gave it: wrapped at its width,
+/// its path at its foot, and, with no path, its words in the middle. A layout
+/// can widen a card or make it taller than its least box, and the words fill
+/// the box it gets.
+pub fn fit_card<N>(node: N, words: &CardWords<'_>, width: f64, height: f64) -> MeasuredNode<N> {
+    let title = paragraph(words.name, TITLE.font, TITLE.size);
+    let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
+    stand(node, words, (&title, &note), width, height)
+}
+
+/// A card's slab at a width, at least as tall as `least`: its name and
+/// responsibility inside the card's padding, beside its type chip, and its code
+/// path at its foot, as far from its foot as its name's capitals stand from its
+/// top. The tags stand on the name's row.
+fn stand<N>(
+    node: N,
+    words: &CardWords<'_>,
+    (title, note): (&Paragraph, &Paragraph),
+    width: f64,
+    least: f64,
+) -> MeasuredNode<N> {
+    let padding = ARCHITECTURE_CARD_PADDING;
+    let left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
+    let marked = words.marked();
+    let beside = beside(words);
     let available = width - left - padding;
-    let titles = runs_for(
-        &title,
-        title_style,
-        available - marked - beside,
-        left,
-        padding,
-    );
-    let titled = padding + titles.len() as f64 * title_style.line;
+    let titles = runs_for(title, TITLE, available - marked - beside, left, padding);
+    let titled = padding + titles.len() as f64 * TITLE.line;
     let note_top = titled + ARCHITECTURE_NOTE_GAP;
-    let notes = runs_for(&note, NOTE, available, left, note_top);
+    let notes = runs_for(note, NOTE, available, left, note_top);
     let told = if notes.is_empty() {
         titled
     } else {
         note_top + notes.len() as f64 * NOTE.line
     };
-    let foot = cap_margin(title_style) + CARD_THICKNESS;
+    let foot = cap_margin(TITLE) + CARD_THICKNESS;
     let height = js_max(
-        size.height,
+        least,
         match words.path {
             Some(_) => told + PART_PATH_GAP + PATH.size + foot,
             None => told + padding,
@@ -452,6 +475,42 @@ mod tests {
         let above = name.y - name.font_size * NAME_CAP;
         let below = bound.height - CARD_THICKNESS - path.y;
         assert!((above - below).abs() < 1e-9, "{above} {below}");
+    }
+
+    #[test]
+    fn a_card_the_layout_widens_and_raises_fills_its_box_with_its_words() {
+        let words = |path| CardWords {
+            name: "Packages",
+            responsibility: Some(
+                "The workspace packages that the apps, the server and the CLI share: \
+                 the model, the renderer, the workbench and their support",
+            ),
+            path,
+            tags: &[],
+            drills: false,
+            door: false,
+            toggle: None,
+        };
+        let notes = |card: &MeasuredNode<()>| -> Vec<f64> {
+            (card.runs.iter())
+                .filter(|run| run.role == TextRole::Note)
+                .map(|run| run.y)
+                .collect()
+        };
+        let pathed = words(Some("packages"));
+        let least = measure_node((), &pathed, false);
+        let fitted = fit_card((), &pathed, 560.0, least.height + 40.0);
+        assert!(notes(&fitted).len() < notes(&least).len());
+        let right = 560.0 - ARCHITECTURE_CARD_PADDING;
+        assert!(fitted.runs.iter().all(|run| run.x + run.width <= right));
+        let path = fitted.runs.last().expect("a path");
+        assert_eq!(path.y, least.runs.last().expect("a path").y + 40.0);
+
+        let plain = words(None);
+        let least = measure_node((), &plain, false);
+        let wide = fit_card((), &plain, 560.0, least.height);
+        let tall = fit_card((), &plain, 560.0, least.height + 40.0);
+        assert_eq!(tall.runs[0].y, wide.runs[0].y + 20.0);
     }
 
     #[test]

@@ -24,7 +24,6 @@ mod layout;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_layout::Node as GraphNode;
-use archboard_scene::CardWords;
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingEdge, DrawingNode, EdgeFacts, Emphasis, MeasuredLabel,
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
@@ -38,6 +37,7 @@ use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
 };
+use archboard_scene::{CardWords, fit_card};
 use serde::Deserialize;
 
 use crate::content::{Flow, Node};
@@ -137,6 +137,20 @@ fn shape_node(node: NodeFacts, width: f64, height: f64) -> MeasuredNode<NodeFact
     }
 }
 
+/// What a message box or a frame says: its name and responsibility, and no
+/// code path, group or control.
+fn card_words(node: &GraphNode) -> CardWords<'_> {
+    CardWords {
+        name: &node.name,
+        responsibility: node.responsibility.as_deref(),
+        path: None,
+        tags: &[],
+        drills: false,
+        door: false,
+        toggle: None,
+    }
+}
+
 /// Every node measured: a frame as a flow's is, a message box as a card is,
 /// and each shape to the size its words need. Each shape's wrapped words beside.
 fn measured(
@@ -151,15 +165,7 @@ fn measured(
         .iter()
         .map(|node| {
             let Some(shape) = graph.shape(&node.id) else {
-                let card = CardWords {
-                    name: &node.name,
-                    responsibility: node.responsibility.as_deref(),
-                    path: None,
-                    tags: &[],
-                    drills: false,
-                    door: false,
-                    toggle: None,
-                };
+                let card = card_words(node);
                 let measured = if node.parent.is_none() {
                     archboard_scene::measure_flow_frame(node.facts(), &card)
                 } else {
@@ -250,7 +256,17 @@ fn drawing_of(
     let cards = graph
         .nodes
         .iter()
-        .filter_map(|node| placed(&node.id, 1.0, *boxes.get(&node.id)?))
+        .filter_map(|node| {
+            let bounds = *boxes.get(&node.id)?;
+            let mut card = placed(&node.id, 1.0, bounds)?;
+            // A run of message boxes stands as wide as its widest, and each
+            // box's words fill the box it gets.
+            if graph.shape(&node.id).is_none() {
+                let words = card_words(node);
+                card.measured = fit_card(node.facts(), &words, bounds.width, bounds.height);
+            }
+            Some(card)
+        })
         .collect();
     let containers = graph
         .nodes

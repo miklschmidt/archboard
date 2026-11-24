@@ -18,7 +18,7 @@ mod labels;
 
 #[cfg(test)]
 pub(crate) use cards::TAB_NEAR;
-pub use cards::{CardWords, measure_node};
+pub use cards::{CardWords, fit_card, measure_node};
 pub(crate) use cards::{door_far_runs, tab_far, tab_runs, tag_end, tag_top};
 pub(crate) use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;

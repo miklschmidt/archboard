@@ -24,6 +24,6 @@ mod sequence_picture;
 mod sizes;
 
 pub use measure::{
-    CardWords, fitted_size, measure_flow_frame, measure_label, measure_node, message_lines,
-    narrow_label, note_lines, width,
+    CardWords, fit_card, fitted_size, measure_flow_frame, measure_label, measure_node,
+    message_lines, narrow_label, note_lines, width,
 };
