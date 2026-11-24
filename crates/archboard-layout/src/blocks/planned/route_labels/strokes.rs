@@ -5,7 +5,6 @@ use super::{Span, subtract};
 use crate::blocks::planned::{geometry::length, model::Model, shape::Shape};
 use crate::geometry::{Point, Rect};
 
-#[derive(Clone)]
 struct Stroke {
     edge: usize,
     /// How far the stroke's ink reaches to either side: a cable's half, a lone line's nothing.
@@ -106,23 +105,24 @@ fn stroke_box(horizontal: bool, stroke: &Stroke) -> Rect {
     }
 }
 
-fn visit_touching(
-    strokes: &[Stroke],
-    horizontal: bool,
-    edge: usize,
-    (low, high, start, end): (f64, f64, f64, f64),
-    visit: &mut impl FnMut(Rect),
-) {
-    for stroke in strokes {
-        if stroke.edge != edge
-            && stroke.across + stroke.half >= low
-            && stroke.across - stroke.half <= high
-            && stroke.lo - stroke.half <= end
-            && stroke.hi + stroke.half >= start
-        {
-            visit(stroke_box(horizontal, stroke));
-        }
+fn bin_range(strokes: &[Stroke], first: i64, last: i64) -> &[Stroke] {
+    let start = strokes.partition_point(|stroke| stroke.bin < first);
+    if start == strokes.len() || strokes[start].bin > last {
+        return &[];
     }
+    let end = start + strokes[start..].partition_point(|stroke| stroke.bin <= last);
+    &strokes[start..end]
+}
+
+fn visit_strokes(mut base: &[Stroke], extra: &[Stroke], mut visit: impl FnMut(&Stroke)) {
+    for stroke in extra {
+        // Base strokes come first within a bin, as in a rebuilt index.
+        let end = base.partition_point(|s| s.bin <= stroke.bin);
+        base[..end].iter().for_each(&mut visit);
+        visit(stroke);
+        base = &base[end..];
+    }
+    base.iter().for_each(visit);
 }
 
 impl StrokeView<'_> {
@@ -132,16 +132,18 @@ impl StrokeView<'_> {
 
     pub(super) fn touching(self, edge: usize, rect: Rect, mut visit: impl FnMut(Rect)) {
         for horizontal in [true, false] {
-            let bounds = rect_axes(horizontal, rect);
-            let near = self.base.nearby(horizontal, bounds.0, bounds.1);
-            visit_touching(near, horizontal, edge, bounds, &mut visit);
-            visit_touching(
-                self.extra[usize::from(horizontal)],
-                horizontal,
-                edge,
-                bounds,
-                &mut visit,
-            );
+            let (low, high, start, end) = rect_axes(horizontal, rect);
+            let near = self.base.nearby(horizontal, low, high);
+            visit_strokes(near, self.extra[usize::from(horizontal)], |stroke| {
+                if stroke.edge != edge
+                    && stroke.across + stroke.half >= low
+                    && stroke.across - stroke.half <= high
+                    && stroke.lo - stroke.half <= end
+                    && stroke.hi + stroke.half >= start
+                {
+                    visit(stroke_box(horizontal, stroke));
+                }
+            });
         }
     }
 
@@ -157,8 +159,9 @@ impl StrokeView<'_> {
                 (pair[0].x, pair[0].y, pair[1].y)
             };
             let key = bin((across * 1e6).round());
-            let base = self.base.range(horizontal, key - 1, key + 1);
-            let extra = self.extra[usize::from(horizontal)];
+            let axis = usize::from(horizontal);
+            let base = bin_range(&self.base.strokes[axis], key - 1, key + 1);
+            let extra = bin_range(self.extra[axis], key - 1, key + 1);
             if base.is_empty() && extra.is_empty() {
                 spans.push(Span {
                     a: pair[0],
@@ -170,27 +173,20 @@ impl StrokeView<'_> {
             }
             parts.clear();
             parts.push((a.min(b), a.max(b)));
-            subtract_strokes(base, edge, across, &mut parts);
-            subtract_strokes(extra, edge, across, &mut parts);
+            visit_strokes(base, extra, |stroke| {
+                if let (Some(first), Some(last)) = (parts.first(), parts.last())
+                    && stroke.edge != edge
+                    && (stroke.across - across).abs() < 1e-6
+                    && stroke.hi > first.0
+                    && stroke.lo < last.1
+                {
+                    subtract(&mut parts, stroke.lo, stroke.hi);
+                }
+            });
             push_private_spans(&parts, (horizontal, across, a, b, before), &mut spans);
             before += length(pair);
         }
         spans
-    }
-}
-
-fn subtract_strokes(strokes: &[Stroke], edge: usize, across: f64, parts: &mut Vec<(f64, f64)>) {
-    for stroke in strokes {
-        let (Some(first), Some(last)) = (parts.first(), parts.last()) else {
-            return;
-        };
-        if stroke.edge != edge
-            && (stroke.across - across).abs() < 1e-6
-            && stroke.hi > first.0
-            && stroke.lo < last.1
-        {
-            subtract(parts, stroke.lo, stroke.hi);
-        }
     }
 }
 
@@ -260,47 +256,16 @@ impl StrokeIndex {
         let mut extra: Strokes = Default::default();
         let mut pieces = Vec::new();
         push_strokes_of(model, edge, path, &mut pieces, &mut extra);
+        for axis in &mut extra {
+            axis.sort_by_key(|stroke| stroke.bin);
+        }
         StrokeOverlay { base: self, extra }
-    }
-
-    /// The index of these routes and one more route after them, as `new` makes it.
-    #[cfg(test)]
-    pub(in crate::blocks::planned) fn with(
-        &self,
-        model: &Model<'_>,
-        edge: usize,
-        path: &[Point],
-    ) -> Self {
-        let mut strokes = self.strokes.clone();
-        let mut extra: Strokes = Default::default();
-        let mut pieces = Vec::new();
-        push_strokes_of(model, edge, path, &mut pieces, &mut extra);
-        for (axis, added) in strokes.iter_mut().zip(extra) {
-            for stroke in added {
-                // A later stroke follows every stroke of its bin, as the stable sort of `new` puts it.
-                axis.insert(axis.partition_point(|s| s.bin <= stroke.bin), stroke);
-            }
-        }
-        Self {
-            strokes,
-            max_half: self.max_half.max(model.reach(edge)),
-            clearance: std::cell::RefCell::default(),
-        }
-    }
-    fn range(&self, horizontal: bool, first: i64, last: i64) -> &[Stroke] {
-        let strokes = &self.strokes[usize::from(horizontal)];
-        let start = strokes.partition_point(|stroke| stroke.bin < first);
-        if start == strokes.len() || strokes[start].bin > last {
-            return &[];
-        }
-        let end = start + strokes[start..].partition_point(|stroke| stroke.bin <= last);
-        &strokes[start..end]
     }
     /// The bins that can contain ink between `low` and `high`, even when its centre is outside.
     fn nearby(&self, horizontal: bool, low: f64, high: f64) -> &[Stroke] {
         let first = bin(((low - self.max_half) * 1e6).floor()) - 1;
         let last = bin(((high + self.max_half) * 1e6).ceil()) + 1;
-        self.range(horizontal, first, last)
+        bin_range(&self.strokes[usize::from(horizontal)], first, last)
     }
     pub(super) fn crosses(&self, edge: usize, rect: Rect) -> bool {
         for horizontal in [true, false] {
@@ -314,10 +279,6 @@ impl StrokeIndex {
             }
         }
         false
-    }
-    #[cfg(test)]
-    pub(super) fn touching(&self, edge: usize, rect: Rect, visit: impl FnMut(Rect)) {
-        self.view().touching(edge, rect, visit);
     }
     pub(super) fn private(&self, edge: usize, path: &[Point]) -> Vec<Span> {
         self.view().private(edge, path)
@@ -391,7 +352,8 @@ mod tests {
             routed: None,
         });
         let path = vec![Point { x: 20.0, y: 30.0 }, Point { x: 80.0, y: 30.0 }];
-        let added = StrokeIndex::new(&model, &shape).with(&model, 0, &path);
+        let base = StrokeIndex::new(&model, &shape);
+        let added = base.overlay(&model, 0, &path);
         shape.routes.push(PlacedLine {
             id: "cable".to_owned(),
             points: path,
@@ -403,10 +365,12 @@ mod tests {
             width: 20.0,
             height: 10.0,
         };
-        for strokes in [added, StrokeIndex::new(&model, &shape)] {
-            assert!(strokes.crosses(1, plate));
+        let rebuilt = StrokeIndex::new(&model, &shape);
+        assert!(added.extra_crosses(1, plate));
+        assert!(rebuilt.crosses(1, plate));
+        for view in [added.view(), rebuilt.view()] {
             let mut found = false;
-            strokes.touching(1, plate, |_| found = true);
+            view.touching(1, plate, |_| found = true);
             assert!(found);
         }
     }

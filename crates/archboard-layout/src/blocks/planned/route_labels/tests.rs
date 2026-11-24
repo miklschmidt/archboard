@@ -47,6 +47,41 @@ fn graph() -> Node {
             {"id":"ac","sources":["a"],"targets":["c"]}]}))
     .unwrap()
 }
+
+#[test]
+fn overlay_visits_strokes_in_the_rebuilt_index_order() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let mut shape = drawing(&[
+        (
+            "ab",
+            &[(20.0, 30.0), (90.0, 30.0), (90.0, 60.0), (70.0, 60.0)],
+        ),
+        (
+            "ac",
+            &[(20.0, 45.0), (80.0, 45.0), (80.0, 30.0), (30.0, 30.0)],
+        ),
+    ]);
+    let candidate = shape.routes.pop().unwrap();
+    let base = StrokeIndex::new(&model, &shape);
+    let edge = model.edge_index["ac"];
+    let overlay = base.overlay(&model, edge, &candidate.points);
+    shape.routes.push(candidate);
+    let rebuilt = StrokeIndex::new(&model, &shape);
+    let bounds = shape.scopes[&0].bounds;
+    let touching = |view: StrokeView<'_>, except| {
+        let mut boxes = Vec::new();
+        view.touching(except, bounds, |rect| boxes.push(rect));
+        boxes
+    };
+    for except in [usize::MAX, edge, model.edge_index["ab"]] {
+        assert_eq!(
+            touching(overlay.view(), except),
+            touching(rebuilt.view(), except)
+        );
+    }
+}
+
 #[test]
 fn words_use_the_longest_private_run_after_the_fan_splits() {
     let graph = graph();
