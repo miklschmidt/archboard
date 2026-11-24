@@ -560,7 +560,14 @@ impl Settling<'_> {
     /// Make the hops of one place of a cable bulge one way (`align_cables`). True where the
     /// lines they pass over rose over the ribbon instead, so the place's hops are to come down.
     fn align(&mut self, place: &[usize]) -> bool {
-        let turnings = self.turnings(place);
+        let sides: Vec<Bulge> = place
+            .iter()
+            .map(|&index| bulge_of(&self.scene.hops[index]))
+            .collect();
+        if sides.iter().all(|side| *side == sides[0]) {
+            return false;
+        }
+        let turnings = self.turnings(place, &sides);
         if let Some((turned, _)) = turnings.iter().find(|(_, nearest)| *nearest > 1.0) {
             self.turn(turned);
             return false;
@@ -577,16 +584,10 @@ impl Settling<'_> {
 
     /// The ways the hops of one place of a cable could all bulge one way (`align_cables`), the
     /// way most of them bulge first: the hops to turn, each with its turned curve, and how near
-    /// the most crowded of them comes to what crowds it. None where the place bulges one way
-    /// already; a way leaves out where a turned hop would not pass over its lines.
-    fn turnings(&mut self, place: &[usize]) -> Vec<(Vec<(usize, Curve)>, f64)> {
-        let sides: Vec<Bulge> = (place.iter())
-            .map(|&index| bulge_of(&self.scene.hops[index]))
-            .collect();
+    /// the most crowded of them comes to what crowds it. Leave out a way where a turned hop
+    /// would not pass over its lines.
+    fn turnings(&mut self, place: &[usize], sides: &[Bulge]) -> Vec<(Vec<(usize, Curve)>, f64)> {
         let up = sides.iter().filter(|&&one| one > 0.0).count();
-        if up == 0 || up == sides.len() {
-            return Vec::new();
-        }
         let first = if 2 * up >= sides.len() { 1.0 } else { -1.0 };
         let runs: Vec<usize> = (place.iter())
             .map(|&index| self.cluster(self.stood[index].cluster).run)
@@ -599,7 +600,7 @@ impl Settling<'_> {
                 .into_iter()
                 .filter_map(|bulge| {
                     let mut nearest = f64::INFINITY;
-                    let turned = (place.iter().zip(&sides).zip(&flips))
+                    let turned = (place.iter().zip(sides).zip(&flips))
                         .filter(|&((_, &now), _)| now != bulge)
                         .map(|((&index, _), curve)| {
                             let curve = curve.clone();
