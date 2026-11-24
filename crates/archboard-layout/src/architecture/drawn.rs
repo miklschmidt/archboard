@@ -156,7 +156,7 @@ fn land_on_shoulders(points: &mut [Point], route: &[Point], tabs: [Option<Rect>;
             && end.x == next.x
             && next.y < end.y
             && (end.y - tab.y).abs() < 1.0
-            && end.x > tab.x + tab.width
+            && points[strand_end].x > tab.x + tab.width
         {
             points[strand_end].y = tab.y + tab.height;
         }
@@ -350,6 +350,47 @@ mod tests {
         assert_eq!(points[0], Point { x: 144.0, y: 236.0 });
         assert_eq!(points[1], Point { x: 144.0, y: 127.0 });
         assert_eq!(points[2], Point { x: 150.0, y: 127.0 });
+    }
+
+    #[test]
+    fn a_cable_straddling_a_tab_edge_lands_each_strand_on_the_frame() {
+        let content: Content = serde_json::from_value(serde_json::json!({
+            "edges": [
+                {"id": "left", "from": "card", "to": "frame", "order": 0, "kind": "sync"},
+                {"id": "middle", "from": "card", "to": "frame", "order": 1, "kind": "event"},
+                {"id": "right", "from": "card", "to": "frame", "order": 2, "kind": "rpc"},
+            ],
+        }))
+        .unwrap();
+        let mut placed: Placed = serde_json::from_value(serde_json::json!({
+            "width": 400, "height": 400, "cards": [],
+            "frames": [
+                {"id": "frame", "depth": 0, "box": {"x": 20, "y": 200, "width": 300, "height": 140}},
+            ],
+            "titles": [
+                {"band": {"x": 20, "y": 200, "width": 100, "height": 36}},
+            ],
+            "edges": [
+                {"id": "left", "points": [{"x": 124, "y": 70}, {"x": 124, "y": 200}]},
+            ],
+        }))
+        .unwrap();
+        placed.planned = true;
+        let riders = BTreeMap::from([
+            ("middle".into(), "left".into()),
+            ("right".into(), "left".into()),
+        ]);
+        let drawing = drawing_of(&content, &Measured::default(), &placed, &riders);
+
+        let ends: Vec<_> = drawing.edges.iter().map(|edge| edge.curve.end()).collect();
+        assert_eq!(
+            ends,
+            [
+                Point { x: 140.0, y: 236.0 },
+                Point { x: 124.0, y: 236.0 },
+                Point { x: 108.0, y: 200.0 },
+            ]
+        );
     }
 
     #[test]
