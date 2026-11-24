@@ -77,7 +77,7 @@ fn offsets(
     edge: usize,
     points: &[Point],
     source: bool,
-    peers: &[Peer<'_>],
+    peers: &[Peer],
 ) -> Vec<f64> {
     let mut offsets = OFFSETS.map(|by| if source { by } else { -by }).to_vec();
     let (at, next) = end(points, source);
@@ -86,7 +86,7 @@ fn offsets(
     let position = if horizontal { at.y } else { at.x };
     offsets.extend([lo - position, hi - position]);
     for peer in peers {
-        for by in peer.offsets(points, source) {
+        for by in peer.offsets(points, source).into_iter().flatten() {
             offsets.extend([by + peer.apart, by - peer.apart]);
         }
     }
@@ -97,38 +97,42 @@ fn offsets(
 
 /// A placed route that ends on one subject with an end of a line: the only kind of route that
 /// the line's ends can conflict with.
-pub(super) struct Peer<'a> {
-    line: &'a PlacedLine,
+#[derive(Clone, Copy)]
+pub(super) struct Peer {
+    ends: [(Point, Point); 2],
     /// How far apart the two lines' ends stand at the least: a lane, and each cable's half.
     apart: f64,
     /// For each of the line's ends, which walls its port must keep clear of at each peer end.
     walls: [[Option<WallPair>; 2]; 2],
 }
-impl Peer<'_> {
-    fn offsets(&self, points: &[Point], source: bool) -> impl Iterator<Item = f64> {
-        [true, false]
-            .into_iter()
-            .zip(self.walls[usize::from(!source)])
-            .filter_map(move |(os, walls)| {
-                walls?.offset(end(points, source), end(&self.line.points, os))
-            })
+impl Peer {
+    fn offsets(&self, points: &[Point], source: bool) -> [Option<f64>; 2] {
+        let mine = end(points, source);
+        let row = self.walls[usize::from(!source)];
+        [
+            row[0].and_then(|w| w.offset(mine, self.ends[0])),
+            row[1].and_then(|w| w.offset(mine, self.ends[1])),
+        ]
     }
 
     fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
-        self.offsets(points, source)
-            .any(|by| by.abs() < self.apart - 1e-6)
+        let mine = end(points, source);
+        let row = self.walls[usize::from(!source)];
+        let limit = self.apart - 1e-6;
+        row[0]
+            .and_then(|w| w.offset(mine, self.ends[0]))
+            .is_some_and(|by| by.abs() < limit)
+            || row[1]
+                .and_then(|w| w.offset(mine, self.ends[1]))
+                .is_some_and(|by| by.abs() < limit)
     }
 
     pub(super) fn conflicts(&self, points: &[Point]) -> bool {
-        [true, false]
-            .into_iter()
-            .any(|source| self.conflicts_at(points, source))
+        self.conflicts_at(points, true) || self.conflicts_at(points, false)
     }
-}
 
-impl<'a> Peer<'a> {
     /// A placed route as a peer of a line, if it is one.
-    pub(super) fn of(model: &Model<'_>, edge: usize, line: &'a PlacedLine) -> Option<Self> {
+    pub(super) fn of(model: &Model<'_>, edge: usize, line: &PlacedLine) -> Option<Self> {
         let other = model.edge_index[line.id.as_str()];
         if edge == other {
             return None;
@@ -152,7 +156,7 @@ impl<'a> Peer<'a> {
             })
         });
         walls.iter().flatten().any(Option::is_some).then_some(Self {
-            line,
+            ends: [end(&line.points, true), end(&line.points, false)],
             apart: APART + model.reach(edge) + model.reach(other),
             walls,
         })
@@ -160,7 +164,7 @@ impl<'a> Peer<'a> {
 }
 
 /// The peers of a line among some placed routes, in their order.
-pub(super) fn peers<'a>(model: &Model<'_>, routes: &'a [PlacedLine], edge: usize) -> Vec<Peer<'a>> {
+pub(super) fn peers(model: &Model<'_>, routes: &[PlacedLine], edge: usize) -> Vec<Peer> {
     (routes.iter())
         .filter_map(|line| Peer::of(model, edge, line))
         .collect()
@@ -171,7 +175,7 @@ pub(super) fn alternatives(
     model: &Model<'_>,
     shape: &Shape,
     line: &PlacedLine,
-    peers: &[Peer<'_>],
+    peers: &[Peer],
 ) -> Vec<PlacedLine> {
     let edge = model.edge_index[line.id.as_str()];
     let mut paths = Paths::new(line.points.clone());

@@ -17,6 +17,9 @@ impl Envelope {
             |a, p| Self(a.0.min(p.x), a.1.min(p.y), a.2.max(p.x), a.3.max(p.y)),
         )
     }
+    fn segment(a: Point, b: Point) -> Self {
+        Self(a.x.min(b.x), a.y.min(b.y), a.x.max(b.x), a.y.max(b.y))
+    }
     /// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
     pub(super) fn apart(self, b: Self) -> bool {
         self.apart_by(b, 0.0)
@@ -56,45 +59,53 @@ fn shared_only_at_ends(a: &[Point], b: &[Point], prefix: f64, suffix: f64) -> bo
     true
 }
 
-/// The length of ink two routes share on their way from the same endpoint.
-pub(super) fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
-    if a.first() != b.first() || a.is_empty() {
+/// Direction of a step from `at` to `to`: unit orthogonal sign, or zero along an axis.
+fn step_dir(at: Point, to: Point) -> (f64, f64) {
+    let sign = |d: f64| if d.abs() < 1e-6 { 0.0 } else { d.signum() };
+    (sign(to.x - at.x), sign(to.y - at.y))
+}
+
+fn manhattan(a: Point, b: Point) -> f64 {
+    (a.x - b.x).abs() + (a.y - b.y).abs()
+}
+
+/// The length of ink two routes share from the same endpoint, stepping forward or backward.
+fn common_end(a: &[Point], b: &[Point], reverse: bool) -> f64 {
+    let at_index = |s: &[Point], idx: usize| if reverse { s[s.len() - 1 - idx] } else { s[idx] };
+    if a.is_empty() || b.is_empty() || at_index(a, 0) != at_index(b, 0) {
         return 0.0;
     }
-    let (mut i, mut j, mut at, mut shared) = (1, 1, a[0], 0.0);
+    let (mut i, mut j, mut at, mut shared) = (1, 1, at_index(a, 0), 0.0);
     while i < a.len() && j < b.len() {
-        let sign = |d: f64| if d.abs() < 1e-6 { 0.0 } else { d.signum() };
-        let dir = |p: Point| (sign(p.x - at.x), sign(p.y - at.y));
-        let (dx, dy) = dir(a[i]);
-        if dx != 0.0 && dy != 0.0 || dx == 0.0 && dy == 0.0 || (dx, dy) != dir(b[j]) {
+        let (pa, pb) = (at_index(a, i), at_index(b, j));
+        let (dx, dy) = step_dir(at, pa);
+        if (dx != 0.0) == (dy != 0.0) || (dx, dy) != step_dir(at, pb) {
             break;
         }
-        let distance =
-            super::geometry::length(&[at, a[i]]).min(super::geometry::length(&[at, b[j]]));
+        let distance = manhattan(at, pa).min(manhattan(at, pb));
         shared += distance;
         at = Point {
             x: at.x + dx * distance,
             y: at.y + dy * distance,
         };
-        if super::geometry::length(&[at, a[i]]) < 1e-6 {
+        if manhattan(at, pa) < 1e-6 {
             i += 1;
         }
-        if super::geometry::length(&[at, b[j]]) < 1e-6 {
+        if manhattan(at, pb) < 1e-6 {
             j += 1;
         }
     }
     shared
 }
 
+/// The length of ink two routes share on their way from the same endpoint.
+pub(super) fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
+    common_end(a, b, false)
+}
+
 /// The length of ink two routes share on their way to the same endpoint.
 pub(super) fn common_suffix(a: &[Point], b: &[Point]) -> f64 {
-    if a.last() != b.last() {
-        return 0.0;
-    }
-    common_prefix(
-        &a.iter().rev().copied().collect::<Vec<_>>(),
-        &b.iter().rev().copied().collect::<Vec<_>>(),
-    )
+    common_end(a, b, true)
 }
 
 /// How far from an arrowhead on the box at its shared end a fan joins or parts at the
@@ -131,48 +142,64 @@ impl Piece {
     }
 }
 
+fn make_piece(ends: [Point; 2], ink: f64) -> Piece {
+    Piece {
+        ends,
+        ink,
+        envelope: Envelope::segment(ends[0], ends[1]),
+    }
+}
+
+fn toward(from: Point, to: Point, by: f64) -> Point {
+    let length = (to.x - from.x).abs() + (to.y - from.y).abs();
+    Point {
+        x: from.x + (to.x - from.x) * by / length,
+        y: from.y + (to.y - from.y) * by / length,
+    }
+}
+
+/// Fill `out` with the straight pieces of a route, each with its ink (`pieces`), reusing `out`'s
+/// allocation.
+pub(super) fn pieces_into(points: &[Point], (half, reach): (f64, f64), out: &mut Vec<Piece>) {
+    out.clear();
+    let runs = points.len().saturating_sub(1);
+    if runs == 0 {
+        return;
+    }
+    if reach <= half {
+        out.extend(points.windows(2).map(|p| make_piece([p[0], p[1]], reach)));
+        return;
+    }
+    let [first_spreads, last_spreads] = crate::constants::fans_at_bend(points, (half, reach));
+    let apron = crate::constants::apron(half, reach);
+    out.reserve(runs + 2);
+    for run in 0..runs {
+        let (from, to) = (points[run], points[run + 1]);
+        let (first, last) = (run == 0, run + 1 == runs);
+        if runs == 1 || (first && first_spreads) || (last && last_spreads) {
+            out.push(make_piece([from, to], reach));
+        } else if first {
+            let cut = toward(from, to, apron);
+            out.push(make_piece([from, cut], reach));
+            out.push(make_piece([cut, to], half));
+        } else if last {
+            let cut = toward(to, from, apron);
+            out.push(make_piece([from, cut], half));
+            out.push(make_piece([cut, to], reach));
+        } else {
+            out.push(make_piece([from, to], half));
+        }
+    }
+}
+
 /// The straight pieces of a route, each with its ink: a cable's fan (`reach`) on the part of its
 /// first and last runs where its strands stand a lane apart, the apron at each card or the whole
 /// run where it fans out whole (`constants::fans_at_bend`), and its body (`half`) elsewhere. A lone
 /// line has no ink past its own.
-pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> {
-    let piece = |ends: [Point; 2], ink: f64| Piece {
-        ends,
-        ink,
-        envelope: Envelope::new(&ends),
-    };
-    let runs = points.len().saturating_sub(1);
-    let [first_spreads, last_spreads] = crate::constants::fans_at_bend(points, (half, reach));
-    let toward = |from: Point, to: Point, by: f64| {
-        let length = (to.x - from.x).abs() + (to.y - from.y).abs();
-        Point {
-            x: from.x + (to.x - from.x) * by / length,
-            y: from.y + (to.y - from.y) * by / length,
-        }
-    };
-    (0..runs)
-        .flat_map(|run| {
-            let (from, to) = (points[run], points[run + 1]);
-            let (first, last) = (run == 0, run + 1 == runs);
-            if runs == 1 {
-                return vec![piece([from, to], reach)];
-            }
-            if !(first || last) {
-                return vec![piece([from, to], half)];
-            }
-            if reach <= half || (first && first_spreads) || (last && last_spreads) {
-                return vec![piece([from, to], reach)];
-            }
-            let apron = crate::constants::apron(half, reach);
-            if first {
-                let cut = toward(from, to, apron);
-                vec![piece([from, cut], reach), piece([cut, to], half)]
-            } else {
-                let cut = toward(to, from, apron);
-                vec![piece([from, cut], half), piece([cut, to], reach)]
-            }
-        })
-        .collect()
+pub(super) fn pieces(points: &[Point], ink: (f64, f64)) -> Vec<Piece> {
+    let mut out = Vec::with_capacity(points.len().saturating_sub(1) + 2);
+    pieces_into(points, ink, &mut out);
+    out
 }
 
 /// Whether two routes, inked as `pieces` gives them, cross only clear of their bends and run

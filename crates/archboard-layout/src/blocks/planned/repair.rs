@@ -105,9 +105,8 @@ fn conflicts<'a>(
     let mut choices: Vec<_> = paths
         .iter()
         .filter_map(|line| {
-            let bad: Vec<_> = meeting.blocking(line).collect();
-            (!bad.is_empty() && bad.len() <= 3 && !bad.iter().any(|e| locked.contains(e)))
-                .then_some(Conflict { bad, line })
+            let bad = meeting.blocking_within(line, locked, 3)?;
+            Some(Conflict { bad, line })
         })
         .collect();
     choices.sort_by(|a, b| {

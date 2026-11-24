@@ -106,6 +106,9 @@ pub(super) struct Probe<'a, 'g> {
     /// Whether the guard keeps the line off the words of the shape and on its own words.
     words: bool,
     junctions: Option<Vec<Junction<'a>>>,
+    /// Scratch buffer holding the current candidate's inked pieces, populated lazily once per
+    /// candidate across all junction and fan obstacle checks.
+    pieces: RefCell<Vec<super::junctions::Piece>>,
     /// The line that refused the last candidate. Candidates of one search share their ends,
     /// so it most likely refuses the next one too, and it is tested first.
     blocker: std::cell::Cell<usize>,
@@ -173,6 +176,7 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .filter(|line| line.id != model.edges[index].id)
                 .map(|line| Junction::new(model, topology, index, line))
                 .collect(),
+            pieces: RefCell::new(Vec::new()),
             blocker: std::cell::Cell::new(0),
         }
     }
@@ -197,32 +201,37 @@ impl<'a, 'g> Probe<'a, 'g> {
         let Some(pairs) = self.junctions.as_ref() else {
             return Some("junction");
         };
+        let mut pieces = self.pieces.borrow_mut();
+        pieces.clear();
         let first = self.blocker.get();
-        let refuses = |pair: &Junction<'_>| !pair.clear(points, bounds);
-        if pairs.get(first).is_some_and(refuses) {
+        if pairs
+            .get(first)
+            .is_some_and(|pair| !pair.clear(points, bounds, &mut pieces))
+        {
             return Some("junction");
         }
-        if let Some(at) =
-            (pairs.iter().enumerate()).position(|(at, pair)| at != first && refuses(pair))
+        if let Some(at) = (pairs.iter().enumerate())
+            .position(|(at, pair)| at != first && !pair.clear(points, bounds, &mut pieces))
         {
             self.blocker.set(at);
             return Some("junction");
         }
         let refusal = if let Some(fan) = &self.fan {
-            super::junctions::pieces(points, model.ink(index))
-                .into_iter()
-                .find_map(|piece| {
-                    let obstacles = if piece.ink() > self.body.half {
-                        fan
-                    } else {
-                        &self.body
-                    };
-                    let ends = piece.ends();
-                    obstacles.refusal(&ends).or_else(|| {
-                        (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
-                            .then_some("wall lane")
-                    })
+            if pieces.is_empty() {
+                super::junctions::pieces_into(points, model.ink(index), &mut pieces);
+            }
+            pieces.iter().find_map(|piece| {
+                let obstacles = if piece.ink() > self.body.half {
+                    fan
+                } else {
+                    &self.body
+                };
+                let ends = piece.ends();
+                obstacles.refusal(&ends).or_else(|| {
+                    (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
+                        .then_some("wall lane")
                 })
+            })
         } else {
             self.body.refusal(points)
         };
@@ -307,31 +316,42 @@ impl<'a> Junction<'a> {
             arrows: [source && (two_way(index) || two_way(other)), target],
         })
     }
-    fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
-        bounds.apart_by(self.bounds, self.most)
-            || ((!self.shared
-                || super::junctions::sharing(
-                    points,
-                    &self.line.points,
-                    self.ends[0],
-                    self.ends[1],
-                ) && super::junctions::readable(
-                    points,
-                    &self.line.points,
-                    self.arrows[0],
-                    self.arrows[1],
-                ))
-                && super::junctions::ordered_pieces(
-                    &super::junctions::pieces(points, self.ours),
-                    (self.bounds, &self.theirs),
-                    self.shared,
-                ))
+    fn clear(
+        &self,
+        points: &[Point],
+        bounds: super::junctions::Envelope,
+        ours_pieces: &mut Vec<super::junctions::Piece>,
+    ) -> bool {
+        if bounds.apart_by(self.bounds, self.most) {
+            return true;
+        }
+        if self.shared
+            && !(super::junctions::sharing(
+                points,
+                &self.line.points,
+                self.ends[0],
+                self.ends[1],
+            ) && super::junctions::readable(
+                points,
+                &self.line.points,
+                self.arrows[0],
+                self.arrows[1],
+            ))
+        {
+            return false;
+        }
+        if ours_pieces.is_empty() {
+            super::junctions::pieces_into(points, self.ours, ours_pieces);
+        }
+        super::junctions::ordered_pieces(ours_pieces, (self.bounds, &self.theirs), self.shared)
     }
 }
 /// The junctions of one line's candidates with every placed route, each route indexed once.
 pub(super) struct Junctions<'a> {
     /// The junction with each placed route, if the route is a line of the model.
     pairs: Vec<Option<Junction<'a>>>,
+    /// Scratch buffer holding the current candidate's inked pieces.
+    pieces: RefCell<Vec<super::junctions::Piece>>,
     /// The route that refused the last candidate, tested first.
     blocker: std::cell::Cell<usize>,
 }
@@ -346,34 +366,39 @@ impl<'a> Junctions<'a> {
             pairs: (routes.iter())
                 .map(|line| Junction::new(model, topology, index, line))
                 .collect(),
+            pieces: RefCell::new(Vec::new()),
             blocker: std::cell::Cell::new(0),
         }
     }
     /// Whether a candidate keeps `shared_junction` with every placed route.
     pub(super) fn clear(&self, points: &[Point]) -> bool {
         let bounds = super::junctions::Envelope::new(points);
+        let mut pieces = self.pieces.borrow_mut();
+        pieces.clear();
         let first = self.blocker.get();
-        let refuses = |at: usize| !self.shares(at, points, bounds);
-        if first < self.pairs.len() && refuses(first) {
+        if first < self.pairs.len() && !self.shares_with(first, points, bounds, &mut pieces) {
             return false;
         }
-        if let Some(at) = (0..self.pairs.len()).position(|at| at != first && refuses(at)) {
+        if let Some(at) = (0..self.pairs.len())
+            .position(|at| at != first && !self.shares_with(at, points, bounds, &mut pieces))
+        {
             self.blocker.set(at);
             return false;
         }
         true
     }
     /// `shared_junction` of a candidate, whose envelope is `bounds`, with the placed route at
-    /// `at`.
-    pub(super) fn shares(
+    /// `at`, reusing `ours_pieces` across routes of the same candidate.
+    pub(super) fn shares_with(
         &self,
         at: usize,
         points: &[Point],
         bounds: super::junctions::Envelope,
+        ours_pieces: &mut Vec<super::junctions::Piece>,
     ) -> bool {
         self.pairs[at]
             .as_ref()
-            .is_some_and(|pair| pair.clear(points, bounds))
+            .is_some_and(|pair| pair.clear(points, bounds, ours_pieces))
     }
 }
 
@@ -391,7 +416,9 @@ pub(super) fn shared_junction(
     if bounds.apart_by(super::junctions::Envelope::new(&line.points), spread) {
         return model.edge_index.contains_key(line.id.as_str());
     }
-    Junction::new(model, topology, index, line).is_some_and(|pair| pair.clear(points, bounds))
+    let mut pieces = Vec::new();
+    Junction::new(model, topology, index, line)
+        .is_some_and(|pair| pair.clear(points, bounds, &mut pieces))
 }
 
 pub(super) fn shared_fragment(
