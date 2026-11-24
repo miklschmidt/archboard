@@ -35,6 +35,12 @@ pub(crate) struct PlacedEdge {
     pub(crate) label: Option<Rect>,
 }
 
+/// The tab band a solver reserved at the top of a frame.
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct PlacedTitle {
+    pub(crate) band: Rect,
+}
+
 /// A whole drawing's geometry, as a solve answers it.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Placed {
@@ -44,6 +50,8 @@ pub(crate) struct Placed {
     pub(crate) height: f64,
     pub(crate) cards: Vec<PlacedCard>,
     pub(crate) frames: Vec<PlacedFrame>,
+    #[serde(default)]
+    pub(crate) titles: Vec<PlacedTitle>,
     pub(crate) edges: Vec<PlacedEdge>,
 }
 

@@ -52,12 +52,10 @@ pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approa
 /// and a little body. With no bend, a head needs no approach.
 pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_run();
 
-/// How far from its card a cable's strands stand at most a lane apart on an end run (the
-/// apron): a head's straight approach and two bends for the jog that steps each outer strand out
-/// from its body to its port, as far out again as the fan is wider than the body. Beyond the apron
-/// the strands run as one ribbon.
+/// How far from its card a cable's strands take to return to the body pitch. The last rounded
+/// corner of the outermost jog reaches past its vertex by a bend radius, fitted to half the step.
 pub(crate) fn apron(half: f64, reach: f64) -> f64 {
-    APPROACH_STRAIGHT + 2.0 * BEND_RADIUS + reach - half
+    fan_jog_depth(half) + BEND_RADIUS.min((reach - half) / 2.0)
 }
 
 /// How far from the card a strand steps out, given its distance from the middle of the body.
