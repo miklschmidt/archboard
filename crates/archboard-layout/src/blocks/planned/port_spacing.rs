@@ -1,4 +1,4 @@
-//! Keep ports apart across opposite walls and along a door's walls.
+//! Keep ports apart across opposite walls and along walls of doors and cards with cables.
 
 use super::{model::Model, shape::Shape};
 use crate::{blocks::assembly::PlacedLine, geometry::Point, lanes::chains::LANE};
@@ -34,23 +34,22 @@ fn one_subject(model: &Model<'_>, one: usize, other: usize) -> bool {
 #[derive(Clone, Copy)]
 enum WallPair {
     Opposite,
-    DistinctDoorPorts,
+    Either { shared_port: bool },
 }
 
 impl WallPair {
     fn offset(self, (at, next): (Point, Point), (other, away): (Point, Point)) -> Option<f64> {
-        let requires_gap = |on: f64, off: f64, their_on: f64, their_off: f64| {
-            (off - on) * (their_off - their_on) < 0.0
-                || matches!(self, Self::DistinctDoorPorts) && (on - their_on).abs() < 0.1
-        };
-        if at.y == next.y && other.y == away.y && requires_gap(at.x, next.x, other.x, away.x) {
-            Some(other.y - at.y)
-        } else if at.x == next.x && other.x == away.x && requires_gap(at.y, next.y, other.y, away.y)
-        {
-            Some(other.x - at.x)
+        let (on, off, their_on, their_off, by) = if at.y == next.y && other.y == away.y {
+            (at.x, next.x, other.x, away.x, other.y - at.y)
+        } else if at.x == next.x && other.x == away.x {
+            (at.y, next.y, other.y, away.y, other.x - at.x)
         } else {
-            None
-        }
+            return None;
+        };
+        let opposite = (off - on) * (their_off - their_on) < 0.0;
+        let same = (on - their_on).abs() < 0.1;
+        let distinct = matches!(self, Self::Either { shared_port } if !shared_port || by != 0.0);
+        (opposite || (same && distinct)).then_some(by)
     }
 }
 
@@ -137,13 +136,15 @@ impl<'a> Peer<'a> {
             let (from, to) = model.ends[edge];
             [(from, true), (to, false)]
         };
+        let cable = model.reach(edge) > 0.0 || model.reach(other) > 0.0;
         let walls = ends(edge).map(|(at, source)| {
             ends(other).map(|(end, other_source)| {
-                if at == end
-                    && model.endpoints[at].door
-                    && (source != other_source || model.treatments[edge] != model.treatments[other])
-                {
-                    Some(WallPair::DistinctDoorPorts)
+                if at == end && (model.endpoints[at].door || cable) {
+                    Some(WallPair::Either {
+                        shared_port: !cable
+                            && source == other_source
+                            && model.treatments[edge] == model.treatments[other],
+                    })
                 } else {
                     one_subject(model, at, end).then_some(WallPair::Opposite)
                 }

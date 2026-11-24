@@ -192,6 +192,16 @@ fn spot_on(
     narrow: bool,
 ) -> Option<(Rect, bool)> {
     let plate = Plate::of(model, own, narrow)?;
+    let ink = model.ink(own.edge);
+    let pieces = if ink.0 > 0.0 {
+        super::junctions::pieces(own.path, ink)
+    } else {
+        Vec::new()
+    };
+    let own = Own {
+        pieces: &pieces,
+        ..own
+    };
     if shape.trunk.contains_key(&own.edge) {
         return nearest(spans, plate, shape, own, index, labels).map(|at| (at, false));
     }

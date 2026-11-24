@@ -458,7 +458,7 @@ impl Settling<'_> {
 
     /// Take standing hops down, by their index, so a crest grown from them
     /// stands in their place.
-    fn unstand(&mut self, hops: &[usize]) {
+    pub(super) fn unstand(&mut self, hops: &[usize]) {
         let mut stood: Vec<Rise> = Vec::new();
         let mut standing: Vec<Hop> = Vec::new();
         let pairs = std::mem::take(&mut self.stood)

@@ -474,14 +474,33 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn the_final_guard_keeps_distinct_door_ports_a_lane_apart_on_one_wall() {
+    fn the_final_guard_keeps_distinct_ports_a_lane_apart_on_one_wall() {
+        for (door, kind, cable, gap) in [
+            ("across", "event", None, 16.0),
+            ("across", "http", None, 16.0),
+            ("", "event", Some("left;strand"), 24.0),
+        ] {
+            check_port_gap(door, kind, cable, gap);
+        }
+    }
+
+    fn check_port_gap(door: &str, kind: &str, cable: Option<&str>, gap: f64) {
+        let door_options = if door.is_empty() {
+            json!({})
+        } else {
+            json!({"archboard.door":door})
+        };
+        let mut left_options = json!({"archboard.relationship.kind":"http"});
+        if let Some(cable) = cable {
+            left_options["archboard.cable"] = json!(cable);
+        }
         let graph: Node = serde_json::from_value(json!({"id":"root","children":[
-            {"id":"door","layoutOptions":{"archboard.door":"across"}},
+            {"id":"door","layoutOptions":door_options},
             {"id":"left"}, {"id":"right"}],
             "edges":[{"id":"left","sources":["door"],"targets":["left"],
-                "layoutOptions":{"archboard.relationship.kind":"http"}},
+                "layoutOptions":left_options},
                 {"id":"right","sources":["door"],"targets":["right"],
-                "layoutOptions":{"archboard.relationship.kind":"event"}}]}))
+                "layoutOptions":{"archboard.relationship.kind":kind}}]}))
         .unwrap();
         let model = Model::new(&graph).unwrap();
         let topology = Topology::new(&model);
@@ -520,10 +539,16 @@ mod tests {
             label: None,
         };
         let mut shape = placement(&model, drawing).unwrap();
-        shape.routes = vec![route("left", 243.0, 180.02), route("right", 257.0, 319.98)];
-        finish(&model, &topology, &mut shape).expect_err("fourteen units is less than a lane");
-        shape.routes = vec![route("left", 242.0, 180.02), route("right", 258.0, 319.98)];
-        finish(&model, &topology, &mut shape).expect("sixteen units leaves a full lane");
+        let routes = |separation| {
+            vec![
+                route("left", 250.0 - separation / 2.0, 180.02),
+                route("right", 250.0 + separation / 2.0, 319.98),
+            ]
+        };
+        shape.routes = routes(gap - 2.0);
+        finish(&model, &topology, &mut shape).expect_err("the ports leave less than a lane");
+        shape.routes = routes(gap);
+        finish(&model, &topology, &mut shape).expect("the outer strands leave a full lane");
     }
 
     #[test]

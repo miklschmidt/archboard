@@ -12,7 +12,7 @@ use archboard_scene::geometry::{Curve, Point, Rect, curve_through};
 use super::choosing::Placed;
 use super::content::Content;
 use super::measured::Measured;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, FAN, STRAND, fans_whole};
+use crate::constants::{FAN, STRAND, fan_jog_depth, fans_at_bend};
 use crate::ecma;
 
 /// How far a part's loop to itself reaches out of its side.
@@ -95,26 +95,25 @@ fn beside(points: &[Point], by: impl Fn(usize) -> f64) -> Vec<Point> {
 /// from the next along the cable's body, where the strands run as one ribbon, and a lane from the
 /// next where they reach a card, so that each strand's mark lands on a port of its own. An end run
 /// short enough fans out whole, its strands spreading at the bend before it
-/// (`constants::fans_whole`). On a longer one the strands step out at the card's
+/// (`constants::fans_at_bend`). On a longer one the strands step out at the card's
 /// apron: each outer strand jogs to its port, the outermost furthest from the card, so that no
 /// strand crosses another and each keeps a straight approach to its mark.
 fn strand(points: &[Point], place: f64, count: usize) -> Vec<Point> {
     let runs = points.len() - 1;
     let gaps = (count - 1) as f64;
     let (half, reach) = (gaps * STRAND / 2.0, gaps * FAN / 2.0);
-    let whole = |run: usize| fans_whole(length(points[run], points[run + 1]), half, reach);
-    let fans = |run: usize| runs == 1 || ((run == 0 || run + 1 == runs) && whole(run));
+    let [first_spreads, last_spreads] = fans_at_bend(points, (half, reach));
+    let fans = |run: usize| (run == 0 && first_spreads) || (run + 1 == runs && last_spreads);
     let mut moved = beside(points, |run| place * if fans(run) { FAN } else { STRAND });
     if place == 0.0 || runs == 1 {
         return moved;
     }
     // How far from its card a strand steps out to its port: the further out it stands, the further
     // from the card, a strand's pitch apart.
-    let depth = APPROACH_STRAIGHT + 2.0 * BEND_RADIUS + (place.abs() - 0.5).max(0.0) * STRAND;
+    let depth = fan_jog_depth(place.abs() * STRAND);
     let step = place * (FAN - STRAND);
-    // A strand's end run, from its end on the card to its corner, stepped out to its port: with a
-    // jog at its depth, or, where its own run has no room for the jog beside its corner, at the
-    // corner, as a run that fans out whole.
+    // A strand's end run, from its end on the card to its corner, stepped out to its port
+    // with a jog at its depth.
     let out = |(end, corner): (Point, Point), (from, to): (Point, Point)| -> Vec<Point> {
         let run = length(from, to);
         let aside = |point: Point| Point {
@@ -122,9 +121,6 @@ fn strand(points: &[Point], place: f64, count: usize) -> Vec<Point> {
             y: point.y + (to.x - from.x) / run * step,
         };
         let own = length(end, corner);
-        if own < depth + 3.0 * BEND_RADIUS {
-            return vec![aside(end), aside(corner)];
-        }
         let body = Point {
             x: end.x + (corner.x - end.x) * depth / own,
             y: end.y + (corner.y - end.y) * depth / own,

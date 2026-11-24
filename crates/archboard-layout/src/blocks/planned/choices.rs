@@ -524,7 +524,7 @@ mod tests {
             cards: vec![
                 card("source", 100.0, 100.0, 200.0, 34.0),
                 card("target", 100.0, 206.0, 200.0, 34.0),
-                card("obstacle", 188.0, 160.0, 24.0, 24.0),
+                card("obstacle", 201.0, 160.0, 24.0, 24.0),
             ],
             frames: Vec::new(),
             regions: Vec::new(),

@@ -1,7 +1,7 @@
 //! A relationship's own route: its words ride one stretch and stand clear of the rest.
 
 use super::{Span, StrokeIndex, clear};
-use crate::blocks::planned::{label_space::Labels, model::Model, shape::Shape};
+use crate::blocks::planned::{junctions::Piece, label_space::Labels, model::Model, shape::Shape};
 use crate::geometry::{Point, Rect, inflate};
 
 /// The relationship whose words are placed, and the route they ride.
@@ -9,6 +9,7 @@ use crate::geometry::{Point, Rect, inflate};
 pub(super) struct Own<'a> {
     pub(super) edge: usize,
     pub(super) path: &'a [Point],
+    pub(super) pieces: &'a [Piece],
     /// Whether the words may stand beside the route's other stretches, within the clearance
     /// they keep from other lines, for a route that leaves them no spot clear of its own ink.
     /// They still never stand over another stretch of it.
@@ -34,16 +35,12 @@ pub(super) fn meets(area: Rect, stretch: Rect) -> bool {
 }
 
 /// Whether a stretch of a route holds a span of it.
-fn carries(pair: &[Point], span: Span) -> bool {
+fn carries(pair: &[Point], [a, b]: [Point; 2]) -> bool {
     let holds = |lo: f64, hi: f64, a: f64, b: f64| lo.min(hi) <= a.min(b) && lo.max(hi) >= a.max(b);
     if pair[0].y == pair[1].y {
-        pair[0].y == span.a.y
-            && span.a.y == span.b.y
-            && holds(pair[0].x, pair[1].x, span.a.x, span.b.x)
+        pair[0].y == a.y && a.y == b.y && holds(pair[0].x, pair[1].x, a.x, b.x)
     } else {
-        pair[0].x == span.a.x
-            && span.a.x == span.b.x
-            && holds(pair[0].y, pair[1].y, span.a.y, span.b.y)
+        pair[0].x == a.x && a.x == b.x && holds(pair[0].y, pair[1].y, a.y, b.y)
     }
 }
 
@@ -53,6 +50,7 @@ impl<'a> Own<'a> {
         Self {
             edge,
             path,
+            pieces: &[],
             beside: false,
         }
     }
@@ -63,12 +61,21 @@ impl<'a> Own<'a> {
         if self.beside { 0.01 } else { clearance }
     }
 
-    /// Every stretch of the route but the one that holds the span the words ride.
+    /// The ink of every run but the one that holds the span the words ride.
     pub(super) fn others(self, span: Span) -> impl Iterator<Item = Rect> {
-        self.path
+        let carries_span = move |pair: &[Point]| carries(pair, [span.a, span.b]);
+        let lines = self
+            .path
             .windows(2)
-            .filter(move |pair| !carries(pair, span))
-            .map(stretch)
+            .filter(move |pair| self.pieces.is_empty() && !carries_span(pair))
+            .map(stretch);
+        let carrier = self.path.windows(2).find(|pair| carries_span(pair));
+        let cable = self.pieces.iter().filter_map(move |piece| {
+            let ends = piece.ends();
+            (!carrier.is_some_and(|pair| carries(pair, ends)))
+                .then(|| inflate(stretch(&ends), piece.ink()))
+        });
+        lines.chain(cable)
     }
 
     /// Whether a box meets one stretch of the route at most.

@@ -64,6 +64,9 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
   each, so a corpus of them never reaches this code. Measure a change here on readings with
   several groups open.
 - Routing is greedy. One line that takes a shorter way can force later lines into detours.
+- Line marks use picture units in both painters. The far view widens the body alone.
+  The picture and the effect legend share the query eye with its center dot and the mutation
+  imprint with its glow. [The picture design](../../DESIGN.md#the-pictures-own-depth) gives the sizes.
 - Blocks routes the relationships between two cards as one line, a cable, and
   `architecture/drawn.rs` draws each relationship as a strand beside it: half a lane apart along
   the body, and a lane apart where the cable reaches a card, so that every mark has its own port.

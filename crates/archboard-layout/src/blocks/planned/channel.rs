@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_whole};
+use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_at_bend};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -31,7 +31,7 @@ pub(super) fn feasible(
 
 /// Every route candidate of one edge uses the same fixed obstacles.
 #[derive(Default)]
-pub(super) struct GeometryCache(RefCell<FxHashMap<usize, Rc<FixedGeometry>>>);
+pub(super) struct GeometryCache(RefCell<FxHashMap<(usize, bool), Rc<FixedGeometry>>>);
 
 struct FixedGeometry {
     cards: super::clearance::Clearance,
@@ -69,6 +69,31 @@ impl FixedGeometry {
     }
 }
 
+/// The obstacles a piece of one width must clear.
+struct Obstacles {
+    fixed: Rc<FixedGeometry>,
+    labels: super::clearance::Clearance,
+    half: f64,
+}
+
+impl Obstacles {
+    fn refusal(&self, points: &[Point]) -> Option<&'static str> {
+        if !self.fixed.cards.clear(points) {
+            return Some("card");
+        }
+        if !self.labels.clear(points) {
+            return Some("label");
+        }
+        if !self.fixed.captions.clear(points) {
+            return Some("caption");
+        }
+        if !self.fixed.foreign.clear(points) {
+            return Some("foreign scope");
+        }
+        None
+    }
+}
+
 /// The guard borrows one immutable candidate set and indexes its fixed obstacles.
 pub(super) struct Probe<'a, 'g> {
     model: &'a Model<'g>,
@@ -76,10 +101,10 @@ pub(super) struct Probe<'a, 'g> {
     index: usize,
     shape: &'a Shape,
     bounds: Rect,
-    fixed: Rc<FixedGeometry>,
+    body: Obstacles,
+    fan: Option<Obstacles>,
     /// Whether the guard keeps the line off the words of the shape and on its own words.
     words: bool,
-    labels: super::clearance::Clearance,
     junctions: Option<Vec<Junction<'a>>>,
     /// The line that refused the last candidate. Candidates of one search share their ends,
     /// so it most likely refuses the next one too, and it is tested first.
@@ -111,36 +136,37 @@ impl<'a, 'g> Probe<'a, 'g> {
         (index, shape, bounds): (usize, &'a Shape, Rect),
         words: bool,
     ) -> Self {
-        let fixed = Rc::clone(
-            shape
-                .channel_geometry
-                .0
-                .borrow_mut()
-                .entry(index)
-                .or_insert_with(|| {
-                    Rc::new(FixedGeometry::of(
-                        model,
-                        topology,
-                        (index, model.half(index)),
-                        shape,
-                    ))
-                }),
-        );
-        let labels = super::clearance::Clearance::new(
-            (shape.labels.iter())
-                .filter(|(id, _)| words && **id != index)
-                .map(|(_, &r)| inflate(r, 12.01 + model.half(index)))
-                .collect(),
-        );
+        let obstacles = |fan, half| Obstacles {
+            fixed: Rc::clone(
+                shape
+                    .channel_geometry
+                    .0
+                    .borrow_mut()
+                    .entry((index, fan))
+                    .or_insert_with(|| {
+                        Rc::new(FixedGeometry::of(model, topology, (index, half), shape))
+                    }),
+            ),
+            labels: super::clearance::Clearance::new(
+                shape
+                    .labels
+                    .iter()
+                    .filter(|(id, _)| words && **id != index)
+                    .map(|(_, &r)| inflate(r, 12.01 + half))
+                    .collect(),
+            ),
+            half,
+        };
+        let (half, reach) = model.ink(index);
         Self {
             model,
             topology,
             index,
             shape,
             bounds,
-            fixed,
+            body: obstacles(false, half),
+            fan: (reach > half).then(|| obstacles(true, reach)),
             words,
-            labels,
             junctions: shape
                 .routes
                 .iter()
@@ -182,20 +208,29 @@ impl<'a, 'g> Probe<'a, 'g> {
             self.blocker.set(at);
             return Some("junction");
         }
-        if !self.fixed.cards.clear(points) {
-            return Some("card");
+        let refusal = if let Some(fan) = &self.fan {
+            super::junctions::pieces(points, model.ink(index))
+                .into_iter()
+                .find_map(|piece| {
+                    let obstacles = if piece.ink() > self.body.half {
+                        fan
+                    } else {
+                        &self.body
+                    };
+                    let ends = piece.ends();
+                    obstacles.refusal(&ends).or_else(|| {
+                        (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
+                            .then_some("wall lane")
+                    })
+                })
+        } else {
+            self.body.refusal(points)
+        };
+        if refusal.is_some() {
+            return refusal;
         }
-        if !self.labels.clear(points) {
-            return Some("label");
-        }
-        if !self.fixed.captions.clear(points) {
-            return Some("caption");
-        }
-        if hugs_wall(shape, points, model.half(index)) {
+        if hugs_wall(shape, points, self.body.half) {
             return Some("wall lane");
-        }
-        if !self.fixed.foreign.clear(points) {
-            return Some("foreign scope");
         }
         if !super::portals::follows(&topology.routes[index], shape, points) {
             return Some("portal");
@@ -380,12 +415,10 @@ pub(super) fn shared_fragment(
 const DETOUR_LIMIT: f64 = 2.5;
 
 /// How far a cable stands its strands out on each side of a run's end bends: its fan on a first
-/// or last run that fans out whole (`constants::fans_whole`), its body elsewhere, where an end run
+/// or last run that fans out whole (`constants::fans_at_bend`), its body elsewhere, where an end run
 /// steps its strands out only at its apron.
-fn out_of(points: &[Point], run: usize, (half, reach): (f64, f64)) -> f64 {
-    let runs = points.len() - 1;
-    let at_end = run == 0 || run + 1 == runs;
-    if at_end && fans_whole(length(&points[run..run + 2]), half, reach) {
+fn out_of(run: usize, runs: usize, (half, reach): (f64, f64), [first, last]: [bool; 2]) -> f64 {
+    if (run == 0 && first) || (run + 1 == runs && last) {
         reach
     } else {
         half
@@ -400,29 +433,34 @@ pub(super) fn approaches(points: &[Point], ink: (f64, f64)) -> bool {
     if runs <= 1 {
         return points.len() < 2 || length(points) >= STRAIGHT_RUN;
     }
-    length(&points[..2]) >= approach_of(out_of(points, 1, ink))
-        && length(&points[runs - 1..]) >= approach_of(out_of(points, runs - 2, ink))
+    let spread = fans_at_bend(points, ink);
+    length(&points[..2]) >= approach_of(out_of(1, runs, ink, spread))
+        && length(&points[runs - 1..]) >= approach_of(out_of(runs - 2, runs, ink, spread))
 }
 
 /// Whether a cable keeps every strand the right way round: between two bends that turn the same
 /// way, the inner strand's run is shorter by how far the runs on either side stand their strands
 /// out (`out_of`), and still holds both rounded corners with a straight between them as long as
 /// the strands stand apart along the body. Corners that met with no straight between them would
-/// turn the inner strand in one S, unlike the strands beside it.
+/// turn the inner strand in one S, unlike the strands beside it. Between opposite turns, the
+/// offsets shorten one side by their difference, so that strand must still run forward.
 fn turns_clear(points: &[Point], ink: (f64, f64)) -> bool {
     let turn = |at: usize| {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
         ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)).signum()
     };
-    let last = points.len().saturating_sub(2);
+    let runs = points.len() - 1;
+    let spread = fans_at_bend(points, ink);
     ink.0 == 0.0
-        || (1..last).all(|at| {
-            turn(at) != turn(at + 1)
-                || length(&points[at..at + 2])
-                    >= out_of(points, at - 1, ink)
-                        + out_of(points, at + 1, ink)
-                        + 2.0 * BEND_RADIUS
-                        + STRAND
+        || (1..runs.saturating_sub(1)).all(|at| {
+            let before = out_of(at - 1, runs, ink, spread);
+            let after = out_of(at + 1, runs, ink, spread);
+            let run = length(&points[at..at + 2]);
+            if turn(at) == turn(at + 1) {
+                run >= before + after + 2.0 * BEND_RADIUS + STRAND
+            } else {
+                run > (before - after).abs()
+            }
         })
 }
 
@@ -558,6 +596,138 @@ fn basic(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_inner_strand_has_room_at_a_bend_where_the_fan_spreads() {
+        let source = Rect {
+            x: 60.0,
+            y: 160.0,
+            width: 80.0,
+            height: 40.0,
+        };
+        let bounds = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 400.0,
+            height: 400.0,
+        };
+        let refusal = |across: f64| {
+            let target = Rect {
+                x: source.x + across,
+                y: 70.0,
+                ..source
+            };
+            let points = [
+                Point { x: 100.0, y: 200.0 },
+                Point { x: 100.0, y: 290.0 },
+                Point {
+                    x: 100.0 + across,
+                    y: 290.0,
+                },
+                Point {
+                    x: 100.0 + across,
+                    y: 110.0,
+                },
+            ];
+            basic((&points, (16.0, 32.0)), source, target, bounds)
+        };
+        assert_eq!(refusal(56.0), Some("approach"));
+        assert_eq!(refusal(72.0), None);
+    }
+
+    #[test]
+    fn a_cable_keeps_its_fan_clear_of_a_nearby_card() {
+        use crate::blocks::assembly::{Placed, PlacedCard};
+
+        let graph = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "children": [{"id": "source"}, {"id": "target"}, {"id": "obstacle"}],
+            "edges": [{
+                "id": "cable", "sources": ["source"], "targets": ["target"],
+                "layoutOptions": {"archboard.cable": "sync;async;http;rpc;queue"}
+            }]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width| PlacedCard {
+            id: id.to_owned(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height: 80.0,
+            },
+            depth: 1,
+            header: None,
+        };
+        let points = [
+            Point { x: 90.0, y: 72.0 },
+            Point { x: 290.0, y: 72.0 },
+            Point { x: 290.0, y: 220.0 },
+            Point { x: 390.0, y: 220.0 },
+        ];
+        let refusal = |obstacle_x| {
+            let shape = super::super::fixed::placement(
+                &model,
+                Placed {
+                    width: 500.0,
+                    height: 300.0,
+                    cards: vec![
+                        card("source", 10.0, 32.0, 80.0),
+                        card("target", 390.0, 180.0, 80.0),
+                        card("obstacle", obstacle_x, 106.0, 20.0),
+                    ],
+                    frames: vec![],
+                    regions: vec![],
+                    edges: vec![],
+                    titles: vec![],
+                    routed: None,
+                },
+            )
+            .unwrap();
+            Probe::new(&model, &topology, 0, &shape, shape.scopes[&0].bounds).refusal(&points)
+        };
+        assert_eq!(refusal(130.0), Some("card"));
+        assert_eq!(refusal(220.0), None);
+    }
+
+    #[test]
+    fn a_cable_cannot_double_back_between_its_fan_and_body() {
+        let card = |x, centre| Rect {
+            x,
+            y: centre - 40.0,
+            width: 80.0,
+            height: 80.0,
+        };
+        let refusal = |offset| {
+            let points = [
+                Point { x: 80.0, y: 70.0 },
+                Point { x: 144.0, y: 70.0 },
+                Point {
+                    x: 144.0,
+                    y: 70.0 + offset,
+                },
+                Point {
+                    x: 294.0,
+                    y: 70.0 + offset,
+                },
+            ];
+            basic(
+                (&points, (16.0, 32.0)),
+                card(0.0, 70.0),
+                card(294.0, 70.0 + offset),
+                Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 400.0,
+                    height: 200.0,
+                },
+            )
+        };
+        assert_eq!(refusal(8.0), Some("approach"));
+        assert_eq!(refusal(24.0), None);
+    }
 
     #[test]
     fn a_lone_line_cannot_take_a_detour_around_the_page() {

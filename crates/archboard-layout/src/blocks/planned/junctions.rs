@@ -133,7 +133,7 @@ impl Piece {
 
 /// The straight pieces of a route, each with its ink: a cable's fan (`reach`) on the part of its
 /// first and last runs where its strands stand a lane apart, the apron at each card or the whole
-/// run where it fans out whole (`constants::fans_whole`), and its body (`half`) elsewhere. A lone
+/// run where it fans out whole (`constants::fans_at_bend`), and its body (`half`) elsewhere. A lone
 /// line has no ink past its own.
 pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> {
     let piece = |ends: [Point; 2], ink: f64| Piece {
@@ -142,6 +142,7 @@ pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> 
         envelope: Envelope::new(&ends),
     };
     let runs = points.len().saturating_sub(1);
+    let [first_spreads, last_spreads] = crate::constants::fans_at_bend(points, (half, reach));
     let toward = |from: Point, to: Point, by: f64| {
         let length = (to.x - from.x).abs() + (to.y - from.y).abs();
         Point {
@@ -152,7 +153,6 @@ pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> 
     (0..runs)
         .flat_map(|run| {
             let (from, to) = (points[run], points[run + 1]);
-            let length = (to.x - from.x).abs() + (to.y - from.y).abs();
             let (first, last) = (run == 0, run + 1 == runs);
             if runs == 1 {
                 return vec![piece([from, to], reach)];
@@ -160,7 +160,7 @@ pub(super) fn pieces(points: &[Point], (half, reach): (f64, f64)) -> Vec<Piece> 
             if !(first || last) {
                 return vec![piece([from, to], half)];
             }
-            if reach <= half || crate::constants::fans_whole(length, half, reach) {
+            if reach <= half || (first && first_spreads) || (last && last_spreads) {
                 return vec![piece([from, to], reach)];
             }
             let apron = crate::constants::apron(half, reach);

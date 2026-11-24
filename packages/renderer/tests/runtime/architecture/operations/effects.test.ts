@@ -4,6 +4,7 @@ import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/pol
 import type { DiagramTheme } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import type { RenderedDiagram, StatedStandings } from "#shared/protocol/render-request.ts";
+import { pointsOf } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 
 /**
@@ -154,6 +155,7 @@ describe("a line's ends say its effect", () => {
 		const { svg } = await drawn(LINES);
 		const query = lineOf(svg, "read").markup;
 		expect(markerAt(query, "marker-start")).toContain("<circle");
+		expect(markerAt(query, "marker-end")).toContain("<circle");
 		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
 		// The imprint is a short bar across the end of the line, beside the
 		// line's ports.
@@ -164,46 +166,34 @@ describe("a line's ends say its effect", () => {
 	test("a mutation's imprint lies wholly in front of its target's edge, on a glow in its ink", async () => {
 		const { markup } = lineOf((await drawn(LINES)).svg, "write");
 		// The halo runs to the tip, which touches the target's edge.
-		const tip = /<path class="ab-halo" d="([^"]*)"/u
-			.exec(markup)![1]!
-			.trim()
-			.split(/[ ,LMC]+/u)
-			.filter(Boolean)
-			.map(Number)
-			.slice(-2);
+		const tip = pointsOf(/<path class="ab-halo" d="([^"]*)"/u.exec(markup)![1]!).at(-1)!;
 		const lines = [...outside(markup).matchAll(/<line ([^>]*)\/>/gu)].map(([, attributes]) => {
 			const number = (name: string) =>
 				Number(new RegExp(` ?${name}="([^"]*)"`, "u").exec(attributes!)![1]);
+			const style = /style="([^"]*)"/u.exec(attributes!)![1]!;
 			return {
 				middle: [(number("x1") + number("x2")) / 2, (number("y1") + number("y2")) / 2],
 				width: number("stroke-width"),
-				style: /style="([^"]*)"/u.exec(attributes!)![1]!,
+				style,
+				ink: /stroke:([^;]*)/u.exec(style)![1]!,
 			};
 		});
 		const imprint = lines.find(({ style }) => !style.includes("filter"))!;
 		const glow = lines.find(({ style }) => style.includes("filter:blur("))!;
 		// Its far side touches the tip, so the card drawn over the line hides none of it.
-		const fromTip = Math.hypot(imprint.middle[0]! - tip[0]!, imprint.middle[1]! - tip[1]!);
+		const fromTip = Math.hypot(imprint.middle[0]! - tip.x, imprint.middle[1]! - tip.y);
 		expect(fromTip).toBeCloseTo(imprint.width / 2, 1);
-		const ink = (style: string) => /stroke:([^;]*)/u.exec(style)![1];
 		// The glow is the imprint's ink, at a strength of its own on each ground.
-		expect(ink(glow.style)).toContain(ink(imprint.style));
+		expect(glow.ink).toContain(imprint.ink);
 		expect(glow.width).toBeGreaterThan(imprint.width);
 	});
 
 	test("a line's body stops short of its head, and its halo runs to the tip", async () => {
 		const { svg } = await drawn(LINES);
 		const { markup } = lineOf(svg, "format");
-		const end = (d: string) =>
-			d
-				.trim()
-				.split(/[ ,LMC]+/u)
-				.filter(Boolean)
-				.map(Number)
-				.slice(-2);
-		const halo = end(/<path class="ab-halo" d="([^"]*)"/u.exec(markup)![1]!);
-		const body = end(/<path d="([^"]*)"[^>]*marker-end=/u.exec(markup)![1]!);
-		expect(Math.hypot(halo[0]! - body[0]!, halo[1]! - body[1]!)).toBeGreaterThan(10);
+		const halo = pointsOf(/<path class="ab-halo" d="([^"]*)"/u.exec(markup)![1]!).at(-1)!;
+		const body = pointsOf(/<path d="([^"]*)"[^>]*marker-end=/u.exec(markup)![1]!).at(-1)!;
+		expect(Math.hypot(halo.x - body.x, halo.y - body.y)).toBeGreaterThan(10);
 	});
 
 	test("a coloured line names its kind on its label, and a sync line does not", async () => {
@@ -218,11 +208,13 @@ describe("a line's ends say its effect", () => {
 	test("a compared line wears its standing's ink, and its head still says its effect", async () => {
 		const plain = lineOf((await drawn(LINES)).svg, "read");
 		const added = lineOf((await drawn(LINES, { standing: { read: "added" } })).svg, "read");
-		const stroked = (markup: string): string =>
-			/<path [^>]*marker-end="[^"]*" style="fill:none;stroke:([^"]+)"/.exec(markup)![1]!;
-		expect(stroked(plain.markup)).toContain("--semantic-emerald");
-		expect(stroked(added.markup)).toContain("--standing-added");
-		expect(stroked(added.markup)).not.toContain("--semantic-emerald");
+		const [plainInk, addedInk] = [plain, added].map(
+			({ markup }) =>
+				/<path [^>]*marker-end="[^"]*" style="fill:none;stroke:([^"]+)"/u.exec(markup)![1]!,
+		);
+		expect(plainInk).toContain("--semantic-emerald");
+		expect(addedInk).toContain("--standing-added");
+		expect(addedInk).not.toContain("--semantic-emerald");
 		expect(added.arrowhead).toBe("eye");
 	});
 
@@ -253,11 +245,12 @@ describe("a line's ends say its effect", () => {
 
 test("the legend keys each kind solid and lists the effects the picture draws", async () => {
 	const { svg } = await drawn(LINES, { legend: true });
-	const entries = [
+	const rows = [
 		...svg.matchAll(
-			/<g data-legend-entry="(relationship|effect)">[\s\S]*?<text[^>]*>([^<]*)<\/text>/gu,
+			/<g data-legend-entry="(relationship|effect)">([\s\S]*?)<text[^>]*>([^<]*)<\/text>/gu,
 		),
-	].map((found) => `${found[1]}: ${found[2]}`);
+	];
+	const entries = rows.map((found) => `${found[1]}: ${found[3]}`);
 	expect(entries).toEqual([
 		"relationship: HTTP",
 		"relationship: Storage",
@@ -268,4 +261,7 @@ test("the legend keys each kind solid and lists the effects the picture draws", 
 		"effect: Compute",
 		"effect: Declared only",
 	]);
+	const sample = (name: string) => rows.find((row) => row[3] === name)?.[2] ?? "";
+	expect(sample("Mutation")).toContain("filter:blur(");
+	expect(sample("Query").match(/<circle\b/gu)).toHaveLength(2);
 });
