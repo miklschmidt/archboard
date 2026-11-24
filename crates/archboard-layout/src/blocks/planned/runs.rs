@@ -305,7 +305,7 @@ fn overlap_span(
         (other[0].y, other[1].y)
     };
     let (lo, hi) = (a.min(b), a.max(b));
-    (lo < high && hi > low).then_some((lo, hi, a < b))
+    (lo.max(low) < hi.min(high)).then_some((lo, hi, a < b))
 }
 
 fn collect_overlapping(
@@ -368,6 +368,29 @@ mod tests {
     use super::*;
     use crate::graph::Node;
     use serde_json::json;
+
+    #[test]
+    fn a_point_on_a_collinear_route_does_not_make_an_opposing_run() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a"},{"id":"b"},{"id":"x"},{"id":"y"}],
+            "edges":[{"id":"ax","sources":["a"],"targets":["x"]},
+                {"id":"by","sources":["b"],"targets":["y"]}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let at = |x| Point { x, y: 50.0 };
+        let line = PlacedLine {
+            id: "ax".into(),
+            points: vec![at(0.0), at(100.0)],
+            label: None,
+        };
+        let point = PlacedLine {
+            id: "by".into(),
+            points: vec![at(50.0), at(50.0)],
+            label: None,
+        };
+        assert!(accepts(&model, std::slice::from_ref(&point), &line));
+        assert!(accepts(&model, std::slice::from_ref(&line), &point));
+    }
 
     #[test]
     fn three_collinear_routes_need_one_common_endpoint_for_the_entire_trunk() {
