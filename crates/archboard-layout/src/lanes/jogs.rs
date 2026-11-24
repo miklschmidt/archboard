@@ -165,7 +165,8 @@ impl Router<'_> {
 
     /// Slide a card along its band by a kink, so its centred port stands at an x: the card and
     /// every line end on it, kept a lane clear of everything else on the band and half a lane
-    /// clear of the lines that pass it. A card laid out as the region round it stays.
+    /// clear of the lines that pass it. It stays inside the placed block, whose x starts at zero.
+    /// A card laid out as the region round it stays.
     fn slide_card(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let item = self.station(self.net(net).at(end)).item.expect("a card");
         let one = *self.scene.item(item);
@@ -183,17 +184,18 @@ impl Router<'_> {
         };
         // Two doors, slivers a lane apart, stand a lane apart from middle to middle.
         let sliver = |bx: &Rect| bx.width <= 2.0 * STRAIGHT + 1.0;
-        let clear = (self.scene.cards.values().chain(self.scene.labels.values()))
-            .filter(|&&other| other != item && self.scene.item(other).band == one.band)
-            .map(|&other| self.scene.item(other).bx)
-            .all(|bx| {
-                let gap = if sliver(&bx) && sliver(&one.bx) {
-                    LANE - bx.width
-                } else {
-                    LANE
-                };
-                apart(bx.x, bx.x + bx.width, gap)
-            })
+        let clear = moved.x >= one.bx.x.min(0.0)
+            && (self.scene.cards.values().chain(self.scene.labels.values()))
+                .filter(|&&other| other != item && self.scene.item(other).band == one.band)
+                .map(|&other| self.scene.item(other).bx)
+                .all(|bx| {
+                    let gap = if sliver(&bx) && sliver(&one.bx) {
+                        LANE - bx.width
+                    } else {
+                        LANE
+                    };
+                    apart(bx.x, bx.x + bx.width, gap)
+                })
             && self.lanes_by_band(nets)[one.band]
                 .iter()
                 .all(|&lane| apart(lane, lane, LANE / 2.0));

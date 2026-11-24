@@ -316,3 +316,27 @@ fn a_cables_plate_needs_room_between_its_marks() {
     let (label, _) = slot(250.0).expect("the plate fits between the cable's marks");
     assert_eq!(label.y, 155.0);
 }
+
+#[test]
+fn a_cables_words_do_not_cover_a_strand_on_its_other_end_run() {
+    let graph = serde_json::from_value(json!({
+        "id": "root", "children": [{"id": "a"}, {"id": "b"}], "edges": [{
+            "id": "cable", "sources": ["a"], "targets": ["b"],
+            "layoutOptions": {"archboard.cable": "one;two"},
+            "labels": [{"width": 100, "height": 24}]
+        }]
+    }))
+    .unwrap();
+    let model = Model::new(&graph).unwrap();
+    for (end, fits) in [(156.0, false), (160.0, true)] {
+        let shape = drawing(&[(
+            "cable",
+            &[(100.0, 100.0), (100.0, 224.0), (end, 224.0), (end, 160.0)],
+        )]);
+        let slots = Slots::new(&model, &shape);
+        assert_eq!(
+            slots.beside(&model, 0, &shape.routes[0].points).is_some(),
+            fits
+        );
+    }
+}

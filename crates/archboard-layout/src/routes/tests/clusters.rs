@@ -319,3 +319,53 @@ fn every_strand_of_a_cable_hopping_a_crossing_bulges_the_same_way() {
     assert_eq!(sides.len(), 4);
     assert!(sides.iter().all(|&side| side == sides[0]), "{sides:?}");
 }
+
+#[test]
+fn an_aligned_cable_keeps_its_hops_over_a_crossing() {
+    let mut cable = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(66.0, -100.0, 200.0),
+        ],
+        &[(1, "call", Emphasis::Hero), (2, "call", Emphasis::Hero)],
+    );
+    cable.edges[2].edge.from = cable.edges[1].edge.from.clone();
+    cable.edges[2].edge.to = cable.edges[1].edge.to.clone();
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+
+    let mut risers: Vec<_> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|hop| hop.edge_id.as_str())
+        .collect();
+    risers.sort_unstable();
+    assert_eq!(risers, ["1", "2"]);
+}
+
+#[test]
+fn turning_a_cables_hops_keeps_them_clear_of_a_join_between_its_strands() {
+    let mut cable = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(58.0, -100.0, 200.0),
+            across_from(54.0, 45.0, 200.0),
+            across_from(54.0, 48.0, 200.0),
+        ],
+        &[(1, "call", Emphasis::Hero), (2, "call", Emphasis::Hero)],
+    );
+    cable.edges[2].edge.from = cable.edges[1].edge.from.clone();
+    cable.edges[2].edge.to = cable.edges[1].edge.to.clone();
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+    let lower = hops_of(&result.bridges)
+        .into_iter()
+        .find(|hop| hop.edge_id == "2")
+        .expect("the lower strand still hops the crossing");
+    assert_eq!(
+        super::bulge_of(lower).0,
+        0.0,
+        "the hop bulges away from the join"
+    );
+}

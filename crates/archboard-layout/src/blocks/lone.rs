@@ -33,8 +33,8 @@ pub(crate) struct Lone {
     pub caption: Size,
     /// A card's width: a caption wider than the card widens the region round it, not the card.
     pub width: Option<f64>,
-    /// How far a container a block lays out stands in from each side of its
-    /// region, once laid out narrower than its caption.
+    /// The fixed side inset of a container narrower than its caption, or a
+    /// Lanes card whose face can grow to fit its ports.
     pub room: Option<f64>,
 }
 
@@ -91,6 +91,7 @@ pub(crate) fn placing_group(
     captions: &Map<String, Size>,
     node: &Node,
     siblings: &[&Node],
+    lanes: bool,
 ) -> Option<String> {
     let group = node.option(PLACING_GROUP)?;
     if !alone_in(node, siblings) {
@@ -98,14 +99,14 @@ pub(crate) fn placing_group(
     }
     lone.insert(
         node.id.clone(),
-        lone_of(node, group, captions.get(group).copied()),
+        lone_of(node, group, captions.get(group).copied(), lanes),
     );
     None
 }
 
 /// A node's region round it alone.
-fn lone_of(node: &Node, group: &str, caption: Option<Size>) -> Lone {
-    Lone {
+fn lone_of(node: &Node, group: &str, caption: Option<Size>, lanes: bool) -> Lone {
+    let mut lone = Lone {
         group: group.to_owned(),
         caption: caption.unwrap_or(Size {
             width: 1.0,
@@ -117,7 +118,12 @@ fn lone_of(node: &Node, group: &str, caption: Option<Size>) -> Lone {
             Some(node.w())
         },
         room: None,
+    };
+    if lanes && let Some(width) = lone.width {
+        let natural = js_max(width + 2.0 * REGION_INSET, caption_width(&lone));
+        lone.room = Some(side_room(natural, &lone));
     }
+    lone
 }
 
 /// Whether a node is alone among its siblings in its placing group.
@@ -217,9 +223,9 @@ pub(crate) fn card_in(region: Rect, lone: &Lone) -> Rect {
 
 /// How far in from each side of the box its region took a card or container stands.
 pub(crate) fn side_room(width: f64, lone: &Lone) -> f64 {
-    match lone.width {
-        None => room_of(lone),
-        Some(own) => js_max(REGION_INSET, (width - own) / 2.0),
+    match (lone.width, lone.room) {
+        (Some(own), None) => js_max(REGION_INSET, (width - own) / 2.0),
+        _ => room_of(lone),
     }
 }
 

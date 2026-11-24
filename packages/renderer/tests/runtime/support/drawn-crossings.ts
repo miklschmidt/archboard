@@ -116,6 +116,7 @@ type DrawnArc = {
 	readonly axis: "x" | "y";
 	readonly line: number;
 	readonly side: number;
+	readonly feet: Stretch;
 	readonly box: Box;
 };
 
@@ -156,7 +157,14 @@ function arcsOf(id: string, d: string): DrawnArc[] {
 		const points = pieces.slice(piece, last + 1).flatMap((one) => [one.from, one.to]);
 		const box = boxOf(points);
 		const middle = axis === "x" ? (box.y0 + box.y1) / 2 : (box.x0 + box.x1) / 2;
-		found.push({ id, axis, line, side: Math.sign(middle - line), box });
+		found.push({
+			id,
+			axis,
+			line,
+			side: Math.sign(middle - line),
+			feet: [pieces[piece]!.from, pieces[last]!.to],
+			box,
+		});
 	}
 	return found;
 }
@@ -380,19 +388,28 @@ function cornerOf(box: Box): string {
  * @returns Each such place, by the two strands and where.
  */
 function mixedCableHops(drawing: RenderedDiagram): string[] {
+	const paths = [...routePaths(drawing.svg)];
+	const arcs = paths.flatMap(([id, d]) => arcsOf(id, d));
+	if (arcs.length < 2) return [];
 	const cables = cablesOf(drawing);
-	const arcs = [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d));
+	const routes = paths.map(([id, d]) => ({ id, ink: inkOf(d) }));
 	const found: string[] = [];
 	for (const [index, one] of arcs.entries())
 		for (const other of arcs.slice(index + 1)) {
-			const strands = cables.get(one.id) ?? [one.id];
-			if (other.id === one.id || !strands.includes(other.id) || one.axis !== other.axis) continue;
-			const [low, high] = one.axis === "x" ? ["x0", "x1"] : ["y0", "y1"];
-			const overlap =
-				Math.min(one.box[high as keyof Box], other.box[high as keyof Box]) -
-				Math.max(one.box[low as keyof Box], other.box[low as keyof Box]);
-			if (overlap > 0 && one.side !== other.side)
-				found.push(`${one.id} and ${other.id} bulging apart at ${cornerOf(one.box)}`);
+			if (
+				one.id === other.id ||
+				!cables.get(one.id)?.includes(other.id) ||
+				one.axis !== other.axis ||
+				one.side === other.side
+			)
+				continue;
+			const shared = routes.some(
+				({ id, ink }) =>
+					id !== one.id &&
+					id !== other.id &&
+					ink.some((stretch) => crossingOf(one.feet, stretch) && crossingOf(other.feet, stretch)),
+			);
+			if (shared) found.push(`${one.id} and ${other.id} bulging apart at ${cornerOf(one.box)}`);
 		}
 	return found;
 }

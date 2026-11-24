@@ -7,9 +7,9 @@ use crate::drawing::Emphasis;
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
-use crate::paint::edge_line::body;
+use crate::paint::edge_line::{body, imprint_at};
 use crate::paint::heads::{
-    IMPRINT_REACH, IMPRINT_WIDTH, body_short_of, mark_length, mark_shapes, place_of, ring_reach,
+    IMPRINT_REACH, body_short_of, mark_length, mark_shapes, place_of, ring_reach,
 };
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
@@ -17,6 +17,7 @@ use crate::paint::standing::standing_pin_at;
 use crate::paint::styles::{HEAD_LENGTH, drawn_ink, effect_look, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash, LineEffect};
+use crate::route::Stand;
 use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
     Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,
@@ -122,28 +123,24 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
         }],
     };
     let stroke = Stroke::new(ink, stroke_width(Emphasis::Normal) * sample.body).capped(Cap::Round);
-    let mut items: Items = shape(body(&run, sample.dash, &stroke, Purpose::Sample));
+    let mut items = Items::new();
+    if sample.imprint {
+        let end = Stand {
+            point: tip,
+            way: Point { x: 1.0, y: 0.0 },
+        };
+        items.extend(
+            imprint_at(end, IMPRINT_REACH, ink)
+                .into_iter()
+                .flat_map(shape),
+        );
+    }
+    items.extend(shape(body(&run, sample.dash, &stroke, Purpose::Sample)));
     if let Some(tail) = tail {
         items.extend(mark_at(tail, ink, start));
     }
     if let Some(head) = head {
         items.extend(mark_at(head, ink, tip));
-    }
-    if sample.imprint {
-        items.extend(shape(
-            Shape::path(
-                Purpose::Sample,
-                vec![
-                    PathStep::Move {
-                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across - IMPRINT_REACH),
-                    },
-                    PathStep::Line {
-                        to: point(tip.x - IMPRINT_WIDTH / 2.0, across + IMPRINT_REACH),
-                    },
-                ],
-            )
-            .stroked(Stroke::new(ink, IMPRINT_WIDTH)),
-        ));
     }
     items
 }

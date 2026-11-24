@@ -14,7 +14,7 @@ use super::arrive::{Grow, Leave};
 use super::circuit::{Span, holder, label_span};
 use super::ease::{ease_out, phase};
 use super::found::{Form, Found, largest_rect};
-use super::line::{end_of, in_flight};
+use super::line::{end_of, in_flight, target_imprint};
 use super::morph::{length, route_of};
 use super::phases::Transition;
 use super::plan::Mover;
@@ -281,14 +281,19 @@ impl DrawOn {
     /// A dashed line keeps its dashes: drawing it on means taking its dash away,
     /// so it fades in behind the spark.
     pub(super) fn new(group: &Group, span: Span, arrowhead_at: f64) -> DrawOn {
-        let routed = group.items.iter().enumerate().filter_map(|(child, item)| {
-            let Item::Shape(shape) = item else {
-                return None;
-            };
-            shape.stroke.as_ref()?;
-            let length = length(&route_of(&shape.geometry)?).filter(|length| *length > 0.0)?;
-            Some(Stroked { child, length })
-        });
+        let routed = group
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_, item)| !target_imprint(item))
+            .filter_map(|(child, item)| {
+                let Item::Shape(shape) = item else {
+                    return None;
+                };
+                shape.stroke.as_ref()?;
+                let length = length(&route_of(&shape.geometry)?).filter(|length| *length > 0.0)?;
+                Some(Stroked { child, length })
+            });
         let (mut strokes, mut head) = (Vec::new(), None);
         for stroked in routed {
             head = Some(stroked);
@@ -338,6 +343,7 @@ impl DrawOn {
                 .items
                 .extend(layers.map(|layer| spark(shape, length, length * drawn, layer)));
         }
+        group.items.retain(|item| !target_imprint(item));
         group
     }
 }
@@ -350,6 +356,7 @@ mod tests {
     };
 
     use super::super::found::found;
+    use super::super::line::{end_of, start_of, target_imprint};
     use super::super::plan::Mover;
     use super::super::testing::{card, line, rect, scene};
     use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline, rims};
@@ -435,6 +442,40 @@ mod tests {
         };
         assert!(stroke.marker.is_some());
         assert_eq!(stroke.stroke.as_ref().expect("stroked").opacity, 1.0);
+    }
+
+    #[test]
+    fn an_imprint_and_its_glow_wait_until_the_line_reaches_the_target() {
+        let caller = Point { x: 0.0, y: 0.0 };
+        let target = Point { x: 100.0, y: 0.0 };
+        let Item::Group(mut group) = line("write", &[(caller.x, caller.y), (target.x, target.y)])
+        else {
+            panic!("a line group")
+        };
+        let stripe = Geometry::Line {
+            from: Point { x: 98.2, y: -9.0 },
+            to: Point { x: 98.2, y: 9.0 },
+        };
+        group.items.splice(
+            ..0,
+            [(Purpose::Glow, 16.0), (Purpose::Imprint, 3.6)].map(|(purpose, width)| {
+                Item::Shape(
+                    Shape::new(purpose, stripe.clone()).stroked(Stroke::new(Token::Border, width)),
+                )
+            }),
+        );
+        assert_eq!(start_of(&group), Some(caller));
+        assert_eq!(end_of(&group), Some((target, 100.0)));
+        let draw = super::DrawOn::new(&group, (0.0, 1.0), 0.9);
+        assert!(!draw.at(0.9).items.iter().any(target_imprint));
+        assert_eq!(
+            draw.at(1.0)
+                .items
+                .iter()
+                .filter(|item| target_imprint(item))
+                .count(),
+            2
+        );
     }
 
     #[test]

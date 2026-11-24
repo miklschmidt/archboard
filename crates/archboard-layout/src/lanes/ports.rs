@@ -171,12 +171,16 @@ impl Router<'_> {
                     + count.saturating_sub(1) as f64 * LANE
             };
             let found = self.scene.item(item);
-            // Ports coming in from above keep clear of a lone region's caption (`face_reach`),
-            // so the face holds them only past it.
+            // Only ports on the caption side need room beside the caption in Lanes.
             let face = card_face(found);
-            let caption = (found.bx.x + found.top_inset - face.x - PORT_MARGIN).max(0.0);
+            let caption = if !self.bus || requests.iter().any(|request| request.side == End::Bottom)
+            {
+                (found.bx.x + found.top_inset - face.x - PORT_MARGIN).max(0.0)
+            } else {
+                0.0
+            };
             let width = 2.0 * PORT_MARGIN + span(End::Top).max(span(End::Bottom) + caption);
-            if width > card_face(found).width {
+            if width > face.width {
                 widths.insert(item, width + 2.0 * found.inset.unwrap_or(0.0));
             }
         }

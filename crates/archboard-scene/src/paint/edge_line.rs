@@ -22,7 +22,7 @@ use crate::paint::styles::{
 };
 use crate::paint::text_runs::paint_text_runs;
 use crate::request::{Dash, LineAppearance, Standing};
-use crate::route::{Walk, shortened_by};
+use crate::route::{Stand, Walk, shortened_by};
 use crate::scene::{
     Cap, Colour, Definition, Geometry, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId,
     Purpose, Role, Shape, Stroke, SubjectKind,
@@ -65,12 +65,7 @@ fn body_between(curve: &Curve, start: f64, end: f64) -> Curve {
 /// side. It lies just in front of the edge, the card drawn over the line, so
 /// the whole of its width shows, on a glow in its ink. A viewer that moves
 /// draws it fading at both ends; a document draws it flat.
-fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Vec<Shape> {
-    if reach <= 0.0 {
-        return Vec::new();
-    }
-    let walk = Walk::of(curve);
-    let end = walk.stand(walk.length());
+pub(super) fn imprint_at(end: Stand, reach: f64, ink: &Colour) -> [Shape; 2] {
     let from = end.turned(-IMPRINT_WIDTH / 2.0, -reach);
     let to = end.turned(-IMPRINT_WIDTH / 2.0, reach);
     let along = |purpose: Purpose, stroke: Stroke| {
@@ -85,7 +80,7 @@ fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Vec<Shape> {
     };
     let (breadth, light, dark) = IMPRINT_GLOW;
     let glow = light_dark(&translucent(ink, light), &translucent(ink, dark));
-    vec![
+    [
         along(
             Purpose::Glow,
             Stroke::new(&glow, breadth).capped(Cap::Round),
@@ -175,12 +170,10 @@ pub(super) fn paint_edge_line(
     };
     line.marker = head.map(&mut marker);
     line.start_marker = tail.map(&mut marker);
-    if look.is_some_and(|look| look.imprint) && !step {
-        parts.extend(
-            imprint(&routed.curve, imprint_reach, &ink)
-                .into_iter()
-                .map(shape),
-        );
+    if look.is_some_and(|look| look.imprint) && !step && imprint_reach > 0.0 {
+        let walk = Walk::of(&routed.curve);
+        let end = walk.stand(walk.length());
+        parts.extend(imprint_at(end, imprint_reach, &ink).into_iter().map(shape));
     }
     parts.push(standing_swipe(&path, width, standing, palette));
     parts.push(shape(

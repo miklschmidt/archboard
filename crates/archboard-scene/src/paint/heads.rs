@@ -13,6 +13,7 @@
 use crate::geometry::Point;
 use crate::paint::styles::HEAD_LENGTH;
 use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, Shape, Stroke};
+use crate::sizes::HERO_LINE_WIDTH;
 
 /// The side of the square a new mark is drawn in, in its own units.
 const MARK_BOX: f64 = 16.0;
@@ -38,7 +39,7 @@ const MARK_UNIT: f64 = 1.5;
 pub(super) const IMPRINT_REACH: f64 = 6.0 * MARK_UNIT;
 /// How thick a mutation's imprint is drawn: as thick as an emphasised line,
 /// so it reads as the mark the wedge leaves and the wedge keeps its point.
-pub(super) const IMPRINT_WIDTH: f64 = 2.4 * MARK_UNIT;
+pub(super) const IMPRINT_WIDTH: f64 = HERO_LINE_WIDTH;
 /// How broad the glow round a mutation's imprint is across its target's edge,
 /// a lane, and how solid it is at its heart on a light ground and on a dark
 /// one: paler on the light ground, where a dense haze reads as a smudge.

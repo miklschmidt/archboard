@@ -80,11 +80,14 @@ pub(crate) struct Net {
 }
 
 impl Net {
-    /// A fixed short step takes two complete bends on separate tracks.
+    /// A fixed short step takes two complete bends on separate tracks. A cable's return
+    /// needs room for the strand that moves inwards from the fan to the body.
     pub(crate) fn detour_x(&self) -> Option<f64> {
         let step = abs(self.top_x - self.bottom_x);
-        (self.wall.is_none() && step > 0.5 && step < LANE)
-            .then(|| self.bottom_x + sign(self.bottom_x - self.top_x) * LANE)
+        (self.wall.is_none() && step > 0.5 && step < LANE).then(|| {
+            let width = LANE + self.reach() - self.half_width();
+            self.bottom_x + sign(self.bottom_x - self.top_x) * width
+        })
     }
 
     /// How far the outermost strand stands from this net's route along its body.

@@ -39,10 +39,9 @@ impl Router<'_> {
         lanes.last().copied().unwrap_or(0)
     }
 
-    /// In a Lanes drawing, give each unit its own lanes, in the order the units took tracks:
-    /// the first lane below every earlier unit it overlaps, and a hand-off below every earlier
-    /// unit it reads as one with. A unit no hand-off pushes keeps the lanes above it, so the
-    /// channel holds no lane a run does not use. Answers how many lanes the channel takes.
+    /// In a Lanes drawing, give each unit the first lane below every earlier unit it overlaps.
+    /// Each unit keeps the room its joins and hand-offs need. Answers how many lanes the channel
+    /// takes.
     fn pack_units(&mut self, units: &[(Unit, Vec<NetId>)], tracks: &[(usize, usize)]) -> usize {
         let spans: Vec<usize> = (0..units.len())
             .map(|unit| self.takes(&units[unit].1) + 2 * self.cable_reach(&units[unit].1))
