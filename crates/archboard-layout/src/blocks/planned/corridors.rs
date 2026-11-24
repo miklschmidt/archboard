@@ -471,7 +471,13 @@ mod tests {
                 .collect();
             expected.sort_by(|a, b| (a - from).abs().total_cmp(&(b - from).abs()));
             nearest_within(&values, from, (low, high), &mut nearest);
-            assert_eq!(nearest, expected, "from {from}, reach {low} to {high}");
+            assert!(
+                nearest
+                    .iter()
+                    .map(|v| v.to_bits())
+                    .eq(expected.iter().map(|v| v.to_bits())),
+                "from {from}, reach {low} to {high}: expected {expected:?}, got {nearest:?}"
+            );
         }
     }
 }
