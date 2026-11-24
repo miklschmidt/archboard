@@ -7,7 +7,7 @@ use crate::geometry::{Point, Rect};
 
 use super::super::super::reading::{DEAD_SPACE, ring_pane_cost};
 use super::line_up::{Scratch, cheapest};
-use super::{PITCH, Priced, Ring, WALLS, Wall, slot_count};
+use super::{Priced, Ring, WALLS, Wall};
 
 /// Where the page can stand round the frames' whole, as shares of the room it has to spare.
 const WINDOWS: [f64; 3] = [0.0, 0.5, 1.0];
@@ -88,51 +88,6 @@ fn bounds(whole: Rect, doors: impl Iterator<Item = Rect>) -> Rect {
     }
 }
 
-/// Whether a box stands within another.
-fn within(at: Rect, one: &Rect) -> bool {
-    at.x >= one.x - 1e-6
-        && at.y >= one.y - 1e-6
-        && at.x + at.width <= one.x + one.width + 1e-6
-        && at.y + at.height <= one.y + one.height + 1e-6
-}
-
-/// Approximate offset bounds `[lo_f, hi_f)` along `wall` for a door starting at `first` inside
-/// `holds`, or `None` when the wall's fixed axis lies outside `holds`.
-fn wall_bounds(wall: usize, first: Rect, holds: &Rect) -> Option<(f64, f64)> {
-    let (min_x, max_x) = (holds.x - 1e-6, holds.x + holds.width + 1e-6);
-    let (min_y, max_y) = (holds.y - 1e-6, holds.y + holds.height + 1e-6);
-    if min_x.is_nan() || max_x.is_nan() || min_y.is_nan() || max_y.is_nan() {
-        return None;
-    }
-    let bounds = match WALLS[wall] {
-        Wall::Top => (first.y >= min_y && first.y + first.height <= max_y).then(|| {
-            (
-                ((min_x - first.x) / PITCH).floor(),
-                ((max_x - first.width - first.x) / PITCH).ceil() + 1.0,
-            )
-        }),
-        Wall::Right => (first.x >= min_x && first.x + first.width <= max_x).then(|| {
-            (
-                ((min_y - first.y) / PITCH).floor(),
-                ((max_y - first.height - first.y) / PITCH).ceil() + 1.0,
-            )
-        }),
-        Wall::Bottom => (first.y >= min_y && first.y + first.height <= max_y).then(|| {
-            (
-                ((first.x + first.width - max_x) / PITCH).floor(),
-                ((first.x - min_x) / PITCH).ceil() + 1.0,
-            )
-        }),
-        Wall::Left => (first.x >= min_x && first.x + first.width <= max_x).then(|| {
-            (
-                ((first.y + first.height - max_y) / PITCH).floor(),
-                ((first.y - min_y) / PITCH).ceil() + 1.0,
-            )
-        }),
-    }?;
-    (bounds.1 >= -1.0 && bounds.0 <= bounds.1 + 2.0).then_some(bounds)
-}
-
 /// Exact allowed slot offset range `[lo, hi)` on `wall` for one door inside `holds`.
 fn wall_range(
     ring: &Ring,
@@ -141,36 +96,43 @@ fn wall_range(
     fit: usize,
     holds: &Rect,
 ) -> (usize, usize) {
-    if fit == 0 {
-        return (0, 0);
-    }
     let start = ring.walls[wall].0;
-    let Some(first) = boxes[start] else {
+    let wall_boxes = &boxes[start..start + fit];
+    let Some(Some(first)) = wall_boxes.first() else {
         return (0, 0);
     };
-    let Some((lo_f, hi_f)) = wall_bounds(wall, first, holds) else {
+    let (along, across) = match WALLS[wall] {
+        Wall::Top | Wall::Bottom => ((holds.x, holds.width), (holds.y, holds.height)),
+        Wall::Right | Wall::Left => ((holds.y, holds.height), (holds.x, holds.width)),
+    };
+    let edges = |at: &Rect| match WALLS[wall] {
+        Wall::Top | Wall::Bottom => ((at.x, at.x + at.width), (at.y, at.y + at.height)),
+        Wall::Right | Wall::Left => ((at.y, at.y + at.height), (at.x, at.x + at.width)),
+    };
+    let (_, (near, far)) = edges(first);
+    if !(near >= across.0 - 1e-6 && far <= across.0 + across.1 + 1e-6) {
         return (0, 0);
-    };
-    if lo_f > fit as f64 + 1.0 {
+    }
+
+    let (min, max) = (along.0 - 1e-6, along.0 + along.1 + 1e-6);
+    if min.is_nan() || max.is_nan() {
         return (0, 0);
     }
-    let mut lo = if lo_f <= 1.0 {
-        0
-    } else {
-        slot_count((lo_f - 1.0).min(fit as f64))
+    // Each edge is monotone along a wall, even when several slots round to the same
+    // coordinate. Search the stored edges to keep the page's original containment test.
+    let along_edges = |at: &Option<Rect>| edges(at.as_ref().expect("a fitting door box")).0;
+    let (lo, hi) = match WALLS[wall] {
+        Wall::Top | Wall::Right => {
+            let lo = wall_boxes.partition_point(|at| along_edges(at).0 < min);
+            let hi = lo + wall_boxes[lo..].partition_point(|at| along_edges(at).1 <= max);
+            (lo, hi)
+        }
+        Wall::Bottom | Wall::Left => {
+            let lo = wall_boxes.partition_point(|at| along_edges(at).1 > max);
+            let hi = lo + wall_boxes[lo..].partition_point(|at| along_edges(at).0 >= min);
+            (lo, hi)
+        }
     };
-    let mut hi = if hi_f <= 0.0 {
-        0
-    } else {
-        slot_count((hi_f + 1.0).min(fit as f64))
-    };
-    let ok = |k: usize| boxes[start + k].is_some_and(|at| within(at, holds));
-    while lo < hi && !ok(lo) {
-        lo += 1;
-    }
-    while hi > lo && !ok(hi - 1) {
-        hi -= 1;
-    }
     if lo == hi { (0, 0) } else { (lo, hi) }
 }
 
@@ -234,4 +196,47 @@ pub(super) fn cheapest_page(
         }
     }
     best.map(|(_, at, order, places)| (at, order, places))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::blocks::planned::dense::ring::Door;
+
+    fn within(at: Rect, page: &Rect) -> bool {
+        at.x >= page.x - 1e-6
+            && at.y >= page.y - 1e-6
+            && at.x + at.width <= page.x + page.width + 1e-6
+            && at.y + at.height <= page.y + page.height + 1e-6
+    }
+
+    #[test]
+    fn wall_ranges_match_the_stored_boxes_after_coordinate_rounding() {
+        let whole = Rect {
+            x: 2.0_f64.powi(58),
+            y: 2.0_f64.powi(58),
+            width: 192.0,
+            height: 192.0,
+        };
+        let ring = Ring::new(whole, 0.0, Point { x: 120.0, y: 120.0 });
+        let door = Door {
+            size: Point { x: 12.0, y: 12.0 },
+            plates: 0.0,
+        };
+        let boxes: Vec<_> = (0..ring.slots())
+            .map(|slot| ring.place(slot, door))
+            .collect();
+        for (wall, &(start, count)) in ring.walls.iter().enumerate() {
+            let wall_boxes = &boxes[start..start + count];
+            let fit = wall_boxes.partition_point(Option::is_some);
+            let (lo, hi) = wall_range(&ring, &boxes, wall, fit, &whole);
+            for (offset, at) in wall_boxes.iter().enumerate() {
+                assert_eq!(
+                    (lo..hi).contains(&offset),
+                    at.is_some_and(|at| within(at, &whole)),
+                    "wall {wall}, slot {offset}",
+                );
+            }
+        }
+    }
 }
