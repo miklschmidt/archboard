@@ -502,18 +502,16 @@ impl Settling<'_> {
     /// (`force`). A hop turns only where the lines beneath still pass under it, and its own
     /// cable's strands never crowd it.
     fn align_cables(&mut self) {
-        let mut gone: Vec<usize> = Vec::new();
-        for place in self.cable_places() {
+        let mut places = self.cable_places();
+        places.reverse();
+        while let Some(place) = places.pop() {
             if self.align(&place) {
-                gone.extend(place);
+                self.unstand(&place);
+                for index in places.iter_mut().flatten() {
+                    *index -= place.iter().filter(|&&removed| removed < *index).count();
+                }
             }
         }
-        let stood = std::mem::take(&mut self.stood);
-        let hops = std::mem::take(&mut self.scene.hops);
-        (self.stood, self.scene.hops) = (stood.into_iter().zip(hops).enumerate())
-            .filter(|(index, _)| !gone.contains(index))
-            .map(|(_, pair)| pair)
-            .unzip();
     }
 
     /// Cable hops sharing a crossing cluster on the line beneath them. A crest can
