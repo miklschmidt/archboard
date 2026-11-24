@@ -3,7 +3,11 @@ import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { collinearPorts } from "#tests/runtime/support/drawn-ports.ts";
-import { crowdedArcs, unbridgedCrossings } from "#tests/runtime/support/drawn-crossings.ts";
+import {
+	crowdedArcs,
+	mixedCableHops,
+	unbridgedCrossings,
+} from "#tests/runtime/support/drawn-crossings.ts";
 import {
 	ambiguousTrunks,
 	labelsOffRuns,
@@ -61,5 +65,6 @@ export function expectDrawingIntact(
 	expect(slants(drawing), "routes on a slant").toEqual([]);
 	expect(unbridgedCrossings(drawing), "crossings with no arc").toEqual([]);
 	expect(crowdedArcs(drawing), "arcs crowding each other or a junction").toEqual([]);
+	expect(mixedCableHops(drawing), "a cable's hops bulging apart").toEqual([]);
 	expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
 }
