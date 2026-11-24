@@ -142,7 +142,8 @@ impl StrokeView<'_> {
     }
 
     pub(super) fn private(self, edge: usize, path: &[Point]) -> Vec<Span> {
-        let mut spans = Vec::new();
+        let mut spans = Vec::with_capacity(path.len().saturating_sub(1));
+        let mut parts: Vec<(f64, f64)> = Vec::new();
         let mut before = 0.0;
         for pair in path.windows(2) {
             let horizontal = pair[0].y == pair[1].y;
@@ -152,32 +153,62 @@ impl StrokeView<'_> {
                 (pair[0].x, pair[0].y, pair[1].y)
             };
             let key = bin((across * 1e6).round());
-            let mut parts = vec![(a.min(b), a.max(b))];
             let base = self.base.range(horizontal, key - 1, key + 1);
             let extra = self.extra[usize::from(horizontal)];
-            for stroke in base.iter().chain(extra.iter()) {
-                if stroke.edge != edge && (stroke.across - across).abs() < 1e-6 {
-                    subtract(&mut parts, stroke.lo, stroke.hi);
-                }
-            }
-            for (lo, hi) in parts {
-                let point = |at| {
-                    if horizontal {
-                        Point { x: at, y: across }
-                    } else {
-                        Point { x: across, y: at }
-                    }
-                };
-                let (start, end) = span_ends(lo, hi, a < b);
+            if base.is_empty() && extra.is_empty() {
                 spans.push(Span {
-                    a: point(start),
-                    b: point(end),
-                    before: before + (a - start).abs(),
+                    a: pair[0],
+                    b: pair[1],
+                    before,
                 });
+                before += length(pair);
+                continue;
             }
+            parts.clear();
+            parts.push((a.min(b), a.max(b)));
+            subtract_strokes(base, edge, across, &mut parts);
+            subtract_strokes(extra, edge, across, &mut parts);
+            push_private_spans(&parts, (horizontal, across, a, b, before), &mut spans);
             before += length(pair);
         }
         spans
+    }
+}
+
+fn subtract_strokes(strokes: &[Stroke], edge: usize, across: f64, parts: &mut Vec<(f64, f64)>) {
+    for stroke in strokes {
+        let (Some(first), Some(last)) = (parts.first(), parts.last()) else {
+            return;
+        };
+        if stroke.edge != edge
+            && (stroke.across - across).abs() < 1e-6
+            && stroke.hi > first.0
+            && stroke.lo < last.1
+        {
+            subtract(parts, stroke.lo, stroke.hi);
+        }
+    }
+}
+
+fn push_private_spans(
+    parts: &[(f64, f64)],
+    (horizontal, across, a, b, before): (bool, f64, f64, f64, f64),
+    spans: &mut Vec<Span>,
+) {
+    let point = |at| {
+        if horizontal {
+            Point { x: at, y: across }
+        } else {
+            Point { x: across, y: at }
+        }
+    };
+    for &(lo, hi) in parts {
+        let (start, end) = span_ends(lo, hi, a < b);
+        spans.push(Span {
+            a: point(start),
+            b: point(end),
+            before: before + (a - start).abs(),
+        });
     }
 }
 
@@ -255,7 +286,10 @@ impl StrokeIndex {
     fn range(&self, horizontal: bool, first: i64, last: i64) -> &[Stroke] {
         let strokes = &self.strokes[usize::from(horizontal)];
         let start = strokes.partition_point(|stroke| stroke.bin < first);
-        let end = strokes.partition_point(|stroke| stroke.bin <= last);
+        if start == strokes.len() || strokes[start].bin > last {
+            return &[];
+        }
+        let end = start + strokes[start..].partition_point(|stroke| stroke.bin <= last);
         &strokes[start..end]
     }
     /// The bins that can contain ink between `low` and `high`, even when its centre is outside.
