@@ -442,7 +442,8 @@ pub(super) fn approaches(points: &[Point], ink: (f64, f64)) -> bool {
 /// way, the inner strand's run is shorter by how far the runs on either side stand their strands
 /// out (`out_of`), and still holds both rounded corners with a straight between them as long as
 /// the strands stand apart along the body. Corners that met with no straight between them would
-/// turn the inner strand in one S, unlike the strands beside it.
+/// turn the inner strand in one S, unlike the strands beside it. Between opposite turns, the
+/// offsets shorten one side by their difference, so that strand must still run forward.
 fn turns_clear(points: &[Point], ink: (f64, f64)) -> bool {
     let turn = |at: usize| {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
@@ -452,12 +453,14 @@ fn turns_clear(points: &[Point], ink: (f64, f64)) -> bool {
     let spread = fans_at_bend(points, ink);
     ink.0 == 0.0
         || (1..runs.saturating_sub(1)).all(|at| {
-            turn(at) != turn(at + 1)
-                || length(&points[at..at + 2])
-                    >= out_of(at - 1, runs, ink, spread)
-                        + out_of(at + 1, runs, ink, spread)
-                        + 2.0 * BEND_RADIUS
-                        + STRAND
+            let before = out_of(at - 1, runs, ink, spread);
+            let after = out_of(at + 1, runs, ink, spread);
+            let run = length(&points[at..at + 2]);
+            if turn(at) == turn(at + 1) {
+                run >= before + after + 2.0 * BEND_RADIUS + STRAND
+            } else {
+                run > (before - after).abs()
+            }
         })
 }
 
@@ -687,6 +690,43 @@ mod tests {
         };
         assert_eq!(refusal(130.0), Some("card"));
         assert_eq!(refusal(220.0), None);
+    }
+
+    #[test]
+    fn a_cable_cannot_double_back_between_its_fan_and_body() {
+        let card = |x, centre| Rect {
+            x,
+            y: centre - 40.0,
+            width: 80.0,
+            height: 80.0,
+        };
+        let refusal = |offset| {
+            let points = [
+                Point { x: 80.0, y: 70.0 },
+                Point { x: 144.0, y: 70.0 },
+                Point {
+                    x: 144.0,
+                    y: 70.0 + offset,
+                },
+                Point {
+                    x: 294.0,
+                    y: 70.0 + offset,
+                },
+            ];
+            basic(
+                (&points, (16.0, 32.0)),
+                card(0.0, 70.0),
+                card(294.0, 70.0 + offset),
+                Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 400.0,
+                    height: 200.0,
+                },
+            )
+        };
+        assert_eq!(refusal(8.0), Some("approach"));
+        assert_eq!(refusal(24.0), None);
     }
 
     #[test]
