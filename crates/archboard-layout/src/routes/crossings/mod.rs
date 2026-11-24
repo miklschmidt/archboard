@@ -40,7 +40,7 @@ use super::hops::{
     Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, flipped, look_of, passes_beneath,
     replace_runs,
 };
-use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
+use super::{BRIDGE_RADIUS, LineLook};
 
 mod forced;
 
@@ -516,45 +516,26 @@ impl Settling<'_> {
             .unzip();
     }
 
-    /// The hops of each cable's strands by place: hops on one axis that stand near enough along
-    /// it to crowd each other.
+    /// Cable hops sharing a crossing cluster on the line beneath them. A crest can
+    /// connect several such clusters when it spans several lines.
     fn cable_places(&self) -> Vec<Vec<usize>> {
-        let span = |index: usize| {
-            let Hop { axis, bounds, .. } = &self.scene.hops[index];
-            match axis {
-                Axis::X => [bounds.x, bounds.x + bounds.width],
-                Axis::Y => [bounds.y, bounds.y + bounds.height],
-            }
-        };
-        let mut hops: Vec<(&String, bool, usize)> = (0..self.scene.hops.len())
-            .filter_map(|index| {
-                let across = self.scene.hops[index].axis == Axis::X;
-                Some((self.cable_of(index)?, across, index))
-            })
-            .collect();
-        hops.sort_by(|a, b| {
-            (a.0, a.1)
-                .cmp(&(b.0, b.1))
-                .then(span(a.2)[0].total_cmp(&span(b.2)[0]))
-        });
-        let mut places: Vec<Vec<usize>> = Vec::new();
-        let mut last: Option<(&String, bool, f64)> = None;
-        for (leader, across, index) in hops {
-            let [low, high] = span(index);
-            match (last, places.last_mut()) {
-                (Some((before, was, end)), Some(place))
-                    if (before, was) == (leader, across) && low <= end + 2.0 * BRIDGE_CLEARANCE =>
-                {
-                    place.push(index);
-                    last = Some((leader, across, end.max(high)));
-                }
-                _ => {
-                    places.push(vec![index]);
-                    last = Some((leader, across, high));
+        let mut by_crossing = BTreeMap::new();
+        let mut links = vec![Vec::new(); self.stood.len()];
+        for (index, rise) in self.stood.iter().enumerate() {
+            let Some(leader) = self.cable_of(index) else {
+                continue;
+            };
+            for &crossing in &rise.crossings {
+                let other = self.other_cluster(rise.cluster, crossing);
+                let first = *by_crossing.entry((leader, other)).or_insert(index);
+                if first != index {
+                    links[first].push(index);
+                    links[index].push(first);
                 }
             }
         }
-        places
+
+        connected_hops(&links)
     }
 
     /// Make the hops of one place of a cable bulge one way (`align_cables`). True where the
@@ -746,6 +727,31 @@ impl Settling<'_> {
             .find(|&(value, other)| (value - other).abs() >= 1.0);
         (false, first.is_some_and(|(value, other)| *value > other))
     }
+}
+
+/// The groups of standing hops linked by the crossed lines they share.
+fn connected_hops(links: &[Vec<usize>]) -> Vec<Vec<usize>> {
+    let mut places = Vec::new();
+    let mut seen = vec![false; links.len()];
+    for index in 0..links.len() {
+        if seen[index] || links[index].is_empty() {
+            continue;
+        }
+        let mut place = Vec::new();
+        let mut pending = vec![index];
+        seen[index] = true;
+        while let Some(hop) = pending.pop() {
+            place.push(hop);
+            for &neighbour in &links[hop] {
+                if !seen[neighbour] {
+                    seen[neighbour] = true;
+                    pending.push(neighbour);
+                }
+            }
+        }
+        places.push(place);
+    }
+    places
 }
 
 /// The values without repeats, each where it first stood.
