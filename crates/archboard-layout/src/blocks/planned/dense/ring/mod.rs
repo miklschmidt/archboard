@@ -220,7 +220,9 @@ fn prices(
         };
         scene.boxes[door] = at;
         let bits = [at.x, at.y].map(f64::to_bits);
-        if door_scene.alone && let Some(&cost) = known.get(&bits) {
+        if door_scene.alone
+            && let Some(&cost) = known.get(&bits)
+        {
             return cost;
         }
         let cost = (door_scene.lines.iter())
@@ -722,8 +724,7 @@ fn widened(
             .iter()
             .map(|fits| fits.map(|fit| (0, fit)))
             .collect();
-        if let Some((_, order, places)) =
-            cheapest(&ring.ring, takes, &ring.costs, &ranges, scratch)
+        if let Some((_, order, places)) = cheapest(&ring.ring, takes, &ring.costs, &ranges, scratch)
         {
             return (ring, order, places);
         }

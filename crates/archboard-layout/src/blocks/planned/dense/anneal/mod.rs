@@ -339,7 +339,13 @@ impl<'p> Search<'p> {
         true
     }
 
-    fn shifted_cell(&self, member: usize, lattice: usize, grid: Lattice, step: usize) -> Option<usize> {
+    fn shifted_cell(
+        &self,
+        member: usize,
+        lattice: usize,
+        grid: Lattice,
+        step: usize,
+    ) -> Option<usize> {
         if self.parts[member].lattice != lattice {
             return None;
         }
@@ -549,8 +555,7 @@ impl<'p> Search<'p> {
             }
         }
         let (made, ended) = change.crossings;
-        let delta =
-            lines_sum + rounds_sum + CROSSING * (made as f64 - ended as f64) + groups_sum;
+        let delta = lines_sum + rounds_sum + CROSSING * (made as f64 - ended as f64) + groups_sum;
         Some((delta, drawn))
     }
 

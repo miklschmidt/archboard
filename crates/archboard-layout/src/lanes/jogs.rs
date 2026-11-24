@@ -365,7 +365,9 @@ impl Router<'_> {
         } = keeping;
         if !cache.valid {
             cache.notches.clear();
-            cache.notches.extend(nets.iter().map(|&net| guard(self, net)));
+            cache
+                .notches
+                .extend(nets.iter().map(|&net| guard(self, net)));
             self.fill_card_step_set(nets, &mut cache.steps);
             cache.valid = true;
         }

@@ -62,7 +62,11 @@ fn rect_axes(horizontal: bool, rect: Rect) -> (f64, f64, f64, f64) {
     }
 }
 
-fn stroke_crosses(stroke: &Stroke, edge: usize, (low, high, start, end): (f64, f64, f64, f64)) -> bool {
+fn stroke_crosses(
+    stroke: &Stroke,
+    edge: usize,
+    (low, high, start, end): (f64, f64, f64, f64),
+) -> bool {
     stroke.edge != edge
         && stroke.across + stroke.half > low
         && stroke.across - stroke.half < high

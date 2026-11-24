@@ -84,7 +84,10 @@ impl Router<'_> {
     ) -> bool {
         let one = self.net(net);
         let top = self.station(one.top);
-        let Some(item) = top.item.filter(|_| one.wall.is_none() && top.kind == Kind::Card) else {
+        let Some(item) = top
+            .item
+            .filter(|_| one.wall.is_none() && top.kind == Kind::Card)
+        else {
             return true;
         };
         let card = self.scene.item(item).bx.x;
@@ -136,7 +139,11 @@ impl Router<'_> {
     }
 
     /// Whether every card step currently present among `nets` was already in `before`.
-    pub(super) fn card_steps_subset(&self, nets: &[NetId], before: &FxHashSet<CardStepKey>) -> bool {
+    pub(super) fn card_steps_subset(
+        &self,
+        nets: &[NetId],
+        before: &FxHashSet<CardStepKey>,
+    ) -> bool {
         self.visit_card_step_keys(nets, |key| before.contains(&key))
     }
 

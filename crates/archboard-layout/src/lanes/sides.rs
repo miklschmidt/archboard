@@ -136,9 +136,10 @@ pub(crate) fn route_with_sides(
     for line in knotted_lines(&search.best.routes).into_iter().take(TRIED) {
         search.try_loose(line);
     }
-    let candidates = search
-        .prepared
-        .side_candidates_of(&search.drawn, &search.best_done, spacing.0);
+    let candidates =
+        search
+            .prepared
+            .side_candidates_of(&search.drawn, &search.best_done, spacing.0);
     if !candidates.is_empty() {
         let post_trunks = search.prepared.post_trunks(&search.kept.loose);
         for candidate in candidates.into_iter().take(TRIED) {

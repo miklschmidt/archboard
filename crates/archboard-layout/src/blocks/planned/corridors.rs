@@ -158,13 +158,7 @@ impl CorridorBase {
         );
     }
 
-    fn coordinates(
-        &self,
-        a: Point,
-        b: Point,
-        windows: AxisWindows,
-        scratch: &mut CorridorScratch,
-    ) {
+    fn coordinates(&self, a: Point, b: Point, windows: AxisWindows, scratch: &mut CorridorScratch) {
         let (x_win, y_win) = windows;
         let (xs, ys) = (&mut scratch.xs, &mut scratch.ys);
         xs.clear();
@@ -254,10 +248,7 @@ fn ordered(values: &mut Vec<f64>, keys: &mut Vec<i64>) {
     keys.sort_unstable();
     keys.dedup();
     values.clear();
-    values.extend(
-        keys.iter()
-            .map(|&k| f64::from_bits(key(k).cast_unsigned())),
-    );
+    values.extend(keys.iter().map(|&k| f64::from_bits(key(k).cast_unsigned())));
     values.dedup();
 }
 

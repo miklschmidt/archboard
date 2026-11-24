@@ -66,7 +66,9 @@ fn clear(
                     .clear(at)
                 && !strokes.base.crosses(edge, inflate(at, 12.01))
         });
-    base_clear && !strokes.extra_crosses(edge, inflate(at, 12.01)) && labels.clear(at, &shape.labels)
+    base_clear
+        && !strokes.extra_crosses(edge, inflate(at, 12.01))
+        && labels.clear(at, &shape.labels)
 }
 
 fn at(span: Span, position: f64, size: Rect) -> Rect {
@@ -366,7 +368,13 @@ fn best_spot_on(
     if best_dist.is_some_and(|d| !min_dist.total_cmp(&d).is_lt()) {
         return None;
     }
-    let free = free_intervals(span, (lo, hi, a, b, across, along_half, across_half), shape, own, index);
+    let free = free_intervals(
+        span,
+        (lo, hi, a, b, across, along_half, across_half),
+        shape,
+        own,
+        index,
+    );
     let pick = |(lo, hi): (f64, f64)| -> Option<Option<(f64, Rect)>> {
         let position = if forward { lo } else { hi };
         let dist = span.before + (position - a).abs();

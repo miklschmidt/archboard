@@ -131,17 +131,16 @@ fn slot(
         }
         sum / count.max(1) as f64
     };
-    let by_bearing = |kinds: &mut Vec<&str>,
-                      lines: &[usize],
-                      far: fn(&Model<'_>, usize) -> usize| {
-        let mut keyed: Vec<(&str, f64)> = kinds
-            .iter()
-            .map(|&kind| (kind, bearing(kind, lines, far)))
-            .collect();
-        keyed.sort_by(|one, other| one.1.total_cmp(&other.1));
-        kinds.clear();
-        kinds.extend(keyed.into_iter().map(|(kind, _)| kind));
-    };
+    let by_bearing =
+        |kinds: &mut Vec<&str>, lines: &[usize], far: fn(&Model<'_>, usize) -> usize| {
+            let mut keyed: Vec<(&str, f64)> = kinds
+                .iter()
+                .map(|&kind| (kind, bearing(kind, lines, far)))
+                .collect();
+            keyed.sort_by(|one, other| one.1.total_cmp(&other.1));
+            kinds.clear();
+            kinds.extend(keyed.into_iter().map(|(kind, _)| kind));
+        };
     by_bearing(&mut heads, incoming, |model, line| model.ends[line].0);
     by_bearing(&mut tails, outgoing, |model, line| model.ends[line].1);
     let mut widths = widths_of(model, incoming, &heads);
@@ -279,7 +278,10 @@ impl<'a, 'g> EdgePorts<'a, 'g> {
     /// that met a door on another side would loop round the door, or reach it from behind.
     pub(super) fn faces_far_end(&self, points: &[Point]) -> bool {
         let last = points.len() - 1;
-        let [(from_box, from_center, from_door), (to_box, to_center, to_door)] = self.ends;
+        let [
+            (from_box, from_center, from_door),
+            (to_box, to_center, to_door),
+        ] = self.ends;
         (!from_door || facing(from_box, to_center, points[0], points[1]))
             && (!to_door || facing(to_box, from_center, points[last], points[last - 1]))
     }

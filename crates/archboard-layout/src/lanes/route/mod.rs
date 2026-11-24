@@ -669,7 +669,11 @@ impl<'l, 'e> Prepared<'l, 'e> {
     ) -> (Routing, RouterSnapshot) {
         let mut track = pre_gather.clone().into_router(scene, self.bus);
         let buses = if self.bus {
-            gather(&mut track, (&self.inner, &self.routed, &self.chains), &choice.buses)
+            gather(
+                &mut track,
+                (&self.inner, &self.routed, &self.chains),
+                &choice.buses,
+            )
         } else {
             Buses::default()
         };

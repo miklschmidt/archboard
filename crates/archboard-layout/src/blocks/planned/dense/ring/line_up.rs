@@ -129,7 +129,10 @@ fn frees(
     }
     // A place further along is free wherever an earlier one is.
     let mut earlier = (f64::INFINITY, usize::MAX);
-    for (least, from) in least[min_free..].iter_mut().zip(from[min_free..].iter_mut()) {
+    for (least, from) in least[min_free..]
+        .iter_mut()
+        .zip(from[min_free..].iter_mut())
+    {
         if earlier.0 < *least {
             (*least, *from) = earlier;
         } else {
@@ -308,13 +311,9 @@ pub(super) fn cheapest(
     let slots = ring.slots();
     let doors = takes.len();
     scratch.wanted.clear();
-    scratch.wanted.extend((0..doors).map(|door| {
-        alone(
-            ring,
-            &costs[door * slots..(door + 1) * slots],
-            ranges[door],
-        )
-    }));
+    scratch.wanted.extend(
+        (0..doors).map(|door| alone(ring, &costs[door * slots..(door + 1) * slots], ranges[door])),
+    );
     let mut best: Option<(f64, Vec<usize>, Vec<usize>)> = None;
     for wall in 0..4 {
         let cut = ring.walls[wall].0 as f64;

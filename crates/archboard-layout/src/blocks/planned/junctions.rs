@@ -71,7 +71,13 @@ fn manhattan(a: Point, b: Point) -> f64 {
 
 /// The length of ink two routes share from the same endpoint, stepping forward or backward.
 fn common_end(a: &[Point], b: &[Point], reverse: bool) -> f64 {
-    let at_index = |s: &[Point], idx: usize| if reverse { s[s.len() - 1 - idx] } else { s[idx] };
+    let at_index = |s: &[Point], idx: usize| {
+        if reverse {
+            s[s.len() - 1 - idx]
+        } else {
+            s[idx]
+        }
+    };
     if a.is_empty() || b.is_empty() || at_index(a, 0) != at_index(b, 0) {
         return 0.0;
     }

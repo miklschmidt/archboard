@@ -331,17 +331,13 @@ impl<'a> Junction<'a> {
             return true;
         }
         if self.shared
-            && !(super::junctions::sharing(
-                points,
-                &self.line.points,
-                self.ends[0],
-                self.ends[1],
-            ) && super::junctions::readable(
-                points,
-                &self.line.points,
-                self.arrows[0],
-                self.arrows[1],
-            ))
+            && !(super::junctions::sharing(points, &self.line.points, self.ends[0], self.ends[1])
+                && super::junctions::readable(
+                    points,
+                    &self.line.points,
+                    self.arrows[0],
+                    self.arrows[1],
+                ))
         {
             return false;
         }

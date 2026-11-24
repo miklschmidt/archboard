@@ -279,7 +279,9 @@ fn expand_side(
     for at in 0..paths.all.len() {
         if filter_source
             && paths.all[at].len() > 2
-            && peers.iter().any(|peer| peer.conflicts_at(&paths.all[at], true))
+            && peers
+                .iter()
+                .any(|peer| peer.conflicts_at(&paths.all[at], true))
         {
             continue;
         }

@@ -95,7 +95,11 @@ pub(super) fn choose(
     self::search(model, topology, edge, shape, guide, hint, search).collect()
 }
 
-fn port_usable(bounds: Rect, obstacles: &super::clearance::Clearance, port: &super::ports::Port) -> bool {
+fn port_usable(
+    bounds: Rect,
+    obstacles: &super::clearance::Clearance,
+    port: &super::ports::Port,
+) -> bool {
     contains(
         bounds,
         Rect {
@@ -155,7 +159,10 @@ pub(super) fn search<'a>(
             for (tail, head) in
                 super::endpoint_choices::aligned(model, edge, shape, orig_tail, orig_head)
             {
-                let pair_ok = (usable(tail, orig_tail, tail_ok), usable(head, orig_head, head_ok));
+                let pair_ok = (
+                    usable(tail, orig_tail, tail_ok),
+                    usable(head, orig_head, head_ok),
+                );
                 add_pair(
                     geom,
                     (tail, head),
