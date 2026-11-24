@@ -154,8 +154,16 @@ mod tests {
     use super::*;
     use crate::blocks::planned::geometry::crosses_box;
 
+    fn runs(points: &[f64]) -> impl Iterator<Item = (f64, f64, f64)> + '_ {
+        points.iter().flat_map(move |&at| {
+            points
+                .iter()
+                .flat_map(move |&from| points.iter().map(move |&to| (at, from, to)))
+        })
+    }
+
     #[test]
-    fn indexed_clearance_keeps_open_walls_and_reversed_or_empty_runs() {
+    fn clearance_keeps_open_walls_and_reversed_or_empty_runs() {
         let boxes = [
             Rect {
                 x: 0.0,
@@ -176,28 +184,25 @@ mod tests {
                 height: 10.0,
             },
         ];
-        let index = Clearance::new(boxes.to_vec());
+        let linear = Clearance::new(boxes.to_vec());
+        // Repeating boxes leaves the answer unchanged and makes the indexed path run.
+        let index = Clearance::new(boxes.repeat(LINEAR_LIMIT));
         let points = [-1.0, 0.0, 1.0, 5.0, 10.0, 20.0, 30.0, 40.0, 50.0, 51.0];
-        for at in points {
-            for a in points {
-                for b in points {
-                    for path in [
-                        [Point { x: at, y: a }, Point { x: at, y: b }],
-                        [Point { x: a, y: at }, Point { x: b, y: at }],
-                    ] {
-                        assert_eq!(
-                            index.clear(&path),
-                            !boxes.iter().any(|&r| crosses_box(&path, r))
-                        );
-                    }
-                }
+        for (at, a, b) in runs(&points) {
+            for path in [
+                [Point { x: at, y: a }, Point { x: at, y: b }],
+                [Point { x: a, y: at }, Point { x: b, y: at }],
+            ] {
+                let expected = !boxes.iter().any(|&r| crosses_box(&path, r));
+                assert_eq!(linear.clear(&path), expected);
+                assert_eq!(index.clear(&path), expected);
             }
         }
     }
 
     #[test]
     fn reach_answers_as_clear_does_for_every_end_of_a_run() {
-        let index = Clearance::new(vec![
+        let boxes = [
             Rect {
                 x: 0.0,
                 y: 0.0,
@@ -210,18 +215,18 @@ mod tests {
                 width: 20.0,
                 height: 10.0,
             },
-        ]);
+        ];
         let points = [-1.0, 0.0, 5.0, 15.0, 30.0, 40.0, 45.0, 50.0, 51.0];
-        let runs = points.iter().flat_map(|&at| {
-            points
-                .iter()
-                .flat_map(move |&from| points.map(|to| (at, from, to)))
-        });
-        for (at, from, to) in runs {
-            let (low, high) = index.reach(true, at, from);
-            let reached = if to < from { to >= low } else { to <= high };
-            let run = [Point { x: at, y: from }, Point { x: at, y: to }];
-            assert_eq!(reached, index.clear(&run));
+        for clearance in [
+            Clearance::new(boxes.to_vec()),
+            Clearance::new(boxes.repeat(LINEAR_LIMIT)),
+        ] {
+            for (at, from, to) in runs(&points) {
+                let (low, high) = clearance.reach(true, at, from);
+                let reached = if to < from { to >= low } else { to <= high };
+                let run = [Point { x: at, y: from }, Point { x: at, y: to }];
+                assert_eq!(reached, clearance.clear(&run));
+            }
         }
     }
 }
