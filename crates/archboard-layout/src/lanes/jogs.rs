@@ -165,7 +165,8 @@ impl Router<'_> {
 
     /// Slide a card along its band by a kink, so its centred port stands at an x: the card and
     /// every line end on it, kept a lane clear of everything else on the band and half a lane
-    /// clear of the lines that pass it. It stays inside the placed block, whose x starts at zero.
+    /// clear of the lines that pass it. It stays inside the placed block, whose x starts at zero
+    /// and whose right edge is the furthest right any box on it stands.
     /// A card laid out as the region round it stays.
     fn slide_card(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let item = self.station(self.net(net).at(end)).item.expect("a card");
@@ -184,7 +185,13 @@ impl Router<'_> {
         };
         // Two doors, slivers a lane apart, stand a lane apart from middle to middle.
         let sliver = |bx: &Rect| bx.width <= 2.0 * STRAIGHT + 1.0;
+        // The block's extent: from zero, or the furthest left any box stands, to the furthest
+        // right one does.
+        let right = (self.scene.items.iter())
+            .map(|item| item.bx.x + item.bx.width)
+            .fold(one.bx.x + one.bx.width, f64::max);
         let clear = moved.x >= one.bx.x.min(0.0)
+            && moved.x + moved.width <= right
             && (self.scene.cards.values().chain(self.scene.labels.values()))
                 .filter(|&&other| other != item && self.scene.item(other).band == one.band)
                 .map(|&other| self.scene.item(other).bx)
@@ -473,5 +480,79 @@ impl Router<'_> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lanes::chains::Station;
+    use crate::lanes::channels::Net;
+    use crate::lanes::scene::{Band, Placement};
+
+    /// A block of two bands: a card at `x` on the first, and a line from its bottom at its middle
+    /// down to a lane on the second, with a wider card on the second that sets the block's width.
+    fn block(x: f64) -> Placement {
+        let mut scene = Placement::default();
+        for (top, bottom) in [(0.0, 40.0), (100.0, 140.0)] {
+            scene.bands.push(Band {
+                top,
+                bottom,
+                new_top: top,
+                first_track: 0.0,
+            });
+        }
+        let card = scene.add(Item::new(
+            Rect {
+                x,
+                y: 0.0,
+                width: 100.0,
+                height: 40.0,
+            },
+            0,
+        ));
+        scene.cards.insert("card".to_owned(), card);
+        let wide = scene.add(Item::new(
+            Rect {
+                x: 0.0,
+                y: 100.0,
+                width: 300.0,
+                height: 40.0,
+            },
+            1,
+        ));
+        scene.cards.insert("wide".to_owned(), wide);
+        scene
+    }
+
+    /// Whether the card slides 16 to the right to stand its port over the line's lane.
+    fn slides(x: f64) -> bool {
+        let mut scene = block(x);
+        let card = scene.cards["card"];
+        let mut track = Router::new(&mut scene);
+        track.bus = true;
+        let middle = x + 50.0;
+        let top = track.add(Station::new(Kind::Card, 0, Some(card), middle));
+        let bottom = track.add(Station::new(Kind::Lane, 1, None, middle + 16.0));
+        track.nets.push(Net {
+            edge: "line".into(),
+            order: 0.0,
+            channel: 0,
+            kind: "call".into(),
+            top,
+            bottom,
+            top_x: middle,
+            bottom_x: middle + 16.0,
+            track: 0,
+            trunk: None,
+            wall: None,
+        });
+        track.slide_card(&[NetId(0)], NetId(0), End::Top, middle + 16.0)
+    }
+
+    #[test]
+    fn a_card_slides_only_while_it_stays_inside_its_block() {
+        assert!(slides(100.0), "a card with room to its right slides");
+        assert!(!slides(200.0), "a card at the block's right edge stays");
     }
 }
