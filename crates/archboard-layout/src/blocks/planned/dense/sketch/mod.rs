@@ -40,18 +40,24 @@ pub(super) struct Sketch {
 
 impl Sketch {
     fn new(points: [Point; 3], bent: bool) -> Sketch {
-        let used = if bent { &points[..] } else { &points[..2] };
-        let low = |of: fn(&Point) -> f64| used.iter().map(of).fold(f64::INFINITY, f64::min);
-        let high = |of: fn(&Point) -> f64| used.iter().map(of).fold(f64::NEG_INFINITY, f64::max);
-        let (x, y) = (low(|p| p.x), low(|p| p.y));
+        let (p0, p1) = (points[0], points[1]);
+        let (mut lo_x, mut hi_x) = (p0.x.min(p1.x), p0.x.max(p1.x));
+        let (mut lo_y, mut hi_y) = (p0.y.min(p1.y), p0.y.max(p1.y));
+        if bent {
+            let p2 = points[2];
+            lo_x = lo_x.min(p2.x);
+            hi_x = hi_x.max(p2.x);
+            lo_y = lo_y.min(p2.y);
+            hi_y = hi_y.max(p2.y);
+        }
         Sketch {
             points,
             bent,
             span: Rect {
-                x,
-                y,
-                width: high(|p| p.x) - x,
-                height: high(|p| p.y) - y,
+                x: lo_x,
+                y: lo_y,
+                width: hi_x - lo_x,
+                height: hi_y - lo_y,
             },
         }
     }
@@ -60,15 +66,14 @@ impl Sketch {
         Sketch::new([from, to, to], false)
     }
 
-    fn segments(&self) -> impl Iterator<Item = (Point, Point)> + '_ {
-        let count = if self.bent { 2 } else { 1 };
-        (0..count).map(|at| (self.points[at], self.points[at + 1]))
-    }
-
     fn length(&self) -> f64 {
-        self.segments()
-            .map(|(a, b)| (a.x - b.x).abs() + (a.y - b.y).abs())
-            .sum()
+        let seg = |a: Point, b: Point| (a.x - b.x).abs() + (a.y - b.y).abs();
+        let first = seg(self.points[0], self.points[1]);
+        if self.bent {
+            first + seg(self.points[1], self.points[2])
+        } else {
+            first
+        }
     }
 
     /// What a line costs by the sketch: its length, its bend, what it adds to go round what
@@ -83,43 +88,45 @@ impl Sketch {
         if !meets(self.span, solid) {
             return 0.0;
         }
-        self.segments()
-            .map(|(a, b)| {
-                let (along, low, high, at, near, far) = if a.x == b.x {
-                    (
-                        a.x,
-                        a.y.min(b.y),
-                        a.y.max(b.y),
-                        solid.y,
-                        solid.x,
-                        solid.width,
-                    )
-                } else {
-                    (
-                        a.y,
-                        a.x.min(b.x),
-                        a.x.max(b.x),
-                        solid.x,
-                        solid.y,
-                        solid.height,
-                    )
-                };
-                let reach = if a.x == b.x {
-                    solid.height
-                } else {
-                    solid.width
-                };
-                let through = along > near + TOUCH
-                    && along < near + far - TOUCH
-                    && low < at + reach - TOUCH
-                    && high > at + TOUCH;
-                if through {
-                    2.0 * (along - near).min(near + far - along) + 2.0 * BEND
-                } else {
-                    0.0
-                }
-            })
-            .sum()
+        let first = round_segment(self.points[0], self.points[1], solid);
+        if self.bent {
+            first + round_segment(self.points[1], self.points[2], solid)
+        } else {
+            first
+        }
+    }
+}
+
+fn round_segment(a: Point, b: Point, solid: Rect) -> f64 {
+    let (along, low, high, at, reach, near, far) = if a.x == b.x {
+        (
+            a.x,
+            a.y.min(b.y),
+            a.y.max(b.y),
+            solid.y,
+            solid.height,
+            solid.x,
+            solid.width,
+        )
+    } else {
+        (
+            a.y,
+            a.x.min(b.x),
+            a.x.max(b.x),
+            solid.x,
+            solid.width,
+            solid.y,
+            solid.height,
+        )
+    };
+    let through = along > near + TOUCH
+        && along < near + far - TOUCH
+        && low < at + reach - TOUCH
+        && high > at + TOUCH;
+    if through {
+        2.0 * (along - near).min(near + far - along) + 2.0 * BEND
+    } else {
+        0.0
     }
 }
 
@@ -382,10 +389,22 @@ impl Scene {
 
     /// How far a group's members stand from the group's middle, as line costs it.
     pub(super) fn spread(&self, group: usize) -> f64 {
+        let mut xs = Vec::new();
+        let mut ys = Vec::new();
+        self.spread_with(group, &mut xs, &mut ys)
+    }
+
+    /// Same as `spread`, reusing `xs` and `ys` buffers.
+    pub(super) fn spread_with(&self, group: usize, xs: &mut Vec<f64>, ys: &mut Vec<f64>) -> f64 {
         let members = &self.groups[group];
-        let mut xs: Vec<f64> = members.iter().map(|&at| centre(self.boxes[at]).x).collect();
-        let mut ys: Vec<f64> = members.iter().map(|&at| centre(self.boxes[at]).y).collect();
-        GROUP * (scatter(&mut xs) + scatter(&mut ys))
+        xs.clear();
+        ys.clear();
+        for &at in members {
+            let c = centre(self.boxes[at]);
+            xs.push(c.x);
+            ys.push(c.y);
+        }
+        GROUP * (scatter(xs) + scatter(ys))
     }
 
     /// What every line, crossing and group of the scene costs, line by line.

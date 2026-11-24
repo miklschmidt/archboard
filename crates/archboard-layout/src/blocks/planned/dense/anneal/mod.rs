@@ -66,6 +66,7 @@ const MARGIN: f64 = 1.0;
 const SLACK: f64 = 1e-3;
 
 /// What a move changes, before it stands or is undone.
+#[derive(Default)]
 struct Change {
     /// Each line that ends on a moved part, and once they are sketched, each one's new sketch,
     /// chord and cost.
@@ -76,6 +77,22 @@ struct Change {
     /// How many crossings the move makes, and how many it ends.
     crossings: (usize, usize),
     groups: Vec<(usize, f64)>,
+}
+
+/// Reusable scratch buffers for annealing moves, avoiding per-step heap allocations.
+#[derive(Default)]
+struct AnnealScratch {
+    proposed: Vec<(usize, usize)>,
+    shift_targets: Vec<usize>,
+    shift_left: Vec<usize>,
+    old: Vec<(usize, usize, Rect)>,
+    change: Change,
+    parts: Vec<Edges>,
+    near: Vec<u64>,
+    group_ids: Vec<usize>,
+    xs: Vec<f64>,
+    ys: Vec<f64>,
+    costs: Vec<f64>,
 }
 
 /// The lines that end on each box of a scene.
@@ -263,13 +280,14 @@ impl<'p> Search<'p> {
         (self.random() >> 11) as f64 / (1_u64 << 53) as f64
     }
 
-    /// A random move: each moved part and the cell it goes to.
-    fn propose(&mut self) -> Vec<(usize, usize)> {
+    /// A random move: each moved part and the cell it goes to, written into `scratch.proposed`.
+    fn propose(&mut self, scratch: &mut AnnealScratch) {
+        scratch.proposed.clear();
         if !self.scene.groups.is_empty() && self.random() % 100 < GROUP_MOVES {
             let group = self.below(self.scene.groups.len());
             let step = self.below(4);
-            if let Some(moves) = self.shift(group, step) {
-                return moves;
+            if self.shift(group, step, scratch) {
+                return;
             }
         }
         let part = self.below(self.parts.len());
@@ -277,57 +295,72 @@ impl<'p> Search<'p> {
         let cell = self.below(self.lattices[lattice].cells());
         let from = self.cells[part];
         if cell == from {
-            return Vec::new();
+            return;
         }
-        let mut moves = vec![(part, cell)];
+        scratch.proposed.push((part, cell));
         if let Some(other) = self.occupant[lattice][cell] {
-            moves.push((other, from));
+            scratch.proposed.push((other, from));
         }
-        moves
     }
 
     /// Shift every member of a group one cell, if they share a grid and all stay on it. The
     /// parts in their way take the cells they leave.
-    fn shift(&self, group: usize, step: usize) -> Option<Vec<(usize, usize)>> {
+    fn shift(&self, group: usize, step: usize, scratch: &mut AnnealScratch) -> bool {
         let members = &self.scene.groups[group];
-        let lattice = self.parts[*members.first()?].lattice;
+        let Some(&first) = members.first() else {
+            return false;
+        };
+        let lattice = self.parts[first].lattice;
         let grid = self.lattices[lattice];
-        let mut moves = Vec::new();
+        scratch.proposed.clear();
         for &member in members {
-            if self.parts[member].lattice != lattice {
-                return None;
-            }
-            let cell = self.cells[member];
-            let (column, row) = (cell % grid.columns, cell / grid.columns);
-            let (column, row) = match step {
-                0 => (column.checked_sub(1)?, row),
-                1 => (column + 1, row),
-                2 => (column, row.checked_sub(1)?),
-                _ => (column, row + 1),
+            let Some(next) = self.shifted_cell(member, lattice, grid, step) else {
+                scratch.proposed.clear();
+                return false;
             };
-            if column >= grid.columns || row >= grid.rows {
-                return None;
-            }
-            moves.push((member, row * grid.columns + column));
+            scratch.proposed.push((member, next));
         }
-        let targets: Vec<usize> = moves.iter().map(|&(_, cell)| cell).collect();
-        let left: Vec<usize> = (members.iter())
-            .map(|&member| self.cells[member])
-            .filter(|cell| !targets.contains(cell))
-            .collect();
-        let displaced = (targets.iter())
+        scratch.shift_targets.clear();
+        scratch
+            .shift_targets
+            .extend(scratch.proposed.iter().map(|&(_, cell)| cell));
+        scratch.shift_left.clear();
+        scratch.shift_left.extend(
+            (members.iter())
+                .map(|&member| self.cells[member])
+                .filter(|cell| !scratch.shift_targets.contains(cell)),
+        );
+        let displaced = (scratch.shift_targets.iter())
             .filter_map(|&cell| self.occupant[lattice][cell])
             .filter(|other| !members.contains(other));
-        moves.extend(displaced.zip(left));
-        Some(moves)
+        scratch
+            .proposed
+            .extend(displaced.zip(scratch.shift_left.iter().copied()));
+        true
     }
 
-    /// Make a move: each part to its cell. Returns each moved part's old cell and box.
-    fn make(&mut self, moves: &[(usize, usize)]) -> Vec<(usize, usize, Rect)> {
-        let old: Vec<(usize, usize, Rect)> = (moves.iter())
-            .map(|&(part, _)| (part, self.cells[part], self.scene.boxes[part]))
-            .collect();
-        for &(part, _, _) in &old {
+    fn shifted_cell(&self, member: usize, lattice: usize, grid: Lattice, step: usize) -> Option<usize> {
+        if self.parts[member].lattice != lattice {
+            return None;
+        }
+        let cell = self.cells[member];
+        let (column, row) = (cell % grid.columns, cell / grid.columns);
+        let (column, row) = match step {
+            0 => (column.checked_sub(1)?, row),
+            1 => (column + 1, row),
+            2 => (column, row.checked_sub(1)?),
+            _ => (column, row + 1),
+        };
+        (column < grid.columns && row < grid.rows).then_some(row * grid.columns + column)
+    }
+
+    /// Make a move: each part to its cell, recording each moved part's old cell and box in `old`.
+    fn make_into(&mut self, moves: &[(usize, usize)], old: &mut Vec<(usize, usize, Rect)>) {
+        old.clear();
+        old.extend(
+            (moves.iter()).map(|&(part, _)| (part, self.cells[part], self.scene.boxes[part])),
+        );
+        for &(part, _, _) in old.iter() {
             let lattice = self.parts[part].lattice;
             self.occupant[lattice][self.cells[part]] = None;
         }
@@ -337,7 +370,6 @@ impl<'p> Search<'p> {
             self.occupant[lattice][cell] = Some(part);
             self.scene.boxes[part] = self.lattices[lattice].place(cell, size);
         }
-        old
     }
 
     fn undo(&mut self, old: &[(usize, usize, Rect)]) {
@@ -351,10 +383,10 @@ impl<'p> Search<'p> {
         }
     }
 
-    /// Stamp the lines that end on the moved parts, and list them.
-    fn stamp_moved(&mut self, old: &[(usize, usize, Rect)]) -> Vec<usize> {
+    /// Stamp the lines that end on the moved parts, and list them into `lines`.
+    fn stamp_moved(&mut self, old: &[(usize, usize, Rect)], lines: &mut Vec<usize>) {
         self.stamps += 1;
-        let mut lines = Vec::new();
+        lines.clear();
         for &(part, _, _) in old {
             for &line in &self.touching[part] {
                 if self.stamp[line] != self.stamps {
@@ -363,7 +395,6 @@ impl<'p> Search<'p> {
                 }
             }
         }
-        lines
     }
 
     /// Whether the move under weighing moved a line.
@@ -375,80 +406,94 @@ impl<'p> Search<'p> {
     ///
     /// A line runs round a moved part only where the box round its ends comes near the part,
     /// where the part stood or stands now.
-    fn rounds(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
-        let parts: Vec<Edges> = (old.iter())
-            .flat_map(|&(part, _, was)| [Edges::of(was), Edges::of(self.scene.boxes[part])])
-            .collect();
-        let Some(all) = parts.iter().copied().reduce(Edges::round) else {
-            return Vec::new();
-        };
-        let mut near = vec![0; self.bounds.len().div_ceil(64)];
-        for part in &parts {
-            self.near.add(part, &mut near);
+    fn rounds(&self, scratch: &mut AnnealScratch) {
+        scratch.change.rounds.clear();
+        scratch.parts.clear();
+        for &(part, _, was) in &scratch.old {
+            scratch.parts.push(Edges::of(was));
+            scratch.parts.push(Edges::of(self.scene.boxes[part]));
         }
-        let mut rounds = Vec::new();
-        for (word, mut near) in near.into_iter().enumerate() {
-            while near != 0 {
-                let line = word * 64 + near.trailing_zeros() as usize;
-                near &= near - 1;
-                let bounds = &self.bounds[line];
-                if !bounds.near(&all) || self.moved(line) || !parts.iter().any(|at| bounds.near(at))
-                {
-                    continue;
-                }
-                let sketch = &self.weighed.sketches[line];
-                let added: f64 = (old.iter())
-                    .filter(|&&(part, _, _)| self.scene.blocks(line, part))
-                    .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
-                    .sum();
+        let Some(all) = scratch.parts.iter().copied().reduce(Edges::round) else {
+            return;
+        };
+        let words = self.bounds.len().div_ceil(64);
+        scratch.near.clear();
+        scratch.near.resize(words, 0);
+        for part in &scratch.parts {
+            self.near.add(part, &mut scratch.near);
+        }
+        for word in 0..words {
+            self.collect_round_word(word, scratch.near[word], &all, scratch);
+        }
+    }
+
+    fn collect_round_word(
+        &self,
+        word: usize,
+        mut near: u64,
+        all: &Edges,
+        scratch: &mut AnnealScratch,
+    ) {
+        while near != 0 {
+            let line = word * 64 + near.trailing_zeros() as usize;
+            near &= near - 1;
+            if self.line_near_moved(line, all, &scratch.parts) {
+                let added = self.round_delta(line, &scratch.old);
                 if added != 0.0 {
-                    rounds.push((line, added));
+                    scratch.change.rounds.push((line, added));
                 }
             }
         }
-        rounds
+    }
+
+    fn line_near_moved(&self, line: usize, all: &Edges, parts: &[Edges]) -> bool {
+        let bounds = &self.bounds[line];
+        bounds.near(all) && !self.moved(line) && parts.iter().any(|at| bounds.near(at))
+    }
+
+    fn round_delta(&self, line: usize, old: &[(usize, usize, Rect)]) -> f64 {
+        let sketch = &self.weighed.sketches[line];
+        (old.iter())
+            .filter(|&&(part, _, _)| self.scene.blocks(line, part))
+            .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
+            .sum()
     }
 
     /// The groups of the moved parts, and how far apart each group stands now.
-    fn regroup(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
-        let mut groups: Vec<usize> = (old.iter())
-            .flat_map(|&(part, _, _)| self.grouped[part].iter().copied())
-            .collect();
-        groups.sort_unstable();
-        groups.dedup();
-        (groups.into_iter())
-            .map(|group| (group, self.scene.spread(group)))
-            .collect()
+    fn regroup(&self, scratch: &mut AnnealScratch) {
+        scratch.group_ids.clear();
+        for &(part, _, _) in &scratch.old {
+            scratch.group_ids.extend_from_slice(&self.grouped[part]);
+        }
+        scratch.group_ids.sort_unstable();
+        scratch.group_ids.dedup();
+        scratch.change.groups.clear();
+        for &group in &scratch.group_ids {
+            let spread = self
+                .scene
+                .spread_with(group, &mut scratch.xs, &mut scratch.ys);
+            scratch.change.groups.push((group, spread));
+        }
     }
 
     /// What a made move changes, all but the new sketches of the lines it moved and the
     /// crossings they make now.
-    fn change(&mut self, old: &[(usize, usize, Rect)]) -> Change {
-        let lines = self.stamp_moved(old);
-        let rounds = self.rounds(old);
-        let ended = self.crossing.begin(&self.scene, lines.iter().copied());
-        let groups = self.regroup(old);
-        Change {
-            lines,
-            fresh: Vec::new(),
-            rounds,
-            crossings: (0, ended),
-            groups,
-        }
+    fn change(&mut self, scratch: &mut AnnealScratch) {
+        self.stamp_moved(&scratch.old, &mut scratch.change.lines);
+        self.rounds(scratch);
+        let ended = self
+            .crossing
+            .begin(&self.scene, scratch.change.lines.iter().copied());
+        self.regroup(scratch);
+        scratch.change.fresh.clear();
+        scratch.change.crossings = (0, ended);
     }
 
-    /// What a change adds to the total, where each line it moved costs as some costs say.
-    fn delta(&self, change: &Change, costs: impl Iterator<Item = f64>) -> f64 {
-        let weighed = &self.weighed;
-        let (made, ended) = change.crossings;
-        (change.lines.iter().zip(costs))
-            .map(|(&line, cost)| cost - weighed.own[line])
-            .sum::<f64>()
-            + change.rounds.iter().map(|&(_, added)| added).sum::<f64>()
-            + CROSSING * (made as f64 - ended as f64)
-            + (change.groups.iter())
-                .map(|&(group, spread)| spread - weighed.spread[group])
-                .sum::<f64>()
+    /// Sum of `cost - weighed.own[line]` across moved lines in order.
+    fn lines_delta(&self, lines: &[usize], costs: &[f64]) -> f64 {
+        (lines.iter().zip(costs))
+            .map(|(&line, &cost)| cost - self.weighed.own[line])
+            .sum()
     }
 
     /// What a line costs at least where its boxes stand: its cheapest way with nothing in its
@@ -466,14 +511,24 @@ impl<'p> Search<'p> {
     /// rise weighs too much for the draw, the move loses it before the rest is weighed: `None`.
     /// The margin holds against any rounding of the weight. The draw is the one the search makes
     /// for that move anyway, so no walk of the search changes.
-    fn weigh(&mut self, change: &mut Change, heat: f64) -> Option<(f64, Option<f64>)> {
-        let mut costs: Vec<f64> = change.lines.iter().map(|&line| self.least(line)).collect();
+    fn weigh(&mut self, scratch: &mut AnnealScratch, heat: f64) -> Option<(f64, Option<f64>)> {
+        let change = &mut scratch.change;
+        let costs = &mut scratch.costs;
+        costs.clear();
+        costs.extend(change.lines.iter().map(|&line| self.least(line)));
         change.fresh.clear();
+        let rounds_sum: f64 = change.rounds.iter().map(|&(_, added)| added).sum();
+        let groups_sum: f64 = (change.groups.iter())
+            .map(|&(group, spread)| spread - self.weighed.spread[group])
+            .sum();
+        let mut lines_sum = self.lines_delta(&change.lines, costs);
         let lines = change.lines.len();
         let mut drawn = None;
         // Counting first ends more moves early than sketching first.
         for step in 0..=2 * lines {
-            let rise = self.delta(change, costs.iter().copied());
+            let (made, ended) = change.crossings;
+            let rise =
+                lines_sum + rounds_sum + CROSSING * (made as f64 - ended as f64) + groups_sum;
             if rise > 0.0 && heat > 0.0 {
                 let chance = *drawn.get_or_insert_with(|| self.chance());
                 if chance > (-rise / heat).exp() * (1.0 + 1e-9) + 1e-12 {
@@ -484,55 +539,62 @@ impl<'p> Search<'p> {
                 Ordering::Less => change.crossings.0 += self.crossing.count(step),
                 Ordering::Equal => change.crossings.0 += self.crossing.pairs(),
                 Ordering::Greater => {
-                    let line = change.lines[change.fresh.len()];
+                    let idx = change.fresh.len();
+                    let line = change.lines[idx];
                     let (sketch, cost) = self.scene.sketch(line);
-                    costs[change.fresh.len()] = cost;
+                    costs[idx] = cost;
                     change.fresh.push((sketch, self.scene.chord(line), cost));
+                    lines_sum = self.lines_delta(&change.lines, costs);
                 }
             }
         }
-        Some((self.delta(change, costs.into_iter()), drawn))
+        let (made, ended) = change.crossings;
+        let delta =
+            lines_sum + rounds_sum + CROSSING * (made as f64 - ended as f64) + groups_sum;
+        Some((delta, drawn))
     }
 
-    fn keep(&mut self, delta: f64, change: Change) {
+    fn keep(&mut self, delta: f64, change: &Change) {
         self.crossing.keep();
         let weighed = &mut self.weighed;
-        for (line, (sketch, chord, cost)) in change.lines.into_iter().zip(change.fresh) {
+        for (&line, &(sketch, chord, cost)) in change.lines.iter().zip(&change.fresh) {
             self.bounds[line] = Edges::line(&self.scene, line);
             self.near.set(line, &self.bounds[line]);
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
         }
-        for (line, added) in change.rounds {
+        for &(line, added) in &change.rounds {
             weighed.own[line] += added;
         }
         let (made, ended) = change.crossings;
         weighed.crossings = weighed.crossings + made - ended;
-        for (group, spread) in change.groups {
+        for &(group, spread) in &change.groups {
             weighed.spread[group] = spread;
         }
         self.total += delta;
     }
 
     /// The mean rise of random moves, which the search starts as hot as.
-    fn heat(&mut self) -> f64 {
-        let mut rises = Vec::new();
+    fn heat(&mut self, scratch: &mut AnnealScratch) -> f64 {
+        let mut sum = 0.0;
+        let mut count = 0usize;
         for _ in 0..SAMPLES {
-            let moves = self.propose();
-            if moves.is_empty() {
+            self.propose(scratch);
+            if scratch.proposed.is_empty() {
                 continue;
             }
-            let old = self.make(&moves);
-            let mut change = self.change(&old);
-            let weighed = self.weigh(&mut change, 0.0);
-            self.undo(&old);
+            self.make_into(&scratch.proposed, &mut scratch.old);
+            self.change(scratch);
+            let weighed = self.weigh(scratch, 0.0);
+            self.undo(&scratch.old);
             let delta = weighed.map_or(0.0, |(delta, _)| delta);
             if delta > 0.0 {
-                rises.push(delta);
+                sum += delta;
+                count += 1;
             }
         }
-        rises.iter().sum::<f64>() / rises.len().max(1) as f64
+        sum / count.max(1) as f64
     }
 
     /// Anneal for some moves, from a share of the first heat, and end on the cheapest
@@ -541,33 +603,39 @@ impl<'p> Search<'p> {
         if self.parts.len() < 2 {
             return;
         }
-        let start = self.heat() * warmth;
-        let mut best = (self.total, self.cells.clone());
+        let mut scratch = AnnealScratch::default();
+        let start = self.heat(&mut scratch) * warmth;
+        let mut best_total = self.total;
+        let mut best_cells = self.cells.clone();
         for step in 0..moves {
             let heat = start * COOLING.powf(step as f64 / moves as f64);
-            let proposed = self.propose();
-            if proposed.is_empty() {
+            self.propose(&mut scratch);
+            if scratch.proposed.is_empty() {
                 continue;
             }
-            let old = self.make(&proposed);
-            let mut change = self.change(&old);
-            let Some((delta, drawn)) = self.weigh(&mut change, heat) else {
-                self.undo(&old);
+            self.make_into(&scratch.proposed, &mut scratch.old);
+            self.change(&mut scratch);
+            let Some((delta, drawn)) = self.weigh(&mut scratch, heat) else {
+                self.undo(&scratch.old);
                 continue;
             };
             if delta <= 0.0
                 || (heat > 0.0 && drawn.unwrap_or_else(|| self.chance()) < (-delta / heat).exp())
             {
-                self.keep(delta, change);
-                if self.total < best.0 - 1e-6 {
-                    best = (self.total, self.cells.clone());
+                self.keep(delta, &scratch.change);
+                if self.total < best_total - 1e-6 {
+                    best_total = self.total;
+                    best_cells.copy_from_slice(&self.cells);
                 }
             } else {
-                self.undo(&old);
+                self.undo(&scratch.old);
             }
         }
-        let moves: Vec<(usize, usize)> = best.1.iter().copied().enumerate().collect();
-        self.make(&moves);
+        scratch.proposed.clear();
+        scratch
+            .proposed
+            .extend(best_cells.iter().copied().enumerate());
+        self.make_into(&scratch.proposed, &mut scratch.old);
         self.reweigh();
     }
 }
