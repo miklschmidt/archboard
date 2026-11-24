@@ -61,7 +61,9 @@ impl<C: Canvas> Walk<'_, C> {
         let Some((from, to, stroke, width)) = stripe(shape) else {
             return;
         };
-        let colour = self.lit_colour(&stroke.paint, lit);
+        let colour = self
+            .lit_colour(&stroke.paint, lit)
+            .multiply_alpha(solid(stroke.opacity));
         let mut fading = Gradient::new_linear(from, to);
         fading.stops = stops(FADE.map(|(offset, share)| (offset, colour.multiply_alpha(share))));
         fading.interpolation_alpha_space = InterpolationAlphaSpace::Unpremultiplied;

@@ -28,6 +28,8 @@ mod entrance_order;
 mod found;
 mod handover;
 #[cfg(test)]
+mod imprint_tests;
+#[cfg(test)]
 mod interrupted;
 mod line;
 mod morph;

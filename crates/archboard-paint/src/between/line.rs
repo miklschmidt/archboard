@@ -299,12 +299,61 @@ fn white() -> Paint {
     }
 }
 
+/// The marks already on the old target and the marks the new line will leave.
+#[derive(Clone, Debug)]
+struct TargetImprints {
+    old: Vec<Shape>,
+    next: Vec<Shape>,
+    moves: bool,
+}
+
+impl TargetImprints {
+    fn new(before: &Group, after: &Group) -> Self {
+        let marks = |group: &Group| {
+            group
+                .items
+                .iter()
+                .filter(|item| target_imprint(item))
+                .filter_map(|item| match item {
+                    Item::Shape(shape) => Some(shape.clone()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        let (old, next) = (marks(before), marks(after));
+        let arrival = |group| outline_of(group).and_then(|path| crate::path::end_of(&path, false));
+        let moves = !(old.is_empty() && next.is_empty()) && arrival(before) != arrival(after);
+        Self { old, next, moves }
+    }
+
+    /// Keep the old marks until the line sets off and show the new marks when it lands.
+    /// Marks already on a target that stays in place can stay through the move.
+    fn at(&self, moved: f64, swapped: f64) -> impl Iterator<Item = Item> + '_ {
+        let (old, next) = if self.moves || self.old.is_empty() {
+            (f64::from(moved == 0.0), f64::from(moved == 1.0))
+        } else if self.old == self.next {
+            (0.0, 1.0)
+        } else {
+            (1.0 - swapped, swapped)
+        };
+        [(old, &self.old), (next, &self.next)]
+            .into_iter()
+            .filter(|(shown, _)| *shown > 0.0)
+            .flat_map(|(shown, marks)| {
+                marks
+                    .iter()
+                    .map(move |mark| Item::Shape(dim(mark.clone(), shown)))
+            })
+    }
+}
+
 /// One line carried from its old route to its new one.
 #[derive(Clone, Debug)]
 pub(super) struct LineCarry {
     template: Group,
     slides: Vec<Slide>,
     ghosts: Vec<Ghost>,
+    imprints: TargetImprints,
     /// How far the line recedes as it travels.
     depth: f64,
     /// What its masks do.
@@ -434,6 +483,7 @@ impl LineCarry {
             template,
             slides,
             ghosts,
+            imprints: TargetImprints::new(before.group, after.group),
             depth: depth_of_travel(reach),
             cuts: Cuts::of(masks.0, masks.1),
             phases,
@@ -448,12 +498,14 @@ impl LineCarry {
     /// The line at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Group {
         let t = &self.phases;
-        let along = emphasised(phase(progress, t.move_start, t.move_end));
+        let moved = phase(progress, t.move_start, t.move_end);
+        let along = emphasised(moved);
         let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
         let shown = receded(self.depth, progress);
         let mut items = Vec::with_capacity(self.template.items.len() + self.ghosts.len());
+        items.extend(self.imprints.at(moved, swapped));
         for (child, item) in self.template.items.iter().enumerate() {
-            if along < 1.0 && target_imprint(item) {
+            if target_imprint(item) {
                 continue;
             }
             for ghost in self.ghosts.iter().filter(|ghost| ghost.before == child) {

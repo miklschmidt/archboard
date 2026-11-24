@@ -115,7 +115,8 @@ impl Peer<'_> {
     }
 
     fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
-        self.offsets(points, source).any(|by| by.abs() < self.apart)
+        self.offsets(points, source)
+            .any(|by| by.abs() < self.apart - 1e-6)
     }
 
     pub(super) fn conflicts(&self, points: &[Point]) -> bool {
@@ -301,4 +302,38 @@ fn wall_span(
         (card.x, card.width)
     };
     (start + margin, start + span - margin)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn centred_cable_ports_keep_their_places_despite_rounding() {
+        let graph = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "children": [{"id": "source"}, {"id": "left"}, {"id": "right"}],
+            "edges": [
+                {
+                    "id": "left", "sources": ["source"], "targets": ["left"],
+                    "layoutOptions": {"archboard.cable": "sync;async"}
+                },
+                {"id": "right", "sources": ["source"], "targets": ["right"]}
+            ]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let route = |id: &str, x| PlacedLine {
+            id: id.into(),
+            points: vec![Point { x, y: 80.0 }, Point { x, y: 180.0 }],
+            label: None,
+        };
+        let middle = 250.4;
+        let cable = route("left", middle - 12.0);
+        assert!(clear(
+            &model,
+            &[cable.clone(), route("right", middle + 12.0)]
+        ));
+        assert!(!clear(&model, &[cable, route("right", middle + 11.0)]));
+    }
 }
