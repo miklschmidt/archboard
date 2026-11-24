@@ -369,3 +369,45 @@ fn turning_a_cables_hops_keeps_them_clear_of_a_join_between_its_strands() {
         "the hop bulges away from the join"
     );
 }
+
+#[test]
+fn a_lifted_crest_matches_the_standing_hop_of_its_cable() {
+    let mut cables = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            down_from(42.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(66.0, 10.0, 200.0),
+            across_from(53.0, 64.0, 200.0),
+            across_from(53.0, 67.0, 200.0),
+        ],
+        &[
+            (0, "call", Emphasis::Hero),
+            (1, "call", Emphasis::Hero),
+            (3, "call", Emphasis::Hero),
+        ],
+    );
+    for (strand, leader) in [(1, 0), (3, 2)] {
+        cables.edges[strand].edge.from = cables.edges[leader].edge.from.clone();
+        cables.edges[strand].edge.to = cables.edges[leader].edge.to.clone();
+    }
+    let riders = BTreeMap::from([
+        ("1".to_owned(), "0".to_owned()),
+        ("3".to_owned(), "2".to_owned()),
+    ]);
+    let result = bridge_crossings(&cables, &lines_of(&cables), &riders);
+
+    let mut crests: Vec<_> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|crest| {
+            let mut under: Vec<_> = crest.under.iter().map(String::as_str).collect();
+            under.sort_unstable();
+            (crest.edge_id.as_str(), under, super::bulge_of(crest).0)
+        })
+        .collect();
+    crests.sort_unstable_by_key(|&(id, _, _)| id);
+    assert_eq!(
+        crests,
+        [("2", vec!["0", "1"], 0.0), ("3", vec!["0", "1"], 0.0)]
+    );
+}

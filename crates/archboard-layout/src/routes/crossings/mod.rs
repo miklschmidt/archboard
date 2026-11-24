@@ -20,7 +20,7 @@
 //! junction mark wherever another arc avoids it (TASK-570). Beside a join,
 //! the line that does not join rises.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use archboard_scene::drawing::{ArchitectureDrawing, Bridged, DrawingBridge, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::Curve;
@@ -517,6 +517,13 @@ impl Settling<'_> {
         }
     }
 
+    /// The clusters a rise crosses, on the lines beneath it.
+    fn crossed_clusters<'a>(&'a self, rise: &'a Rise) -> impl Iterator<Item = usize> + 'a {
+        rise.crossings
+            .iter()
+            .map(|&crossing| self.other_cluster(rise.cluster, crossing))
+    }
+
     /// Cable hops sharing a crossing cluster on the line beneath them. A crest can
     /// connect several such clusters when it spans several lines.
     fn cable_places(&self) -> Vec<Vec<usize>> {
@@ -526,8 +533,7 @@ impl Settling<'_> {
             let Some(leader) = self.cable_of(rise.cluster) else {
                 continue;
             };
-            for &crossing in &rise.crossings {
-                let other = self.other_cluster(rise.cluster, crossing);
+            for other in self.crossed_clusters(rise) {
                 let first = *by_crossing.entry((leader, other)).or_insert(index);
                 if first != index {
                     links[first].push(index);
@@ -628,17 +634,23 @@ impl Settling<'_> {
                 .or_default()
                 .push(Rise { cluster, crossings });
         }
-        let bundles: Vec<_> = bundles.into_values().collect();
+        let bundles: Vec<_> = bundles
+            .into_iter()
+            .map(|((cable, _), bundle)| {
+                let sides = self.ribbon_sides(cable, &bundle, place);
+                (bundle, sides)
+            })
+            .collect();
         let crests = self.without(place, |settling| {
             let runs = &settling.scene.runs;
             let mut crests = Vec::new();
             let mut pending = Vec::new();
-            for bundle in bundles {
+            for (bundle, sides) in bundles {
                 let siblings: Vec<_> = bundle
                     .iter()
                     .map(|rise| &runs[settling.cluster(rise.cluster).run])
                     .collect();
-                let curves = [1.0, -1.0].into_iter().find_map(|bulge| {
+                let curves = sides.into_iter().find_map(|bulge| {
                     bundle
                         .iter()
                         .map(|rise| settling.ribbon_crest(rise, bulge, &siblings, &pending))
@@ -659,6 +671,29 @@ impl Settling<'_> {
             self.stand(&rise, curve);
         }
         true
+    }
+
+    /// The sides a bundle can take without making a cable's standing hops disagree
+    /// with its new crests over the same crossed clusters.
+    fn ribbon_sides(&self, cable: Option<&str>, bundle: &[Rise], replaced: &[usize]) -> Vec<Bulge> {
+        let mut sides = vec![1.0, -1.0];
+        if let Some(cable) = cable {
+            let crossed: BTreeSet<_> = bundle
+                .iter()
+                .flat_map(|rise| self.crossed_clusters(rise))
+                .collect();
+            for (index, (rise, hop)) in self.stood.iter().zip(&self.scene.hops).enumerate() {
+                if !replaced.contains(&index)
+                    && self.cable_of(rise.cluster) == Some(cable)
+                    && self
+                        .crossed_clusters(rise)
+                        .any(|one| crossed.contains(&one))
+                {
+                    sides.retain(|&side| side == bulge_of(hop));
+                }
+            }
+        }
+        sides
     }
 
     /// A replacement crest on one side of the cable, where the whole rise fits.
