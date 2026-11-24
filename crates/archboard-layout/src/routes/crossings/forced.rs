@@ -267,6 +267,7 @@ impl Settling<'_> {
                         beneath,
                         self.crossings[crossing].point,
                         bulge,
+                        true,
                     )
                 }) {
                     return None;

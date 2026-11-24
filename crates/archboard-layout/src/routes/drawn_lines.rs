@@ -266,15 +266,16 @@ pub(super) fn line_runs<'a>(runs: &'a [Run], run: &'a Run) -> Vec<&'a Run> {
 }
 
 /// Whether a drawn line runs straight and alone through a stretch: every run
-/// on that line which reaches into the stretch holds all of it, clear of its
-/// ends' approaches, so nothing bends, joins, parts or ends there.
-pub(super) fn straight_through(runs: &[Run], run: &Run, low: f64, high: f64) -> bool {
+/// on that line which reaches into the stretch holds all of it, so nothing
+/// bends, joins, parts or ends there. With `rooms`, the stretch also stays
+/// clear of end approaches.
+pub(super) fn straight_through(runs: &[Run], run: &Run, low: f64, high: f64, rooms: bool) -> bool {
     line_runs(runs, run).into_iter().all(|other| {
         let whole = extent_of(other, false);
         if whole.high <= low + EPSILON || whole.low >= high - EPSILON {
             return true;
         }
-        let clear = extent_of(other, true);
+        let clear = extent_of(other, rooms);
         clear.low <= low + EPSILON && clear.high >= high - EPSILON
     })
 }
