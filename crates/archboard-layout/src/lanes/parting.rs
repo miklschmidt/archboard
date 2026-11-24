@@ -9,9 +9,57 @@
 
 use crate::ecma::{abs, number_key, or, sorted_by};
 use crate::lanes::chains::{ChainId, LANE, Router};
-use crate::lanes::channels::{End, NetId};
+use crate::lanes::channels::{End, NetId, TrunkId};
 use crate::lanes::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
-use crate::lanes::scene::{Map, Set};
+use crate::lanes::scene::{ItemId, Set};
+
+/// Compact snapshot of one net for fast channel-wise collinearity and crossing checks.
+struct NetEntry<'a> {
+    edge: &'a str,
+    trunk: Option<TrunkId>,
+    wall: Option<End>,
+    top_x: f64,
+    bottom_x: f64,
+    top_item: Option<ItemId>,
+    bottom_item: Option<ItemId>,
+}
+
+impl NetEntry<'_> {
+    fn related(&self, other: &Self) -> bool {
+        std::ptr::eq(self.edge, other.edge)
+            || self.edge == other.edge
+            || (self.trunk.is_some() && self.trunk == other.trunk)
+    }
+
+    fn meets_at_one_point(&self, other: &Self) -> bool {
+        (self.top_item.is_some()
+            && self.top_item == other.top_item
+            && abs(self.top_x - other.top_x) <= STRAIGHT)
+            || (self.bottom_item.is_some()
+                && self.bottom_item == other.bottom_item
+                && abs(self.bottom_x - other.bottom_x) <= STRAIGHT)
+    }
+
+    fn collinear_with(&self, other: &Self) -> bool {
+        abs(self.top_x - other.bottom_x) < LANE
+            && other.wall != Some(End::Bottom)
+            && !self.related(other)
+            && !self.meets_at_one_point(other)
+    }
+}
+
+fn channel_collinear_count(entries: &[NetEntry<'_>]) -> usize {
+    let mut count = 0;
+    for up in entries {
+        if up.wall == Some(End::Top) {
+            continue;
+        }
+        for down in entries {
+            count += usize::from(up.collinear_with(down));
+        }
+    }
+    count
+}
 
 impl Router<'_> {
     /// Whether two nets belong to one line or one trunk.
@@ -48,35 +96,58 @@ impl Router<'_> {
         })
     }
 
+    fn entry_of(&self, id: NetId) -> NetEntry<'_> {
+        let net = self.net(id);
+        NetEntry {
+            edge: &net.edge,
+            trunk: net.trunk,
+            wall: net.wall,
+            top_x: net.top_x,
+            bottom_x: net.bottom_x,
+            top_item: self.station(net.top).item,
+            bottom_item: self.station(net.bottom).item,
+        }
+    }
+
     /// How many pairs of lines read as one.
     pub(crate) fn collinear_pairs(&self, nets: &[NetId]) -> f64 {
-        let mut count = 0.0;
-        for channel in by_channel(self, nets.iter().copied(), |&net| net).values() {
-            for &leaving in channel {
-                for &entering in channel {
-                    if self.collinear(leaving, entering) {
-                        count += 1.0;
-                    }
-                }
+        let channels = by_channel_vec(self, nets.iter().copied(), |&net| net);
+        let mut count = 0usize;
+        let mut entries: Vec<NetEntry<'_>> = Vec::new();
+        for channel in &channels {
+            if channel.len() < 2 {
+                continue;
             }
+            entries.clear();
+            entries.extend(channel.iter().map(|&id| self.entry_of(id)));
+            count += channel_collinear_count(&entries);
         }
-        count
+        count as f64
     }
 
     /// How many pairs of lines swap sides across a channel.
     fn swapped(&self, nets: &[NetId]) -> f64 {
-        let mut count = 0.0;
-        for channel in by_channel(self, nets.iter().copied(), |&net| net).values() {
-            for &one in channel {
-                for &other in channel {
-                    let (a, b) = (self.net(one), self.net(other));
-                    if (a.top_x - b.top_x) * (a.bottom_x - b.bottom_x) < 0.0 {
-                        count += 1.0;
+        let channels = by_channel_vec(self, nets.iter().copied(), |&net| net);
+        let mut count = 0usize;
+        let mut ends: Vec<(f64, f64)> = Vec::new();
+        for channel in &channels {
+            if channel.len() < 2 {
+                continue;
+            }
+            ends.clear();
+            ends.extend(channel.iter().map(|&id| {
+                let net = self.net(id);
+                (net.top_x, net.bottom_x)
+            }));
+            for (i, &(t1, b1)) in ends.iter().enumerate() {
+                for &(t2, b2) in &ends[i + 1..] {
+                    if (t1 - t2) * (b1 - b2) < 0.0 {
+                        count += 2;
                     }
                 }
             }
         }
-        count
+        count as f64
     }
 
     /// Part one pair of lines that read as one, by the nearest move that
@@ -145,12 +216,12 @@ impl Router<'_> {
                     .map(move |(index, &net)| (net, Place { route, index }))
             })
             .collect();
-        let channels = by_channel(self, places.iter().copied(), |(net, _)| *net);
+        let channels = by_channel_vec(self, places.iter().copied(), |(net, _)| *net);
         for piece in [false, true] {
             for _ in 0..PASSES {
                 let mut parted = false;
                 for &(net, leaving) in &places {
-                    let enterings: Vec<Place> = channels[&self.net(net).channel]
+                    let enterings: Vec<Place> = channels[self.net(net).channel]
                         .iter()
                         .filter(|(entering, _)| self.collinear(net, *entering))
                         .map(|&(_, place)| place)
@@ -168,15 +239,18 @@ impl Router<'_> {
 }
 
 /// Items by the channel their net runs in, each in the order given.
-fn by_channel<T>(
+fn by_channel_vec<T>(
     track: &Router<'_>,
     items: impl IntoIterator<Item = T>,
     net_of: impl Fn(&T) -> NetId,
-) -> Map<usize, Vec<T>> {
-    let mut channels: Map<usize, Vec<T>> = Map::default();
+) -> Vec<Vec<T>> {
+    let mut channels: Vec<Vec<T>> = Vec::with_capacity(track.scene.bands.len());
     for item in items {
         let channel = track.net(net_of(&item)).channel;
-        channels.entry(channel).or_default().push(item);
+        if channel >= channels.len() {
+            channels.resize_with(channel + 1, Vec::new);
+        }
+        channels[channel].push(item);
     }
     channels
 }

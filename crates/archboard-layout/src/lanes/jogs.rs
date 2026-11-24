@@ -21,7 +21,7 @@ use crate::ecma::{abs, js_min, sign};
 use crate::geometry::Rect;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN};
-use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
+use crate::lanes::scene::{ItemId, card_face, centre_x};
 
 /// Under this, two stations stand in one column.
 pub(crate) const STRAIGHT: f64 = 0.5;
@@ -70,9 +70,9 @@ pub(crate) fn nothing(_: &Router<'_>, _: &[NetId]) -> f64 {
 
 /// What a stretch's move changes, to put back when part of it cannot move.
 struct Saved {
-    lanes: Map<StationId, f64>,
-    boxes: Map<StationId, Item>,
-    ends: Vec<(NetId, f64, f64)>,
+    lanes: Vec<(StationId, f64)>,
+    boxes: Vec<(ItemId, Rect)>,
+    ends: Vec<(f64, f64)>,
 }
 
 /// How far a net steps sideways.
@@ -254,40 +254,42 @@ impl Router<'_> {
     }
 
     /// Keep what moving some stations could change.
-    fn save(&self, chains: &[ChainId], nets: &[NetId], stations: &[StationId]) -> Saved {
-        let mut lanes: Map<StationId, f64> = Map::default();
-        for &station in stations {
+    fn save(&self, chains: &[ChainId], nets: &[NetId], stretch: &[Reach]) -> Saved {
+        let mut lanes = Vec::new();
+        let mut boxes = Vec::new();
+        for &reach in stretch {
+            let station = reach.station;
             if let Some(run) = self.run_of(chains, station) {
                 for lane in run.lanes {
-                    lanes.insert(lane, self.x(lane));
+                    lanes.push((lane, self.x(lane)));
                 }
             }
-        }
-        let mut boxes: Map<StationId, Item> = Map::default();
-        for &station in stations {
             let one = self.station(station);
             // A card slides too (`slide_card`).
             if one.kind != Kind::Lane {
-                boxes.insert(station, *self.scene.item(one.item.expect("a box")));
+                let id = one.item.expect("a box");
+                boxes.push((id, self.scene.item(id).bx));
             }
         }
         let ends = nets
             .iter()
-            .map(|&net| (net, self.net(net).top_x, self.net(net).bottom_x))
+            .map(|&net| {
+                let n = self.net(net);
+                (n.top_x, n.bottom_x)
+            })
             .collect();
         Saved { lanes, boxes, ends }
     }
 
     /// Put back what a failed stretch moved.
-    fn restore(&mut self, saved: &Saved) {
-        for (&lane, &x) in &saved.lanes {
+    fn restore(&mut self, nets: &[NetId], saved: &Saved) {
+        for &(lane, x) in saved.lanes.iter().rev() {
             self.set_x(lane, x);
         }
-        for (&station, item) in &saved.boxes {
-            let id = self.station(station).item.expect("a box");
-            self.scene.item_mut(id).bx = item.bx;
+        for &(id, bx) in saved.boxes.iter().rev() {
+            self.scene.item_mut(id).bx = bx;
         }
-        for &(net, top, bottom) in &saved.ends {
+        for (&net, &(top, bottom)) in nets.iter().zip(&saved.ends) {
             let one = self.net_mut(net);
             one.top_x = top;
             one.bottom_x = bottom;
@@ -350,14 +352,9 @@ impl Router<'_> {
             piece,
             better,
         } = keeping;
-        let stations: Vec<StationId> = stretch.iter().map(|one| one.station).collect();
-        let saved = self.save(chains, nets, &stations);
-        let notches: Set<NetId> = nets
-            .iter()
-            .copied()
-            .filter(|&net| guard(self, net))
-            .collect();
-        let steps: Set<String> = self.card_step_keys(nets).into_iter().collect();
+        let saved = self.save(chains, nets, stretch);
+        let notches: Vec<bool> = nets.iter().map(|&net| guard(self, net)).collect();
+        let steps = self.card_step_set(nets);
         let moved = stretch
             .iter()
             .all(|&one| self.move_station(chains, nets, one, x, piece));
@@ -367,14 +364,12 @@ impl Router<'_> {
         let done = moved
             && nets
                 .iter()
-                .all(|&net| notches.contains(&net) || !guard(self, net))
-            && self
-                .card_step_keys(nets)
-                .iter()
-                .all(|key| steps.contains(key))
+                .zip(&notches)
+                .all(|(&net, &was)| was || !guard(self, net))
+            && self.card_steps_subset(nets, &steps)
             && better.is_none_or(|better| better(self));
         if !done {
-            self.restore(&saved);
+            self.restore(nets, &saved);
         }
         done
     }
@@ -488,7 +483,7 @@ mod tests {
     use super::*;
     use crate::lanes::chains::Station;
     use crate::lanes::channels::Net;
-    use crate::lanes::scene::{Band, Placement};
+    use crate::lanes::scene::{Band, Item, Placement};
 
     /// A block of two bands: a card at `x` on the first, and a line from its bottom at its middle
     /// down to a lane on the second, with a wider card on the second that sets the block's width.
