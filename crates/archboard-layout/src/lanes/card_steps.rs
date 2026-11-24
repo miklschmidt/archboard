@@ -21,14 +21,15 @@ enum FixedKey {
     Other(String),
 }
 
-/// Under this magnitude, a value in hundredths stays below 2^52, where every half-hundredth is a
-/// double, so rounding the product never carries it across the half that decides its hundredth.
-const EXACT_CENTIS: f64 = 1e13;
+/// Keep the scaled magnitude below 2^52, where multiplication cannot round past a
+/// half-hundredth. The cutoff is an exact half-hundredth that rounds up, so no rounded
+/// hundredth straddles the two key variants.
+const EXACT_CENTIS: f64 = 1e13 + 0.125;
 
 impl FixedKey {
     #[expect(
         clippy::cast_possible_truncation,
-        reason = "bounded to |value| < 1e13, so centis fit comfortably in i64"
+        reason = "bounded by EXACT_CENTIS, so centis fit comfortably in i64"
     )]
     fn of(value: f64) -> Self {
         if !value.is_finite() || value.abs() >= EXACT_CENTIS {
@@ -299,6 +300,10 @@ mod tests {
             (0.004, 0.0),
             (-0.004, -0.001),
             (1.005, 1.0049999),
+            (1e13, 1e13_f64.next_down()),
+            (-1e13, -1e13_f64.next_down()),
+            (EXACT_CENTIS, EXACT_CENTIS.next_down()),
+            (EXACT_CENTIS, EXACT_CENTIS.next_up()),
             (5e13 + 0.125, 5e13 + 0.117_187_5),
             (-5e13 - 0.125, -5e13 - 0.117_187_5),
             (0.004, -0.004),
