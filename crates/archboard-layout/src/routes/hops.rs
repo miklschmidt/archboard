@@ -16,10 +16,12 @@ use archboard_scene::geometry::{
 use archboard_scene::paint::junction_boxes;
 use archboard_scene::request::{Arrowhead, Dash};
 
-use crate::constants::APPROACH_STRAIGHT;
+use crate::constants::{APPROACH_STRAIGHT, STRAIGHT_RUN};
 use crate::ecma::{hypot, js_max, js_min, max, min, sign, sorted_by};
 
-use super::drawn_lines::{Axis, Run, SHARED_INK, fixed_of, on_run, straight_through, straightness};
+use super::drawn_lines::{
+    Axis, Passage, Run, SHARED_INK, fixed_of, on_run, straight_through, straightness,
+};
 use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
 
 /// Straight line kept past a hop, before a bend, a join or an end's approach.
@@ -214,7 +216,8 @@ pub(super) fn crest_along(
         .axis
         .of(on_run(run, first - (BRIDGE_RADIUS + room), 0.0));
     let high = run.axis.of(on_run(run, last + (BRIDGE_RADIUS + room), 0.0));
-    straight_through(runs, run, js_min(low, high), js_max(low, high), true)
+    straight_through(runs, run, js_min(low, high), js_max(low, high))
+        .is_clear()
         .then(|| hump(run, first, last, bulge))
 }
 
@@ -246,16 +249,10 @@ pub(super) fn curve_end(curve: &Curve) -> Point {
     segment_start(curve, curve.segments.len())
 }
 
-/// Whether a line runs straight and alone beneath where a hop over it would
+/// How a line passes beneath where a hop over it would
 /// stand: under the crest and on past it on the side the hop bulges to, and a
-/// little way on the other side. With `rooms`, this stretch stays clear of end approaches.
-pub(super) fn passes_beneath(
-    runs: &[Run],
-    run: &Run,
-    point: Point,
-    bulge: Bulge,
-    rooms: bool,
-) -> bool {
+/// little way on the other side.
+pub(super) fn passage_beneath(runs: &[Run], run: &Run, point: Point, bulge: Bulge) -> Passage {
     let at = run.axis.of(point);
     // A hop bulges up from a line across, toward lower y along a line down,
     // and right of a line down, toward higher x along a line across.
@@ -264,7 +261,7 @@ pub(super) fn passes_beneath(
     } else {
         (FAR_REACH, HOP_REACH)
     };
-    straight_through(runs, run, at - back, at + ahead, rooms)
+    straight_through(runs, run, at - back, at + ahead)
 }
 
 /// How a relationship's line is drawn: as measurement settled it, or solid
@@ -278,7 +275,7 @@ pub(super) fn look_of(lines: &BTreeMap<String, LineLook>, id: &str) -> LineLook 
 
 /// The boxes a line's arrowheads are drawn in: one at its end, and one at its
 /// start when it runs both ways.
-fn arrowhead_boxes(edge: &DrawingEdge<EdgeFacts>, look: LineLook) -> Vec<Rect> {
+fn arrowhead_boxes(edge: &DrawingEdge<EdgeFacts>, look: LineLook, reach: f64) -> Vec<Rect> {
     if look.arrowhead == Arrowhead::None {
         return Vec::new();
     }
@@ -294,18 +291,29 @@ fn arrowhead_boxes(edge: &DrawingEdge<EdgeFacts>, look: LineLook) -> Vec<Rect> {
     [end, start]
         .into_iter()
         .flatten()
-        .filter_map(|(from, to)| arrowhead_box(from, to))
+        .filter_map(|(from, to)| arrowhead_box(from, to, reach))
         .collect()
 }
 
-/// The box an arrowhead is drawn in, on a straight piece that runs to the head's
-/// tip: the last stretch of approach, and half as far to either side.
-fn arrowhead_box(from: Point, to: Point) -> Option<Rect> {
+/// Whether a turned hop would touch a crossed line's mark. A straight run's
+/// minimum length covers the longest painted mark with room for its stroke.
+pub(super) fn overlaps_arrowhead(
+    edge: &DrawingEdge<EdgeFacts>,
+    look: LineLook,
+    bounds: Rect,
+) -> bool {
+    arrowhead_boxes(edge, look, STRAIGHT_RUN)
+        .into_iter()
+        .any(|head| overlaps(bounds, head))
+}
+
+/// A box extending back from the arrowhead's tip, widened to cover its mark.
+fn arrowhead_box(from: Point, to: Point, reach: f64) -> Option<Rect> {
     let length = hypot(to.x - from.x, to.y - from.y);
     if length == 0.0 {
         return None;
     }
-    let share = js_min(length, APPROACH_STRAIGHT) / length;
+    let share = js_min(length, reach) / length;
     let back = Point {
         x: to.x + (from.x - to.x) * share,
         y: to.y + (from.y - to.y) * share,
@@ -362,7 +370,7 @@ fn keepouts_of(
         .iter()
         .filter_map(|edge| edge.label.as_ref().map(|label| alone(label.bounds)));
     let heads = drawing.edges.iter().enumerate().flat_map(|(index, edge)| {
-        arrowhead_boxes(edge, look_of(lines, &edge.edge.id))
+        arrowhead_boxes(edge, look_of(lines, &edge.edge.id), APPROACH_STRAIGHT)
             .into_iter()
             .map(move |bounds| Keepout {
                 bounds,

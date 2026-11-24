@@ -37,7 +37,7 @@ use super::drawn_lines::{
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passage_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
 
@@ -292,7 +292,7 @@ impl Settling<'_> {
         let runs = &self.scene.runs;
         rise.crossings.iter().all(|&crossing| {
             let beneath = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            passes_beneath(runs, beneath, self.crossings[crossing].point, 1.0, true)
+            passage_beneath(runs, beneath, self.crossings[crossing].point, 1.0).is_clear()
         })
     }
 
@@ -408,7 +408,7 @@ impl Settling<'_> {
         let run = &runs[self.cluster(cluster).run];
         let beneath = &runs[self.sides(cluster, crossing).1.drawer];
         let point = self.crossings[crossing].point;
-        if !passes_beneath(runs, beneath, point, bulge, true) {
+        if !passage_beneath(runs, beneath, point, bulge).is_clear() {
             return false;
         }
         let place = at_on(run, &self.crossings[crossing]);

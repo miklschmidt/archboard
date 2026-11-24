@@ -3,12 +3,14 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use archboard_scene::geometry::Curve;
+use archboard_scene::geometry::{Curve, curve_bounds};
 
 use super::super::clusters::at_on;
 use super::super::crowding::{crowded, crowding, mark_crowding, near_own_head, own_head_crowding};
-use super::super::drawn_lines::{Axis, Run};
-use super::super::hops::{Bulge, Hop, crest_along, flipped, passes_beneath};
+use super::super::drawn_lines::{Axis, Passage, Run, line_runs};
+use super::super::hops::{
+    Bulge, Hop, crest_along, flipped, look_of, overlaps, overlaps_arrowhead, passage_beneath,
+};
 use super::{FULL_ROOM, LEAST_ROOM, Rise, Settling};
 use crate::ecma::{max, min, sign};
 
@@ -244,7 +246,7 @@ impl Settling<'_> {
             let under = &runs[lower.drawer];
             if !self.risers(crossing).contains(&rise.cluster)
                 || self.lead_over(upper, lower).is_none()
-                || !passes_beneath(runs, under, self.crossings[crossing].point, bulge, true)
+                || !passage_beneath(runs, under, self.crossings[crossing].point, bulge).is_clear()
             {
                 return None;
             }
@@ -275,8 +277,8 @@ impl Settling<'_> {
 
     /// How near a hop turned to bulge one way comes to what crowds it, as a share of the clear
     /// space it keeps, its cable's other strands at the place aside. None where it would not
-    /// pass over its lines or where it bulges into a junction mark. A straight line can still
-    /// pass under a turned hop at its end approach, but the turn counts as crowded there.
+    /// pass over its lines or where it touches a card or mark. An end approach counts as
+    /// crowded where the turn has room before the arrowhead.
     fn turned_nearness(
         &self,
         index: usize,
@@ -287,19 +289,33 @@ impl Settling<'_> {
         let rise = &self.stood[index];
         let runs = &self.scene.runs;
         let run = &runs[self.cluster(rise.cluster).run];
-        if mark_crowding(&self.scene, run, curve) <= 1.0 {
+        let bounds = curve_bounds(curve);
+        if mark_crowding(&self.scene, run, curve) <= 1.0
+            || self
+                .scene
+                .drawing
+                .cards
+                .iter()
+                .any(|card| overlaps(bounds, card.bounds))
+        {
             return None;
         }
         let mut approach = f64::INFINITY;
         let mut beneath: Vec<&Run> = Vec::new();
         for &crossing in &rise.crossings {
             let under = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            let point = self.crossings[crossing].point;
-            if !passes_beneath(runs, under, point, bulge, true) {
-                if !passes_beneath(runs, under, point, bulge, false) {
-                    return None;
+            match passage_beneath(runs, under, self.crossings[crossing].point, bulge) {
+                Passage::Interrupted => return None,
+                Passage::Approach => {
+                    if line_runs(runs, under).into_iter().any(|member| {
+                        let edge = &self.edges()[member.edge_index];
+                        overlaps_arrowhead(edge, look_of(self.lines, &edge.edge.id), bounds)
+                    }) {
+                        return None;
+                    }
+                    approach = 1.0;
                 }
-                approach = 1.0;
+                Passage::Clear => {}
             }
             beneath.push(under);
         }
