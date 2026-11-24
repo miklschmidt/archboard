@@ -624,7 +624,16 @@ impl Settling<'_> {
             let runs = &settling.scene.runs;
             let mut crests: Vec<(Rise, Curve)> = Vec::new();
             for (&other, crossed) in &lines {
-                let run = &runs[settling.cluster(other).run];
+                let cluster = settling.cluster(other);
+                let run = &runs[cluster.run];
+                let may_rise = crossed.iter().all(|&(crossing, _)| {
+                    let (upper, lower) = settling.sides(other, crossing);
+                    settling.risers(crossing).contains(&other)
+                        && settling.lead_over(upper, lower).is_some()
+                });
+                if !may_rise {
+                    return None;
+                }
                 let places: Vec<f64> = (crossed.iter())
                     .map(|&(crossing, _)| at_on(run, &settling.crossings[crossing]))
                     .collect();
@@ -642,7 +651,17 @@ impl Settling<'_> {
                         .into_iter()
                         .filter_map(|room| crest_along(runs, run, &places, room, bulge))
                         .find(|curve| {
-                            !crowded(&settling.scene, run, &strands, curve, &pending)
+                            let feet = [curve.from, curve.end()].map(|point| run.axis.of(point));
+                            let low = min(feet);
+                            let high = max(feet);
+                            let spans_other = cluster.crossings.iter().any(|&crossing| {
+                                let at = run.axis.of(settling.crossings[crossing].point);
+                                at > low
+                                    && at < high
+                                    && !crossed.iter().any(|&(covered, _)| covered == crossing)
+                            });
+                            !spans_other
+                                && !crowded(&settling.scene, run, &strands, curve, &pending)
                                 && !near_own_head(&settling.scene, run, curve)
                                 && mark_crowding(&settling.scene, run, curve) > 1.0
                         })
