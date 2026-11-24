@@ -27,6 +27,8 @@ type Piece =
 /** A straight stretch of ink between two points. */
 type Stretch = readonly [DrawnPoint, DrawnPoint];
 
+type DrawnRun = { readonly id: string; readonly stretch: Stretch };
+
 /** Engine coordinates carry floating noise, so a piece straight to the eye is straight here. */
 const STRAIGHT = 0.01;
 
@@ -390,19 +392,42 @@ function cornerOf(box: Box): string {
 }
 
 /**
+ * The straight runs before hops were spliced into them.
+ * @param d The route's painted path.
+ * @returns Each run, with any arcs on it flattened back into the run.
+ */
+function straightRunsOf(d: string): Stretch[] {
+	const pieces = piecesOf(d);
+	const arcs = arcPieces(pieces);
+	const runs: Stretch[] = [];
+	for (let index = 0; index < pieces.length; index++) {
+		const piece = pieces[index]!;
+		if (axisOf(piece) === undefined) continue;
+		while (arcs.has(index + 1)) {
+			do {
+				index++;
+			} while (arcs.has(index + 1));
+			index++;
+		}
+		runs.push([piece.from, pieces[index]!.to]);
+	}
+	return runs;
+}
+
+/**
  * Whether two arc baselines cross the same local cluster on one perpendicular run.
  * A cable can pass over a long run more than once.
  * @param one The first arc.
  * @param other The second arc.
  * @param crossed The straight line under both arcs.
- * @param baselines The drawing's straight runs, including arc baselines.
+ * @param runs The drawing's straight runs, including arc baselines.
  * @returns True when the crossings belong to the same cluster.
  */
 function shareCrossedCluster(
 	one: DrawnArc,
 	other: DrawnArc,
-	crossed: Stretch,
-	baselines: readonly Stretch[],
+	{ id, stretch: crossed }: DrawnRun,
+	runs: readonly DrawnRun[],
 ): boolean {
 	const fixed = one.axis;
 	if (Math.abs(crossed[0][fixed] - crossed[1][fixed]) >= STRAIGHT) return false;
@@ -411,7 +436,9 @@ function shareCrossedCluster(
 	if (first === undefined || second === undefined) return false;
 	const along = fixed === "x" ? "y" : "x";
 	const positions = new Set<number>();
-	for (const stretch of baselines) {
+	for (const run of runs) {
+		if (run.id === id) continue;
+		const { stretch } = run;
 		if (Math.abs(stretch[0][along] - stretch[1][along]) >= STRAIGHT) continue;
 		const at = crossingOf(stretch, crossed);
 		if (at !== undefined) positions.add(at[along]);
@@ -448,8 +475,7 @@ function mixedCableHops(drawing: RenderedDiagram): string[] {
 	const arcs = paths.flatMap(([id, d]) => arcsOf(id, d));
 	if (arcs.length < 2) return [];
 	const cables = cablesOf(drawing);
-	const routes = paths.map(([id, d]) => ({ id, ink: inkOf(d) }));
-	const baselines = routes.flatMap(({ ink }) => ink).concat(arcs.map((arc) => arc.feet));
+	const runs = paths.flatMap(([id, d]) => straightRunsOf(d).map((stretch) => ({ id, stretch })));
 	const found: string[] = [];
 	for (const [index, one] of arcs.entries())
 		for (const other of arcs.slice(index + 1)) {
@@ -460,11 +486,9 @@ function mixedCableHops(drawing: RenderedDiagram): string[] {
 				one.side === other.side
 			)
 				continue;
-			const shared = routes.some(
-				({ id, ink }) =>
-					id !== one.id &&
-					id !== other.id &&
-					ink.some((stretch) => shareCrossedCluster(one, other, stretch, baselines)),
+			const shared = runs.some(
+				(run) =>
+					run.id !== one.id && run.id !== other.id && shareCrossedCluster(one, other, run, runs),
 			);
 			if (shared) found.push(`${one.id} and ${other.id} bulging apart at ${cornerOf(one.box)}`);
 		}

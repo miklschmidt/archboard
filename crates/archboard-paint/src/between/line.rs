@@ -11,7 +11,7 @@
 //! morphed beside it, the two cross-fading. A swipe that appears or disappears
 //! morphs with the stroke, fading in or out.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_scene::geometry::{Point, Rect, round_coord, route_tolerance};
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
@@ -321,8 +321,14 @@ impl TargetImprints {
                 .collect::<Vec<_>>()
         };
         let (old, next) = (marks(before), marks(after));
-        let arrival = |group| outline_of(group).and_then(|path| crate::path::end_of(&path, false));
-        let moves = !(old.is_empty() && next.is_empty()) && arrival(before) != arrival(after);
+        let arrival =
+            |group| outline_of(group).and_then(|path| path.elements().last()?.end_point());
+        let moves = !old.is_empty()
+            && match (arrival(before), arrival(after)) {
+                // Rounded scene coordinates can differ by a hundredth at the same port.
+                (Some(from), Some(to)) => round_coord(from.distance(to)) > route_tolerance(),
+                (from, to) => from != to,
+            };
         Self { old, next, moves }
     }
 

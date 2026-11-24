@@ -65,3 +65,13 @@ fn a_carried_mutation_leaves_its_old_marks_and_lands_its_new_ones() {
         assert_eq!(imprints(&between.at(t.move_end)), imprints(&next.body));
     }
 }
+
+#[test]
+fn rounding_at_the_target_does_not_hide_a_carried_mutations_marks() {
+    let from = mutation(0.0, 100.0);
+    let to = mutation(6.0, 100.01);
+    let t = PHASES.transition;
+    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    assert_eq!(imprints(&between.at(t.fade_start)), imprints(&from.body));
+    assert_eq!(imprints(&between.at(t.fade_end)), imprints(&to.body));
+}

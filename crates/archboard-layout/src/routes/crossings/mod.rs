@@ -292,7 +292,7 @@ impl Settling<'_> {
         let runs = &self.scene.runs;
         rise.crossings.iter().all(|&crossing| {
             let beneath = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            passes_beneath(runs, beneath, self.crossings[crossing].point, 1.0)
+            passes_beneath(runs, beneath, self.crossings[crossing].point, 1.0, true)
         })
     }
 
@@ -408,7 +408,7 @@ impl Settling<'_> {
         let run = &runs[self.cluster(cluster).run];
         let beneath = &runs[self.sides(cluster, crossing).1.drawer];
         let point = self.crossings[crossing].point;
-        if !passes_beneath(runs, beneath, point, bulge) {
+        if !passes_beneath(runs, beneath, point, bulge, true) {
             return false;
         }
         let place = at_on(run, &self.crossings[crossing]);

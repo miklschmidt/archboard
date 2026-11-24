@@ -411,3 +411,19 @@ fn a_lifted_crest_matches_the_standing_hop_of_its_cable() {
         [("2", vec!["0", "1"], 0.0), ("3", vec!["0", "1"], 0.0)]
     );
 }
+
+#[test]
+fn a_cable_hops_one_way_across_a_lines_end_approach() {
+    let mut cable = drawing(&[down(50.0), down(58.0), across_from(50.0, 86.0, -100.0)]);
+    cable.edges[1].edge.from = cable.edges[0].edge.from.clone();
+    cable.edges[1].edge.to = cable.edges[0].edge.to.clone();
+    let riders = BTreeMap::from([("1".to_owned(), "0".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+
+    let hops = hops_of(&result.bridges);
+    assert_eq!(hops.len(), 2);
+    assert!(hops.iter().all(|hop| hop.under == ["2"]));
+    let bulges_left = |hop| super::bulge_of(hop).0 < 0.0;
+    assert_eq!(bulges_left(hops[0]), bulges_left(hops[1]));
+    assert_eq!(result.edges[2].curve, cable.edges[2].curve);
+}
