@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_whole};
+use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_at_bend};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -380,12 +380,10 @@ pub(super) fn shared_fragment(
 const DETOUR_LIMIT: f64 = 2.5;
 
 /// How far a cable stands its strands out on each side of a run's end bends: its fan on a first
-/// or last run that fans out whole (`constants::fans_whole`), its body elsewhere, where an end run
+/// or last run that fans out whole (`constants::fans_at_bend`), its body elsewhere, where an end run
 /// steps its strands out only at its apron.
-fn out_of(points: &[Point], run: usize, (half, reach): (f64, f64)) -> f64 {
-    let runs = points.len() - 1;
-    let at_end = run == 0 || run + 1 == runs;
-    if at_end && fans_whole(length(&points[run..run + 2]), half, reach) {
+fn out_of(run: usize, runs: usize, (half, reach): (f64, f64), [first, last]: [bool; 2]) -> f64 {
+    if (run == 0 && first) || (run + 1 == runs && last) {
         reach
     } else {
         half
@@ -400,8 +398,9 @@ pub(super) fn approaches(points: &[Point], ink: (f64, f64)) -> bool {
     if runs <= 1 {
         return points.len() < 2 || length(points) >= STRAIGHT_RUN;
     }
-    length(&points[..2]) >= approach_of(out_of(points, 1, ink))
-        && length(&points[runs - 1..]) >= approach_of(out_of(points, runs - 2, ink))
+    let spread = fans_at_bend(points, ink);
+    length(&points[..2]) >= approach_of(out_of(1, runs, ink, spread))
+        && length(&points[runs - 1..]) >= approach_of(out_of(runs - 2, runs, ink, spread))
 }
 
 /// Whether a cable keeps every strand the right way round: between two bends that turn the same
@@ -414,13 +413,14 @@ fn turns_clear(points: &[Point], ink: (f64, f64)) -> bool {
         let (a, b, c) = (points[at - 1], points[at], points[at + 1]);
         ((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)).signum()
     };
-    let last = points.len().saturating_sub(2);
+    let runs = points.len() - 1;
+    let spread = fans_at_bend(points, ink);
     ink.0 == 0.0
-        || (1..last).all(|at| {
+        || (1..runs.saturating_sub(1)).all(|at| {
             turn(at) != turn(at + 1)
                 || length(&points[at..at + 2])
-                    >= out_of(points, at - 1, ink)
-                        + out_of(points, at + 1, ink)
+                    >= out_of(at - 1, runs, ink, spread)
+                        + out_of(at + 1, runs, ink, spread)
                         + 2.0 * BEND_RADIUS
                         + STRAND
         })
@@ -558,6 +558,44 @@ fn basic(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_inner_strand_has_room_at_a_bend_where_the_fan_spreads() {
+        let source = Rect {
+            x: 60.0,
+            y: 160.0,
+            width: 80.0,
+            height: 40.0,
+        };
+        let bounds = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 400.0,
+            height: 400.0,
+        };
+        let refusal = |across: f64| {
+            let target = Rect {
+                x: source.x + across,
+                y: 70.0,
+                ..source
+            };
+            let points = [
+                Point { x: 100.0, y: 200.0 },
+                Point { x: 100.0, y: 290.0 },
+                Point {
+                    x: 100.0 + across,
+                    y: 290.0,
+                },
+                Point {
+                    x: 100.0 + across,
+                    y: 110.0,
+                },
+            ];
+            basic((&points, (16.0, 32.0)), source, target, bounds)
+        };
+        assert_eq!(refusal(56.0), Some("approach"));
+        assert_eq!(refusal(72.0), None);
+    }
 
     #[test]
     fn a_lone_line_cannot_take_a_detour_around_the_page() {
