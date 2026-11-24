@@ -312,24 +312,26 @@ fn around_routes(
     }
 }
 
-/// Collect the reachable values from sorted `values` into `out` ordered by distance from `from`,
-/// preserving the original ascending order on exact distance ties (matching `sort_by`).
+/// Collect reachable coordinates, already sorted and free of NaNs, in order of distance from
+/// `from`. Equal distances keep coordinate order.
 fn nearest_within(values: &[f64], from: f64, (low, high): (f64, f64), out: &mut Vec<f64>) {
     out.clear();
-    let Some((lo, hi)) = reach_window((low, high), from) else {
-        return;
-    };
-    let start = values.partition_point(|&v| v < lo);
-    let end = start + values[start..].partition_point(|&v| v <= hi);
-    let slice = &values[start..end];
-    if slice.is_empty() {
+    let reached = |v: f64| if v < from { v >= low } else { v <= high };
+    let distance = |v: f64| (v - from).abs();
+    if !from.is_finite() {
+        // Non-finite distances need the original stable sort, since inf - inf is NaN.
+        out.extend(values.iter().copied().filter(|&v| reached(v)));
+        out.sort_by(|&a, &b| distance(a).total_cmp(&distance(b)));
         return;
     }
-    let split = slice.partition_point(|&v| v < from);
+    let split = values.partition_point(|&v| v < from);
+    let start = values[..split].partition_point(|&v| !reached(v));
+    let end = split + values[split..].partition_point(|&v| reached(v));
+    let slice = &values[start..end];
+    let split = split - start;
     let mut left = split;
     let mut right = split;
     out.reserve(slice.len());
-    let distance = |v: f64| (v - from).abs();
     while left > 0 {
         let nearest = distance(slice[left - 1]);
         while right < slice.len() && distance(slice[right]).total_cmp(&nearest).is_lt() {
@@ -449,5 +451,27 @@ mod tests {
         let mut nearest = Vec::new();
         nearest_within(&values, 512.0, (32.0, 992.0), &mut nearest);
         assert_eq!(nearest, [448.0, 576.0, 32.0, 32.0_f64.next_up(), 992.0]);
+    }
+
+    #[test]
+    fn nearest_corridors_match_the_original_reach_filter_and_sort() {
+        let values = [f64::NEG_INFINITY, -1.0, -0.0, 0.0, 1.0, f64::INFINITY];
+        let mut nearest = Vec::new();
+        for (from, low, high) in [
+            (0.0, -1.0, -1.0),
+            (0.0, -1.0, f64::NAN),
+            (0.0, f64::NAN, 1.0),
+            (f64::NAN, 1.0, 1.0),
+            (f64::NEG_INFINITY, f64::NEG_INFINITY, f64::INFINITY),
+            (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY),
+        ] {
+            let mut expected: Vec<_> = values
+                .into_iter()
+                .filter(|&v| if v < from { v >= low } else { v <= high })
+                .collect();
+            expected.sort_by(|a, b| (a - from).abs().total_cmp(&(b - from).abs()));
+            nearest_within(&values, from, (low, high), &mut nearest);
+            assert_eq!(nearest, expected, "from {from}, reach {low} to {high}");
+        }
     }
 }
