@@ -708,8 +708,8 @@ impl Settling<'_> {
     }
 
     /// How near a hop turned to bulge one way comes to what crowds it, as a share of the clear
-    /// space it keeps, its cable's other strands at the place aside; None where it would not
-    /// pass over its lines.
+    /// space it keeps, its cable's other strands at the place aside. None where it would not
+    /// pass over its lines or where it bulges into a junction mark.
     fn turned_nearness(
         &self,
         index: usize,
@@ -720,6 +720,9 @@ impl Settling<'_> {
         let rise = &self.stood[index];
         let runs = &self.scene.runs;
         let run = &runs[self.cluster(rise.cluster).run];
+        if mark_crowding(&self.scene, run, curve) <= 1.0 {
+            return None;
+        }
         let mut beneath: Vec<&Run> = Vec::new();
         for &crossing in &rise.crossings {
             let under = &runs[self.sides(rise.cluster, crossing).1.drawer];
@@ -729,11 +732,10 @@ impl Settling<'_> {
             beneath.push(under);
         }
         beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
-        Some(min([
+        Some(f64::min(
             crowding(&self.scene, run, &beneath, curve, &[]),
             own_head_crowding(&self.scene, run, curve),
-            mark_crowding(&self.scene, run, curve),
-        ]))
+        ))
     }
 
     /// Which of a crossing's two lines would stay whole: a line that joins or
