@@ -235,14 +235,26 @@ fn beside(words: &CardWords<'_>) -> f64 {
     tags_beside(tags_width(&names, 1.0))
 }
 
-/// A card's words stood in the box the layout gave it: wrapped at its width,
-/// its path at its foot, and, with no path, its words in the middle. A layout
-/// can widen a card or make it taller than its least box, and the words fill
-/// the box it gets.
+/// A card's words in the box the layout gave it: wrapped at its width, where
+/// its least box stands them, and its path at its foot. A layout can widen a
+/// card or make it taller than its least box. The words stay where they stand,
+/// so the far view, whose words start at the chip, keeps its room.
 pub fn fit_card<N>(node: N, words: &CardWords<'_>, width: f64, height: f64) -> MeasuredNode<N> {
     let title = paragraph(words.name, TITLE.font, TITLE.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
-    stand(node, words, (&title, &note), width, height)
+    let least = stand(node, words, (&title, &note), width, CARD_HEIGHT);
+    let grown = height - least.height;
+    let at_foot = |run: &TextRun| matches!(run.role, TextRole::Folder | TextRole::File);
+    MeasuredNode {
+        height,
+        runs: (least.runs.into_iter())
+            .map(|run| TextRun {
+                y: run.y + if at_foot(&run) { grown } else { 0.0 },
+                ..run
+            })
+            .collect(),
+        ..least
+    }
 }
 
 /// A card's slab at a width, at least as tall as `least`: its name and
@@ -357,7 +369,7 @@ mod tests {
     }
 
     #[test]
-    fn a_card_the_layout_widens_and_raises_fills_its_box_with_its_words() {
+    fn a_card_the_layout_widens_and_raises_wraps_at_its_width_and_keeps_its_words_in_place() {
         let words = |path| CardWords {
             name: "Packages",
             responsibility: Some(
@@ -389,7 +401,7 @@ mod tests {
         let least = measure_node((), &plain, false);
         let wide = fit_card((), &plain, 560.0, least.height);
         let tall = fit_card((), &plain, 560.0, least.height + 40.0);
-        assert_eq!(tall.runs[0].y, wide.runs[0].y + 20.0);
+        assert_eq!(tall.runs[0].y, wide.runs[0].y);
     }
 
     #[test]
