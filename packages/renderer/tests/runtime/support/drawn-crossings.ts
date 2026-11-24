@@ -11,6 +11,7 @@
 
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import type { DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
+import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
 
 /** One command of a route's path: a straight piece or a cubic curve. */
 type Piece =
@@ -371,4 +372,29 @@ function cornerOf(box: Box): string {
 	return `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
 }
 
-export { crowdedArcs, unbridgedCrossings };
+/**
+ * Every place where the strands of one cable hop over the same crossing and their arcs do not
+ * all bulge to one side: the hops of a cable read as one parallel set, never as a tube with one
+ * arc turned out.
+ * @param drawing The rendered document.
+ * @returns Each such place, by the two strands and where.
+ */
+function mixedCableHops(drawing: RenderedDiagram): string[] {
+	const cables = cablesOf(drawing);
+	const arcs = [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d));
+	const found: string[] = [];
+	for (const [index, one] of arcs.entries())
+		for (const other of arcs.slice(index + 1)) {
+			const strands = cables.get(one.id) ?? [one.id];
+			if (other.id === one.id || !strands.includes(other.id) || one.axis !== other.axis) continue;
+			const [low, high] = one.axis === "x" ? ["x0", "x1"] : ["y0", "y1"];
+			const overlap =
+				Math.min(one.box[high as keyof Box], other.box[high as keyof Box]) -
+				Math.max(one.box[low as keyof Box], other.box[low as keyof Box]);
+			if (overlap > 0 && one.side !== other.side)
+				found.push(`${one.id} and ${other.id} bulging apart at ${cornerOf(one.box)}`);
+		}
+	return found;
+}
+
+export { crowdedArcs, mixedCableHops, unbridgedCrossings };

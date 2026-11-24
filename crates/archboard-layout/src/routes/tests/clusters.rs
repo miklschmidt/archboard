@@ -293,3 +293,29 @@ fn a_crossing_a_crest_would_touch_is_one_cluster_with_the_crests_crossings() {
         }
     }
 }
+
+// Owner's crop of the root reading: where a ribbon of strands hopped another cable, every strand
+// arched one way but the outermost, which arched out the other way, so the set read as a tube.
+#[test]
+fn every_strand_of_a_cable_hopping_a_crossing_bulges_the_same_way() {
+    // A ribbon of four strands down, eight apart, crossing a ribbon of four strands across.
+    let mut routes: Vec<_> = (0..4)
+        .map(|at| across_from(50.0 + 8.0 * f64::from(at), -100.0, 200.0))
+        .collect();
+    routes.extend((0..4).map(|at| down_from(40.0 + 8.0 * f64::from(at), -100.0, 200.0)));
+    let mut cables = drawing(&routes);
+    let mut riders = BTreeMap::new();
+    for at in [1, 2, 3, 5, 6, 7] {
+        let leader = if at < 4 { 0 } else { 4 };
+        cables.edges[at].edge.from = cables.edges[leader].edge.from.clone();
+        cables.edges[at].edge.to = cables.edges[leader].edge.to.clone();
+        riders.insert(at.to_string(), leader.to_string());
+    }
+    let result = bridge_crossings(&cables, &lines_of(&cables), &riders);
+    let sides: Vec<bool> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|bridge| super::bulge_of(bridge).1 > 0.0)
+        .collect();
+    assert_eq!(sides.len(), 4);
+    assert!(sides.iter().all(|&side| side == sides[0]), "{sides:?}");
+}

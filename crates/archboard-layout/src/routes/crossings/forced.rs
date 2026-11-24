@@ -301,7 +301,7 @@ impl Settling<'_> {
 
     /// What a look at the drawing finds with some standing hops, by their
     /// index, taken down.
-    fn without<T>(&mut self, hops: &[usize], look: impl FnOnce(&Self) -> T) -> T {
+    pub(super) fn without<T>(&mut self, hops: &[usize], look: impl FnOnce(&Self) -> T) -> T {
         if hops.is_empty() {
             return look(self);
         }
