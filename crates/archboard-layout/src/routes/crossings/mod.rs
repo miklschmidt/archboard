@@ -482,16 +482,19 @@ impl Settling<'_> {
         }
     }
 
-    /// Which line a hop stands on is a cable's strand, by the cable's leading line, if it is one.
-    fn cable_of(&self, hop: usize) -> Option<&String> {
-        let run = &self.scene.runs[self.cluster(self.stood[hop].cluster).run];
+    /// The cable to which a cluster's line belongs, by the cable's leading line.
+    fn cable_of(&self, cluster: usize) -> Option<&str> {
+        let run = &self.scene.runs[self.cluster(cluster).run];
         let id = &self.edges()[run.edge_index].edge.id;
-        self.riders.get(id).or_else(|| {
-            self.riders
-                .values()
-                .any(|leader| leader == id)
-                .then_some(id)
-        })
+        self.riders
+            .get(id)
+            .or_else(|| {
+                self.riders
+                    .values()
+                    .any(|leader| leader == id)
+                    .then_some(id)
+            })
+            .map(String::as_str)
     }
 
     /// Make the hops of a cable's strands over one place all bulge the same way, so they read
@@ -520,7 +523,7 @@ impl Settling<'_> {
         let mut by_crossing = BTreeMap::new();
         let mut links = vec![Vec::new(); self.stood.len()];
         for (index, rise) in self.stood.iter().enumerate() {
-            let Some(leader) = self.cable_of(index) else {
+            let Some(leader) = self.cable_of(rise.cluster) else {
                 continue;
             };
             for &crossing in &rise.crossings {
@@ -606,74 +609,46 @@ impl Settling<'_> {
     /// rises over the whole ribbon instead, under one crest, the usual way or else the other.
     /// True when every such crest stands; the place's hops are then to come down.
     fn over_ribbon(&mut self, place: &[usize]) -> bool {
-        let rises: Vec<Rise> = place
-            .iter()
-            .map(|&index| self.stood[index].clone())
-            .collect();
-        // The crossings each line beneath the ribbon passes, by that line's cluster.
-        let mut lines: BTreeMap<usize, Vec<(usize, usize)>> = BTreeMap::new();
-        for rise in &rises {
+        let mut lines = BTreeMap::<usize, Vec<usize>>::new();
+        for &index in place {
+            let rise = &self.stood[index];
             for &crossing in &rise.crossings {
                 lines
                     .entry(self.other_cluster(rise.cluster, crossing))
                     .or_default()
-                    .push((crossing, self.cluster(rise.cluster).run));
+                    .push(crossing);
             }
         }
+        let mut bundles = BTreeMap::<_, Vec<Rise>>::new();
+        for (cluster, crossings) in lines {
+            let cable = self.cable_of(cluster);
+            let group = (cable, cable.is_none().then_some(cluster));
+            bundles
+                .entry(group)
+                .or_default()
+                .push(Rise { cluster, crossings });
+        }
+        let bundles: Vec<_> = bundles.into_values().collect();
         let crests = self.without(place, |settling| {
             let runs = &settling.scene.runs;
-            let mut crests: Vec<(Rise, Curve)> = Vec::new();
-            for (&other, crossed) in &lines {
-                let cluster = settling.cluster(other);
-                let run = &runs[cluster.run];
-                let may_rise = crossed.iter().all(|&(crossing, _)| {
-                    let (upper, lower) = settling.sides(other, crossing);
-                    settling.risers(crossing).contains(&other)
-                        && settling.lead_over(upper, lower).is_some()
-                });
-                if !may_rise {
-                    return None;
-                }
-                let places: Vec<f64> = (crossed.iter())
-                    .map(|&(crossing, _)| at_on(run, &settling.crossings[crossing]))
+            let mut crests = Vec::new();
+            let mut pending = Vec::new();
+            for bundle in bundles {
+                let siblings: Vec<_> = bundle
+                    .iter()
+                    .map(|rise| &runs[settling.cluster(rise.cluster).run])
                     .collect();
-                let strands: Vec<&Run> = crossed.iter().map(|&(_, strand)| &runs[strand]).collect();
-                let pending: Vec<Hop> = (crests.iter())
-                    .map(|(_, curve)| Hop::new(curve.clone(), run.axis))
-                    .collect();
-                let curve = [1.0, -1.0].into_iter().find_map(|bulge| {
-                    let beneath = (crossed.iter()).all(|&(crossing, strand)| {
-                        let point = settling.crossings[crossing].point;
-                        passes_beneath(runs, &runs[strand], point, bulge)
-                    });
-                    beneath.then_some(())?;
-                    [FULL_ROOM, LEAST_ROOM]
-                        .into_iter()
-                        .filter_map(|room| crest_along(runs, run, &places, room, bulge))
-                        .find(|curve| {
-                            let feet = [curve.from, curve.end()].map(|point| run.axis.of(point));
-                            let low = min(feet);
-                            let high = max(feet);
-                            let spans_other = cluster.crossings.iter().any(|&crossing| {
-                                let at = run.axis.of(settling.crossings[crossing].point);
-                                at > low
-                                    && at < high
-                                    && !crossed.iter().any(|&(covered, _)| covered == crossing)
-                            });
-                            !spans_other
-                                && !crowded(&settling.scene, run, &strands, curve, &pending)
-                                && !near_own_head(&settling.scene, run, curve)
-                                && mark_crowding(&settling.scene, run, curve) > 1.0
-                        })
+                let curves = [1.0, -1.0].into_iter().find_map(|bulge| {
+                    bundle
+                        .iter()
+                        .map(|rise| settling.ribbon_crest(rise, bulge, &siblings, &pending))
+                        .collect::<Option<Vec<_>>>()
                 })?;
-                let crossings = crossed.iter().map(|&(crossing, _)| crossing).collect();
-                crests.push((
-                    Rise {
-                        cluster: other,
-                        crossings,
-                    },
-                    curve,
-                ));
+                for (rise, curve) in bundle.into_iter().zip(curves) {
+                    let axis = runs[settling.cluster(rise.cluster).run].axis;
+                    pending.push(Hop::new(curve.clone(), axis));
+                    crests.push((rise, curve));
+                }
             }
             Some(crests)
         });
@@ -684,6 +659,52 @@ impl Settling<'_> {
             self.stand(&rise, curve);
         }
         true
+    }
+
+    /// A replacement crest on one side of the cable, where the whole rise fits.
+    fn ribbon_crest(
+        &self,
+        rise: &Rise,
+        bulge: Bulge,
+        siblings: &[&Run],
+        pending: &[Hop],
+    ) -> Option<Curve> {
+        let runs = &self.scene.runs;
+        let cluster = self.cluster(rise.cluster);
+        let run = &runs[cluster.run];
+        let mut beneath = siblings.to_vec();
+        for &crossing in &rise.crossings {
+            let (upper, lower) = self.sides(rise.cluster, crossing);
+            let under = &runs[lower.drawer];
+            if !self.risers(crossing).contains(&rise.cluster)
+                || self.lead_over(upper, lower).is_none()
+                || !passes_beneath(runs, under, self.crossings[crossing].point, bulge)
+            {
+                return None;
+            }
+            beneath.push(under);
+        }
+        let places: Vec<f64> = rise
+            .crossings
+            .iter()
+            .map(|&crossing| at_on(run, &self.crossings[crossing]))
+            .collect();
+        [FULL_ROOM, LEAST_ROOM]
+            .into_iter()
+            .filter_map(|room| crest_along(runs, run, &places, room, bulge))
+            .find(|curve| {
+                let feet = [curve.from, curve.end()].map(|point| run.axis.of(point));
+                let low = min(feet);
+                let high = max(feet);
+                let spans_other = cluster.crossings.iter().any(|crossing| {
+                    let at = run.axis.of(self.crossings[*crossing].point);
+                    at > low && at < high && !rise.crossings.contains(crossing)
+                });
+                !spans_other
+                    && !crowded(&self.scene, run, &beneath, curve, pending)
+                    && !near_own_head(&self.scene, run, curve)
+                    && mark_crowding(&self.scene, run, curve) > 1.0
+            })
     }
 
     /// How near a hop turned to bulge one way comes to what crowds it, as a share of the clear
