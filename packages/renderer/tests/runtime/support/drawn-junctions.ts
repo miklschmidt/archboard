@@ -93,7 +93,12 @@ function junctionKnots(drawing: Pick<RenderedDiagram, "svg">): DrawnPoint[][] {
 	const knots: DrawnPoint[][] = [];
 	for (const [index, mark] of marks.entries()) {
 		for (const other of marks.slice(index + 1)) {
-			const apart = Math.min(distanceTo(mark[0], other), distanceTo(mark[1], other));
+			// Each mark's ends against the other's bar, both ways round, so the order the marks
+			// were drawn in does not matter.
+			const apart = Math.min(
+				...mark.map((end) => distanceTo(end, other)),
+				...other.map((end) => distanceTo(end, mark)),
+			);
 			if (apart < KNOT) knots.push([mark[0], other[0]]);
 		}
 	}
