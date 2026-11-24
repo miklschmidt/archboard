@@ -30,16 +30,17 @@ use crate::constants::BEND_RADIUS;
 use crate::ecma::{js_min, max, min, round, sign, sorted_by};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
-use super::crowding::{crowded, near_own_head};
+use super::crowding::{crowded, crowding, near_own_head, own_head_crowding};
 use super::drawn_lines::{
-    DrawnCrossing, Edges, Line, drawn_crossings, join_near, piece_of, straight_runs, straightness,
-    weight,
+    Axis, DrawnCrossing, Edges, Line, Run, drawn_crossings, join_near, piece_of, straight_runs,
+    straightness, weight,
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, flipped, look_of, passes_beneath,
+    replace_runs,
 };
-use super::{BRIDGE_RADIUS, LineLook};
+use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
 
 mod forced;
 
@@ -481,6 +482,238 @@ impl Settling<'_> {
         }
     }
 
+    /// Which line a hop stands on is a cable's strand, by the cable's leading line, if it is one.
+    fn cable_of(&self, hop: usize) -> Option<&String> {
+        let run = &self.scene.runs[self.cluster(self.stood[hop].cluster).run];
+        let id = &self.edges()[run.edge_index].edge.id;
+        self.riders.get(id).or_else(|| {
+            self.riders
+                .values()
+                .any(|leader| leader == id)
+                .then_some(id)
+        })
+    }
+
+    /// Make the hops of a cable's strands over one place all bulge the same way, so they read
+    /// as one ribbon passing over, never as a tube with its outer strand turned out. The place
+    /// turns to a way where no turned hop is crowded, the way most of them bulge first (the
+    /// usual way between equals); else each line its hops pass over rises over the ribbon
+    /// instead; else it turns to the way that crowds least, as a lone hop with no clear way does
+    /// (`force`). A hop turns only where the lines beneath still pass under it, and its own
+    /// cable's strands never crowd it.
+    fn align_cables(&mut self) {
+        let mut gone: Vec<usize> = Vec::new();
+        for place in self.cable_places() {
+            if self.align(&place) {
+                gone.extend(place);
+            }
+        }
+        let stood = std::mem::take(&mut self.stood);
+        let hops = std::mem::take(&mut self.scene.hops);
+        (self.stood, self.scene.hops) = (stood.into_iter().zip(hops).enumerate())
+            .filter(|(index, _)| !gone.contains(index))
+            .map(|(_, pair)| pair)
+            .unzip();
+    }
+
+    /// The hops of each cable's strands by place: hops on one axis that stand near enough along
+    /// it to crowd each other.
+    fn cable_places(&self) -> Vec<Vec<usize>> {
+        let span = |index: usize| {
+            let Hop { axis, bounds, .. } = &self.scene.hops[index];
+            match axis {
+                Axis::X => [bounds.x, bounds.x + bounds.width],
+                Axis::Y => [bounds.y, bounds.y + bounds.height],
+            }
+        };
+        let mut hops: Vec<(&String, bool, usize)> = (0..self.scene.hops.len())
+            .filter_map(|index| {
+                let across = self.scene.hops[index].axis == Axis::X;
+                Some((self.cable_of(index)?, across, index))
+            })
+            .collect();
+        hops.sort_by(|a, b| {
+            (a.0, a.1)
+                .cmp(&(b.0, b.1))
+                .then(span(a.2)[0].total_cmp(&span(b.2)[0]))
+        });
+        let mut places: Vec<Vec<usize>> = Vec::new();
+        let mut last: Option<(&String, bool, f64)> = None;
+        for (leader, across, index) in hops {
+            let [low, high] = span(index);
+            match (last, places.last_mut()) {
+                (Some((before, was, end)), Some(place))
+                    if (before, was) == (leader, across) && low <= end + 2.0 * BRIDGE_CLEARANCE =>
+                {
+                    place.push(index);
+                    last = Some((leader, across, end.max(high)));
+                }
+                _ => {
+                    places.push(vec![index]);
+                    last = Some((leader, across, high));
+                }
+            }
+        }
+        places
+    }
+
+    /// Make the hops of one place of a cable bulge one way (`align_cables`). True where the
+    /// lines they pass over rose over the ribbon instead, so the place's hops are to come down.
+    fn align(&mut self, place: &[usize]) -> bool {
+        let turnings = self.turnings(place);
+        if let Some((turned, _)) = turnings.iter().find(|(_, nearest)| *nearest > 1.0) {
+            self.turn(turned);
+            return false;
+        }
+        if self.over_ribbon(place) {
+            return true;
+        }
+        let least = (turnings.iter()).reduce(|best, one| if one.1 > best.1 { one } else { best });
+        if let Some((turned, _)) = least {
+            self.turn(turned);
+        }
+        false
+    }
+
+    /// The ways the hops of one place of a cable could all bulge one way (`align_cables`), the
+    /// way most of them bulge first: the hops to turn, each with its turned curve, and how near
+    /// the most crowded of them comes to what crowds it. None where the place bulges one way
+    /// already; a way leaves out where a turned hop would not pass over its lines.
+    fn turnings(&mut self, place: &[usize]) -> Vec<(Vec<(usize, Curve)>, f64)> {
+        let sides: Vec<Bulge> = (place.iter())
+            .map(|&index| bulge_of(&self.scene.hops[index]))
+            .collect();
+        let up = sides.iter().filter(|&&one| one > 0.0).count();
+        if up == 0 || up == sides.len() {
+            return Vec::new();
+        }
+        let first = if 2 * up >= sides.len() { 1.0 } else { -1.0 };
+        let runs: Vec<usize> = (place.iter())
+            .map(|&index| self.cluster(self.stood[index].cluster).run)
+            .collect();
+        let flips: Vec<Curve> = (place.iter())
+            .map(|&index| flipped(&self.scene.hops[index]))
+            .collect();
+        self.without(place, |settling| {
+            [first, -first]
+                .into_iter()
+                .filter_map(|bulge| {
+                    let mut nearest = f64::INFINITY;
+                    let turned = (place.iter().zip(&sides).zip(&flips))
+                        .filter(|&((_, &now), _)| now != bulge)
+                        .map(|((&index, _), curve)| {
+                            let curve = curve.clone();
+                            let near = settling.turned_nearness(index, &curve, bulge, &runs)?;
+                            nearest = nearest.min(near);
+                            Some((index, curve))
+                        })
+                        .collect::<Option<Vec<_>>>()?;
+                    Some((turned, nearest))
+                })
+                .collect()
+        })
+    }
+
+    /// Stand turned hops in place of theirs.
+    fn turn(&mut self, turned: &[(usize, Curve)]) {
+        for (index, curve) in turned {
+            let axis = self.scene.hops[*index].axis;
+            self.scene.hops[*index] = Hop::new(curve.clone(), axis);
+        }
+    }
+
+    /// Where the hops of one place of a cable cannot all bulge one way, each line they pass over
+    /// rises over the whole ribbon instead, under one crest, the usual way or else the other.
+    /// True when every such crest stands; the place's hops are then to come down.
+    fn over_ribbon(&mut self, place: &[usize]) -> bool {
+        let rises: Vec<Rise> = place
+            .iter()
+            .map(|&index| self.stood[index].clone())
+            .collect();
+        // The crossings each line beneath the ribbon passes, by that line's cluster.
+        let mut lines: BTreeMap<usize, Vec<(usize, usize)>> = BTreeMap::new();
+        for rise in &rises {
+            for &crossing in &rise.crossings {
+                lines
+                    .entry(self.other_cluster(rise.cluster, crossing))
+                    .or_default()
+                    .push((crossing, self.cluster(rise.cluster).run));
+            }
+        }
+        let crests = self.without(place, |settling| {
+            let runs = &settling.scene.runs;
+            let mut crests: Vec<(Rise, Curve)> = Vec::new();
+            for (&other, crossed) in &lines {
+                let run = &runs[settling.cluster(other).run];
+                let places: Vec<f64> = (crossed.iter())
+                    .map(|&(crossing, _)| at_on(run, &settling.crossings[crossing]))
+                    .collect();
+                let strands: Vec<&Run> = crossed.iter().map(|&(_, strand)| &runs[strand]).collect();
+                let pending: Vec<Hop> = (crests.iter())
+                    .map(|(_, curve)| Hop::new(curve.clone(), run.axis))
+                    .collect();
+                let curve = [1.0, -1.0].into_iter().find_map(|bulge| {
+                    let beneath = (crossed.iter()).all(|&(crossing, strand)| {
+                        let point = settling.crossings[crossing].point;
+                        passes_beneath(runs, &runs[strand], point, bulge)
+                    });
+                    beneath.then_some(())?;
+                    [FULL_ROOM, LEAST_ROOM]
+                        .into_iter()
+                        .filter_map(|room| crest_along(runs, run, &places, room, bulge))
+                        .find(|curve| {
+                            !crowded(&settling.scene, run, &strands, curve, &pending)
+                                && !near_own_head(&settling.scene, run, curve)
+                        })
+                })?;
+                let crossings = crossed.iter().map(|&(crossing, _)| crossing).collect();
+                crests.push((
+                    Rise {
+                        cluster: other,
+                        crossings,
+                    },
+                    curve,
+                ));
+            }
+            Some(crests)
+        });
+        let Some(crests) = crests else {
+            return false;
+        };
+        for (rise, curve) in crests {
+            self.stand(&rise, curve);
+        }
+        true
+    }
+
+    /// How near a hop turned to bulge one way comes to what crowds it, as a share of the clear
+    /// space it keeps, its cable's other strands at the place aside; None where it would not
+    /// pass over its lines.
+    fn turned_nearness(
+        &self,
+        index: usize,
+        curve: &Curve,
+        bulge: Bulge,
+        siblings: &[usize],
+    ) -> Option<f64> {
+        let rise = &self.stood[index];
+        let runs = &self.scene.runs;
+        let run = &runs[self.cluster(rise.cluster).run];
+        let mut beneath: Vec<&Run> = Vec::new();
+        for &crossing in &rise.crossings {
+            let under = &runs[self.sides(rise.cluster, crossing).1.drawer];
+            if !passes_beneath(runs, under, self.crossings[crossing].point, bulge) {
+                return None;
+            }
+            beneath.push(under);
+        }
+        beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
+        Some(f64::min(
+            crowding(&self.scene, run, &beneath, curve, &[]),
+            own_head_crowding(&self.scene, run, curve),
+        ))
+    }
+
     /// Which of a crossing's two lines would stay whole: a line that joins or
     /// parts there, since cutting it would sever the join from its mark; else
     /// the weightier, the solid, the one that runs straighter through the
@@ -525,6 +758,15 @@ fn unique<T: PartialEq>(values: Vec<T>) -> Vec<T> {
     kept
 }
 
+/// Which way a hop bulges: 1 up from a line across or right of a line down, -1 the other way.
+fn bulge_of(hop: &Hop) -> Bulge {
+    let crest = hop.curve.segments[0].to();
+    match hop.axis {
+        Axis::X => sign(hop.curve.from.y - crest.y),
+        Axis::Y => sign(crest.x - hop.curve.from.x),
+    }
+}
+
 /// Compare two plans' places in the order: below zero when `a` goes first.
 fn by_key(a: &Plan, b: &Plan) -> f64 {
     a.key
@@ -566,6 +808,7 @@ pub(crate) fn bridge_unfolded(
         cuts: Vec::new(),
     };
     state.settle();
+    state.align_cables();
     let (bridges, replacements) = state.finish();
     Bridged {
         edges: edges
