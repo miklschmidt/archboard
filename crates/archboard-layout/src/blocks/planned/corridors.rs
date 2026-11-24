@@ -21,6 +21,13 @@ pub(super) struct CorridorScratch {
     xs: Vec<f64>,
     ys: Vec<f64>,
     keys: Vec<i64>,
+    start_x: Vec<f64>,
+    start_y: Vec<f64>,
+    end_x: Vec<f64>,
+    end_y: Vec<f64>,
+    sampled_start: Vec<f64>,
+    sampled_end: Vec<f64>,
+    across: Vec<(f64, f64)>,
 }
 
 impl CorridorBase {
@@ -143,10 +150,10 @@ impl CorridorBase {
         two_channels(
             a,
             b,
-            &scratch.xs,
-            &scratch.ys,
+            [leave_x, enter_x, leave_y, enter_y],
             self.breadth,
             obstacles,
+            scratch,
             visit,
         );
     }
@@ -314,58 +321,98 @@ fn around_routes(
     }
 }
 
+/// Collect the reachable values from sorted `values` into `out` ordered by distance from `from`,
+/// preserving the original ascending order on exact distance ties (matching `sort_by`).
+fn nearest_within(values: &[f64], from: f64, (low, high): (f64, f64), out: &mut Vec<f64>) {
+    out.clear();
+    let Some((lo, hi)) = reach_window((low, high), from) else {
+        return;
+    };
+    let start = values.partition_point(|&v| v < lo);
+    let end = start + values[start..].partition_point(|&v| v <= hi);
+    let slice = &values[start..end];
+    if slice.is_empty() {
+        return;
+    }
+    let split = slice.partition_point(|&v| v < from);
+    let mut left = split;
+    let mut right = split;
+    out.reserve(slice.len());
+    while left > 0 && right < slice.len() {
+        let dl = (slice[left - 1] - from).abs();
+        let dr = (slice[right] - from).abs();
+        // Equal distances tie-break to the earlier element in `slice` (which is `left - 1`).
+        if dl.total_cmp(&dr).is_le() {
+            left -= 1;
+            out.push(slice[left]);
+        } else {
+            out.push(slice[right]);
+            right += 1;
+        }
+    }
+    while left > 0 {
+        left -= 1;
+        out.push(slice[left]);
+    }
+    out.extend_from_slice(&slice[right..]);
+}
+
+fn sample_into(values: &[f64], breadth: usize, out: &mut Vec<f64>) {
+    out.clear();
+    if values.len() <= breadth {
+        out.extend_from_slice(values);
+        return;
+    }
+    let half = breadth / 2;
+    out.extend_from_slice(&values[..half]);
+    for i in 0..half {
+        out.push(values[values.len() - 1 - i * (values.len() - half) / half]);
+    }
+}
+
 fn two_channels(
     a: Point,
     b: Point,
-    xs: &[f64],
-    ys: &[f64],
+    [leave_x, enter_x, leave_y, enter_y]: [(f64, f64); 4],
     breadth: usize,
     obstacles: &Clearance,
+    scratch: &mut CorridorScratch,
     mut visit: impl FnMut(&[Point]),
 ) {
-    // One reach along each end's two lines answers every run that leaves or enters there.
-    let within = |values: &[f64], vertical: bool, at: Point| {
-        let (along, from) = if vertical { (at.x, at.y) } else { (at.y, at.x) };
-        let (low, high) = obstacles.reach(vertical, along, from);
-        (values.iter().copied())
-            .filter(|&to| if to < from { to >= low } else { to <= high })
-            .collect::<Vec<_>>()
-    };
-    let mut start_x = within(xs, false, a);
-    let mut end_y = within(ys, true, b);
-    let mut start_y = within(ys, true, a);
-    let mut end_x = within(xs, false, b);
-    start_x.sort_by(|x, y| (x - a.x).abs().total_cmp(&(y - a.x).abs()));
-    start_y.sort_by(|x, y| (x - a.y).abs().total_cmp(&(y - a.y).abs()));
-    end_x.sort_by(|x, y| (x - b.x).abs().total_cmp(&(y - b.x).abs()));
-    end_y.sort_by(|x, y| (x - b.y).abs().total_cmp(&(y - b.y).abs()));
-    let sample = |values: Vec<f64>| {
-        if values.len() <= breadth {
-            return values;
-        }
-        let mut chosen = values[..breadth / 2].to_vec();
-        for i in 0..breadth / 2 {
-            chosen
-                .push(values[values.len() - 1 - i * (values.len() - breadth / 2) / (breadth / 2)]);
-        }
-        chosen
-    };
-    let (start_x, start_y, end_x, end_y) = (
-        sample(start_x),
-        sample(start_y),
-        sample(end_x),
-        sample(end_y),
+    nearest_within(&scratch.xs, a.x, leave_x, &mut scratch.start_x);
+    nearest_within(&scratch.ys, b.y, enter_y, &mut scratch.end_y);
+    nearest_within(&scratch.ys, a.y, leave_y, &mut scratch.start_y);
+    nearest_within(&scratch.xs, b.x, enter_x, &mut scratch.end_x);
+    sample_into(&scratch.start_x, breadth, &mut scratch.sampled_start);
+    sample_into(&scratch.end_y, breadth, &mut scratch.sampled_end);
+    paired(
+        a,
+        b,
+        (&scratch.sampled_start, &scratch.sampled_end),
+        obstacles,
+        false,
+        &mut scratch.across,
+        &mut visit,
     );
-    paired(a, b, &start_x, &end_y, obstacles, false, &mut visit);
-    paired(a, b, &start_y, &end_x, obstacles, true, visit);
+    sample_into(&scratch.start_y, breadth, &mut scratch.sampled_start);
+    sample_into(&scratch.end_x, breadth, &mut scratch.sampled_end);
+    paired(
+        a,
+        b,
+        (&scratch.sampled_start, &scratch.sampled_end),
+        obstacles,
+        true,
+        &mut scratch.across,
+        visit,
+    );
 }
 fn paired(
     a: Point,
     b: Point,
-    starts: &[f64],
-    ends: &[f64],
+    (starts, ends): (&[f64], &[f64]),
     obstacles: &Clearance,
     transpose: bool,
+    across: &mut Vec<(f64, f64)>,
     mut visit: impl FnMut(&[Point]),
 ) {
     let flip = |p: Point| {
@@ -377,13 +424,11 @@ fn paired(
     };
     let (a, b) = (flip(a), flip(b));
     // Each line's reach answers every pair on it without another lookup.
-    let across: Vec<_> = ends
-        .iter()
-        .map(|&y| obstacles.reach(transpose, y, b.x))
-        .collect();
+    across.clear();
+    across.extend(ends.iter().map(|&y| obstacles.reach(transpose, y, b.x)));
     for &x in starts {
         let (low, high) = obstacles.reach(!transpose, x, a.y);
-        for (&y, &(left, right)) in ends.iter().zip(&across) {
+        for (&y, &(left, right)) in ends.iter().zip(across.iter()) {
             let down = if y < a.y { y >= low } else { y <= high };
             if down && (if x < b.x { x >= left } else { x <= right }) {
                 let inner = [Point { x, y: a.y }, Point { x, y }, Point { x: b.x, y }].map(flip);

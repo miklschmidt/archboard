@@ -6,24 +6,58 @@ use rustc_hash::FxHashMap;
 
 use crate::geometry::{Point, Rect};
 
+/// Below this box count, scanning `boxes` directly beats hashing and caching per-axis spans.
+const LINEAR_LIMIT: usize = 8;
+
 type Axes = FxHashMap<u64, Vec<(f64, f64)>>;
 
 pub(super) struct Clearance {
     boxes: Vec<Rect>,
+    /// Bounding range of all boxes along each axis: index 0 is `y` (for horizontal lines),
+    /// index 1 is `x` (for vertical lines).
+    extent: [(f64, f64); 2],
     /// Cached blocking spans per coordinate: index 0 for horizontal (`y`), 1 for vertical (`x`).
     axes: [RefCell<Axes>; 2],
 }
+
+fn box_axes(r: &Rect, vertical: bool) -> (f64, f64, f64, f64) {
+    if vertical {
+        (r.x, r.x + r.width, r.y, r.y + r.height)
+    } else {
+        (r.y, r.y + r.height, r.x, r.x + r.width)
+    }
+}
+
 impl Clearance {
     pub(super) fn new(boxes: Vec<Rect>) -> Self {
+        let mut min_x = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut min_y = f64::INFINITY;
+        let mut max_y = f64::NEG_INFINITY;
+        for r in &boxes {
+            min_x = min_x.min(r.x);
+            max_x = max_x.max(r.x + r.width);
+            min_y = min_y.min(r.y);
+            max_y = max_y.max(r.y + r.height);
+        }
         Self {
             boxes,
+            extent: [(min_y, max_y), (min_x, max_x)],
             axes: [RefCell::default(), RefCell::default()],
         }
     }
 
     pub(super) fn clear_segment(&self, vertical: bool, at: f64, a: f64, b: f64) -> bool {
-        if self.boxes.is_empty() {
+        let (min_at, max_at) = self.extent[usize::from(vertical)];
+        if !(at > min_at && at < max_at) {
             return true;
+        }
+        let (lo, hi) = (a.min(b), a.max(b));
+        if self.boxes.len() <= LINEAR_LIMIT {
+            return self.boxes.iter().all(|r| {
+                let (c0, c1, s0, s1) = box_axes(r, vertical);
+                !(at > c0 && at < c1 && s0 < hi && s1 > lo)
+            });
         }
         let mut axes = self.axes[usize::from(vertical)].borrow_mut();
         let spans = axes
@@ -32,7 +66,6 @@ impl Clearance {
         if spans.is_empty() {
             return true;
         }
-        let (lo, hi) = (a.min(b), a.max(b));
         let before = spans.partition_point(|&(start, _)| start < hi);
         before == 0 || spans[before - 1].1 <= lo
     }
@@ -55,8 +88,12 @@ impl Clearance {
     /// How far a run on one line can reach each way from `from`: any end
     /// within the answer leaves the run clear, and no end beyond it does.
     pub(super) fn reach(&self, vertical: bool, at: f64, from: f64) -> (f64, f64) {
-        if self.boxes.is_empty() {
+        let (min_at, max_at) = self.extent[usize::from(vertical)];
+        if !(at > min_at && at < max_at) {
             return (f64::NEG_INFINITY, f64::INFINITY);
+        }
+        if self.boxes.len() <= LINEAR_LIMIT {
+            return self.reach_linear(vertical, at, from);
         }
         let mut axes = self.axes[usize::from(vertical)].borrow_mut();
         let spans = axes
@@ -74,17 +111,30 @@ impl Clearance {
         let high = spans.get(after).map_or(f64::INFINITY, |&(lo, _)| lo);
         (low, high)
     }
+
+    fn reach_linear(&self, vertical: bool, at: f64, from: f64) -> (f64, f64) {
+        let (mut low, mut high) = (f64::NEG_INFINITY, f64::INFINITY);
+        for r in &self.boxes {
+            let (c0, c1, s0, s1) = box_axes(r, vertical);
+            if at > c0 && at < c1 {
+                if s0 < from {
+                    low = low.max(s1);
+                }
+                if s1 > from {
+                    high = high.min(s0);
+                }
+            }
+        }
+        (low, high)
+    }
+
     fn spans(&self, vertical: bool, at: f64) -> Vec<(f64, f64)> {
         let mut spans: Vec<_> = self
             .boxes
             .iter()
             .filter_map(|r| {
-                let (across, size, lo, hi) = if vertical {
-                    (r.x, r.width, r.y, r.y + r.height)
-                } else {
-                    (r.y, r.height, r.x, r.x + r.width)
-                };
-                (at > across && at < across + size).then_some((lo, hi))
+                let (c0, c1, lo, hi) = box_axes(r, vertical);
+                (at > c0 && at < c1).then_some((lo, hi))
             })
             .collect();
         if spans.len() > 1 {
