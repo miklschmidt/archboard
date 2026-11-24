@@ -329,21 +329,21 @@ fn nearest_within(values: &[f64], from: f64, (low, high): (f64, f64), out: &mut 
     let mut left = split;
     let mut right = split;
     out.reserve(slice.len());
-    while left > 0 && right < slice.len() {
-        let dl = (slice[left - 1] - from).abs();
-        let dr = (slice[right] - from).abs();
-        // Equal distances tie-break to the earlier element in `slice` (which is `left - 1`).
-        if dl.total_cmp(&dr).is_le() {
-            left -= 1;
-            out.push(slice[left]);
-        } else {
+    let distance = |v: f64| (v - from).abs();
+    while left > 0 {
+        let nearest = distance(slice[left - 1]);
+        while right < slice.len() && distance(slice[right]).total_cmp(&nearest).is_lt() {
             out.push(slice[right]);
             right += 1;
         }
-    }
-    while left > 0 {
-        left -= 1;
-        out.push(slice[left]);
+        // Subtraction can round distinct coordinates to the same distance. Emit the whole
+        // left tie in coordinate order, before any right coordinates at that distance.
+        let mut first = left - 1;
+        while first > 0 && distance(slice[first - 1]).total_cmp(&nearest).is_eq() {
+            first -= 1;
+        }
+        out.extend_from_slice(&slice[first..left]);
+        left = first;
     }
     out.extend_from_slice(&slice[right..]);
 }
@@ -436,5 +436,18 @@ fn hinted(hint: Option<super::lanes::Hint>, xs: &mut Vec<f64>, ys: &mut Vec<f64>
         } else {
             xs.push(hint.at);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::nearest_within;
+
+    #[test]
+    fn nearest_corridors_keep_coordinate_order_when_distances_round_to_a_tie() {
+        let values = [32.0, 32.0_f64.next_up(), 448.0, 576.0, 992.0];
+        let mut nearest = Vec::new();
+        nearest_within(&values, 512.0, (32.0, 992.0), &mut nearest);
+        assert_eq!(nearest, [448.0, 576.0, 32.0, 32.0_f64.next_up(), 992.0]);
     }
 }
