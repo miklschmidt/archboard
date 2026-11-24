@@ -48,14 +48,14 @@ impl NetEntry<'_> {
     }
 }
 
-fn channel_collinear_count(entries: &[NetEntry<'_>]) -> usize {
+fn channel_collinear_count(entries: &[NetEntry<'_>]) -> u64 {
     let mut count = 0;
     for up in entries {
         if up.wall == Some(End::Top) {
             continue;
         }
         for down in entries {
-            count += usize::from(up.collinear_with(down));
+            count += u64::from(up.collinear_with(down));
         }
     }
     count
@@ -112,7 +112,7 @@ impl Router<'_> {
     /// How many pairs of lines read as one.
     pub(crate) fn collinear_pairs(&self, nets: &[NetId]) -> f64 {
         let channels = by_channel_vec(self, nets.iter().copied(), |&net| net);
-        let mut count = 0usize;
+        let mut count = 0u64;
         let mut entries: Vec<NetEntry<'_>> = Vec::new();
         for channel in &channels {
             if channel.len() < 2 {
@@ -128,7 +128,7 @@ impl Router<'_> {
     /// How many pairs of lines swap sides across a channel.
     fn swapped(&self, nets: &[NetId]) -> f64 {
         let channels = by_channel_vec(self, nets.iter().copied(), |&net| net);
-        let mut count = 0usize;
+        let mut count = 0u64;
         let mut ends: Vec<(f64, f64)> = Vec::new();
         for channel in &channels {
             if channel.len() < 2 {
