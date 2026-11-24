@@ -3,15 +3,18 @@
 use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::blocks::assembly::PlacedLine;
 use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_at_bend};
 use crate::geometry::{Point, Rect, inflate};
 
-use super::geometry::{contains, intersection, length, meets_itself};
+use super::geometry::{contains, length, meets_itself};
 use super::model::Model;
 use super::ports::port;
 use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
+
+mod junction;
+use junction::Junction;
+pub(super) use junction::{Junctions, shared_fragment, shared_junction};
 
 /// The option a line carries when it draws an arrowhead at both ends.
 pub(super) const TWO_WAY: &str = "archboard.relationship.two-way";
@@ -278,164 +281,6 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
                 && pair[0].y.min(pair[1].y) <= label.y - 16.0
                 && pair[0].y.max(pair[1].y) >= label.y + label.height + 16.0
     })
-}
-
-struct Junction<'a> {
-    line: &'a PlacedLine,
-    /// How far a candidate's ink reaches along its body and at its cards (`Model::ink`).
-    ours: (f64, f64),
-    /// The line's straight pieces, each with its ink (`junctions::pieces`).
-    theirs: Vec<super::junctions::Piece>,
-    /// How much further than two lone lines' the two lines' ink reaches between them at the most.
-    most: f64,
-    bounds: super::junctions::Envelope,
-    shared: bool,
-    /// Whether the two share their source, and their target.
-    ends: [bool; 2],
-    /// Whether the two share their source and either draws an arrowhead there, and whether
-    /// they share their target.
-    arrows: [bool; 2],
-}
-impl<'a> Junction<'a> {
-    fn new(
-        model: &Model<'_>,
-        topology: &Topology,
-        index: usize,
-        line: &'a PlacedLine,
-    ) -> Option<Self> {
-        let &other = model.edge_index.get(line.id.as_str())?;
-        let source = model.ends[index].0 == model.ends[other].0;
-        let target = model.ends[index].1 == model.ends[other].1;
-        let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
-        Some(Self {
-            line,
-            ours: model.ink(index),
-            theirs: super::junctions::pieces(&line.points, model.ink(other)),
-            most: model.reach(index) + model.reach(other),
-            bounds: super::junctions::Envelope::new(&line.points),
-            shared: topology.memberships[index]
-                .iter()
-                .flatten()
-                .any(|fan| topology.memberships[other].contains(&Some(*fan))),
-            ends: [source, target],
-            arrows: [source && (two_way(index) || two_way(other)), target],
-        })
-    }
-    fn clear(
-        &self,
-        points: &[Point],
-        bounds: super::junctions::Envelope,
-        ours_pieces: &mut Vec<super::junctions::Piece>,
-    ) -> bool {
-        if bounds.apart_by(self.bounds, self.most) {
-            return true;
-        }
-        if self.shared
-            && !(super::junctions::sharing(points, &self.line.points, self.ends[0], self.ends[1])
-                && super::junctions::readable(
-                    points,
-                    &self.line.points,
-                    self.arrows[0],
-                    self.arrows[1],
-                ))
-        {
-            return false;
-        }
-        if ours_pieces.is_empty() {
-            super::junctions::pieces_into(points, self.ours, ours_pieces);
-        }
-        super::junctions::ordered_pieces(ours_pieces, (self.bounds, &self.theirs), self.shared)
-    }
-}
-/// The junctions of one line's candidates with every placed route, each route indexed once.
-pub(super) struct Junctions<'a> {
-    /// The junction with each placed route, if the route is a line of the model.
-    pairs: Vec<Option<Junction<'a>>>,
-    /// Scratch buffer holding the current candidate's inked pieces.
-    pieces: RefCell<Vec<super::junctions::Piece>>,
-    /// The route that refused the last candidate, tested first.
-    blocker: std::cell::Cell<usize>,
-}
-impl<'a> Junctions<'a> {
-    pub(super) fn new(
-        model: &Model<'_>,
-        topology: &Topology,
-        index: usize,
-        routes: &'a [PlacedLine],
-    ) -> Self {
-        Self {
-            pairs: (routes.iter())
-                .map(|line| Junction::new(model, topology, index, line))
-                .collect(),
-            pieces: RefCell::new(Vec::new()),
-            blocker: std::cell::Cell::new(0),
-        }
-    }
-    /// Whether a candidate keeps `shared_junction` with every placed route.
-    pub(super) fn clear(&self, points: &[Point]) -> bool {
-        let bounds = super::junctions::Envelope::new(points);
-        let mut pieces = self.pieces.borrow_mut();
-        pieces.clear();
-        let first = self.blocker.get();
-        if first < self.pairs.len() && !self.shares_with(first, points, bounds, &mut pieces) {
-            return false;
-        }
-        if let Some(at) = (0..self.pairs.len())
-            .position(|at| at != first && !self.shares_with(at, points, bounds, &mut pieces))
-        {
-            self.blocker.set(at);
-            return false;
-        }
-        true
-    }
-    /// `shared_junction` of a candidate, whose envelope is `bounds`, with the placed route at
-    /// `at`, reusing `ours_pieces` across routes of the same candidate.
-    pub(super) fn shares_with(
-        &self,
-        at: usize,
-        points: &[Point],
-        bounds: super::junctions::Envelope,
-        ours_pieces: &mut Vec<super::junctions::Piece>,
-    ) -> bool {
-        self.pairs[at]
-            .as_ref()
-            .is_some_and(|pair| pair.clear(points, bounds, ours_pieces))
-    }
-}
-
-pub(super) fn shared_junction(
-    model: &Model<'_>,
-    topology: &Topology,
-    index: usize,
-    points: &[Point],
-    line: &PlacedLine,
-) -> bool {
-    let bounds = super::junctions::Envelope::new(points);
-    // A line far from this one clears it whatever their fans and ends.
-    let spread = model.reach(index)
-        + (model.edge_index.get(line.id.as_str())).map_or(0.0, |&other| model.reach(other));
-    if bounds.apart_by(super::junctions::Envelope::new(&line.points), spread) {
-        return model.edge_index.contains_key(line.id.as_str());
-    }
-    let mut pieces = Vec::new();
-    Junction::new(model, topology, index, line)
-        .is_some_and(|pair| pair.clear(points, bounds, &mut pieces))
-}
-
-pub(super) fn shared_fragment(
-    model: &Model<'_>,
-    edge: usize,
-    points: &[Point],
-    line: &PlacedLine,
-) -> bool {
-    if !intersection(points, &line.points).0 {
-        return true;
-    }
-    let Some(&other) = model.edge_index.get(line.id.as_str()) else {
-        return false;
-    };
-    model.treatments[edge] == model.treatments[other]
-        && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
 /// How many times its direct way a route may run, past the long detour's length: a

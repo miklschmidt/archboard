@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     constants::{BEND_RADIUS, FAN, STRAND},
-    lanes::scene::Band,
+    lanes::scene::{Band, Set},
 };
 
 #[test]
