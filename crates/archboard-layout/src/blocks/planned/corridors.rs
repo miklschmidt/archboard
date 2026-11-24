@@ -95,30 +95,46 @@ impl CorridorBase {
         let (a, b) = ends;
         visit(&[a, Point { x: a.x, y: b.y }, b]);
         visit(&[a, Point { x: b.x, y: a.y }, b]);
-        self.coordinates(a, b, scratch);
         // Every corridor of one family leaves and enters on the same two lines, so the reach
         // along each line answers its end runs, and only the middle run needs a lookup.
-        let reached = |(low, high): (f64, f64), from: f64, to: f64| {
-            if to < from { to >= low } else { to <= high }
-        };
-        let (leave, enter) = (
+        let (leave_x, enter_x) = (
             obstacles.reach(false, a.y, a.x),
             obstacles.reach(false, b.y, b.x),
         );
-        for &x in &scratch.xs {
-            let path = [a, Point { x, y: a.y }, Point { x, y: b.y }, b];
-            if reached(leave, a.x, x) && reached(enter, b.x, x) && obstacles.clear(&path[1..3]) {
-                visit(&path);
-            }
-        }
-        let (leave, enter) = (
+        let (leave_y, enter_y) = (
             obstacles.reach(true, a.x, a.y),
             obstacles.reach(true, b.x, b.y),
         );
+        let x_win = coord_window(
+            (leave_x, a.x),
+            (enter_x, b.x),
+            (self.bounds.x, self.bounds.x + self.bounds.width),
+            simple,
+        );
+        let y_win = coord_window(
+            (leave_y, a.y),
+            (enter_y, b.y),
+            (self.bounds.y, self.bounds.y + self.bounds.height),
+            simple,
+        );
+        self.coordinates(a, b, (x_win, y_win), scratch);
+        let reached = |(low, high): (f64, f64), from: f64, to: f64| {
+            if to < from { to >= low } else { to <= high }
+        };
+        for &x in &scratch.xs {
+            if reached(leave_x, a.x, x)
+                && reached(enter_x, b.x, x)
+                && obstacles.clear_segment(true, x, a.y, b.y)
+            {
+                visit(&[a, Point { x, y: a.y }, Point { x, y: b.y }, b]);
+            }
+        }
         for &y in &scratch.ys {
-            let path = [a, Point { x: a.x, y }, Point { x: b.x, y }, b];
-            if reached(leave, a.y, y) && reached(enter, b.y, y) && obstacles.clear(&path[1..3]) {
-                visit(&path);
+            if reached(leave_y, a.y, y)
+                && reached(enter_y, b.y, y)
+                && obstacles.clear_segment(false, y, a.x, b.x)
+            {
+                visit(&[a, Point { x: a.x, y }, Point { x: b.x, y }, b]);
             }
         }
         if simple {
@@ -135,32 +151,96 @@ impl CorridorBase {
         );
     }
 
-    fn coordinates(&self, a: Point, b: Point, scratch: &mut CorridorScratch) {
+    fn coordinates(
+        &self,
+        a: Point,
+        b: Point,
+        windows: AxisWindows,
+        scratch: &mut CorridorScratch,
+    ) {
+        let (x_win, y_win) = windows;
         let (xs, ys) = (&mut scratch.xs, &mut scratch.ys);
         xs.clear();
         ys.clear();
-        xs.extend_from_slice(&self.fixed_xs);
-        ys.extend_from_slice(&self.fixed_ys);
-        xs.push(f64::midpoint(a.x, b.x));
-        ys.push(f64::midpoint(a.y, b.y));
-        for offset in [-64.0, -48.0, -32.0, -16.0, 16.0, 32.0, 48.0, 64.0] {
-            xs.extend([a.x + offset, b.x + offset]);
-            ys.extend([a.y + offset, b.y + offset]);
+        if let Some(win) = x_win {
+            seed_axis(&self.fixed_xs, (a.x, b.x), win, xs);
         }
-        around_boxes(&self.boxes, a, b, xs, ys);
-        around_routes(&self.route_points, a, b, xs, ys);
-        let (min_x, max_x) = (self.bounds.x, self.bounds.x + self.bounds.width);
-        let (min_y, max_y) = (self.bounds.y, self.bounds.y + self.bounds.height);
-        xs.retain(|&x| x >= min_x && x <= max_x);
-        ys.retain(|&y| y >= min_y && y <= max_y);
-        ordered(xs, &mut scratch.keys);
-        ordered(ys, &mut scratch.keys);
+        if let Some(win) = y_win {
+            seed_axis(&self.fixed_ys, (a.y, b.y), win, ys);
+        }
+        if x_win.is_some() || y_win.is_some() {
+            around_boxes(&self.boxes, a, b, windows, xs, ys);
+            around_routes(&self.route_points, a, b, windows, xs, ys);
+        }
+        if x_win.is_some() {
+            ordered(xs, &mut scratch.keys);
+        }
+        if y_win.is_some() {
+            ordered(ys, &mut scratch.keys);
+        }
+    }
+}
+
+type AxisWindows = (Option<(f64, f64)>, Option<(f64, f64)>);
+
+/// The inclusive coordinate window `[min, max]` that `reached(reach, from, v)` can satisfy.
+fn reach_window((low, high): (f64, f64), from: f64) -> Option<(f64, f64)> {
+    if low > from && high < from {
+        return None;
+    }
+    Some((
+        if low <= from { low } else { from },
+        if high >= from { high } else { from },
+    ))
+}
+
+/// The coordinate window needed for one axis: the intersection of both ends' reach windows when
+/// `simple` (only 1-channel joins run), or their bounding hull otherwise.
+fn coord_window(
+    (reach_a, a): ((f64, f64), f64),
+    (reach_b, b): ((f64, f64), f64),
+    (bound_lo, bound_hi): (f64, f64),
+    simple: bool,
+) -> Option<(f64, f64)> {
+    let (wa, wb) = (reach_window(reach_a, a), reach_window(reach_b, b));
+    let (lo, hi) = if simple {
+        let (a_lo, a_hi) = wa?;
+        let (b_lo, b_hi) = wb?;
+        (a_lo.max(b_lo), a_hi.min(b_hi))
+    } else {
+        match (wa, wb) {
+            (Some((a_lo, a_hi)), Some((b_lo, b_hi))) => (a_lo.min(b_lo), a_hi.max(b_hi)),
+            (Some(w), None) | (None, Some(w)) => w,
+            (None, None) => return None,
+        }
+    };
+    let (lo, hi) = (lo.max(bound_lo), hi.min(bound_hi));
+    (lo <= hi).then_some((lo, hi))
+}
+
+fn push_in(out: &mut Vec<f64>, v: f64, (lo, hi): (f64, f64)) {
+    if v >= lo && v <= hi {
+        out.push(v);
+    }
+}
+
+fn seed_axis(fixed: &[f64], (a, b): (f64, f64), win: (f64, f64), out: &mut Vec<f64>) {
+    let start = fixed.partition_point(|&v| v < win.0);
+    let end = fixed.partition_point(|&v| v <= win.1);
+    out.extend_from_slice(&fixed[start..end]);
+    push_in(out, f64::midpoint(a, b), win);
+    for offset in [-64.0, -48.0, -32.0, -16.0, 16.0, 32.0, 48.0, 64.0] {
+        push_in(out, a + offset, win);
+        push_in(out, b + offset, win);
     }
 }
 
 /// Coordinates in `f64::total_cmp` order without repeats. Each sorts by the integer that
 /// orders as `total_cmp` does, which compares faster, and equal keys are equal bits.
 fn ordered(values: &mut Vec<f64>, keys: &mut Vec<i64>) {
+    if values.len() <= 1 {
+        return;
+    }
     let key = |bits: i64| bits ^ ((bits >> 63).cast_unsigned() >> 1).cast_signed();
     keys.clear();
     keys.extend(values.iter().map(|v| key(v.to_bits().cast_signed())));
@@ -174,32 +254,62 @@ fn ordered(values: &mut Vec<f64>, keys: &mut Vec<i64>) {
     values.dedup();
 }
 
-fn around_boxes(boxes: &[Rect], a: Point, b: Point, xs: &mut Vec<f64>, ys: &mut Vec<f64>) {
+fn around_boxes(
+    boxes: &[Rect],
+    a: Point,
+    b: Point,
+    (x_win, y_win): AxisWindows,
+    xs: &mut Vec<f64>,
+    ys: &mut Vec<f64>,
+) {
     let (lo_x, hi_x) = (a.x.min(b.x), a.x.max(b.x));
     let (lo_y, hi_y) = (a.y.min(b.y), a.y.max(b.y));
     for at in boxes {
-        if at.y < hi_y && at.y + at.height > lo_y {
+        if let Some(win) = x_win
+            && at.y < hi_y
+            && at.y + at.height > lo_y
+        {
             for gap in [16.0, 32.0, 48.0] {
-                xs.extend([at.x - gap, at.x + at.width + gap]);
+                push_in(xs, at.x - gap, win);
+                push_in(xs, at.x + at.width + gap, win);
             }
         }
-        if at.x < hi_x && at.x + at.width > lo_x {
+        if let Some(win) = y_win
+            && at.x < hi_x
+            && at.x + at.width > lo_x
+        {
             for gap in [16.0, 32.0, 48.0] {
-                ys.extend([at.y - gap, at.y + at.height + gap]);
+                push_in(ys, at.y - gap, win);
+                push_in(ys, at.y + at.height + gap, win);
             }
         }
     }
 }
 
-fn around_routes(points: &[Point], a: Point, b: Point, xs: &mut Vec<f64>, ys: &mut Vec<f64>) {
+fn around_routes(
+    points: &[Point],
+    a: Point,
+    b: Point,
+    (x_win, y_win): AxisWindows,
+    xs: &mut Vec<f64>,
+    ys: &mut Vec<f64>,
+) {
     let (lo_x, hi_x) = (a.x.min(b.x) - 32.0, a.x.max(b.x) + 32.0);
     let (lo_y, hi_y) = (a.y.min(b.y) - 32.0, a.y.max(b.y) + 32.0);
     for point in points {
-        if point.y >= lo_y && point.y <= hi_y {
-            xs.extend([point.x - 16.0, point.x + 16.0]);
+        if let Some(win) = x_win
+            && point.y >= lo_y
+            && point.y <= hi_y
+        {
+            push_in(xs, point.x - 16.0, win);
+            push_in(xs, point.x + 16.0, win);
         }
-        if point.x >= lo_x && point.x <= hi_x {
-            ys.extend([point.y - 16.0, point.y + 16.0]);
+        if let Some(win) = y_win
+            && point.x >= lo_x
+            && point.x <= hi_x
+        {
+            push_in(ys, point.y - 16.0, win);
+            push_in(ys, point.y + 16.0, win);
         }
     }
 }

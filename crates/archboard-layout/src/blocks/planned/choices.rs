@@ -136,17 +136,23 @@ pub(super) fn search<'a>(
     let base = CorridorBase::new(bounds, shape, guide, hint);
     let mut scratch = CorridorScratch::default();
     let mut points = Vec::with_capacity(7);
+    let usable = |port, orig, ok| {
+        if port == orig {
+            ok
+        } else {
+            port_usable(bounds, &obstacles, &port)
+        }
+    };
     for &(orig_tail, tail_ok) in &sources {
         for &(orig_head, head_ok) in &targets {
             for (tail, head) in
                 super::endpoint_choices::aligned(model, edge, shape, orig_tail, orig_head)
             {
-                let t_ok = tail == orig_tail && tail_ok || port_usable(bounds, &obstacles, &tail);
-                let h_ok = head == orig_head && head_ok || port_usable(bounds, &obstacles, &head);
+                let pair_ok = (usable(tail, orig_tail, tail_ok), usable(head, orig_head, head_ok));
                 add_pair(
                     geom,
                     (tail, head),
-                    (t_ok, h_ok),
+                    pair_ok,
                     (&base, &obstacles, search),
                     (&mut scratch, &mut points, &mut paths),
                 );
@@ -422,12 +428,7 @@ fn connect(
         search == Search::Simple,
         scratch,
         |middle| {
-            super::geometry::clean_into(
-                std::iter::once(tail.attachment)
-                    .chain(middle.iter().copied())
-                    .chain([head.attachment]),
-                points,
-            );
+            super::geometry::clean_with_ends(tail.attachment, middle, head.attachment, points);
             if super::channel::basic((points, ink), source, target, bounds).is_none() {
                 paths.insert_slice(points);
             }

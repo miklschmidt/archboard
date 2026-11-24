@@ -6,19 +6,37 @@ use rustc_hash::FxHashMap;
 
 use crate::geometry::{Point, Rect};
 
-type Axes = FxHashMap<(bool, u64), Vec<(f64, f64)>>;
+type Axes = FxHashMap<u64, Vec<(f64, f64)>>;
 
 pub(super) struct Clearance {
     boxes: Vec<Rect>,
-    axes: RefCell<Axes>,
+    /// Cached blocking spans per coordinate: index 0 for horizontal (`y`), 1 for vertical (`x`).
+    axes: [RefCell<Axes>; 2],
 }
 impl Clearance {
     pub(super) fn new(boxes: Vec<Rect>) -> Self {
         Self {
             boxes,
-            axes: RefCell::default(),
+            axes: [RefCell::default(), RefCell::default()],
         }
     }
+
+    pub(super) fn clear_segment(&self, vertical: bool, at: f64, a: f64, b: f64) -> bool {
+        if self.boxes.is_empty() {
+            return true;
+        }
+        let mut axes = self.axes[usize::from(vertical)].borrow_mut();
+        let spans = axes
+            .entry(at.to_bits())
+            .or_insert_with(|| self.spans(vertical, at));
+        if spans.is_empty() {
+            return true;
+        }
+        let (lo, hi) = (a.min(b), a.max(b));
+        let before = spans.partition_point(|&(start, _)| start < hi);
+        before == 0 || spans[before - 1].1 <= lo
+    }
+
     pub(super) fn clear(&self, path: &[Point]) -> bool {
         if self.boxes.is_empty() {
             return true;
@@ -30,22 +48,23 @@ impl Clearance {
             } else {
                 (pair[0].y, pair[0].x, pair[1].x)
             };
-            let mut axes = self.axes.borrow_mut();
-            let spans = axes
-                .entry((vertical, at.to_bits()))
-                .or_insert_with(|| self.spans(vertical, at));
-            let before = spans.partition_point(|&(lo, _)| lo < a.max(b));
-            before == 0 || spans[before - 1].1 <= a.min(b)
+            self.clear_segment(vertical, at, a, b)
         })
     }
 
     /// How far a run on one line can reach each way from `from`: any end
     /// within the answer leaves the run clear, and no end beyond it does.
     pub(super) fn reach(&self, vertical: bool, at: f64, from: f64) -> (f64, f64) {
-        let mut axes = self.axes.borrow_mut();
+        if self.boxes.is_empty() {
+            return (f64::NEG_INFINITY, f64::INFINITY);
+        }
+        let mut axes = self.axes[usize::from(vertical)].borrow_mut();
         let spans = axes
-            .entry((vertical, at.to_bits()))
+            .entry(at.to_bits())
             .or_insert_with(|| self.spans(vertical, at));
+        if spans.is_empty() {
+            return (f64::NEG_INFINITY, f64::INFINITY);
+        }
         let before = spans.partition_point(|&(lo, _)| lo < from);
         let low = before
             .checked_sub(1)
@@ -68,11 +87,13 @@ impl Clearance {
                 (at > across && at < across + size).then_some((lo, hi))
             })
             .collect();
-        spans.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let mut end = f64::NEG_INFINITY;
-        for span in &mut spans {
-            end = end.max(span.1);
-            span.1 = end;
+        if spans.len() > 1 {
+            spans.sort_by(|a, b| a.0.total_cmp(&b.0));
+            let mut end = f64::NEG_INFINITY;
+            for span in &mut spans {
+                end = end.max(span.1);
+                span.1 = end;
+            }
         }
         spans
     }

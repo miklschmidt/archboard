@@ -179,21 +179,33 @@ pub(super) fn alternatives(
 ) -> Vec<PlacedLine> {
     let edge = model.edge_index[line.id.as_str()];
     let mut paths = Paths::new(line.points.clone());
-    for source in [true, false] {
-        if !peers
-            .iter()
-            .any(|peer| peer.conflicts_at(&line.points, source))
-        {
-            continue;
-        }
-        let offsets = offsets(model, shape, edge, &line.points, source, peers);
-        for at in 0..paths.all.len() {
-            for &offset in &offsets {
-                if let Some(path) = slide(model, shape, edge, &paths.all[at], source, offset) {
-                    paths.add(path);
-                }
-            }
-        }
+    let source_conflict = peers
+        .iter()
+        .any(|peer| peer.conflicts_at(&line.points, true));
+    let target_conflict = peers
+        .iter()
+        .any(|peer| peer.conflicts_at(&line.points, false));
+    if source_conflict {
+        expand_side(
+            model,
+            shape,
+            edge,
+            &line.points,
+            peers,
+            (true, false),
+            &mut paths,
+        );
+    }
+    if target_conflict {
+        expand_side(
+            model,
+            shape,
+            edge,
+            &line.points,
+            peers,
+            (false, source_conflict),
+            &mut paths,
+        );
     }
     let movement = |points: &[Point]| {
         [true, false]
@@ -254,6 +266,46 @@ impl Paths {
     }
 }
 
+fn expand_side(
+    model: &Model<'_>,
+    shape: &Shape,
+    edge: usize,
+    base: &[Point],
+    peers: &[Peer],
+    (source, filter_source): (bool, bool),
+    paths: &mut Paths,
+) {
+    let offsets = offsets(model, shape, edge, base, source, peers);
+    for at in 0..paths.all.len() {
+        if filter_source
+            && paths.all[at].len() > 2
+            && peers.iter().any(|peer| peer.conflicts_at(&paths.all[at], true))
+        {
+            continue;
+        }
+        for &offset in &offsets {
+            if let Some(path) = slide(model, shape, edge, &paths.all[at], source, offset) {
+                paths.add(path);
+            }
+        }
+    }
+}
+
+fn fits_wall(
+    model: &Model<'_>,
+    shape: &Shape,
+    edge: usize,
+    points: &[Point],
+    source: bool,
+    horizontal: bool,
+    offset: f64,
+) -> bool {
+    let (at, _) = end(points, source);
+    let moved = (if horizontal { at.y } else { at.x }) + offset;
+    let (lo, hi) = wall_span(model, shape, edge, source, horizontal);
+    moved >= lo && moved <= hi
+}
+
 fn slide(
     model: &Model<'_>,
     shape: &Shape,
@@ -264,6 +316,12 @@ fn slide(
 ) -> Option<Vec<Point>> {
     let (at, next) = end(points, source);
     let horizontal = at.y == next.y;
+    if !fits_wall(model, shape, edge, points, source, horizontal, offset) {
+        return None;
+    }
+    if points.len() == 2 && !fits_wall(model, shape, edge, points, !source, horizontal, offset) {
+        return None;
+    }
     let mut path = points.to_vec();
     let count = path.len();
     let run = if source {
@@ -278,16 +336,7 @@ fn slide(
             point.x += offset;
         }
     }
-    let inside = [true, false]
-        .into_iter()
-        .filter(|&end| end == source || points.len() == 2)
-        .all(|end_source| {
-            let (at, _) = end(&path, end_source);
-            let (lo, hi) = wall_span(model, shape, edge, end_source, horizontal);
-            let position = if horizontal { at.y } else { at.x };
-            position >= lo && position <= hi
-        });
-    inside.then_some(path)
+    Some(path)
 }
 
 fn wall_span(
