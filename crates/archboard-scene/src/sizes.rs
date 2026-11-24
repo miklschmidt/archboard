@@ -156,7 +156,7 @@ pub(crate) const TAG_INSET: f64 = 12.0;
 pub(crate) const TAG_BESIDE: f64 = 8.0;
 
 /// How much larger everything a far view sets larger stands: a far card's words
-/// and every line with its arrowhead.
+/// and the bodies of its lines.
 pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// How thick a line of normal weight is drawn.
 pub(crate) const LINE_WIDTH: f64 = 2.4;

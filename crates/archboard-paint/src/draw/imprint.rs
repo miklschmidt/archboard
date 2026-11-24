@@ -29,7 +29,7 @@ impl<C: Canvas> Walk<'_, C> {
     }
 
     /// Draw a glow: an oval about its line, as broad as its stroke and reaching
-    /// half that past each end, solid at its heart and fading to nothing at
+    /// a quarter of that past each end, fading from its heart to nothing at
     /// its rim. It brightens as `lit` rises.
     fn glow(&mut self, shape: &Shape, inside: Inside, lit: f64) {
         let Some((from, to, stroke, width)) = stripe(shape) else {
