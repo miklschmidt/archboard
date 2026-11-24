@@ -33,8 +33,8 @@ impl Settling<'_> {
     /// turns to a way where no turned hop is crowded, the way most of them bulge first (the
     /// usual way between equals); else each line its hops pass over rises over the ribbon
     /// instead; else it turns to the way that crowds least, as a lone hop with no clear way does
-    /// (`force`). A hop turns only where the lines beneath still pass under it, and its own
-    /// cable's strands never crowd it.
+    /// (`force`). A hop turns only where the lines beneath still run straight under it.
+    /// A crossed line's end approach counts as crowding, and the hop's own strands never do.
     pub(super) fn align_cables(&mut self) {
         let mut places = self.cable_places();
         places.reverse();
@@ -244,7 +244,7 @@ impl Settling<'_> {
             let under = &runs[lower.drawer];
             if !self.risers(crossing).contains(&rise.cluster)
                 || self.lead_over(upper, lower).is_none()
-                || !passes_beneath(runs, under, self.crossings[crossing].point, bulge)
+                || !passes_beneath(runs, under, self.crossings[crossing].point, bulge, true)
             {
                 return None;
             }
@@ -275,7 +275,8 @@ impl Settling<'_> {
 
     /// How near a hop turned to bulge one way comes to what crowds it, as a share of the clear
     /// space it keeps, its cable's other strands at the place aside. None where it would not
-    /// pass over its lines or where it bulges into a junction mark.
+    /// pass over its lines or where it bulges into a junction mark. A straight line can still
+    /// pass under a turned hop at its end approach, but the turn counts as crowded there.
     fn turned_nearness(
         &self,
         index: usize,
@@ -289,19 +290,25 @@ impl Settling<'_> {
         if mark_crowding(&self.scene, run, curve) <= 1.0 {
             return None;
         }
+        let mut approach = f64::INFINITY;
         let mut beneath: Vec<&Run> = Vec::new();
         for &crossing in &rise.crossings {
             let under = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            if !passes_beneath(runs, under, self.crossings[crossing].point, bulge) {
-                return None;
+            let point = self.crossings[crossing].point;
+            if !passes_beneath(runs, under, point, bulge, true) {
+                if !passes_beneath(runs, under, point, bulge, false) {
+                    return None;
+                }
+                approach = 1.0;
             }
             beneath.push(under);
         }
         beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
-        Some(f64::min(
+        Some(min([
+            approach,
             crowding(&self.scene, run, &beneath, curve, &[]),
             own_head_crowding(&self.scene, run, curve),
-        ))
+        ]))
     }
 }
 

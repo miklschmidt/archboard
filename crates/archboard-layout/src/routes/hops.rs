@@ -214,7 +214,7 @@ pub(super) fn crest_along(
         .axis
         .of(on_run(run, first - (BRIDGE_RADIUS + room), 0.0));
     let high = run.axis.of(on_run(run, last + (BRIDGE_RADIUS + room), 0.0));
-    straight_through(runs, run, js_min(low, high), js_max(low, high))
+    straight_through(runs, run, js_min(low, high), js_max(low, high), true)
         .then(|| hump(run, first, last, bulge))
 }
 
@@ -248,8 +248,14 @@ pub(super) fn curve_end(curve: &Curve) -> Point {
 
 /// Whether a line runs straight and alone beneath where a hop over it would
 /// stand: under the crest and on past it on the side the hop bulges to, and a
-/// little way on the other side.
-pub(super) fn passes_beneath(runs: &[Run], run: &Run, point: Point, bulge: Bulge) -> bool {
+/// little way on the other side. With `rooms`, this stretch stays clear of end approaches.
+pub(super) fn passes_beneath(
+    runs: &[Run],
+    run: &Run,
+    point: Point,
+    bulge: Bulge,
+    rooms: bool,
+) -> bool {
     let at = run.axis.of(point);
     // A hop bulges up from a line across, toward lower y along a line down,
     // and right of a line down, toward higher x along a line across.
@@ -258,7 +264,7 @@ pub(super) fn passes_beneath(runs: &[Run], run: &Run, point: Point, bulge: Bulge
     } else {
         (FAR_REACH, HOP_REACH)
     };
-    straight_through(runs, run, at - back, at + ahead)
+    straight_through(runs, run, at - back, at + ahead, rooms)
 }
 
 /// How a relationship's line is drawn: as measurement settled it, or solid
