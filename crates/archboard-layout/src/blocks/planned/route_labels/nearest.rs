@@ -126,19 +126,29 @@ fn best_spot_on(
         own,
         index,
     );
-    let pick = |(lo, hi): (f64, f64)| -> Option<Option<(f64, Rect)>> {
+    let candidate = |(lo, hi): (f64, f64)| {
         let position = if forward { lo } else { hi };
-        let dist = span.before + (position - a).abs();
-        if best_dist.is_some_and(|d| !dist.total_cmp(&d).is_lt()) {
-            return Some(None);
-        }
+        (span.before + (position - a).abs(), position)
+    };
+    let beats_best = |(dist, _): &(f64, f64)| best_dist.is_none_or(|d| dist.total_cmp(&d).is_lt());
+    let clear_spot = |(dist, position)| {
         let label = at(span, position, size);
-        clear(shape, own.edge, label, index, labels).then_some(Some((dist, label)))
+        clear(shape, own.edge, label, index, labels).then_some((dist, label))
     };
     if forward {
-        free.into_iter().find_map(pick).flatten()
+        free.into_iter()
+            .map(candidate)
+            .take_while(beats_best)
+            .find_map(clear_spot)
     } else {
-        free.into_iter().rev().find_map(pick).flatten()
+        let mut candidates = free.into_iter().rev().map(candidate).take_while(beats_best);
+        let first = candidates.find_map(clear_spot)?;
+        // Equal distances keep the first clear interval in ascending coordinate order.
+        candidates
+            .take_while(|(dist, _)| dist.total_cmp(&first.0).is_eq())
+            .filter_map(clear_spot)
+            .last()
+            .or(Some(first))
     }
 }
 

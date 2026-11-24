@@ -132,6 +132,26 @@ fn blocked_midpoints_use_the_nearest_clear_private_spot_without_rerouting() {
 }
 
 #[test]
+fn a_reverse_span_prefers_the_first_interval_when_distances_round_equal() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let shape = drawing(&[("ac", &[(500.0, 450.0), (500.0, 550.0)])]);
+    let path = [Point { x: 900.0, y: 500.0 }, Point { x: 100.0, y: 500.0 }];
+    let own = Own::new(model.edge_index["ab"], &path);
+    // At this accumulated route length, both clear intervals give the same distance.
+    let span = Span {
+        a: path[0],
+        b: path[1],
+        before: 2.0_f64.powi(63),
+    };
+    let plate = Plate::of(&model, own, false).unwrap();
+    let strokes = StrokeIndex::new(&model, &shape);
+    let labels = super::super::label_space::Labels::default();
+    let label = nearest(&[span], plate, &shape, own, strokes.view(), &labels).unwrap();
+    assert!(label.x + label.width < 500.0);
+}
+
+#[test]
 fn words_never_stand_across_another_stretch_of_their_own_line() {
     let graph = graph();
     let model = Model::new(&graph).unwrap();
