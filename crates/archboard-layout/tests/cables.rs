@@ -220,3 +220,36 @@ fn two_cables_with_the_same_strands_leave_a_card_from_separate_ports() {
     let edges = placed["edges"].as_array().expect("placed edges");
     assert_ne!(edges[0]["points"][0], edges[1]["points"][0]);
 }
+
+#[test]
+fn a_lanes_cable_leaving_below_a_caption_keeps_the_regions_measured_width() {
+    let mut graph = json!({
+        "id": "root",
+        "layoutOptions": {
+            "archboard.layout.engine": "lanes",
+            "archboard.group.captions": "[[\"group\",300,20]]"
+        },
+        "children": [
+            {"id": "source", "width": 120, "height": 80,
+                "layoutOptions": {"archboard.group": "group"}},
+            {"id": "target", "width": 120, "height": 80}
+        ],
+        "edges": [{"id": "cable", "sources": ["source"], "targets": ["target"],
+            "layoutOptions": {"archboard.cable": "sync;event"}}]
+    });
+    let region_width = |graph: &Value| {
+        let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
+            .expect("a drawing");
+        let answer: Value = serde_json::from_str(&answer).expect("an answer");
+        let placed = answer["layoutOptions"]["archboard.blocks.placed"]
+            .as_str()
+            .expect("a placed drawing");
+        let placed: Value = serde_json::from_str(placed).expect("a drawing");
+        placed["regions"][0]["box"]["width"]
+            .as_f64()
+            .expect("region width")
+    };
+    let connected = region_width(&graph);
+    graph["edges"] = json!([]);
+    assert_eq!(connected, region_width(&graph));
+}
