@@ -9,7 +9,7 @@ mod trunk;
 use own::{Own, keeps, meets};
 use plate::Plate;
 pub(super) use seating::Seating;
-pub(super) use strokes::StrokeIndex;
+pub(super) use strokes::{StrokeIndex, StrokeOverlay, StrokeView};
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -49,11 +49,12 @@ fn clear(
     shape: &Shape,
     edge: usize,
     at: Rect,
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> bool {
     let key = (edge, [at.x, at.y, at.width, at.height].map(f64::to_bits));
-    *strokes
+    let base_clear = *strokes
+        .base
         .clearance
         .borrow_mut()
         .entry(key)
@@ -63,9 +64,9 @@ fn clear(
                     .label_geometry
                     .get_or_init(|| super::label_space::Protection::new(shape))
                     .clear(at)
-                && !strokes.crosses(edge, inflate(at, 12.01))
-        })
-        && labels.clear(at, &shape.labels)
+                && !strokes.base.crosses(edge, inflate(at, 12.01))
+        });
+    base_clear && !strokes.extra_crosses(edge, inflate(at, 12.01)) && labels.clear(at, &shape.labels)
 }
 
 fn at(span: Span, position: f64, size: Rect) -> Rect {
@@ -101,7 +102,7 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        let (shape, strokes, labels) = (self.shape, self.strokes.view(), &self.labels);
         let spans = spans(edge, path, shape, strokes);
         spot_for(
             model,
@@ -118,7 +119,7 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        let (shape, strokes, labels) = (self.shape, self.strokes.view(), &self.labels);
         let spans = spans(edge, path, shape, strokes);
         let own = Own {
             beside: true,
@@ -138,7 +139,7 @@ fn slot_index(
     edge: usize,
     shape: &Shape,
     path: &[Point],
-    index: &StrokeIndex,
+    index: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
     let spans = spans(edge, path, shape, index);
@@ -158,7 +159,7 @@ fn spot_for(
     model: &Model<'_>,
     own: Own<'_>,
     (shape, spans): (&Shape, &[Span]),
-    (index, labels): (&StrokeIndex, &super::label_space::Labels),
+    (index, labels): (StrokeView<'_>, &super::label_space::Labels),
 ) -> Option<(Rect, bool)> {
     let spot = |narrow| spot_on(model, own, spans, shape, index, labels, narrow);
     let (at, fallback) = spot(false).or_else(|| spot(true))?;
@@ -167,7 +168,7 @@ fn spot_for(
 
 /// The stretches of a route that no other line shares, where its words can stand: the longest
 /// first, or along the route from its part for a line of a door's trunk.
-fn spans(edge: usize, path: &[Point], shape: &Shape, index: &StrokeIndex) -> Vec<Span> {
+fn spans(edge: usize, path: &[Point], shape: &Shape, index: StrokeView<'_>) -> Vec<Span> {
     if let Some(&part_first) = shape.trunk.get(&edge) {
         return index.private(edge, &from_part(path, part_first));
     }
@@ -187,7 +188,7 @@ fn spot_on(
     own: Own<'_>,
     spans: &[Span],
     shape: &Shape,
-    index: &StrokeIndex,
+    index: StrokeView<'_>,
     labels: &super::label_space::Labels,
     narrow: bool,
 ) -> Option<(Rect, bool)> {
@@ -217,7 +218,7 @@ fn midway(
     plate: Plate,
     shape: &Shape,
     own: Own<'_>,
-    index: &StrokeIndex,
+    index: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
     spans.iter().find_map(|&span| {
@@ -244,7 +245,7 @@ fn nearest(
     plate: Plate,
     shape: &Shape,
     own: Own<'_>,
-    index: &StrokeIndex,
+    index: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
     let mut best: Option<(f64, Rect)> = None;
@@ -267,7 +268,7 @@ fn spots_for(
     plate: Plate,
     shape: &Shape,
     own: Own<'_>,
-    index: &StrokeIndex,
+    index: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> Vec<(f64, Rect)> {
     let mut spots = Vec::new();
@@ -368,9 +369,9 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<()> {
         model,
         shape,
         shape.routes.iter().zip(indices.iter().copied()),
-        &strokes,
+        strokes.view(),
     )?;
-    seated(model, shape, &indices, &strokes)
+    seated(model, shape, &indices, strokes.view())
 }
 
 /// The rest of `arrange`, for a shape without words whose lines `available` found room for.
@@ -379,7 +380,7 @@ pub(super) fn seated(
     model: &Model<'_>,
     shape: &mut Shape,
     indices: &[usize],
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
 ) -> Option<()> {
     debug_assert!(shape.labels.is_empty());
     let mut labels = super::label_space::Labels::default();
@@ -438,7 +439,7 @@ fn available<'l>(
     model: &Model<'_>,
     shape: &Shape,
     lines: impl IntoIterator<Item = (&'l PlacedLine, usize)>,
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
 ) -> Option<()> {
     debug_assert!(shape.labels.is_empty());
     let labels = &super::label_space::Labels::default();
@@ -460,7 +461,7 @@ fn consistent(
     shape: &mut Shape,
     indices: &[usize],
     order: &[usize],
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
     labels: &super::label_space::Labels,
 ) -> Option<()> {
     for &index in order {
@@ -487,7 +488,7 @@ fn seed(
     shape: &mut Shape,
     indices: &[usize],
     order: &[usize],
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
     labels: &mut super::label_space::Labels,
 ) {
     for &index in order {
@@ -513,7 +514,7 @@ fn update(
     model: &Model<'_>,
     shape: &mut Shape,
     (indices, order): (&[usize], &[usize]),
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
     labels: &mut super::label_space::Labels,
     moves: &mut Moves,
 ) -> Option<bool> {

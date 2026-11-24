@@ -476,7 +476,7 @@ impl<'a, 'g> Fit<'a, 'g> {
         let mut next = shape.without_labels();
         next.routes.push(line.clone());
         let indices: Vec<_> = seating.indices().chain([edge]).collect();
-        super::route_labels::seated(model, &mut next, &indices, &strokes)?;
+        super::route_labels::seated(model, &mut next, &indices, strokes.view())?;
         Some(next)
     }
 }

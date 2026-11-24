@@ -28,14 +28,15 @@ pub(in crate::blocks::planned) fn seat(
             continue;
         };
         let path = &shape.routes[index].points;
-        let spans = spans(edge, path, shape, &strokes);
+        let view = strokes.view();
+        let spans = spans(edge, path, shape, view);
         let spot = |narrow| {
             spot_on(
                 model,
                 Own::new(edge, path),
                 &spans,
                 shape,
-                &strokes,
+                view,
                 &labels,
                 narrow,
             )

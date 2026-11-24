@@ -137,6 +137,9 @@ impl Labels {
         }
     }
     pub(super) fn clear(&self, at: Rect, labels: &std::collections::BTreeMap<usize, Rect>) -> bool {
+        if self.cells.is_empty() {
+            return true;
+        }
         cells(at).all(|cell| {
             self.cells.get(&cell).is_none_or(|ids| {
                 ids.iter().all(|id| {
