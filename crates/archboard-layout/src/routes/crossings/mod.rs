@@ -30,7 +30,7 @@ use crate::constants::BEND_RADIUS;
 use crate::ecma::{js_min, max, min, round, sign, sorted_by};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
-use super::crowding::{crowded, crowding, near_own_head, own_head_crowding};
+use super::crowding::{crowded, crowding, mark_crowding, near_own_head, own_head_crowding};
 use super::drawn_lines::{
     Axis, DrawnCrossing, Edges, Line, Run, drawn_crossings, join_near, piece_of, straight_runs,
     straightness, weight,
@@ -644,6 +644,7 @@ impl Settling<'_> {
                         .find(|curve| {
                             !crowded(&settling.scene, run, &strands, curve, &pending)
                                 && !near_own_head(&settling.scene, run, curve)
+                                && mark_crowding(&settling.scene, run, curve) > 1.0
                         })
                 })?;
                 let crossings = crossed.iter().map(|&(crossing, _)| crossing).collect();
@@ -688,10 +689,11 @@ impl Settling<'_> {
             beneath.push(under);
         }
         beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
-        Some(f64::min(
+        Some(min([
             crowding(&self.scene, run, &beneath, curve, &[]),
             own_head_crowding(&self.scene, run, curve),
-        ))
+            mark_crowding(&self.scene, run, curve),
+        ]))
     }
 
     /// Which of a crossing's two lines would stay whole: a line that joins or
