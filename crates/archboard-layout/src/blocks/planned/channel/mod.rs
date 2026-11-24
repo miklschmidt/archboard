@@ -513,12 +513,8 @@ pub(super) fn tails(model: &Model<'_>, index: usize, shape: &Shape) -> Vec<Vec<P
         .collect()
 }
 
-pub(super) fn attached(at: Point, next: Point, bounds: Rect) -> bool {
-    attached_by(at, next, bounds, 0.0)
-}
-
-/// `attached` for a line whose ink reaches `half` to either side: a cable's every strand ends on
-/// the wall, so its middle stands half its width in from each end of the wall.
+/// Whether a line whose ink reaches `half` to either side starts cleanly on a wall of `bounds`:
+/// a cable's every strand ends on the wall, so its middle stands half its width in from each end.
 fn attached_by(at: Point, next: Point, bounds: Rect, half: f64) -> bool {
     let near = |a: f64, b: f64| (a - b).abs() < 0.1;
     if at.x == next.x {
@@ -575,7 +571,7 @@ fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
         })
 }
 
-fn basic(
+pub(super) fn basic(
     (points, ink): (&[Point], (f64, f64)),
     source: Rect,
     target: Rect,

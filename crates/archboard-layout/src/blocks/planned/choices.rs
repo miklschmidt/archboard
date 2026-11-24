@@ -1,5 +1,11 @@
 //! Candidate channels between fixed endpoint ports.
+use std::cell::OnceCell;
+use std::hash::{Hash, Hasher};
+
+use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
+
 use super::{
+    corridors::{CorridorBase, CorridorScratch},
     fixed::{RouteRanker, page_bounds},
     geometry::{clean, contains, length},
     model::Model,
@@ -11,6 +17,64 @@ use crate::{
     blocks::assembly::PlacedLine,
     geometry::{Point, Rect, inflate},
 };
+
+/// Distinct candidate polylines in first-seen order, avoiding cloning and sorting duplicates.
+#[derive(Default)]
+struct PathSet {
+    paths: Vec<Vec<Point>>,
+    first: FxHashMap<u64, usize>,
+    overflow: Vec<(u64, usize)>,
+}
+
+impl PathSet {
+    fn hash_of(points: &[Point]) -> u64 {
+        let mut hasher = FxHasher::default();
+        points.len().hash(&mut hasher);
+        for p in points {
+            let x = if p.x == 0.0 { 0_u64 } else { p.x.to_bits() };
+            let y = if p.y == 0.0 { 0_u64 } else { p.y.to_bits() };
+            x.hash(&mut hasher);
+            y.hash(&mut hasher);
+        }
+        hasher.finish()
+    }
+
+    fn insert_slice(&mut self, points: &[Point]) {
+        let hash = Self::hash_of(points);
+        if let Some(&idx) = self.first.get(&hash) {
+            if self.paths[idx] == points
+                || self
+                    .overflow
+                    .iter()
+                    .any(|&(h, j)| h == hash && self.paths[j] == points)
+            {
+                return;
+            }
+            self.overflow.push((hash, self.paths.len()));
+        } else {
+            self.first.insert(hash, self.paths.len());
+        }
+        self.paths.push(points.to_vec());
+    }
+
+    fn insert_vec(&mut self, points: Vec<Point>) {
+        let hash = Self::hash_of(&points);
+        if let Some(&idx) = self.first.get(&hash) {
+            if self.paths[idx] == points
+                || self
+                    .overflow
+                    .iter()
+                    .any(|&(h, j)| h == hash && self.paths[j] == points)
+            {
+                return;
+            }
+            self.overflow.push((hash, self.paths.len()));
+        } else {
+            self.first.insert(hash, self.paths.len());
+        }
+        self.paths.push(points);
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum Search {
@@ -31,6 +95,18 @@ pub(super) fn choose(
     self::search(model, topology, edge, shape, guide, hint, search).collect()
 }
 
+fn port_usable(bounds: Rect, obstacles: &super::clearance::Clearance, port: &super::ports::Port) -> bool {
+    contains(
+        bounds,
+        Rect {
+            x: port.approach.x,
+            y: port.approach.y,
+            width: 0.0,
+            height: 0.0,
+        },
+    ) && obstacles.clear(&[port.attachment, port.approach])
+}
+
 /// Check candidates on demand, preserving the pool order and its limits.
 pub(super) fn search<'a>(
     model: &'a Model<'_>,
@@ -42,50 +118,63 @@ pub(super) fn search<'a>(
     search: Search,
 ) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
-    let mut paths = guide_paths(guide);
+    let mut paths = PathSet::default();
+    for path in guide_paths(guide) {
+        paths.insert_vec(path);
+    }
     let obstacles = super::clearance::Clearance::new(obstacles(model, topology, edge, shape));
-    let usable = |port: &super::ports::Port| {
-        contains(
-            bounds,
-            Rect {
-                x: port.approach.x,
-                y: port.approach.y,
-                width: 0.0,
-                height: 0.0,
-            },
-        ) && obstacles.clear(&[port.attachment, port.approach])
-    };
-    let sources = super::endpoint_choices::ends(model, edge, true, shape, guide, search);
-    let targets = super::endpoint_choices::ends(model, edge, false, shape, guide, search);
-    let ink = model.ink(edge);
-    for tail in sources {
-        for &head in &targets {
-            let pairs = super::endpoint_choices::aligned(model, edge, shape, tail, head);
-            for (tail, head) in pairs {
-                if !usable(&tail) || !usable(&head) {
-                    // A bend approach can extend past the opposite wall of a straight span.
-                    let span = [tail.attachment, head.attachment];
-                    if (span[0].x == span[1].x || span[0].y == span[1].y)
-                        && super::channel::approaches(&span, ink)
-                        && obstacles.clear(&span)
-                    {
-                        paths.push(span.to_vec());
-                    }
-                    continue;
-                }
-                paths.extend(connect(
-                    model,
-                    edge,
-                    shape,
+    let sources: Vec<_> = super::endpoint_choices::ends(model, edge, true, shape, guide, search)
+        .into_iter()
+        .map(|port| (port, port_usable(bounds, &obstacles, &port)))
+        .collect();
+    let targets: Vec<_> = super::endpoint_choices::ends(model, edge, false, shape, guide, search)
+        .into_iter()
+        .map(|port| (port, port_usable(bounds, &obstacles, &port)))
+        .collect();
+    let (from, to) = model.ends[edge];
+    let geom = (shape.endpoints[&from], shape.endpoints[&to], bounds, model.ink(edge));
+    let base = CorridorBase::new(bounds, shape, guide, hint);
+    let mut scratch = CorridorScratch::default();
+    let mut points = Vec::with_capacity(7);
+    for &(orig_tail, tail_ok) in &sources {
+        for &(orig_head, head_ok) in &targets {
+            for (tail, head) in
+                super::endpoint_choices::aligned(model, edge, shape, orig_tail, orig_head)
+            {
+                let t_ok = tail == orig_tail && tail_ok || port_usable(bounds, &obstacles, &tail);
+                let h_ok = head == orig_head && head_ok || port_usable(bounds, &obstacles, &head);
+                add_pair(
+                    geom,
                     (tail, head),
-                    (bounds, guide, hint),
-                    &obstacles,
-                    search,
-                ));
+                    (t_ok, h_ok),
+                    (&base, &obstacles, search),
+                    (&mut scratch, &mut points, &mut paths),
+                );
             }
         }
     }
-    select(model, topology, edge, shape, paths)
+    select(model, topology, edge, shape, paths.paths)
+}
+
+fn add_pair(
+    geom: (Rect, Rect, Rect, (f64, f64)),
+    (tail, head): (super::ports::Port, super::ports::Port),
+    (t_ok, h_ok): (bool, bool),
+    (base, obstacles, search): (&CorridorBase, &super::clearance::Clearance, Search),
+    state: (&mut CorridorScratch, &mut Vec<Point>, &mut PathSet),
+) {
+    if !t_ok || !h_ok {
+        // A bend approach can extend past the opposite wall of a straight span.
+        let span = [tail.attachment, head.attachment];
+        if (span[0].x == span[1].x || span[0].y == span[1].y)
+            && super::channel::approaches(&span, geom.3)
+            && obstacles.clear(&span)
+        {
+            state.2.insert_slice(&span);
+        }
+        return;
+    }
+    connect(geom, (tail, head), (base, obstacles, search), state);
 }
 
 fn select<'a>(
@@ -99,22 +188,18 @@ fn select<'a>(
     let ink_bounds = page_bounds(shape);
     let mut ranker = RouteRanker::new(model, shape, edge, ink_bounds);
     paths.sort_by_cached_key(|path| ranker.rank(path));
-    paths.dedup();
     let mut pool = Pool::default();
-    let slots = super::route_labels::Slots::new(model, shape);
+    let slots: OnceCell<super::route_labels::Slots<'a>> = OnceCell::new();
     let probe = super::channel::Probe::new(model, topology, edge, shape, bounds);
     let limit = if model.edges.len() > 64 { 64 } else { 128 };
     // A route that keeps its words off its own other stretches comes first, whatever its rank.
-    let passes: &[bool] = if model.edges[edge].label().is_some() {
-        &[false, true]
-    } else {
-        &[false]
-    };
+    let has_label = model.edges[edge].label().is_some();
+    let passes: &[bool] = if has_label { &[false, true] } else { &[false] };
     let count = paths.len();
     // What the first pass found of each route. The second pass can only add a route that the
     // guard passed and whose words found no spot clear of its other stretches: it finds any
     // other route as the first pass did, refused or already in the pool.
-    let mut words_beside = vec![false; count];
+    let mut words_beside = vec![false; if has_label { count } else { 0 }];
     passes
         .iter()
         .flat_map(move |&beside| (0..count).map(move |at| (beside, at)))
@@ -124,16 +209,23 @@ fn select<'a>(
                 if !words_beside[at] {
                     return None;
                 }
+                let slots = slots.get_or_init(|| super::route_labels::Slots::new(model, shape));
                 Some(slots.beside(model, edge, points)?.0)
             } else {
                 if probe.refusal(points).is_some() {
                     return None;
                 }
-                let Ok(label) = label_for(model, edge, points, &slots) else {
-                    words_beside[at] = true;
-                    return None;
-                };
-                label
+                if has_label {
+                    let slots =
+                        slots.get_or_init(|| super::route_labels::Slots::new(model, shape));
+                    let Some((label, _)) = slots.slot(model, edge, points) else {
+                        words_beside[at] = true;
+                        return None;
+                    };
+                    Some(label)
+                } else {
+                    None
+                }
             };
             pool.keep(model, edge, points, label)
         })
@@ -142,12 +234,12 @@ fn select<'a>(
 
 #[derive(Default)]
 struct Pool {
-    homes: std::collections::BTreeSet<(u64, u64, u64, u64, u64, u64)>,
+    homes: FxHashSet<(u64, u64, u64, u64, u64, u64)>,
     /// How many candidates each family keeps: the routes whose longest run shares one line,
     /// and that leave their source and target walls the same ways. A route that leaves
     /// another wall keeps its own place, so ports that later fail together do not crowd out
     /// a route from another wall.
-    families: std::collections::BTreeMap<([Side; 2], bool, u64), usize>,
+    families: FxHashMap<([Side; 2], bool, u64), usize>,
 }
 impl Pool {
     /// Keep a route that the guard passed, with its words, unless the pool holds its place.
@@ -212,7 +304,7 @@ impl Pool {
 }
 
 /// The way a line leaves a wall: right, left, down or up the page.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Side {
     Right,
     Left,
@@ -319,59 +411,28 @@ fn normalized_guide(points: &[Point]) -> Vec<Point> {
 }
 
 fn connect(
-    model: &Model<'_>,
-    edge: usize,
-    shape: &Shape,
-    pair: (super::ports::Port, super::ports::Port),
-    guidance: (Rect, Option<&PlacedLine>, Option<super::lanes::Hint>),
-    obstacles: &super::clearance::Clearance,
-    search: Search,
-) -> Vec<Vec<Point>> {
-    let (tail, head) = pair;
-    let (bounds, guide, hint) = guidance;
-    let (from, to) = model.ends[edge];
-    let a = shape.endpoints[&from];
-    let b = shape.endpoints[&to];
-    let mut paths = Vec::new();
-    let mut points = Vec::with_capacity(7);
-    super::corridors::joins(
+    (source, target, bounds, ink): (Rect, Rect, Rect, (f64, f64)),
+    (tail, head): (super::ports::Port, super::ports::Port),
+    (base, obstacles, search): (&CorridorBase, &super::clearance::Clearance, Search),
+    (scratch, points, paths): (&mut CorridorScratch, &mut Vec<Point>, &mut PathSet),
+) {
+    base.joins(
         (tail.approach, head.approach),
-        bounds,
-        shape,
-        (guide, hint),
         obstacles,
         search == Search::Simple,
+        scratch,
         |middle| {
             super::geometry::clean_into(
                 std::iter::once(tail.attachment)
                     .chain(middle.iter().copied())
                     .chain([head.attachment]),
-                &mut points,
+                points,
             );
-            if points.len() >= 2
-                && super::channel::approaches(&points, model.ink(edge))
-                && super::channel::attached(points[0], points[1], a)
-                && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
-            {
-                paths.push(points.clone());
+            if super::channel::basic((points, ink), source, target, bounds).is_none() {
+                paths.insert_slice(points);
             }
         },
     );
-    paths
-}
-
-/// The words of a route, at a spot clear of its other stretches. A line without words needs none.
-fn label_for(
-    model: &Model<'_>,
-    edge: usize,
-    points: &[Point],
-    slots: &super::route_labels::Slots<'_>,
-) -> Result<Option<Rect>, ()> {
-    if model.edges[edge].label().is_none() {
-        return Ok(None);
-    }
-    let spot = slots.slot(model, edge, points);
-    spot.map(|(label, _)| Some(label)).ok_or(())
 }
 
 fn shifted(guide: &[Point], index: usize, horizontal: bool, offset: f64) -> Vec<Point> {
