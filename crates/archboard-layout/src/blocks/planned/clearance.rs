@@ -198,6 +198,7 @@ mod tests {
                 assert_eq!(index.clear(&path), expected);
             }
         }
+        assert!(index.axes.iter().all(|axis| !axis.borrow().is_empty()));
     }
 
     #[test]
