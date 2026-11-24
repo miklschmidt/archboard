@@ -154,6 +154,7 @@ describe("a line's ends say its effect", () => {
 		const { svg } = await drawn(LINES);
 		const query = lineOf(svg, "read").markup;
 		expect(markerAt(query, "marker-start")).toContain("<circle");
+		expect(markerAt(query, "marker-end")).toContain("<circle");
 		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
 		// The imprint is a short bar across the end of the line, beside the
 		// line's ports.
@@ -253,11 +254,12 @@ describe("a line's ends say its effect", () => {
 
 test("the legend keys each kind solid and lists the effects the picture draws", async () => {
 	const { svg } = await drawn(LINES, { legend: true });
-	const entries = [
+	const rows = [
 		...svg.matchAll(
-			/<g data-legend-entry="(relationship|effect)">[\s\S]*?<text[^>]*>([^<]*)<\/text>/gu,
+			/<g data-legend-entry="(relationship|effect)">([\s\S]*?)<text[^>]*>([^<]*)<\/text>/gu,
 		),
-	].map((found) => `${found[1]}: ${found[2]}`);
+	];
+	const entries = rows.map((found) => `${found[1]}: ${found[3]}`);
 	expect(entries).toEqual([
 		"relationship: HTTP",
 		"relationship: Storage",
@@ -268,4 +270,7 @@ test("the legend keys each kind solid and lists the effects the picture draws", 
 		"effect: Compute",
 		"effect: Declared only",
 	]);
+	const sample = (name: string) => rows.find((row) => row[3] === name)?.[2] ?? "";
+	expect(sample("Mutation")).toContain("filter:blur(");
+	expect(sample("Query").match(/<circle\b/gu)).toHaveLength(2);
 });
