@@ -110,11 +110,14 @@ Blocks keeps its planned and fallback drawings.
   repository and leaves no clear run onto Agent CLI's side. A wall entry to a card closer to the
   wall than an arrowhead's length draws the head across the wall: the advisors kept it, the tip
   still touches the card, and a wider side inset for container frames is a follow-up.
-- A channel is only as tall as the runs that use it (owner, 2026-11-23: "why we're wasting space
-  here"). Each run takes its own lanes, so a hand-off between two lines that read as one no longer
-  pushes the rows below it down. Lines of two kinds never read as one and keep no hand-off; the
-  advisors chose parting a pair sideways over leaving lanes empty. The room under a channel's last
-  track keeps the arrow's approach only where a line ends on a card there.
+- A channel holds the runs that use it and the room they need to read apart.
+  On 2026-11-23 the owner asked "why we're wasting space here".
+  Each run takes its own lanes and keeps room for its own hand-offs.
+  Only lines of the same kind need hand-off room. The advisors chose to part lines sideways
+  where that frees the hand-off room.
+  A trunk and a run that crosses its branch stand at least two lanes apart so the hop clears the
+  join. Below its last track, a channel keeps room for an arrow's approach to a card.
+  A line into a container door keeps room for a hop below a join.
 - Lines between the same two cards the same way travel as one bus, a lane apart over where they
   land, where that crosses and bends no more. A line whose turn ties a knot of join dots and hops
   runs out of its trunk where that unties more knots than it ties and crosses no more lines: the
