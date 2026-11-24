@@ -26,7 +26,8 @@ impl Router<'_> {
         into
     }
 
-    /// A key for every card step among some nets, to tell a new one from an old one.
+    /// A key for every card step among some nets, to tell a new one from an old one: where the
+    /// line in stands on its card, so a card that slides with both its lines keeps its steps.
     pub(super) fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
         let into = self.cards_below(nets);
         let mut keys = Vec::new();
@@ -42,11 +43,12 @@ impl Router<'_> {
             {
                 let bottom_x = self.net(other).bottom_x;
                 if too_short(bottom_x, one.top_x) {
+                    let card = top.item.map_or(0.0, |item| self.scene.item(item).bx.x);
                     keys.push(format!(
                         "{}|{}|{}",
                         one.edge,
                         one.channel,
-                        to_fixed(bottom_x, 2)
+                        to_fixed(bottom_x - card, 2)
                     ));
                 }
             }
@@ -163,5 +165,63 @@ impl Router<'_> {
         }
         let x = self.net(out_net).top_x;
         self.move_kept(chains, nets, &inward, x, kept)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::geometry::Rect;
+    use crate::lanes::chains::{Station, StationId};
+    use crate::lanes::channels::Net;
+    use crate::lanes::scene::{Item, Placement};
+
+    /// A net between two stations at two x.
+    fn net(
+        edge: &str,
+        (top, top_x): (StationId, f64),
+        (bottom, bottom_x): (StationId, f64),
+    ) -> Net {
+        Net {
+            edge: edge.into(),
+            order: 0.0,
+            channel: 0,
+            kind: "call".into(),
+            top,
+            bottom,
+            top_x,
+            bottom_x,
+            track: 0,
+            trunk: None,
+            wall: None,
+        }
+    }
+
+    #[test]
+    fn a_card_that_slides_with_both_its_lines_keeps_its_step() {
+        let mut scene = Placement::default();
+        let card = scene.add(Item::new(
+            Rect {
+                x: 0.0,
+                y: 100.0,
+                width: 100.0,
+                height: 40.0,
+            },
+            1,
+        ));
+        let mut track = Router::new(&mut scene);
+        let above = track.add(Station::new(Kind::Lane, 0, None, 50.0));
+        let on = track.add(Station::new(Kind::Card, 1, Some(card), 50.0));
+        let below = track.add(Station::new(Kind::Lane, 2, None, 55.0));
+        // The line in enters the card's top at 50; the line out leaves its bottom at 55.
+        track.nets.push(net("in", (above, 50.0), (on, 50.0)));
+        track.nets.push(net("out", (on, 55.0), (below, 55.0)));
+        let nets = [NetId(0), NetId(1)];
+        let before = track.card_step_keys(&nets);
+        assert_eq!(before.len(), 1, "the card holds one step");
+        track.scene.item_mut(card).bx.x += 10.0;
+        track.net_mut(NetId(0)).bottom_x += 10.0;
+        track.net_mut(NetId(1)).top_x += 10.0;
+        assert_eq!(track.card_step_keys(&nets), before);
     }
 }

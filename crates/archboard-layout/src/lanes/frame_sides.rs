@@ -148,13 +148,13 @@ fn face_taken(placed: &Picture<'_>, card: &Rect, face: f64) -> bool {
     })
 }
 
-/// Whether runs outside, up to the one that comes in through the wall, pass a box: a card but
-/// the one they reach, or a frame they cross into or out of.
-fn blocked(placed: &Picture<'_>, runs: &[Run], card: &Rect) -> bool {
+/// Whether runs pass a box: a card but the one they reach, or a frame they cross into or out of
+/// but the one whose wall they come in by.
+fn blocked(placed: &Picture<'_>, runs: &[Run], card: &Rect, entered: Option<&Rect>) -> bool {
     runs.iter().any(|&run| {
         let cards = placed.cards.iter().copied().filter(|bx| bx != card);
         let frames = (placed.frames.iter().map(|frame| frame.0))
-            .filter(|bx| !(inside(run.0, bx) && inside(run.1, bx)));
+            .filter(|bx| Some(bx) != entered && !(inside(run.0, bx) && inside(run.1, bx)));
         cards.chain(frames).any(|bx| through(run, &bx))
     })
 }
@@ -243,12 +243,15 @@ fn reads_better(placed: &Picture<'_>, door: &Door, points: &[Point], others: &[R
     let old = outside_first(placed, door.line, door.leaving);
     let start = door.outside.len().saturating_sub(1);
     let outside = runs_of(&points[start..points.len() - 1]);
+    // The run in through the wall, from the lane to the card's side.
+    let through_wall = runs_of(&points[points.len() - 2..]);
     let side = *points.last().expect("a point");
     let head = at_face(side.x, points[points.len() - 2].x, side.y);
     let old_meets = met(&runs_of(&old), others);
     let bused = old_meets / OVERLAP > 0;
     !bused
-        && !blocked(placed, &outside, &door.card)
+        && !blocked(placed, &outside, &door.card, None)
+        && !blocked(placed, &through_wall, &door.card, Some(&door.frame))
         && !others.iter().any(|&other| meets(head, other) > 0)
         && !side_approaches(placed, door.line).any(|approach| {
             runs_of(&points[start..])
@@ -299,6 +302,14 @@ fn aligned_cards_can_both_receive_a_line_through_one_wall() {
         card(120.0, 400.0),
         card(0.0, 560.0),
     ];
+    // A narrow card beside the wall, on the second card's row, between the wall and the lane
+    // the second line would come in by.
+    let beside = Rect {
+        x: 79.0,
+        y: 400.0,
+        width: 10.0,
+        height: 40.0,
+    };
     let frames = [(
         Rect {
             x: 100.0,
@@ -309,34 +320,45 @@ fn aligned_cards_can_both_receive_a_line_through_one_wall() {
         0,
     )];
     let points = |pairs: [(f64, f64); 6]| pairs.into_iter().map(|(x, y)| Point { x, y }).collect();
-    let mut lines = [
-        points([
-            (30.0, 40.0),
-            (30.0, 60.0),
-            (170.0, 60.0),
-            (170.0, 140.0),
-            (150.0, 140.0),
-            (150.0, 180.0),
-        ]),
-        points([
-            (30.0, 560.0),
-            (30.0, 540.0),
-            (170.0, 540.0),
-            (170.0, 460.0),
-            (150.0, 460.0),
-            (150.0, 440.0),
-        ]),
-    ];
-    enter_by_frame_sides(
-        0..lines.len(),
-        &mut Picture {
-            cards: &cards,
-            frames: &frames,
-            lines: &mut lines,
-        },
+    let entered = |cards: &[Rect]| {
+        let mut lines: [Vec<Point>; 2] = [
+            points([
+                (30.0, 40.0),
+                (30.0, 60.0),
+                (170.0, 60.0),
+                (170.0, 140.0),
+                (150.0, 140.0),
+                (150.0, 180.0),
+            ]),
+            points([
+                (30.0, 560.0),
+                (30.0, 540.0),
+                (170.0, 540.0),
+                (170.0, 460.0),
+                (150.0, 460.0),
+                (150.0, 440.0),
+            ]),
+        ];
+        enter_by_frame_sides(
+            0..lines.len(),
+            &mut Picture {
+                cards,
+                frames: &frames,
+                lines: &mut lines,
+            },
+        );
+        lines.map(|line| *line.last().expect("an end"))
+    };
+    assert_eq!(
+        entered(&cards),
+        [Point { x: 120.0, y: 200.0 }, Point { x: 120.0, y: 420.0 }]
     );
-    assert_eq!(lines[0].last(), Some(&Point { x: 120.0, y: 200.0 }));
-    assert_eq!(lines[1].last(), Some(&Point { x: 120.0, y: 420.0 }));
+    // The second line's run in through the wall would cross the card beside the wall.
+    let crowded = [cards[0], cards[1], cards[2], cards[3], beside];
+    assert_eq!(
+        entered(&crowded),
+        [Point { x: 120.0, y: 200.0 }, Point { x: 150.0, y: 440.0 }]
+    );
 }
 
 /// Bring one line in through its wall where that reads better, a lane out from the lines

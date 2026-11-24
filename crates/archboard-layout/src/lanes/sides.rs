@@ -131,7 +131,7 @@ pub(crate) fn route_with_sides(
         search.try_with(
             |choice| choice.buses.insert(bus),
             |again, best| again.crossings <= best.crossings && again.bends <= best.bends,
-        )?;
+        );
     }
     // A line whose turn ties a knot runs on its own where that unties more knots than it ties.
     for line in knotted_lines(&search.best.routes).into_iter().take(TRIED) {
@@ -141,7 +141,7 @@ pub(crate) fn route_with_sides(
                 knots_in(&again.routes) < knots_in(&best.routes)
                     && again.crossings <= best.crossings
             },
-        )?;
+        );
     }
     for candidate in search.best.candidates.clone().into_iter().take(TRIED) {
         search.try_with(
@@ -151,7 +151,7 @@ pub(crate) fn route_with_sides(
                     && again.crossings <= best.crossings
                     && again.bends < best.bends
             },
-        )?;
+        );
     }
     *search.scene = search.drawn;
     Ok(search.best.routes)
@@ -172,29 +172,31 @@ struct Search<'s, 'l, 'e> {
 
 impl Search<'_, '_, '_> {
     /// Route the block again with one change to the kept choice, and keep the change where the
-    /// new routing reads `better` than the best so far.
+    /// new routing reads `better` than the best so far. A change whose routing needs a card made
+    /// wider is not kept: the widths it asks for belong to a choice the block does not take.
     fn try_with(
         &mut self,
         change: impl FnOnce(&mut Choice) -> bool,
         better: impl FnOnce(&Routing, &Routing) -> bool,
-    ) -> Result<(), Map<ItemId, f64>> {
+    ) {
         let mut trying = self.kept.clone();
         change(&mut trying);
         *self.scene = self.fresh.clone();
-        let again = route_once(
+        let Ok(again) = route_once(
             self.scene,
             self.lines,
             self.spacing,
             self.rim,
             (self.reserve, true),
             &trying,
-        )?;
+        ) else {
+            return;
+        };
         if better(&again, &self.best) {
             self.kept = trying;
             self.best = again;
             self.drawn = self.scene.clone();
         }
-        Ok(())
     }
 }
 

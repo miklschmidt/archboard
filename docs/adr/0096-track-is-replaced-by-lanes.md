@@ -103,8 +103,7 @@ Blocks keeps its planned and fallback drawings.
   and only where the picture then bends less, crosses no more lines, and no line crosses the end
   within an arrowhead's length of the card; a wall entry also runs no longer and overlaps no
   line. A line in a bus between two cards lands with the bus. The ends on one side face stand
-  centred a lane apart. Over the 111 Lanes readings this cut bends by 7%, area by 3% and line
-  length by 4%, with one crossing fewer. Two places the owner named stay as they were: Agent CLI
+  centred a lane apart. Two places the owner named stay as they were: Agent CLI
   to Vault repository, because moving its end off Agent CLI's bottom face re-centres the ends
   there and bends another line, and the climb from Codex app-server, whose way up passes Vault
   repository and leaves no clear run onto Agent CLI's side. A wall entry to a card closer to the

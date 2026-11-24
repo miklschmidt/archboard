@@ -38,9 +38,13 @@ function distanceTo(point: DrawnPoint, line: readonly DrawnPoint[]): number {
 /** Up to this, a sideways step reads as a kink in one line, not a route: two lanes. */
 const KINK = 2 * LANE;
 
-/** One straight run of a line: upright or level, where it stands across, and how long it is. */
+/**
+ * One straight run of a line: upright or level, which way along its axis it runs, where it stands
+ * across, and how long it is.
+ */
 interface StraightRun {
 	readonly upright: boolean;
+	readonly forward: boolean;
 	readonly at: number;
 	readonly length: number;
 }
@@ -54,14 +58,17 @@ function straightRuns(points: readonly DrawnPoint[]): StraightRun[] {
 	return points.slice(1).flatMap((point, index): StraightRun[] => {
 		const previous = points[index]!;
 		const [dx, dy] = [Math.abs(point.x - previous.x), Math.abs(point.y - previous.y)];
-		if (dy > 1 && dx < 0.01) return [{ upright: true, at: point.x, length: dy }];
-		return dx > 1 && dy < 0.01 ? [{ upright: false, at: point.y, length: dx }] : [];
+		if (dy > 1 && dx < 0.01)
+			return [{ upright: true, forward: point.y > previous.y, at: point.x, length: dy }];
+		return dx > 1 && dy < 0.01
+			? [{ upright: false, forward: point.x > previous.x, at: point.y, length: dx }]
+			: [];
 	});
 }
 
 /**
  * The kinks of a drawing: every line that runs on the same way after stepping sideways by less
- * than `KINK`, two runs on one axis with no run longer than a kink between them.
+ * than `KINK`, two runs on one axis, going one way, with no run longer than a kink between them.
  * @param drawing The rendered document.
  * @returns Each kinked line's id, once per kink.
  */
@@ -71,7 +78,8 @@ function kinksOf(drawing: Pick<RenderedDiagram, "svg">): string[] {
 		const runs = straightRuns(points);
 		for (const [index, run] of runs.entries()) {
 			const next = runs.slice(index + 1).find((one) => one.upright === run.upright);
-			if (next === undefined) continue;
+			// A line that comes back the way it went turns round; it does not kink.
+			if (next === undefined || next.forward !== run.forward) continue;
 			const between = runs.slice(index + 1, runs.indexOf(next));
 			const step = Math.abs(next.at - run.at);
 			if (step > 0.5 && step < KINK && between.every((one) => one.length < KINK)) kinks.push(id);
