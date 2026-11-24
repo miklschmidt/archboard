@@ -203,9 +203,7 @@ impl Router<'_> {
                     };
                     apart(bx.x, bx.x + bx.width, gap)
                 })
-            && self.lanes_by_band(nets)[one.band]
-                .iter()
-                .all(|&lane| apart(lane, lane, LANE / 2.0));
+            && self.lanes_on_band_all(nets, one.band, |lane| apart(lane, lane, LANE / 2.0));
         if !clear {
             return false;
         }
@@ -259,14 +257,15 @@ impl Router<'_> {
         let mut boxes = Vec::new();
         for &reach in stretch {
             let station = reach.station;
-            if let Some(run) = self.run_of(chains, station) {
-                for lane in run.lanes {
-                    lanes.push((lane, self.x(lane)));
-                }
-            }
             let one = self.station(station);
-            // A card slides too (`slide_card`).
-            if one.kind != Kind::Lane {
+            if one.kind == Kind::Lane {
+                if let Some(run) = self.run_of(chains, station) {
+                    for lane in run.lanes {
+                        lanes.push((lane, self.x(lane)));
+                    }
+                }
+            } else {
+                // A card slides too (`slide_card`).
                 let id = one.item.expect("a box");
                 boxes.push((id, self.scene.item(id).bx));
             }

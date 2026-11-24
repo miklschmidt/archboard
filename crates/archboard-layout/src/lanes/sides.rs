@@ -20,7 +20,7 @@ use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId};
 use crate::lanes::knots::{knots_in, knotted_lines};
 use crate::lanes::ports::gathered;
-use crate::lanes::route::{Routed, SceneLine, route_once};
+use crate::lanes::route::{Prepared, Routed, RouterSnapshot, SceneLine, route_once};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
 use crate::lanes::score::crossing_places;
 use crate::lanes::side_runs::{
@@ -39,11 +39,10 @@ const SIDE_MARGIN: f64 = CARD_RADIUS;
 /// How many candidate ends a block tries on their sides, each with a routing of its own.
 const TRIED: usize = 16;
 
-/// A routed block: each line's points, the ends that could land on a side, the side ends that
-/// could not, and how many lines cross and bend.
+/// A routed block: each line's points, the side ends that could not land, and how many lines
+/// cross and bend.
 pub(crate) struct Routing {
     pub routes: Map<String, Vec<Point>>,
-    pub candidates: Sided,
     pub refused: Sided,
     pub crossings: usize,
     pub bends: usize,
@@ -112,91 +111,120 @@ pub(crate) fn route_with_sides(
     rim: Option<Rim>,
     reserve: bool,
 ) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
-    let fresh = scene.clone();
+    let prepared = Prepared::new(scene, lines, true);
     let kept = Choice::default();
-    let best = route_once(scene, lines, spacing, rim, (reserve, true), &kept)?;
+    let empty_trunks = prepared.post_trunks(&kept.loose);
+    let pre_gather = prepared.pre_gather(scene, &empty_trunks, reserve, &kept)?;
+    let pre_gather_scene = scene.clone();
+    let (best, best_done) = prepared.finish(scene, &pre_gather, spacing, rim, &kept);
     let drawn = scene.clone();
     let mut search = Search {
         scene,
-        fresh,
-        lines,
+        prepared: &prepared,
         spacing,
         rim,
         reserve,
         kept,
         best,
         drawn,
+        best_done,
     };
     for bus in search.best.buses.clone() {
-        search.try_with(
-            |choice| choice.buses.insert(bus),
-            |again, best| again.crossings <= best.crossings && again.bends <= best.bends,
-        );
+        search.try_bus(&pre_gather_scene, &pre_gather, bus);
     }
     // A line whose turn ties a knot runs on its own where that unties more knots than it ties.
     for line in knotted_lines(&search.best.routes).into_iter().take(TRIED) {
-        search.try_with(
-            |choice| choice.loose.insert(line),
-            |again, best| {
-                knots_in(&again.routes) < knots_in(&best.routes)
-                    && again.crossings <= best.crossings
-            },
-        );
+        search.try_loose(line);
     }
-    for candidate in search.best.candidates.clone().into_iter().take(TRIED) {
-        search.try_with(
-            |choice| choice.sided.insert(candidate),
-            |again, best| {
-                again.refused.is_empty()
-                    && again.crossings <= best.crossings
-                    && again.bends < best.bends
-            },
-        );
+    let candidates = search
+        .prepared
+        .side_candidates_of(&search.drawn, &search.best_done, spacing.0);
+    if !candidates.is_empty() {
+        let post_trunks = search.prepared.post_trunks(&search.kept.loose);
+        for candidate in candidates.into_iter().take(TRIED) {
+            search.try_sided(&post_trunks, candidate);
+        }
     }
     *search.scene = search.drawn;
     Ok(search.best.routes)
 }
 
 /// A search over a Lanes block's routings: the choice kept so far, its routing and its scene.
-struct Search<'s, 'l, 'e> {
+struct Search<'s, 'p, 'l, 'e> {
     scene: &'s mut Placement,
-    fresh: Placement,
-    lines: &'l [SceneLine<'e>],
+    prepared: &'p Prepared<'l, 'e>,
     spacing: (f64, f64),
     rim: Option<Rim>,
     reserve: bool,
     kept: Choice,
     best: Routing,
     drawn: Placement,
+    best_done: RouterSnapshot,
 }
 
-impl Search<'_, '_, '_> {
-    /// Route the block again with one change to the kept choice, and keep the change where the
-    /// new routing reads `better` than the best so far. A change whose routing needs a card made
-    /// wider is not kept: the widths it asks for belong to a choice the block does not take.
-    fn try_with(
-        &mut self,
-        change: impl FnOnce(&mut Choice) -> bool,
-        better: impl FnOnce(&Routing, &Routing) -> bool,
-    ) {
-        let mut trying = self.kept.clone();
-        change(&mut trying);
-        *self.scene = self.fresh.clone();
-        let Ok(again) = route_once(
-            self.scene,
-            self.lines,
-            self.spacing,
-            self.rim,
-            (self.reserve, true),
-            &trying,
-        ) else {
-            return;
-        };
-        if better(&again, &self.best) {
+impl Search<'_, '_, '_, '_> {
+    fn keep_if(&mut self, trying: Choice, again: Routing, done: RouterSnapshot, better: bool) {
+        if better {
             self.kept = trying;
             self.best = again;
             self.drawn = self.scene.clone();
+            self.best_done = done;
         }
+    }
+
+    /// Try gathering one bus from the shared pre-gather snapshot (buses only affect `gather`).
+    fn try_bus(
+        &mut self,
+        pre_gather_scene: &Placement,
+        pre_gather: &RouterSnapshot,
+        bus: (ItemId, ItemId, bool),
+    ) {
+        let mut trying = self.kept.clone();
+        trying.buses.insert(bus);
+        *self.scene = pre_gather_scene.clone();
+        let (again, done) =
+            self.prepared
+                .finish(self.scene, pre_gather, self.spacing, self.rim, &trying);
+        let better = again.crossings <= self.best.crossings && again.bends <= self.best.bends;
+        self.keep_if(trying, again, done, better);
+    }
+
+    /// Try loosening one knotted line, reusing the choice-independent `Prepared` prefix.
+    fn try_loose(&mut self, line: String) {
+        let mut trying = self.kept.clone();
+        trying.loose.insert(line);
+        let post_trunks = self.prepared.post_trunks(&trying.loose);
+        let Ok(pre_gather) =
+            self.prepared
+                .pre_gather(self.scene, &post_trunks, self.reserve, &trying)
+        else {
+            return;
+        };
+        let (again, done) =
+            self.prepared
+                .finish(self.scene, &pre_gather, self.spacing, self.rim, &trying);
+        let better = knots_in(&again.routes) < knots_in(&self.best.routes)
+            && again.crossings <= self.best.crossings;
+        self.keep_if(trying, again, done, better);
+    }
+
+    /// Try landing one end on a card's side, reusing the post-`bundle_trunks` snapshot.
+    fn try_sided(&mut self, post_trunks: &RouterSnapshot, candidate: (String, End)) {
+        let mut trying = self.kept.clone();
+        trying.sided.insert(candidate);
+        let Ok(pre_gather) =
+            self.prepared
+                .pre_gather(self.scene, post_trunks, self.reserve, &trying)
+        else {
+            return;
+        };
+        let (again, done) =
+            self.prepared
+                .finish(self.scene, &pre_gather, self.spacing, self.rim, &trying);
+        let better = again.refused.is_empty()
+            && again.crossings <= self.best.crossings
+            && again.bends < self.best.bends;
+        self.keep_if(trying, again, done, better);
     }
 }
 
@@ -560,6 +588,15 @@ impl Router<'_> {
         points
     }
 
+    /// The side-port candidates of a finished Lanes routing.
+    pub(crate) fn find_side_candidates(&self, routed: &Map<String, Routed>, left: f64) -> Sided {
+        if self.bus && self.sided.is_empty() {
+            self.uncrossed(self.side_candidates(routed), routed, left)
+        } else {
+            Sided::default()
+        }
+    }
+
     /// Every line's points, from its source to its target, with its side ends landed, and what
     /// the next routing needs to know.
     pub(crate) fn drawn(&self, routed: &Map<String, Routed>, left: f64) -> Routing {
@@ -573,11 +610,6 @@ impl Router<'_> {
             routes.insert(line.0.clone(), points);
         }
         refused.extend(crossed_near(&landed, &routes));
-        let candidates = if self.bus && self.sided.is_empty() {
-            self.uncrossed(self.side_candidates(routed), routed, left)
-        } else {
-            Sided::default()
-        };
         let (crossings, bends) = if self.bus {
             let lines: Vec<_> = routes.values().map(|points| turns(points)).collect();
             (
@@ -589,7 +621,6 @@ impl Router<'_> {
         };
         Routing {
             routes,
-            candidates,
             refused,
             crossings,
             bends,

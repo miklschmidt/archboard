@@ -365,12 +365,47 @@ impl Router<'_> {
             x: x - bx.width / 2.0,
             ..bx
         };
-        let lanes = self.lanes_by_band(nets);
-        if !clear_on_band(self.scene, item, &moved, &lanes[self.scene.item(item).band]) {
+        let band = self.scene.item(item).band;
+        let lanes = self.lanes_on_band(nets, band);
+        if !clear_on_band(self.scene, item, &moved, &lanes) {
             return false;
         }
         self.scene.item_mut(item).bx = moved;
         true
+    }
+
+    /// Whether every lane on one band satisfies `predicate`.
+    pub(crate) fn lanes_on_band_all(
+        &self,
+        nets: &[NetId],
+        band: usize,
+        mut predicate: impl FnMut(f64) -> bool,
+    ) -> bool {
+        for &id in nets {
+            let net = self.net(id);
+            let stations = match net.wall {
+                Some(End::Bottom) => [Some(net.top), None],
+                Some(End::Top) => [Some(net.bottom), None],
+                None => [Some(net.top), Some(net.bottom)],
+            };
+            for station in stations.into_iter().flatten() {
+                let one = self.station(station);
+                if one.kind == Kind::Lane && one.band == band && !predicate(self.x(station)) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    /// The x of every lane on one band.
+    fn lanes_on_band(&self, nets: &[NetId], band: usize) -> Vec<f64> {
+        let mut lanes = Vec::new();
+        self.lanes_on_band_all(nets, band, |x| {
+            lanes.push(x);
+            true
+        });
+        lanes
     }
 
     /// The x of every lane, by the band it passes.
