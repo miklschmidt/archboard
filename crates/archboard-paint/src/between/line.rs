@@ -60,18 +60,33 @@ fn is_halo(shape: &Shape) -> bool {
     )
 }
 
+/// Whether an item stands at the target once the line lands.
+pub(super) fn target_imprint(item: &Item) -> bool {
+    matches!(
+        item,
+        Item::Shape(Shape {
+            purpose: Purpose::Imprint | Purpose::Glow,
+            ..
+        })
+    )
+}
+
+/// A route shape, excluding marks that stand across its end.
+fn route_shape(item: &Item) -> Option<&Shape> {
+    match item {
+        Item::Shape(shape) if !target_imprint(item) => Some(shape),
+        _ => None,
+    }
+}
+
 /// The shapes of a line that draw a route, by job: a halo has its purpose, the
 /// stroke is the last inked shape, and an inked shape drawn before it is the
 /// swipe.
 fn paths(group: &Group) -> Paths<'_> {
-    let routes = group
-        .items
-        .iter()
-        .enumerate()
-        .filter_map(|(at, item)| match item {
-            Item::Shape(shape) if route_of(&shape.geometry).is_some() => Some((at, shape)),
-            _ => None,
-        });
+    let routes = group.items.iter().enumerate().filter_map(|(at, item)| {
+        let shape = route_shape(item)?;
+        route_of(&shape.geometry).map(|_| (at, shape))
+    });
     let (halos, inked): (Vec<_>, Vec<_>) = routes.partition(|(_, shape)| is_halo(shape));
     Paths {
         halos,
@@ -99,33 +114,36 @@ fn route(shape: Option<&Shape>) -> Vec<PathStep> {
 
 /// Where a line begins: the point its first route starts at.
 pub(super) fn start_of(group: &Group) -> Option<Point> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => match route_of(&shape.geometry)?.first()? {
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| match route_of(&shape.geometry)?.first()? {
             PathStep::Move { to } => Some(*to),
             _ => None,
-        },
-        _ => None,
-    })
+        })
 }
 
 /// Where a line ends, and how far it runs: the last point of its first route.
 pub(super) fn end_of(group: &Group) -> Option<(Point, f64)> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => {
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| {
             let steps = route_of(&shape.geometry)?;
             let end = path_of(&steps).elements().last()?.end_point()?;
             Some((Point { x: end.x, y: end.y }, length(&steps)?))
-        }
-        _ => None,
-    })
+        })
 }
 
 /// The outline of a line's first route.
 pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => route_of(&shape.geometry).map(|steps| path_of(&steps)),
-        _ => None,
-    })
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| route_of(&shape.geometry).map(|steps| path_of(&steps)))
 }
 
 /// A shape this much visible, under whatever visibility it states.
@@ -435,6 +453,9 @@ impl LineCarry {
         let shown = receded(self.depth, progress);
         let mut items = Vec::with_capacity(self.template.items.len() + self.ghosts.len());
         for (child, item) in self.template.items.iter().enumerate() {
+            if along < 1.0 && target_imprint(item) {
+                continue;
+            }
             for ghost in self.ghosts.iter().filter(|ghost| ghost.before == child) {
                 let shape = match &ghost.morph {
                     Some(morph) => on_route(ghost.shape.clone(), morph.at(along)),
