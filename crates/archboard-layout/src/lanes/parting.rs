@@ -10,8 +10,8 @@
 use crate::ecma::{abs, number_key, or, sorted_by};
 use crate::lanes::chains::{ChainId, LANE, Router};
 use crate::lanes::channels::{End, NetId, TrunkId};
-use crate::lanes::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
-use crate::lanes::scene::{ItemId, Set};
+use crate::lanes::jogs::{Keeping, MoveCache, PASSES, Place, STRAIGHT, notched};
+use crate::lanes::scene::ItemId;
 
 /// Compact snapshot of one net for fast channel-wise collinearity and crossing checks.
 struct NetEntry<'a> {
@@ -156,42 +156,52 @@ impl Router<'_> {
         &mut self,
         chains: &[ChainId],
         routes: &[Vec<NetId>],
-        leaving: Place,
-        entering: Place,
-        piece: bool,
+        nets: &[NetId],
+        (leaving, entering, piece): (Place, Place, bool),
+        (cache, baseline): (&mut MoveCache, &mut Option<(f64, f64)>),
     ) -> bool {
-        let nets: Vec<NetId> = routes.concat();
         let (up, down) = (
             routes[leaving.route][leaving.index],
             routes[entering.route][entering.index],
         );
-        let (count, crossing) = (self.collinear_pairs(&nets), self.swapped(&nets));
-        let (upper, lower) = (self.net(up).clone(), self.net(down).clone());
+        let (count, crossing) =
+            *baseline.get_or_insert_with(|| (self.collinear_pairs(nets), self.swapped(nets)));
+        let (upper_top, upper_bottom) = {
+            let u = self.net(up);
+            (u.top_x, u.bottom_x)
+        };
+        let (lower_top, lower_bottom) = {
+            let l = self.net(down);
+            (l.top_x, l.bottom_x)
+        };
         // A stretch moved onto its own line's column straightens that line as
         // it parts the pair, so those moves come before a lane aside.
-        let own: Set<u64> = [upper.bottom_x, lower.top_x]
-            .into_iter()
-            .map(number_key)
-            .collect();
-        let mut moves: Vec<(f64, f64, Vec<Reach>)> = Vec::new();
+        let own_a = number_key(upper_bottom);
+        let own_b = number_key(lower_top);
         let leaving_stretch = self.stretch_beyond(&routes[leaving.route], leaving.index, End::Top);
-        for x in [lower.bottom_x - LANE, lower.bottom_x + LANE, upper.bottom_x] {
-            moves.push((x, upper.top_x, leaving_stretch.clone()));
-        }
         let entering_stretch =
             self.stretch_beyond(&routes[entering.route], entering.index, End::Bottom);
-        for x in [upper.top_x - LANE, upper.top_x + LANE, lower.top_x] {
-            moves.push((x, lower.bottom_x, entering_stretch.clone()));
-        }
-        let away = |x: f64| f64::from(u8::from(!own.contains(&number_key(x))));
-        let moves = sorted_by(&moves, |one, other| {
+        let stretches = [&leaving_stretch, &entering_stretch];
+        let raw_moves = [
+            (lower_bottom - LANE, upper_top, 0usize),
+            (lower_bottom + LANE, upper_top, 0),
+            (upper_bottom, upper_top, 0),
+            (upper_top - LANE, lower_bottom, 1),
+            (upper_top + LANE, lower_bottom, 1),
+            (lower_top, lower_bottom, 1),
+        ];
+        let away = |x: f64| {
+            let k = number_key(x);
+            f64::from(u8::from(k != own_a && k != own_b))
+        };
+        let moves = sorted_by(&raw_moves, |one, other| {
             or(
                 away(one.0) - away(other.0),
                 abs(one.0 - one.1) - abs(other.0 - other.1),
             )
         });
         let better = |track: &Router<'_>| {
-            track.collinear_pairs(&nets) < count && track.swapped(&nets) <= crossing
+            track.collinear_pairs(nets) < count && track.swapped(nets) <= crossing
         };
         // A lane aside opens a 16 px step on purpose: only a notch is new.
         let keeping = Keeping {
@@ -199,14 +209,20 @@ impl Router<'_> {
             piece,
             better: Some(&better),
         };
-        moves.iter().any(|(x, from, stretch)| {
-            abs(x - from) > STRAIGHT && self.move_stretch(chains, &nets, stretch, *x, keeping)
-        })
+        let parted = moves.iter().any(|&(x, from, which)| {
+            abs(x - from) > STRAIGHT
+                && self.move_stretch(chains, nets, stretches[which], x, keeping, cache)
+        });
+        if parted {
+            *baseline = None;
+        }
+        parted
     }
 
     /// Part every pair of lines that read as one where a move can: moving
     /// whole runs of lanes first, then only the pieces of runs a stretch stands on.
     pub(crate) fn part_collinear(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
+        let nets: Vec<NetId> = routes.concat();
         let places: Vec<(NetId, Place)> = routes
             .iter()
             .enumerate()
@@ -217,6 +233,8 @@ impl Router<'_> {
             })
             .collect();
         let channels = by_channel_vec(self, places.iter().copied(), |(net, _)| *net);
+        let mut cache = MoveCache::default();
+        let mut baseline = None;
         for piece in [false, true] {
             for _ in 0..PASSES {
                 let mut parted = false;
@@ -227,7 +245,13 @@ impl Router<'_> {
                         .map(|&(_, place)| place)
                         .collect();
                     for entering in enterings {
-                        parted |= self.part(chains, routes, leaving, entering, piece);
+                        parted |= self.part(
+                            chains,
+                            routes,
+                            &nets,
+                            (leaving, entering, piece),
+                            (&mut cache, &mut baseline),
+                        );
                     }
                 }
                 if !parted {

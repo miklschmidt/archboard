@@ -16,9 +16,12 @@
 //! A step no move can close is opened instead to the shortest step its two
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
+use rustc_hash::FxHashSet;
+
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_min, sign};
 use crate::geometry::Rect;
+use crate::lanes::card_steps::CardStepKey;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN};
 use crate::lanes::scene::{ItemId, card_face, centre_x};
@@ -69,10 +72,21 @@ pub(crate) fn nothing(_: &Router<'_>, _: &[NetId]) -> f64 {
 }
 
 /// What a stretch's move changes, to put back when part of it cannot move.
+#[derive(Default)]
 struct Saved {
     lanes: Vec<(StationId, f64)>,
     boxes: Vec<(ItemId, Rect)>,
     ends: Vec<(f64, f64)>,
+}
+
+/// Reusable move-guard snapshots across consecutive failed `move_stretch` calls.
+/// While a move is rejected and restored, the pre-move notches and card steps stay identical.
+#[derive(Default)]
+pub(crate) struct MoveCache {
+    notches: Vec<bool>,
+    steps: FxHashSet<CardStepKey>,
+    valid: bool,
+    saved: Saved,
 }
 
 /// How far a net steps sideways.
@@ -251,33 +265,30 @@ impl Router<'_> {
         stretch
     }
 
-    /// Keep what moving some stations could change.
-    fn save(&self, chains: &[ChainId], nets: &[NetId], stretch: &[Reach]) -> Saved {
-        let mut lanes = Vec::new();
-        let mut boxes = Vec::new();
+    /// Keep what moving some stations could change, reusing `saved`'s buffers.
+    fn save_into(&self, chains: &[ChainId], nets: &[NetId], stretch: &[Reach], saved: &mut Saved) {
+        saved.lanes.clear();
+        saved.boxes.clear();
         for &reach in stretch {
             let station = reach.station;
             let one = self.station(station);
             if one.kind == Kind::Lane {
                 if let Some(run) = self.run_of(chains, station) {
                     for lane in run.lanes {
-                        lanes.push((lane, self.x(lane)));
+                        saved.lanes.push((lane, self.x(lane)));
                     }
                 }
             } else {
                 // A card slides too (`slide_card`).
                 let id = one.item.expect("a box");
-                boxes.push((id, self.scene.item(id).bx));
+                saved.boxes.push((id, self.scene.item(id).bx));
             }
         }
-        let ends = nets
-            .iter()
-            .map(|&net| {
-                let n = self.net(net);
-                (n.top_x, n.bottom_x)
-            })
-            .collect();
-        Saved { lanes, boxes, ends }
+        saved.ends.clear();
+        saved.ends.extend(nets.iter().map(|&net| {
+            let n = self.net(net);
+            (n.top_x, n.bottom_x)
+        }));
     }
 
     /// Put back what a failed stretch moved.
@@ -345,15 +356,20 @@ impl Router<'_> {
         stretch: &[Reach],
         x: f64,
         keeping: Keeping<'_>,
+        cache: &mut MoveCache,
     ) -> bool {
         let Keeping {
             guard,
             piece,
             better,
         } = keeping;
-        let saved = self.save(chains, nets, stretch);
-        let notches: Vec<bool> = nets.iter().map(|&net| guard(self, net)).collect();
-        let steps = self.card_step_set(nets);
+        if !cache.valid {
+            cache.notches.clear();
+            cache.notches.extend(nets.iter().map(|&net| guard(self, net)));
+            self.fill_card_step_set(nets, &mut cache.steps);
+            cache.valid = true;
+        }
+        self.save_into(chains, nets, stretch, &mut cache.saved);
         let moved = stretch
             .iter()
             .all(|&one| self.move_station(chains, nets, one, x, piece));
@@ -363,12 +379,14 @@ impl Router<'_> {
         let done = moved
             && nets
                 .iter()
-                .zip(&notches)
+                .zip(&cache.notches)
                 .all(|(&net, &was)| was || !guard(self, net))
-            && self.card_steps_subset(nets, &steps)
+            && self.card_steps_subset(nets, &cache.steps)
             && better.is_none_or(|better| better(self));
-        if !done {
-            self.restore(nets, &saved);
+        if done {
+            cache.valid = false;
+        } else {
+            self.restore(nets, &cache.saved);
         }
         done
     }
@@ -383,20 +401,21 @@ impl Router<'_> {
         nets: &[NetId],
         place: Place,
         kept: Kept<'_>,
+        (cache, kept_before): (&mut MoveCache, &mut Option<f64>),
     ) -> bool {
         let route = &routes[place.route];
         let net = route[place.index];
         for end in [End::Top, End::Bottom] {
             let x = self.net(net).x_at(end.other());
             let stretch = self.stretch_beyond(route, place.index, end);
-            if self.move_kept(chains, nets, &stretch, x, kept) {
+            if self.move_kept(chains, nets, &stretch, x, kept, (cache, kept_before)) {
                 return true;
             }
             let through = self.through_card(routes, *stretch.last().expect("a station"));
             if !through.is_empty() {
                 let mut all = stretch.clone();
                 all.extend(through);
-                if self.move_kept(chains, nets, &all, x, kept) {
+                if self.move_kept(chains, nets, &all, x, kept, (cache, kept_before)) {
                     return true;
                 }
             }
@@ -412,15 +431,20 @@ impl Router<'_> {
         moved: &[Reach],
         x: f64,
         kept: Kept<'_>,
+        (cache, kept_before): (&mut MoveCache, &mut Option<f64>),
     ) -> bool {
-        let before = kept(self, nets);
+        let before = *kept_before.get_or_insert_with(|| kept(self, nets));
         let better = |track: &Router<'_>| kept(track, nets) <= before;
         let keeping = Keeping {
             guard: kinked,
             piece: false,
             better: Some(&better),
         };
-        self.move_stretch(chains, nets, moved, x, keeping)
+        let done = self.move_stretch(chains, nets, moved, x, keeping, cache);
+        if done {
+            *kept_before = None;
+        }
+        done
     }
 
     /// Close every step too short for its two bends that a move can close,
@@ -428,23 +452,38 @@ impl Router<'_> {
     /// step back at a label. `kept` is what no move may add to.
     pub(crate) fn close_jogs(&mut self, chains: &[ChainId], routes: &[Vec<NetId>], kept: Kept<'_>) {
         let nets: Vec<NetId> = routes.concat();
+        let mut cache = MoveCache::default();
+        let mut kept_before = None;
         for pass in 0..PASSES {
-            let mut closed = Vec::new();
+            let mut closed = false;
             for route in 0..routes.len() {
                 for index in 0..routes[route].len() {
                     let net = routes[route][index];
                     let wants = (kinked(self, net)
                         || (pass == 0 && self.turns_back(&routes[route], index)))
                         && self.net(net).wall.is_none();
-                    closed.push(
-                        wants && self.close(chains, routes, &nets, Place { route, index }, kept),
-                    );
+                    closed |= wants
+                        && self.close(
+                            chains,
+                            routes,
+                            &nets,
+                            Place { route, index },
+                            kept,
+                            (&mut cache, &mut kept_before),
+                        );
                 }
             }
-            for (into, out_of) in self.card_steps(routes) {
-                closed.push(self.close_card_step(chains, routes, &nets, into, out_of, kept));
+            for pair in self.card_steps(routes) {
+                closed |= self.close_card_step(
+                    chains,
+                    routes,
+                    &nets,
+                    pair,
+                    kept,
+                    (&mut cache, &mut kept_before),
+                );
             }
-            if !closed.iter().any(|&one| one) {
+            if !closed {
                 return;
             }
         }
@@ -454,6 +493,7 @@ impl Router<'_> {
     /// close, to the shortest step they turn whole.
     pub(crate) fn open_notches(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
         let nets: Vec<NetId> = routes.concat();
+        let mut cache = MoveCache::default();
         for route in routes {
             for (index, &net) in route.iter().enumerate() {
                 if !notched(self, net) || self.net(net).wall.is_some() {
@@ -468,7 +508,7 @@ impl Router<'_> {
                         piece: false,
                         better: None,
                     };
-                    if self.move_stretch(chains, &nets, &stretch, x, keeping) {
+                    if self.move_stretch(chains, &nets, &stretch, x, keeping, &mut cache) {
                         break;
                     }
                 }

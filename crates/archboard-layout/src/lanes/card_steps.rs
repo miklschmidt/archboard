@@ -11,7 +11,7 @@ use rustc_hash::FxHashSet;
 use crate::ecma::{abs, to_fixed};
 use crate::lanes::chains::{ChainId, Kind, Router};
 use crate::lanes::channels::{End, NetId};
-use crate::lanes::jogs::{Kept, Place, Reach, STRAIGHT, step, too_short};
+use crate::lanes::jogs::{Kept, MoveCache, Place, Reach, STRAIGHT, step, too_short};
 
 /// A two-decimal fixed-point key bijective with `to_fixed(value, 2)`, avoiding float formatting
 /// outside exact half-centi tie boundaries.
@@ -126,14 +126,13 @@ impl Router<'_> {
         keys
     }
 
-    /// The set of card step keys currently present among `nets`.
-    pub(super) fn card_step_set(&self, nets: &[NetId]) -> FxHashSet<CardStepKey> {
-        let mut keys = FxHashSet::default();
+    /// Populate `keys` with the card step keys currently present among `nets`, reusing its buffer.
+    pub(super) fn fill_card_step_set(&self, nets: &[NetId], keys: &mut FxHashSet<CardStepKey>) {
+        keys.clear();
         self.visit_card_step_keys(nets, |key| {
             keys.insert(key);
             true
         });
-        keys
     }
 
     /// Whether every card step currently present among `nets` was already in `before`.
@@ -229,9 +228,9 @@ impl Router<'_> {
         chains: &[ChainId],
         routes: &[Vec<NetId>],
         nets: &[NetId],
-        into: Place,
-        out_of: Place,
+        (into, out_of): (Place, Place),
         kept: Kept<'_>,
+        (cache, kept_before): (&mut MoveCache, &mut Option<f64>),
     ) -> bool {
         let (in_net, out_net) = (
             routes[into.route][into.index],
@@ -245,11 +244,11 @@ impl Router<'_> {
             self.card_side(routes, into, End::Bottom),
         );
         let x = self.net(in_net).bottom_x;
-        if self.move_kept(chains, nets, &out, x, kept) {
+        if self.move_kept(chains, nets, &out, x, kept, (cache, kept_before)) {
             return true;
         }
         let x = self.net(out_net).top_x;
-        self.move_kept(chains, nets, &inward, x, kept)
+        self.move_kept(chains, nets, &inward, x, kept, (cache, kept_before))
     }
 }
 
