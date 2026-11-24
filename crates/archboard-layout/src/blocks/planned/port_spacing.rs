@@ -277,8 +277,9 @@ fn expand_side(
 ) {
     let offsets = offsets(model, shape, edge, base, source, peers);
     for at in 0..paths.all.len() {
+        // Only disjoint end runs guarantee that a target slide leaves the source port alone.
         if filter_source
-            && paths.all[at].len() > 2
+            && paths.all[at].len() > 3
             && peers
                 .iter()
                 .any(|peer| peer.conflicts_at(&paths.all[at], true))
@@ -362,6 +363,80 @@ fn wall_span(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        blocks::assembly::{Placed, PlacedCard},
+        geometry::Rect,
+    };
+
+    #[test]
+    fn sliding_the_target_of_a_one_bend_route_can_clear_both_ports() {
+        let graph = serde_json::from_value(serde_json::json!({
+            "id": "root", "children": [
+                {"id": "a", "width": 0, "height": 100},
+                {"id": "b", "width": 300, "height": 60},
+                {"id": "c", "width": 60, "height": 80},
+                {"id": "d", "width": 60, "height": 80}
+            ], "edges": [
+                {"id": "ab", "sources": ["a"], "targets": ["b"]},
+                {"id": "ac", "sources": ["a"], "targets": ["c"]},
+                {"id": "bd", "sources": ["b"], "targets": ["d"]}
+            ]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let line = |id: &str, points: &[(f64, f64)]| PlacedLine {
+            id: id.into(),
+            label: None,
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+        };
+        let drawing = Placed {
+            width: 530.0,
+            height: 570.0,
+            cards: vec![
+                card("a", 200.0, 140.0, 0.0, 100.0),
+                card("b", 100.0, 310.0, 300.0, 60.0),
+                card("c", 440.0, 130.0, 60.0, 80.0),
+                card("d", 130.0, 470.0, 60.0, 80.0),
+            ],
+            edges: vec![
+                line("ac", &[(200.0, 167.0), (440.0, 167.0)]),
+                line("bd", &[(160.0, 370.0), (160.0, 470.0)]),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        };
+        let shape = super::super::fixed::placement(&model, drawing).unwrap();
+        let topology = super::super::topology::Topology::new(&model);
+        let edge = model.edge_index["ab"];
+        let base = line("ab", &[(200.0, 180.0), (160.0, 180.0), (160.0, 310.0)]);
+        let expected = line("ab", &[(200.0, 180.0), (380.0, 180.0), (380.0, 310.0)]);
+        assert!(super::super::fixed::feasible(
+            &model,
+            &topology,
+            edge,
+            &shape,
+            &expected.points
+        ));
+        let peers = peers(&model, &shape.routes, edge);
+        assert!(
+            alternatives(&model, &shape, &base, &peers)
+                .iter()
+                .any(|line| line.points == expected.points)
+        );
+    }
 
     #[test]
     fn centred_cable_ports_keep_their_places_despite_rounding() {
