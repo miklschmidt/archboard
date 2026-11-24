@@ -31,7 +31,7 @@ pub(super) fn feasible(
 
 /// Every route candidate of one edge uses the same fixed obstacles.
 #[derive(Default)]
-pub(super) struct GeometryCache(RefCell<FxHashMap<usize, Rc<FixedGeometry>>>);
+pub(super) struct GeometryCache(RefCell<FxHashMap<(usize, bool), Rc<FixedGeometry>>>);
 
 struct FixedGeometry {
     cards: super::clearance::Clearance,
@@ -69,6 +69,31 @@ impl FixedGeometry {
     }
 }
 
+/// The obstacles a piece of one width must clear.
+struct Obstacles {
+    fixed: Rc<FixedGeometry>,
+    labels: super::clearance::Clearance,
+    half: f64,
+}
+
+impl Obstacles {
+    fn refusal(&self, points: &[Point]) -> Option<&'static str> {
+        if !self.fixed.cards.clear(points) {
+            return Some("card");
+        }
+        if !self.labels.clear(points) {
+            return Some("label");
+        }
+        if !self.fixed.captions.clear(points) {
+            return Some("caption");
+        }
+        if !self.fixed.foreign.clear(points) {
+            return Some("foreign scope");
+        }
+        None
+    }
+}
+
 /// The guard borrows one immutable candidate set and indexes its fixed obstacles.
 pub(super) struct Probe<'a, 'g> {
     model: &'a Model<'g>,
@@ -76,10 +101,10 @@ pub(super) struct Probe<'a, 'g> {
     index: usize,
     shape: &'a Shape,
     bounds: Rect,
-    fixed: Rc<FixedGeometry>,
+    body: Obstacles,
+    fan: Option<Obstacles>,
     /// Whether the guard keeps the line off the words of the shape and on its own words.
     words: bool,
-    labels: super::clearance::Clearance,
     junctions: Option<Vec<Junction<'a>>>,
     /// The line that refused the last candidate. Candidates of one search share their ends,
     /// so it most likely refuses the next one too, and it is tested first.
@@ -111,36 +136,37 @@ impl<'a, 'g> Probe<'a, 'g> {
         (index, shape, bounds): (usize, &'a Shape, Rect),
         words: bool,
     ) -> Self {
-        let fixed = Rc::clone(
-            shape
-                .channel_geometry
-                .0
-                .borrow_mut()
-                .entry(index)
-                .or_insert_with(|| {
-                    Rc::new(FixedGeometry::of(
-                        model,
-                        topology,
-                        (index, model.half(index)),
-                        shape,
-                    ))
-                }),
-        );
-        let labels = super::clearance::Clearance::new(
-            (shape.labels.iter())
-                .filter(|(id, _)| words && **id != index)
-                .map(|(_, &r)| inflate(r, 12.01 + model.half(index)))
-                .collect(),
-        );
+        let obstacles = |fan, half| Obstacles {
+            fixed: Rc::clone(
+                shape
+                    .channel_geometry
+                    .0
+                    .borrow_mut()
+                    .entry((index, fan))
+                    .or_insert_with(|| {
+                        Rc::new(FixedGeometry::of(model, topology, (index, half), shape))
+                    }),
+            ),
+            labels: super::clearance::Clearance::new(
+                shape
+                    .labels
+                    .iter()
+                    .filter(|(id, _)| words && **id != index)
+                    .map(|(_, &r)| inflate(r, 12.01 + half))
+                    .collect(),
+            ),
+            half,
+        };
+        let (half, reach) = model.ink(index);
         Self {
             model,
             topology,
             index,
             shape,
             bounds,
-            fixed,
+            body: obstacles(false, half),
+            fan: (reach > half).then(|| obstacles(true, reach)),
             words,
-            labels,
             junctions: shape
                 .routes
                 .iter()
@@ -182,20 +208,29 @@ impl<'a, 'g> Probe<'a, 'g> {
             self.blocker.set(at);
             return Some("junction");
         }
-        if !self.fixed.cards.clear(points) {
-            return Some("card");
+        let refusal = if let Some(fan) = &self.fan {
+            super::junctions::pieces(points, model.ink(index))
+                .into_iter()
+                .find_map(|piece| {
+                    let obstacles = if piece.ink() > self.body.half {
+                        fan
+                    } else {
+                        &self.body
+                    };
+                    let ends = piece.ends();
+                    obstacles.refusal(&ends).or_else(|| {
+                        (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
+                            .then_some("wall lane")
+                    })
+                })
+        } else {
+            self.body.refusal(points)
+        };
+        if refusal.is_some() {
+            return refusal;
         }
-        if !self.labels.clear(points) {
-            return Some("label");
-        }
-        if !self.fixed.captions.clear(points) {
-            return Some("caption");
-        }
-        if hugs_wall(shape, points, model.half(index)) {
+        if hugs_wall(shape, points, self.body.half) {
             return Some("wall lane");
-        }
-        if !self.fixed.foreign.clear(points) {
-            return Some("foreign scope");
         }
         if !super::portals::follows(&topology.routes[index], shape, points) {
             return Some("portal");
@@ -595,6 +630,63 @@ mod tests {
         };
         assert_eq!(refusal(56.0), Some("approach"));
         assert_eq!(refusal(72.0), None);
+    }
+
+    #[test]
+    fn a_cable_keeps_its_fan_clear_of_a_nearby_card() {
+        use crate::blocks::assembly::{Placed, PlacedCard};
+
+        let graph = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "children": [{"id": "source"}, {"id": "target"}, {"id": "obstacle"}],
+            "edges": [{
+                "id": "cable", "sources": ["source"], "targets": ["target"],
+                "layoutOptions": {"archboard.cable": "sync;async;http;rpc;queue"}
+            }]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width| PlacedCard {
+            id: id.to_owned(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height: 80.0,
+            },
+            depth: 1,
+            header: None,
+        };
+        let points = [
+            Point { x: 90.0, y: 72.0 },
+            Point { x: 290.0, y: 72.0 },
+            Point { x: 290.0, y: 220.0 },
+            Point { x: 390.0, y: 220.0 },
+        ];
+        let refusal = |obstacle_x| {
+            let shape = super::super::fixed::placement(
+                &model,
+                Placed {
+                    width: 500.0,
+                    height: 300.0,
+                    cards: vec![
+                        card("source", 10.0, 32.0, 80.0),
+                        card("target", 390.0, 180.0, 80.0),
+                        card("obstacle", obstacle_x, 106.0, 20.0),
+                    ],
+                    frames: vec![],
+                    regions: vec![],
+                    edges: vec![],
+                    titles: vec![],
+                    routed: None,
+                },
+            )
+            .unwrap();
+            Probe::new(&model, &topology, 0, &shape, shape.scopes[&0].bounds).refusal(&points)
+        };
+        assert_eq!(refusal(130.0), Some("card"));
+        assert_eq!(refusal(220.0), None);
     }
 
     #[test]
