@@ -6,9 +6,9 @@
 
 use archboard_scene::geometry::Point;
 
-use crate::ecma::abs;
+use crate::ecma::{abs, number_key};
 use crate::lanes::chains::LANE;
-use crate::lanes::scene::Map;
+use crate::lanes::scene::{Map, Set};
 use crate::lanes::side_runs::{Run, meets, runs_of, turns};
 
 /// How far apart two join marks stand to read as two joins: two lanes.
@@ -100,15 +100,17 @@ fn crossing(a: Run, b: Run) -> Option<Point> {
     })
 }
 
-/// Every place two lines cross, where the painter draws a hop.
+/// Every place two lines cross, once even when they cross a shared trunk.
 fn hops_of(lines: &[Vec<Run>]) -> Vec<Point> {
     let pairs = (lines.iter().enumerate())
         .flat_map(|(index, one)| lines[index + 1..].iter().map(move |other| (one, other)));
+    let mut seen = Set::default();
     pairs
         .flat_map(|(one, other)| {
             one.iter()
                 .flat_map(|&a| other.iter().filter_map(move |&b| crossing(a, b)))
         })
+        .filter(|point| seen.insert((number_key(point.x), number_key(point.y))))
         .collect()
 }
 
@@ -164,4 +166,23 @@ pub(crate) fn knotted_lines(routes: &Map<String, Vec<Point>>) -> Vec<String> {
         })
         .map(|(id, _)| id.clone())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_join_near_a_shared_crossing_ties_one_knot() {
+        let at = |x, y| Point { x, y };
+        let routes = [
+            ("one", vec![at(0.0, 0.0), at(0.0, 90.0), at(60.0, 90.0)]),
+            ("two", vec![at(0.0, 0.0), at(0.0, 100.0), at(60.0, 100.0)]),
+            ("across", vec![at(-40.0, 70.0), at(60.0, 70.0)]),
+        ]
+        .into_iter()
+        .map(|(id, points)| (id.to_owned(), points))
+        .collect();
+        assert_eq!(knots_in(&routes), 1);
+    }
 }
