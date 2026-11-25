@@ -17,7 +17,7 @@ Module names and qualified IDs both resolve on `--module`, `--scope`, `--focus`,
   - `--hide-kind <kind>` and `--hide-effect <effect>` (repeatable): hide specific kinds or effects in addition to the lens.
   - `--to <module>` and `--from <module>` (repeatable): focus only the relationships entering `--to` (or its descendants) and/or leaving `--from` (or its descendants) that pass the active lens, kind, and effect filters. Refuses with `NO_MATCHING_RELATIONSHIPS` when nothing matches so the pane never shows a misleading picture.
 - **Adjusting the current view:**
-  - `--keep`: preserve the target pane's current scope, focus, expand, state, comparison, filters, ref, file, and page for any field not overridden by this call.
+  - `--keep`: preserve the target pane's current scope, focus, expand, state, comparison, filters, file, and page for any field not overridden by this call. A branch reading (`--ref`) or migration preview reports no capture, so `--keep` keeps nothing there: restate its selectors.
 - **Selection, code view, branches, comparison, and pages:**
   - `--select <subject>` (repeatable): select subjects in the pane without changing its scope or focus.
   - `--group <id|name>`: select all modules belonging to a configured semantic group (refuses unknown groups with `GROUP_NOT_FOUND`).
@@ -103,7 +103,7 @@ Settings-only requests need no `vault` and send `{type:"pane_settings",layout?,t
 Navigation requests resolve selectors on the server before moving the pane and send `{type:"pane_model",model,reading,revision,vault,repository}`.
 The result carries `{success,paneId,pane,reading}` plus `{model,revision,repository,checkout}` on navigation and `{settings}` when display settings changed.
 
-`browser panes` reports `panes[].architecture` (with `display.layout`, `display.theme`, `display.hoverLight`, `display.page`, `display.navigatorMode`, `display.file`, `display.ref`, `display.hideKinds`, `display.hideEffects`, and `display.ephemeralFlow`) plus `tabSessionId` for explanation and narrative guards.
+`browser panes` reports `panes[].architecture` (with `display.layout`, `display.theme`, `display.hoverLight`, `display.page`, `display.navigatorMode`, `display.file`, `display.hideKinds`, `display.hideEffects`, and `display.ephemeralFlow`) plus `tabSessionId` for explanation and narrative guards. A branch reading or migration preview reports no `architecture`.
 An agent show can change the machine's chosen checkout for that repository. If the result includes `chose`, tell the user which checkout was chosen and which it replaced.
 Navigation preserves the conversation shown in the tab.
 For narratives, read [canonical walkthroughs](canonical-walkthroughs.md).
