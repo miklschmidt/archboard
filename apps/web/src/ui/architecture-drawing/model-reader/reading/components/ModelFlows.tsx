@@ -41,8 +41,9 @@ function FlowRow(props: {
 }): JSX.Element {
 	const { entry, current, claimed, onChoose } = props;
 	const claims = useMemo(() => claimsOn(claimed, [entry.id]), [claimed, entry.id]);
+	// Keep the name's wrap points when a claim starts or ends.
 	const mark = useMemo(
-		() => (claims.length > 0 ? <ClaimMark purposes={claims} /> : undefined),
+		() => (claims.length > 0 ? <ClaimMark purposes={claims} /> : <span className="w-1.5" />),
 		[claims],
 	);
 	const open = useCallback(
