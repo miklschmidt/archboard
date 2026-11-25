@@ -29,6 +29,9 @@ type WebSocketMessageType =
 	// the pane asks for the drawing itself (ADR 0023).
 	| "pane_place"
 	| "pane_model"
+	// Browser display settings (layout engine, theme, hover-dimming) applied in place
+	// without resetting the pane's current navigation or reading.
+	| "pane_settings"
 	// Canonical model activity across every explicit vault (ADR 0022 and ADR 0068).
 	// Every pane receives the snapshot, independently of its displayed reading.
 	| "agent_activity"

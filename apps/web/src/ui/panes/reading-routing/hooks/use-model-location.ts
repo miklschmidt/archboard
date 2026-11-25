@@ -13,10 +13,24 @@ import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-in
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
 import { allLens } from "@archboard/model/content";
 import { hiddenKinds as policyHiddenKinds, lineEffect } from "@archboard/model/policy";
+import { chooseNavigatorMode } from "#ui/application/clients/navigator-mode.ts";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 /** The two lists of what a reader hid besides the lens. */
 type FilterField = "hideKinds" | "hideEffects";
+
+/** Reset fields shared when leaving a reading for a fresh destination. */
+const CLEARED_READING: Partial<ModelAddress> = {
+	scope: null,
+	focus: undefined,
+	expand: undefined,
+	grammar: undefined,
+	flow: undefined,
+	lens: undefined,
+	hideKinds: undefined,
+	hideEffects: undefined,
+	subject: undefined,
+};
 
 /** A reading to open: the vault at a ref or on disk, one of its states, and the module it opens. */
 interface ReadingTarget {
@@ -148,18 +162,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
 			userChanged?.("view");
-			void navigate({
-				bookmark: next ?? undefined,
-				scope: null,
-				focus: undefined,
-				expand: undefined,
-				grammar: undefined,
-				flow: undefined,
-				lens: undefined,
-				hideKinds: undefined,
-				hideEffects: undefined,
-				subject: undefined,
-			});
+			void navigate({ ...CLEARED_READING, bookmark: next ?? undefined });
 		},
 		[navigate, userChanged],
 	);
@@ -172,19 +175,11 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const selectLegacyAddress = useCallback(
 		(next: string): void => {
 			void navigate({
+				...CLEARED_READING,
 				legacyAddress: next,
 				checkpoint: preview === null ? null : checkpoint,
 				state: undefined,
 				bookmark: undefined,
-				scope: null,
-				focus: undefined,
-				expand: undefined,
-				grammar: undefined,
-				flow: undefined,
-				lens: undefined,
-				hideKinds: undefined,
-				hideEffects: undefined,
-				subject: undefined,
 				against: undefined,
 			});
 		},
@@ -200,8 +195,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		(id: string, repository: string): void => {
 			void navigate(
 				{
+					...CLEARED_READING,
 					id,
-					scope: null,
 					checkpoint: null,
 					ref: undefined,
 					state: undefined,
@@ -209,14 +204,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					bookmark: undefined,
 					legacyAddress: undefined,
 					against: undefined,
-					subject: undefined,
-					grammar: undefined,
-					flow: undefined,
-					focus: undefined,
-					expand: undefined,
-					lens: undefined,
-					hideKinds: undefined,
-					hideEffects: undefined,
 				},
 				false,
 				repository,
@@ -226,29 +213,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const openRequested = useCallback(
 		({ reading, repository }: PaneModelRequest, push = false): Promise<void> => {
-			return navigate(
-				{
-					id: reading.model,
-					scope: reading.scope ?? null,
-					checkpoint: reading.checkpoint ?? null,
-					ref: undefined,
-					state: reading.state,
-					preview: reading.preview,
-					bookmark: reading.bookmark,
-					legacyAddress: reading.legacyAddress,
-					against: requestedComparison(reading),
-					subject: reading.module,
-					grammar: requestedGrammar(reading),
-					flow: reading.flow,
-					focus: reading.focus,
-					expand: reading.expand,
-					lens: reading.lens,
-					hideKinds: reading.hideKinds,
-					hideEffects: reading.hideEffects,
-				},
-				!push,
-				repository ?? undefined,
-			);
+			if (reading.file !== undefined) {
+				chooseNavigatorMode("code");
+			}
+			return navigate(requestedAddressPatch(reading), !push, repository ?? undefined);
 		},
 		[navigate],
 	);
@@ -554,6 +522,36 @@ function nullableParameter(value: string | undefined): string | null {
 export { useModelLocation, type FileTarget, type FilterField, type ReadingTarget };
 
 /**
+ * Build the portable router address patch for an arriving server pane reading.
+ * @param reading The resolved navigation request.
+ * @returns The partial model address to write into the URL.
+ */
+function requestedAddressPatch(reading: PaneModelRequest["reading"]): Partial<ModelAddress> {
+	const ephemeral = reading.resolvedEphemeralFlow !== undefined;
+	return {
+		id: reading.model,
+		scope: reading.scope ?? null,
+		checkpoint: reading.checkpoint ?? null,
+		ref: reading.ref,
+		state: reading.state,
+		preview: reading.preview,
+		bookmark: reading.bookmark,
+		legacyAddress: reading.legacyAddress,
+		against: requestedComparison(reading),
+		subject: reading.module,
+		grammar: ephemeral ? undefined : requestedGrammar(reading),
+		flow: ephemeral ? undefined : reading.flow,
+		focus: reading.focus,
+		expand: reading.expand,
+		lens: reading.lens,
+		hideKinds: reading.hideKinds,
+		hideEffects: reading.hideEffects,
+		file: reading.file,
+		fileRepo: reading.file === undefined ? undefined : reading.fileRepo,
+	};
+}
+
+/**
  * The address field of a resolved request's comparison.
  * @param reading The resolved navigation request.
  * @returns The named base, or `after` when the request turned the comparison off.
@@ -568,9 +566,8 @@ function requestedComparison(reading: PaneModelRequest["reading"]): ModelAddress
  * @returns The grammar needed in the portable address.
  */
 function requestedGrammar(reading: PaneModelRequest["reading"]): ModelAddress["grammar"] {
-	return reading.grammar === "architecture" && reading.bookmark === undefined
-		? undefined
-		: reading.grammar;
+	const grammar = reading.grammar ?? "architecture";
+	return grammar === "architecture" && reading.bookmark === undefined ? undefined : grammar;
 }
 
 /**

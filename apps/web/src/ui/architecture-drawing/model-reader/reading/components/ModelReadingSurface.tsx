@@ -143,12 +143,26 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		() => ({ ...shown.reading, filters: { ...shown.reading.filters, lens: drawnLens } }),
 		[shown.reading, drawnLens],
 	);
+	const presentation = useMemo(
+		() => ({
+			page,
+			file: location.file ?? undefined,
+			fileRepo: location.fileRepo ?? undefined,
+			ref: location.ref ?? undefined,
+			ephemeralFlow:
+				reader.ephemeralFlow === null
+					? undefined
+					: { name: reader.ephemeralFlow.flow.name, grammar: reader.ephemeralFlow.grammar },
+		}),
+		[page, location.file, location.fileRepo, location.ref, reader.ephemeralFlow],
+	);
 	const explanation = useModelExplanation(
 		vault,
 		shown.model,
 		captured,
 		accepted.selected,
 		reporting,
+		presentation,
 	);
 	const [menu, setMenu] = useState(false);
 	const behavioralIds = useBehavioralIds(reader);

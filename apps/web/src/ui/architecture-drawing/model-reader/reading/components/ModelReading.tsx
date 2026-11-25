@@ -3,6 +3,8 @@ import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } fr
 import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/model/content";
+import type { ActiveEphemeralFlow } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
+import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { ModelBreadcrumbs } from "#ui/architecture-drawing/model-reader/reading/components/ModelBreadcrumbs.tsx";
 import { ModelLensStatus } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
 import { ModelChanges } from "#ui/architecture-drawing/model-reader/reading/components/ModelChanges.tsx";
@@ -49,6 +51,11 @@ interface ModelReadingProps {
 	/** What the stage has to say over the picture, which it never moves. */
 	children?: ReactNode;
 	paneId: string;
+	arrival?: number | undefined;
+	requestedPage?: Page | undefined;
+	ephemeralFlow?: ActiveEphemeralFlow | null | undefined;
+	onClearEphemeralFlow?: (() => void) | undefined;
+	onEphemeralGrammar?: ((grammar: "flowchart" | "sequence") => void) | undefined;
 	reducedMotion: boolean;
 }
 
@@ -87,9 +94,10 @@ function nameIn(list: readonly { id: string; name: string }[], id: string): stri
  * @returns The name of the flow or the walkthrough on screen.
  */
 function endingOf(reader: Reader): string | undefined {
-	const { model, walkthrough, location, structure } = reader;
+	const { model, walkthrough, location, structure, ephemeralFlow } = reader;
 	const { grammar, flow } = location;
 	if (walkthrough !== null) return nameIn(model.walkthroughs, walkthrough);
+	if (ephemeralFlow !== null) return ephemeralFlow.flow.name;
 	if (flow === null || grammar === "architecture") return undefined;
 	return nameIn(structure.depicted.flows, flow);
 }
@@ -429,12 +437,53 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			/>
 			<Activity mode={reader.presenting ? "hidden" : "visible"}>
 				<ModelReadingSurface {...props} reader={reader}>
+					{reader.ephemeralFlow !== null && (
+						<EphemeralFlowNotice
+							flow={reader.ephemeralFlow}
+							onClose={reader.onClearEphemeralFlow}
+						/>
+					)}
 					{props.children}
 					{/* The portals read the same picture attention context as the diagram. */}
 					{pictureCode}
 				</ModelReadingSurface>
 			</Activity>
 		</>
+	);
+}
+
+/**
+ * Quiet bar naming an unsaved temporary flow and offering a one-click return to architecture.
+ * @param props The active temporary flow and its dismiss callback.
+ * @param props.flow The temporary flow on screen.
+ * @param props.onClose Dismisses the temporary flow.
+ * @returns The banner.
+ */
+function EphemeralFlowNotice(props: {
+	readonly flow: ActiveEphemeralFlow;
+	readonly onClose: (() => void) | undefined;
+}): JSX.Element {
+	const { flow, onClose } = props;
+	return (
+		<output
+			data-slot="ephemeral-flow-notice"
+			className="bg-card/95 border-border text-body flex items-center justify-between gap-3 border-b px-4 py-2 backdrop-blur-xs"
+		>
+			<div className="flex min-w-0 items-center gap-2">
+				<span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
+					Temporary {flow.grammar}
+				</span>
+				<span className="text-foreground truncate font-medium">{flow.flow.name}</span>
+				<span className="text-muted-foreground hidden text-xs sm:inline">
+					Not saved to this model
+				</span>
+			</div>
+			{onClose !== undefined && (
+				<Button variant="ghost" size="sm" onClick={onClose}>
+					Back to architecture
+				</Button>
+			)}
+		</output>
 	);
 }
 

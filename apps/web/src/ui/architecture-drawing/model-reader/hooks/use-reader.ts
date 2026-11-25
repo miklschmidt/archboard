@@ -1,5 +1,6 @@
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ActiveEphemeralFlow } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
 import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { useChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use-change-walk.ts";
@@ -30,6 +31,16 @@ interface ReaderInputs {
 	readonly settled: boolean;
 	/** Whether the read of this address failed, so that the model only stands in for it. */
 	readonly failed?: boolean | undefined;
+	/** Which time the pane has been pointed at a reading from outside. */
+	readonly arrival?: number | undefined;
+	/** Requested page (`diagram` or `about`) from an external arrival. */
+	readonly requestedPage?: Page | undefined;
+	/** Active unsaved temporary flow, or null. */
+	readonly ephemeralFlow?: ActiveEphemeralFlow | null | undefined;
+	/** Dismisses the active unsaved temporary flow. */
+	readonly onClearEphemeralFlow?: (() => void) | undefined;
+	/** Switches an active temporary flow between flowchart and sequence. */
+	readonly onEphemeralGrammar?: ((grammar: "flowchart" | "sequence") => void) | undefined;
 	readonly reducedMotion: boolean;
 }
 
@@ -39,11 +50,25 @@ type AboutScope = string | null | undefined;
 /**
  * How the open module is read. The page is kept with the module it was chosen on, so another
  * module opens as a diagram. About describes the open scope, and the right panel the selection.
- * @param opened The open module.
+ * @param opened The open module on screen.
+ * @param arriving The module an external arrival opens, drawn or not yet.
+ * @param requestedPage The page requested by an external arrival, if any.
+ * @param arrival The external arrival counter.
  * @returns The page, and how to change it.
  */
-function useReaderPage(opened: string | null) {
-	const [about, setAbout] = useState<AboutScope>(undefined);
+function useReaderPage(
+	opened: string | null,
+	arriving: string | null,
+	requestedPage: Page | undefined,
+	arrival: number | undefined,
+) {
+	const [about, setAbout] = useState<AboutScope>(requestedPage === "about" ? arriving : undefined);
+	const [seenArrival, setSeenArrival] = useState(arrival);
+	if (arrival !== seenArrival) {
+		setSeenArrival(arrival);
+		if (requestedPage === "about") setAbout(arriving);
+		else if (requestedPage === "diagram") setAbout(undefined);
+	}
 	const onPage = useCallback(
 		(next: Page): void => setAbout(next === "about" ? opened : undefined),
 		[opened],
@@ -78,8 +103,10 @@ function useReader(inputs: ReaderInputs) {
 		model,
 		inputs.settled,
 		inputs.failed,
+		inputs.ephemeralFlow,
+		inputs.onClearEphemeralFlow,
 	);
-	const { location, comparison, structure, request } = reading;
+	const { location, comparison, structure, request, activeEphemeral } = reading;
 	const { open, setExpand } = location;
 	const { depicted, opened } = structure;
 	const pane = useContext(ModelPaneContext);
@@ -112,27 +139,35 @@ function useReader(inputs: ReaderInputs) {
 		open: openModule,
 	});
 	const { move } = moves;
+	const { onClearEphemeralFlow } = inputs;
 	const onOpen = useCallback(
 		(next: string | null): void => {
+			onClearEphemeralFlow?.();
 			leave?.();
 			move(next);
 		},
-		[leave, move],
+		[onClearEphemeralFlow, leave, move],
 	);
 	const onToggle = useCallback(
 		(id: string): boolean => {
 			const next = toggled(request.projection, id);
 			if (next === null) return false;
+			onClearEphemeralFlow?.();
 			leave?.();
 			setExpand(next);
 			return true;
 		},
-		[request.projection, leave, setExpand],
+		[request.projection, onClearEphemeralFlow, leave, setExpand],
 	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPage(shown.projection.opened);
+	const places = useReaderPage(
+		shown.projection.opened,
+		opened,
+		inputs.requestedPage,
+		inputs.arrival,
+	);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,
@@ -197,6 +232,9 @@ function useReader(inputs: ReaderInputs) {
 		onToggle,
 		onMove,
 		openFlow,
+		ephemeralFlow: activeEphemeral,
+		onClearEphemeralFlow,
+		onEphemeralGrammar: inputs.onEphemeralGrammar,
 	};
 }
 

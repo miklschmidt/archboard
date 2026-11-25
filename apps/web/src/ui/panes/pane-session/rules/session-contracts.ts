@@ -5,7 +5,10 @@
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
-import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
+import type {
+	PaneModelRequest,
+	PaneSettingsRequest,
+} from "#ui/panes/pane-session/rules/socket-messages.ts";
 import type {
 	AgentActivityEntry,
 	LegacyIdentity,
@@ -64,6 +67,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	onPresentRequest?: (request: PanePresentRequest) => void;
 	/** Open the canonical reading resolved for this pane. */
 	onModelRequest?: (request: PaneModelRequest) => void;
+	/** Apply browser display settings without navigating. */
+	onSettingsRequest?: (settings: PaneSettingsRequest) => void;
 	/**
 	 * This pane's socket came back after a drop, so anything cached from this
 	 * server while it was down may be stale (TASK-167).

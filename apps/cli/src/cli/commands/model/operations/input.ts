@@ -11,7 +11,7 @@ async function statedJson(
 	context: CommandContext,
 ): Promise<unknown> {
 	const text =
-		input.input === undefined
+		input.input === undefined || input.input === "-"
 			? (await context.readStdin()).trim()
 			: context.readTextFile(context.resolvePath(input.input));
 	if (text === "") {

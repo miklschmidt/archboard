@@ -70,7 +70,7 @@ function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
 	const picture = legendOf(scene);
-	const structural = location.grammar === "architecture";
+	const structural = shown.reading.grammar === "architecture";
 	return (
 		<ModelLegend
 			model={shown.model}
@@ -152,8 +152,19 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const legend = useMemo(() => <ReadingLegend reader={reader} look={look} />, [reader, look]);
 	const context = <ReadingContext reader={reader} selected={ids} />;
 	const { flow, reference } = projection;
-	const { grammar, selectGrammar } = location;
-	const { claimed } = reader;
+	const { selectGrammar } = location;
+	const { claimed, ephemeralFlow, onEphemeralGrammar } = reader;
+	const grammar = shown.reading.grammar;
+	const onFlowGrammar = useCallback(
+		(next: string): void => {
+			if (ephemeralFlow !== null && (next === "flowchart" || next === "sequence")) {
+				onEphemeralGrammar?.(next);
+				return;
+			}
+			selectGrammar(next);
+		},
+		[ephemeralFlow, onEphemeralGrammar, selectGrammar],
+	);
 	// The badge names the selection, or the flow or module that the head shows.
 	const claims = useMemo(() => {
 		if (!selecting) {
@@ -170,10 +181,10 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 					flow={flow}
 					collection={flowCollections(model, reference).get(flow.id)}
 					grammar={grammar}
-					onGrammar={selectGrammar}
+					onGrammar={onFlowGrammar}
 				/>
 			),
-		[flow, model, reference, grammar, selectGrammar],
+		[flow, model, reference, grammar, onFlowGrammar],
 	);
 	const { onAbout } = props;
 	const onShow = useShowSubject(reader);

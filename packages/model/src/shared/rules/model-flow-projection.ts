@@ -1,18 +1,40 @@
-import type { VariantContent } from "#shared/schemas/content.ts";
+import type { SemanticNode, VariantContent } from "#shared/schemas/content.ts";
 import type { ModelFlow, projectModel } from "#shared/rules/model-projection.ts";
+
+/** A transient participant synthesized for an unsaved ephemeral flow. */
+interface SyntheticFlowParticipant {
+	readonly id: string;
+	readonly name: string;
+}
 
 /**
  * Behavioral diagrams retain the complete selected exchange and its comparison.
  * @param architecture The underlying architecture reading.
- * @param flow The explicit flow from the same model state.
+ * @param flow The explicit flow from the same model state, or an unsaved temporary flow.
+ * @param syntheticParticipants Optional transient participants not present in the canonical model.
  * @returns All participants and steps without structural filters or invented messages.
  */
 function projectFlow(
 	architecture: ReturnType<typeof projectModel>,
 	flow: ModelFlow,
+	syntheticParticipants?: readonly SyntheticFlowParticipant[],
 ): ReturnType<typeof projectModel> {
 	const depicted = architecture.depicted.flows.find((entry) => entry.id === flow.id) ?? flow;
-	const byId = new Map(architecture.depicted.nodes.map((module) => [module.id, module]));
+	const byId = new Map<string, SemanticNode>(
+		architecture.depicted.nodes.map((module) => [module.id, module]),
+	);
+	// A transient participant stands outside the model, so it reads as `external`, never as
+	// whatever kind the model's first module happens to have.
+	syntheticParticipants?.forEach((participant, index) => {
+		if (!byId.has(participant.id)) {
+			byId.set(participant.id, {
+				id: participant.id,
+				order: architecture.depicted.nodes.length + index,
+				name: participant.name,
+				kind: "external",
+			});
+		}
+	});
 	const nodes = depicted.participants.flatMap((id) => byId.get(id) ?? []);
 	return {
 		...architecture,

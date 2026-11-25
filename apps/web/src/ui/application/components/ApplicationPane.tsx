@@ -146,10 +146,19 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const { paneId, callbacks, onRecordedReading } = props;
 	const bound = useBoundCallbacks(props);
-	const { arrival, driven, onModelRequest, onPresentRequest, endPresentation } = useModelArrival(
-		paneId,
-		bound.onModelError,
-	);
+	const {
+		arrival,
+		selected,
+		requestedPage,
+		ephemeralFlow,
+		clearEphemeralFlow,
+		setEphemeralGrammar,
+		driven,
+		onModelRequest,
+		onSettingsRequest,
+		onPresentRequest,
+		endPresentation,
+	} = useModelArrival(paneId, bound.onModelError);
 	const [canonicalReading, reportCanonicalReading] = useState<PaneReading | null>(null);
 	const client = useQueryClient();
 	const refreshExplanations = useCallback((): void => {
@@ -160,10 +169,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			...optionsFor(props, bound),
 			canonical: true,
 			onModelRequest,
+			onSettingsRequest,
 			onPresentRequest,
 			onExplanationsChanged: refreshExplanations,
 		}),
-		[props, bound, refreshExplanations, onModelRequest, onPresentRequest],
+		[props, bound, refreshExplanations, onModelRequest, onSettingsRequest, onPresentRequest],
 	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, readingChanged, vault } = session;
@@ -224,6 +234,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				) : (
 					<ArchitectureModelStage
 						arrival={arrival}
+						selected={selected}
+						requestedPage={requestedPage}
+						ephemeralFlow={ephemeralFlow}
+						onClearEphemeralFlow={clearEphemeralFlow}
+						onEphemeralGrammar={setEphemeralGrammar}
 						vault={vault}
 						paneId={paneId}
 						reducedMotion={props.reducedMotion}

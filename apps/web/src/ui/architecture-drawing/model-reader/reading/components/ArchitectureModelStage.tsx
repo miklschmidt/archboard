@@ -3,6 +3,8 @@ import {
 	ModelError,
 	type ModelErrorProps,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelFrame.tsx";
+import type { ActiveEphemeralFlow } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
+import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import {
 	isUnread,
 	ModelUnanswered,
@@ -70,6 +72,16 @@ interface ModelStageProps
 	reducedMotion: boolean;
 	/** Which time the pane has been pointed at a reading from outside. */
 	arrival?: number | undefined;
+	/** Explicit multi-subject selection from an agent arrival. */
+	selected?: readonly string[] | undefined;
+	/** Requested page (`diagram` or `about`) from an agent arrival. */
+	requestedPage?: Page | undefined;
+	/** Active unsaved temporary flow from an agent arrival, or null. */
+	ephemeralFlow?: ActiveEphemeralFlow | null | undefined;
+	/** Dismiss the active unsaved temporary flow and return to architecture. */
+	onClearEphemeralFlow?: (() => void) | undefined;
+	/** Switch an active temporary flow between sequence and flowchart. */
+	onEphemeralGrammar?: ((grammar: "flowchart" | "sequence") => void) | undefined;
 	/** The repository of this reading, when the listing names it. */
 	repository?: string | null | undefined;
 	/** What is wrong with the reading on screen, or null once nothing is, for the shell to say. */
@@ -112,7 +124,12 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
 	const { preview, subject } = useModelLocation(props.paneId);
 	return (
-		<ModelPane key={props.vault} subject={subject} arrival={props.arrival}>
+		<ModelPane
+			key={props.vault}
+			subject={subject}
+			selected={props.selected}
+			arrival={props.arrival}
+		>
 			{preview !== null ? <ModelPreviewReader {...props} /> : <CanonicalModelReader {...props} />}
 		</ModelPane>
 	);
@@ -225,6 +242,10 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				onCodeTargetNotice={props.onCodeTargetNotice}
 				onTrouble={props.onTrouble}
 				arrival={props.arrival}
+				requestedPage={props.requestedPage}
+				ephemeralFlow={props.ephemeralFlow}
+				onClearEphemeralFlow={props.onClearEphemeralFlow}
+				onEphemeralGrammar={props.onEphemeralGrammar}
 				driven={props.driven}
 				onPresentationEnd={props.onPresentationEnd}
 				narration={props.narration}
@@ -388,6 +409,10 @@ interface ModelResponseProps extends Pick<
 	| "onCodeTargetNotice"
 	| "onTrouble"
 	| "arrival"
+	| "requestedPage"
+	| "ephemeralFlow"
+	| "onClearEphemeralFlow"
+	| "onEphemeralGrammar"
 	| "driven"
 	| "narration"
 	| "overlay"
@@ -473,6 +498,11 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						model={model}
 						{...readingAnswer(query)}
 						paneId={props.paneId}
+						arrival={props.arrival}
+						requestedPage={props.requestedPage}
+						ephemeralFlow={props.ephemeralFlow}
+						onClearEphemeralFlow={props.onClearEphemeralFlow}
+						onEphemeralGrammar={props.onEphemeralGrammar}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={props.onCodeTargetNotice}
 					/>

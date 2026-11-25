@@ -69,3 +69,23 @@ test("display labels describe the accepted reading while selectors keep their id
 	expect(report.text).not.toContain("state DraftId");
 	expect(report.panes[0]).toMatchObject({ position: 1, place: "the only pane" });
 });
+
+test("display state surfaces temporary flow, ref, about page, file, and layout engine", () => {
+	const display = {
+		model: "Web shop",
+		comparison: "Current",
+		layout: "lanes" as const,
+		theme: "dark" as const,
+		hoverLight: "off" as const,
+		page: "about" as const,
+		file: "src/auth.ts",
+		ref: "feature/auth",
+		ephemeralFlow: { name: "Returning user auth", grammar: "flowchart" as const },
+	};
+	const report = reportOf({ ...reading, display });
+	expect(report.text).toContain('temporary flowchart "Returning user auth"');
+	expect(report.text).toContain("ref feature/auth");
+	expect(report.text).toContain("about");
+	expect(report.text).toContain("file src/auth.ts");
+	expect(report.text).toContain("lanes layout");
+});

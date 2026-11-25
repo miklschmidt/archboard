@@ -82,7 +82,7 @@ It reads no mutable model, starts no live voice session, and recreates no writer
 Saved talks stay exact history.
 A narrative can target a checkpoint older than its own definition.
 
-To steer a live walkthrough, follow [browser panes](browser-panes.md#navigate-a-local-agent-pane).
+To steer a live walkthrough, follow [browser panes](browser-panes.md#navigate-and-filter-a-live-pane).
 Opening a walkthrough does not start narration; the reader starts live narration with the Narrate control in the web UI, so treat narration as pending until they trigger it.
 The pane keeps separate revisions for the narrative source and its target. If either changes or becomes unavailable before narration starts, reopen the walkthrough before retrying.
 

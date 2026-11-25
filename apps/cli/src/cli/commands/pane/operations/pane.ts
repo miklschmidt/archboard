@@ -1,13 +1,5 @@
-import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
-import { statedJson } from "#cli/commands/model/operations/input.ts";
 import { z } from "zod";
-import {
-	closePane,
-	getPanes,
-	openPane,
-	showModelInPane,
-	type ShowModelResponse,
-} from "#cli/server-access/clients/panes.ts";
+import { closePane, getPanes, openPane } from "#cli/server-access/clients/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
@@ -23,7 +15,7 @@ const PaneRefSchema = z.looseObject({
 	position: z.number().int(),
 });
 
-const usage = "browser needs a subcommand: panes, open, close, or show.";
+const usage = "browser needs a subcommand: panes, open, close, show, or settings.";
 const tokens = z.array(z.string()).default([]);
 const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 	for (const token of values) {
@@ -373,175 +365,10 @@ async function callerVault(): Promise<string | null> {
 	return finding.ok ? finding.found.path : null;
 }
 
-/**
- * The line that says a show chose another checkout, which the agent tells the user.
- * @param result The show's answer.
- * @returns The line, or none when the show changed no choice.
- */
-function choiceLine(result: Pick<ShowModelResponse, "chose">): string[] {
-	const { chose } = result;
-	if (chose === undefined) return [];
-	const instead = chose.replaced === null ? "" : ` in place of ${chose.replaced}`;
-	return [
-		`This machine now reads ${chose.checkout} for ${chose.repository}${instead}: every pane of it reads this checkout. Tell the user.`,
-	];
-}
-
-const ShowInputSchema = architecturePaneReadingSchema().extend({
-	pane: z.string().optional(),
-	input: z.string().optional(),
-});
-const ShowResultSchema = z.looseObject({
-	success: z.literal(true),
-	model: z.string(),
-	reading: architecturePaneReadingSchema(),
-	revision: z.unknown(),
-	repository: z.string().nullable(),
-	checkout: z.string(),
-	chose: z
-		.object({ repository: z.string(), checkout: z.string(), replaced: z.string().nullable() })
-		.optional(),
-	paneId: z.string(),
-});
-const browserShowContract = defineCommand({
-	path: ["browser", "show"],
-	shared: ["url", "directory", "as-session"],
-	summary: "Show a canonical reading in one pane",
-	description:
-		"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation. When no browser is connected, it opens the canvas on the repository in the default browser and waits for its pane.",
-	examples: [
-		"archboard browser show --pane A --module Gateway",
-		"archboard browser show Shop --pane B --grammar sequence --flow Request",
-	],
-	parameters: [
-		{
-			kind: "positional",
-			key: "model",
-			name: "model",
-			description: "The optional model identity or name",
-		},
-		...(
-			[
-				"pane",
-				"module",
-				"scope",
-				"state",
-				"checkpoint",
-				"flow",
-				"walkthrough",
-				"lens",
-				"preview",
-				"bookmark",
-				"legacyAddress",
-				"input",
-			] as const
-		).map((key) => ({
-			kind: "option" as const,
-			key,
-			spellings: [key === "legacyAddress" ? "--legacy-address" : `--${key}`] as const,
-			value: "required" as const,
-			placeholder: "value",
-			description: `The explicit \`${key}\` selector`,
-		})),
-		{
-			kind: "option",
-			key: "against",
-			spellings: ["--against"],
-			value: "required",
-			placeholder: "id|name",
-			description: "Compare against one explicit state or complete checkpoint identity",
-		},
-		{
-			kind: "option",
-			key: "grammar",
-			spellings: ["--grammar"],
-			value: "required",
-			choices: ["architecture", "sequence", "flowchart"],
-			description: "The diagram grammar",
-		},
-		{
-			kind: "option",
-			key: "beat",
-			spellings: ["--beat"],
-			value: "required",
-			placeholder: "index",
-			description: "The zero-based walkthrough beat",
-		},
-		...(
-			[
-				["focus", "--focus"],
-				["hideKinds", "--hide-kind"],
-				["expand", "--expand"],
-			] as const
-		).map(([key, spelling]) => ({
-			kind: "option" as const,
-			key,
-			spellings: [spelling] as const,
-			value: "required" as const,
-			occurrences: "append" as const,
-			placeholder: "id",
-			description: `The \`${key}\` identities`,
-		})),
-	],
-	input: {
-		ingress: ShowInputSchema.extend({ beat: z.coerce.number().int().nonnegative().optional() }),
-	},
-	result: ShowResultSchema,
-	output: {
-		cases: [
-			{
-				id: "json",
-				when: {},
-				mode: "json",
-				description: "What the pane is showing now",
-				presentation: ["diagnostics", "result"],
-			},
-		],
-		/**
-		 * Selects the only output case.
-		 * @returns The json case id.
-		 */
-		select: () => "json",
-	},
-	prerequisites: ["server", "browser"],
-	effects: ["browser"],
-	refusals: [refusal("server"), refusal("browser")],
-	relationships: [
-		{
-			method: "POST",
-			path: "/api/panes/show",
-			cardinality: "one",
-			description: "Point the existing pane at a canonical reading",
-		},
-	],
-	/**
-	 * Show a resolved canonical reading in the named pane.
-	 * @param input The complete reading and pane selector.
-	 * @param context The invocation capabilities.
-	 * @returns The navigation receipt.
-	 */
-	async handler(input, context) {
-		await context.require("server", "Show architecture");
-		const { pane, input: file, ...flags } = input;
-		const reading =
-			file === undefined
-				? flags
-				: context.parse(
-						architecturePaneReadingSchema(),
-						await statedJson({ input: file }, context),
-					);
-		const opened = await openCanvas(context.vault?.path ?? null, "Show architecture");
-		const result = await showModelInPane(reading, pane ?? opened ?? undefined);
-		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
-	},
-});
-
 export {
 	browserContract,
 	PaneOpenResultSchema,
 	paneOpenContract,
 	paneCloseContract,
 	panesContract,
-	ShowResultSchema,
-	browserShowContract,
 };

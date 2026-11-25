@@ -1,6 +1,9 @@
 // The panes on screen, as the CLI asks the server about them and moves them.
 
-import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type {
+	architecturePaneReadingSchema,
+	paneDisplaySettingsSchema,
+} from "@archboard/model/pane-context";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
 import type { z } from "zod";
 
@@ -34,13 +37,16 @@ interface PaneLayoutResponse {
 	onScreen: Array<{ paneId: string; place: string; paneKey: string }>;
 }
 
+type BrowserDisplaySettings = z.infer<ReturnType<typeof paneDisplaySettingsSchema>>;
+
 type ShowModelResponse = {
 	success: true;
-	model: string;
+	model?: string;
 	reading: z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
-	revision: unknown;
-	repository: string | null;
-	checkout: string;
+	settings?: BrowserDisplaySettings;
+	revision?: unknown;
+	repository?: string | null;
+	checkout?: string;
 	chose?: { repository: string; checkout: string; replaced: string | null };
 	paneId: string;
 };
@@ -99,4 +105,35 @@ function showModelInPane(
 	);
 }
 
-export { type ShowModelResponse, closePane, getPanes, openPane, showModelInPane };
+/**
+ * Apply browser display settings (layout engine, theme, hover-dimming) in place without
+ * resetting current navigation or requiring a vault.
+ * @param settings The display settings to change.
+ * @param pane The pane spec, when the caller named one.
+ * @returns The applied settings receipt.
+ */
+function updateBrowserSettings(
+	settings: BrowserDisplaySettings,
+	pane?: string,
+): Promise<ShowModelResponse> {
+	const { session } = statedInvocation();
+	return requestJson<ShowModelResponse>(
+		"/api/panes/show",
+		posting({
+			reading: settings,
+			agent: true,
+			...(pane === undefined ? {} : { pane }),
+			...(session === null ? {} : { session }),
+		}),
+	);
+}
+
+export {
+	type BrowserDisplaySettings,
+	type ShowModelResponse,
+	closePane,
+	getPanes,
+	openPane,
+	showModelInPane,
+	updateBrowserSettings,
+};

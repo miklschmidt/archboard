@@ -162,7 +162,7 @@ Preview refusals exit with status 2:
 Preview accepts qualified original states, exact migration checkpoints, and ordinary module or flow selectors.
 Comparisons and explanations are unavailable.
 HTTP uses `/api/architecture/model?vault=<vault>&preview=Shop` and requires an explicit vault.
-To show a preview or imported reading in a live pane, follow [browser panes](browser-panes.md#navigate-a-local-agent-pane) with the matching `--preview`, `--checkpoint`, `--state`, `--bookmark`, or `--legacy-address` selectors.
+To show a preview or imported reading in a live pane, follow [browser panes](browser-panes.md#navigate-and-filter-a-live-pane) with the matching `--preview`, `--checkpoint`, `--state`, `--bookmark`, or `--legacy-address` selectors.
 Reads save no model, checkpoint, plan, timestamp, or current designation.
 For active canonical authoring, complete [installation](#install-an-approved-preview).
 

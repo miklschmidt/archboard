@@ -10,6 +10,7 @@
 
 import {
 	panePresentRequestSchema,
+	paneSettingsRequestSchema,
 	architecturePaneReadingSchema,
 } from "@archboard/model/pane-context";
 import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
@@ -21,6 +22,7 @@ import type {
 import type { z } from "zod";
 
 type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
+type PaneSettingsRequest = Omit<z.infer<ReturnType<typeof paneSettingsRequestSchema>>, "type">;
 
 /** Canonical navigation resolved by the shared runtime before it reaches a pane. */
 interface PaneModelRequest {
@@ -58,6 +60,7 @@ interface MessageContext {
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
 	readonly onModelRequest?: ((request: PaneModelRequest) => void) | undefined;
+	readonly onSettingsRequest?: ((settings: PaneSettingsRequest) => void) | undefined;
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
@@ -154,8 +157,22 @@ function panePresent(context: MessageContext, data: WebSocketMessage): void {
 	}
 }
 
+/**
+ * The server asks the browser to apply display settings (layout engine, theme, hover-dimming)
+ * in place without navigating or resetting the current reading.
+ * @param context The pane.
+ * @param data The settings message.
+ */
+function paneSettings(context: MessageContext, data: WebSocketMessage): void {
+	const parsed = paneSettingsRequestSchema().safeParse(data);
+	if (!parsed.success) return;
+	const { type: _type, ...settings } = parsed.data;
+	context.onSettingsRequest?.(settings);
+}
+
 const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_model: paneModel,
+	pane_settings: paneSettings,
 	pane_place: panePlaced,
 	agent_activity: agentActivity,
 	pane_open: paneOpen,
@@ -179,7 +196,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
  * @returns True when the message is ours to act on.
  */
 function addressesThisPane(context: MessageContext, data: WebSocketMessage): boolean {
-	if (data.type === "pane_place" || data.type === "pane_model") {
+	if (data.type === "pane_place" || data.type === "pane_model" || data.type === "pane_settings") {
 		return true;
 	}
 	const said = data.paneKey;
@@ -197,4 +214,10 @@ function handleSocketMessage(context: MessageContext, data: WebSocketMessage): v
 	}
 }
 
-export { handleSocketMessage, type MessageContext, type PanePlace, type PaneModelRequest };
+export {
+	handleSocketMessage,
+	type MessageContext,
+	type PanePlace,
+	type PaneModelRequest,
+	type PaneSettingsRequest,
+};
