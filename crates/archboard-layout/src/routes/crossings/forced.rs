@@ -7,8 +7,8 @@
 use archboard_scene::geometry::{Curve, curve_bounds, inflate, segment_start};
 
 use super::super::crowding::{
-    CROSSWISE_CLEARANCE, facing_crowding, facing_hops, forced_crowding, knot_crowding,
-    mark_crowding, own_head_crowding,
+    CROSSWISE_CLEARANCE, crowded, facing_crowding, facing_hops, forced_crowding, knot_crowding,
+    mark_crowding, near_own_head, own_head_crowding,
 };
 use super::super::drawn_lines::{Axis, Run, along, on_run};
 use super::super::hops::{
@@ -76,6 +76,47 @@ impl Settling<'_> {
             .crossings
             .iter()
             .all(|&crossing| self.risen[crossing].is_none_or(|risen| risen == cluster))
+    }
+
+    /// Hop a crossing no plan settled: each line that may rise over it alone,
+    /// in order, with the least room; bulging the usual way first, then, where
+    /// only the other side is clear of a bend, the other way. True when a hop
+    /// stands.
+    pub(super) fn hop_alone(&mut self, crossing: usize) -> bool {
+        let order = self.risers(crossing);
+        [1.0, -1.0].into_iter().any(|bulge| {
+            order
+                .iter()
+                .any(|&cluster| self.rise_alone(cluster, crossing, bulge))
+        })
+    }
+
+    /// Stand one line's hop over a single crossing, where the line has the
+    /// least room a hop needs, the line beneath runs straight under it, and
+    /// nothing crowds it. True when it stands.
+    fn rise_alone(&mut self, cluster: usize, crossing: usize, bulge: Bulge) -> bool {
+        let runs = &self.scene.runs;
+        let run = &runs[self.cluster(cluster).run];
+        let beneath = &runs[self.sides(cluster, crossing).1.drawer];
+        let point = self.crossings[crossing].point;
+        if !passage_beneath(runs, beneath, point, bulge).is_clear() {
+            return false;
+        }
+        let place = at_on(run, &self.crossings[crossing]);
+        let Some(curve) = crest_along(runs, run, &[place], LEAST_ROOM, bulge) else {
+            return false;
+        };
+        if crowded(&self.scene, run, &[beneath], &curve, &[])
+            || near_own_head(&self.scene, run, &curve)
+        {
+            return false;
+        }
+        let rise = Rise {
+            cluster,
+            crossings: vec![crossing],
+        };
+        self.stand(&rise, curve);
+        true
     }
 
     /// Stand an arc over a crossing the other stages left (`arcs_over`,

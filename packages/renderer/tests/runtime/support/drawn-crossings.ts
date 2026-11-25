@@ -357,7 +357,18 @@ function crowdedArcs(drawing: Pick<RenderedDiagram, "svg">): string[] {
 	const found: string[] = [];
 	for (const [index, one] of arcs.entries())
 		for (const other of arcs.slice(index + 1)) {
-			if (one.axis !== other.axis || gapOf(one.box, other.box) >= ARC_SPACE) continue;
+			if (one.axis !== other.axis) {
+				const overlap = Math.max(
+					other.box.x0 - one.box.x1,
+					one.box.x0 - other.box.x1,
+					other.box.y0 - one.box.y1,
+					one.box.y0 - other.box.y1,
+				);
+				if (overlap < 0)
+					found.push(`${one.id} and ${other.id} overlapping crosswise at ${cornerOf(one.box)}`);
+				continue;
+			}
+			if (gapOf(one.box, other.box) >= ARC_SPACE) continue;
 			const apart = other.line - one.line;
 			if (Math.abs(apart) <= SHARED_INK)
 				found.push(`${one.id} and ${other.id} side by side at ${cornerOf(one.box)}`);

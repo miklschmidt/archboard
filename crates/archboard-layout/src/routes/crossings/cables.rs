@@ -16,7 +16,7 @@ use crate::ecma::{max, min, sign};
 
 impl Settling<'_> {
     /// The cable to which a cluster's line belongs, by the cable's leading line.
-    fn cable_of(&self, cluster: usize) -> Option<&str> {
+    pub(super) fn cable_of(&self, cluster: usize) -> Option<&str> {
         let run = &self.scene.runs[self.cluster(cluster).run];
         let id = &self.edges()[run.edge_index].edge.id;
         self.riders
@@ -320,16 +320,17 @@ impl Settling<'_> {
             beneath.push(under);
         }
         beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
-        Some(min([
-            approach,
-            crowding(&self.scene, run, &beneath, curve, &[]),
-            own_head_crowding(&self.scene, run, curve),
-        ]))
+        let crowd = crowding(&self.scene, run, &beneath, curve, &[]);
+        let head = own_head_crowding(&self.scene, run, curve);
+        if crowd < 0.0 || head < 0.0 {
+            return None;
+        }
+        Some(min([approach, crowd, head]))
     }
 }
 
 /// The groups of standing hops linked by the crossed lines they share.
-fn connected_hops(links: &[Vec<usize>]) -> Vec<Vec<usize>> {
+pub(super) fn connected_hops(links: &[Vec<usize>]) -> Vec<Vec<usize>> {
     let mut places = Vec::new();
     let mut seen = vec![false; links.len()];
     for index in 0..links.len() {
