@@ -245,6 +245,9 @@ const sections: { title: string; icon: IconName; count: number; rows: Row[] }[] 
 		bottom: 0;
 		width: 1px;
 	}
+	.row.owner + .row.child::before {
+		top: -6px;
+	}
 	.row.child:not(:has(+ .child))::before {
 		bottom: 14px;
 	}
