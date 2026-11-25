@@ -60,11 +60,14 @@ import {
 } from "#cli/commands/server-control/operations/server.ts";
 import {
 	browserContract,
-	browserShowContract,
 	paneCloseContract,
 	paneOpenContract,
 	panesContract,
 } from "#cli/commands/pane/operations/pane.ts";
+import {
+	browserSettingsContract,
+	browserShowContract,
+} from "#cli/commands/pane/operations/show.ts";
 import { repoRoute } from "#cli/commands/repo/operations/repo.ts";
 import { initContract } from "#cli/commands/init/operations/init.ts";
 import { telemetryContract } from "#cli/commands/telemetry/operations/telemetry.ts";
@@ -240,12 +243,15 @@ const COMMANDS: Record<string, CommandRoute> = {
 				contract(paneCloseContract, "apps/cli/src/cli/commands/pane/operations/pane.ts"),
 			),
 			show: child(
-				contract(browserShowContract, "apps/cli/src/cli/commands/pane/operations/pane.ts"),
+				contract(browserShowContract, "apps/cli/src/cli/commands/pane/operations/show.ts"),
+			),
+			settings: child(
+				contract(browserSettingsContract, "apps/cli/src/cli/commands/pane/operations/show.ts"),
 			),
 		},
 		bare: {
 			kind: "namespace-refusal",
-			message: "browser needs a subcommand: panes, open, close, or show",
+			message: "browser needs a subcommand: panes, open, close, show, or settings",
 		},
 	},
 	repo: repoRoute(),

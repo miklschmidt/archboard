@@ -26,7 +26,7 @@ Before describing implemented architecture or editing a model, read [authoring](
 Before preparing a request, read [schemas](references/schemas.md).
 
 For checkpoints, recovery, private archives, remote publication, historical corrections, or portable export/import, read [history](references/history.md).
-For steering a browser pane or answering a pointed screen question, read [browser panes](references/browser-panes.md).
+For steering a browser pane (filters, directional focus, layout/theme settings, code view, temporary flows) or answering a pointed screen question, read [browser panes](references/browser-panes.md).
 For design decisions or refactors, read [the design lens](references/design-lens.md).
 For `improve-codebase-architecture`, follow [the integration workflow](references/design-lens.md#integrate-with-improve-codebase-architecture).
 For narrative authoring, playback, or recording, read [canonical walkthroughs](references/canonical-walkthroughs.md).

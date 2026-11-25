@@ -277,6 +277,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return ports.options().onModelRequest;
 		},
 		/**
+		 * Read the current display-settings listener.
+		 * @returns The browser settings listener.
+		 */
+		get onSettingsRequest() {
+			return ports.options().onSettingsRequest;
+		},
+		/**
 		 * Where the agent-activity snapshot goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */

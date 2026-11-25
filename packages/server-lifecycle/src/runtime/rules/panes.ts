@@ -261,10 +261,20 @@ function architectureWords(architecture: PaneArchitecture): string {
 		display === undefined
 			? intentWords(architecture)
 			: [display.model, display.state, display.comparison];
+	const flowLabel =
+		display?.ephemeralFlow === undefined
+			? reading.grammar === "architecture"
+				? undefined
+				: reading.grammar
+			: `temporary ${display.ephemeralFlow.grammar} "${display.ephemeralFlow.name}"`;
 	return [
 		...labels,
+		display?.ref === undefined ? undefined : `ref ${display.ref}`,
 		checkpointWords(selection?.checkpoint),
-		reading.grammar === "architecture" ? undefined : reading.grammar,
+		flowLabel,
+		display?.page === "about" ? "about" : undefined,
+		display?.file === undefined ? undefined : `file ${display.file}`,
+		display?.layout === undefined ? undefined : `${display.layout} layout`,
 	]
 		.filter(Boolean)
 		.join(", ");

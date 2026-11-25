@@ -10,11 +10,11 @@ type AuthoredInstructionName = keyof VoiceAgentOptions["instructions"];
 const DOMAIN_DOCUMENTS = Object.freeze({
 	workhorse: {
 		text: workhorseDocument,
-		sha256: "4148e5d057abedea90f6a04582de9ff5c2e83236eb06ec96693eaaef08030907",
+		sha256: "4bd75a40ef7f37669b9e2964787c35d4113c07be38f5112ebb42cbe304199e52",
 	},
 	coordinator: {
 		text: coordinatorDocument,
-		sha256: "25f0f2e313c24342ca3eaaeb40f9e33e3f75de49f7238252d5bb9867c09f2b3e",
+		sha256: "0ef63ca63aad6adaf1d1612fee70d440d5db58376d063e430405d7047df19ae2",
 	},
 });
 /**

@@ -9,8 +9,23 @@ import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hook
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
+import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
+import { useHoverLight } from "#ui/architecture-drawing/canvas/picture/hooks/use-hover-light.ts";
+import { useThemePreference } from "#ui/application/hooks/use-theme.ts";
+import { useNavigatorMode } from "#ui/application/hooks/use-navigator-mode.ts";
 
 type Action = ExplanationInvocation["request"]["action"];
+
+/** Browser-level presentation state included in pane reports outside explanation guards. */
+interface ReadingPresentation {
+	readonly page?: "diagram" | "about" | undefined;
+	readonly file?: string | undefined;
+	readonly fileRepo?: string | undefined;
+	readonly ref?: string | undefined;
+	readonly ephemeralFlow?:
+		| { readonly name: string; readonly grammar: "flowchart" | "sequence" }
+		| undefined;
+}
 
 /**
  * Capture one visible reading for pane reports and every explanation entry point.
@@ -19,6 +34,7 @@ type Action = ExplanationInvocation["request"]["action"];
  * @param location The router-owned reading intent.
  * @param selected The temporary selected identities.
  * @param reporting The optional presentation and picture readiness.
+ * @param presentation Optional browser presentation details (page, file, ref, temporary flow).
  * @returns One invocation callback and its availability.
  */
 function useModelExplanation(
@@ -39,6 +55,7 @@ function useModelExplanation(
 	>,
 	selected: ReadonlySet<string>,
 	reporting?: Parameters<typeof useModelReadingReport>[1],
+	presentation?: ReadingPresentation,
 ) {
 	const host = useContext(ModelExplanationContext);
 	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against } =
@@ -54,7 +71,7 @@ function useModelExplanation(
 	);
 	const referenceSubject = subject ?? undefined;
 	const comparisonRevision = model.comparison?.revision.digest;
-	const display = useReadingDisplay(vault, model);
+	const display = useReadingDisplay(vault, model, filters, presentation);
 	const capture = useMemo(() => {
 		const mode = diagramGrammarSchema().safeParse(grammar);
 		if (!mode.success || !readsVaultOnDisk(model)) return null;
@@ -116,12 +133,23 @@ function useModelExplanation(
 }
 
 /**
- * Describe the accepted picture with the same names and comparison text as its header.
+ * Describe the accepted picture with the same names, comparison text, and active browser settings.
  * @param vault The addressed vault.
  * @param model The accepted architecture.
- * @returns Labels for pane reports, outside the explanation request.
+ * @param filters The active kind and effect hide lists.
+ * @param presentation Optional page, code file, ref, and temporary flow state.
+ * @returns Labels and presentation state for pane reports, outside the explanation request.
  */
-function useReadingDisplay(vault: string, model: Model) {
+function useReadingDisplay(
+	vault: string,
+	model: Model,
+	filters: ReturnType<typeof useModelLocation>["filters"],
+	presentation?: ReadingPresentation,
+) {
+	const layout = useLayoutEngine();
+	const theme = useThemePreference();
+	const hoverLight = useHoverLight();
+	const { mode: navigatorMode } = useNavigatorMode();
 	const savedAt = useComparisonSavedAt(
 		vault,
 		model.migrationPreview === undefined ? model.comparison : undefined,
@@ -131,8 +159,21 @@ function useReadingDisplay(vault: string, model: Model) {
 			model: model.manifest.name,
 			state: model.selectedState?.name,
 			comparison: comparedWith({ reading: model, against: null, catalogue: undefined, savedAt }),
+			layout,
+			theme,
+			hoverLight,
+			navigatorMode,
+			...(presentation?.page === undefined ? {} : { page: presentation.page }),
+			...(presentation?.file === undefined ? {} : { file: presentation.file }),
+			...(presentation?.fileRepo === undefined ? {} : { fileRepo: presentation.fileRepo }),
+			...(presentation?.ref === undefined ? {} : { ref: presentation.ref }),
+			...(filters.hideKinds.length === 0 ? {} : { hideKinds: [...filters.hideKinds] }),
+			...(filters.hideEffects.length === 0 ? {} : { hideEffects: [...filters.hideEffects] }),
+			...(presentation?.ephemeralFlow === undefined
+				? {}
+				: { ephemeralFlow: presentation.ephemeralFlow }),
 		}),
-		[model, savedAt],
+		[model, savedAt, layout, theme, hoverLight, navigatorMode, filters, presentation],
 	);
 }
 

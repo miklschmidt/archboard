@@ -19,6 +19,13 @@ import {
 
 import { z } from "zod";
 import { DiagramGrammarSchema, VariantLifecycleSchema } from "#shared/schemas/vocabulary.ts";
+import { LayoutEngineSchema } from "#shared/protocol/render-reply.ts";
+import { LineEffectSchema } from "#shared/schemas/semantic-policy.ts";
+import {
+	PaneHoverLightSchema,
+	PanePageSchema,
+	PaneThemePreferenceSchema,
+} from "#shared/schemas/model-pane.ts";
 
 /** Where a pane posts what it is reading. */
 const SEMANTIC_PANE_CONTEXT_ROUTE = "/api/panes/semantic-context";
@@ -161,12 +168,28 @@ const SemanticPaneContextSchema = z
 			.extend({
 				vault: z.string().min(1),
 				selection: ReadingSelectionSchema.optional(),
-				/** Labels of the accepted reading, independent of its machine selectors. */
+				/** Labels and browser presentation state of the accepted reading, outside explanation guards. */
 				display: z
 					.strictObject({
 						model: z.string().min(1),
 						state: z.string().min(1).optional(),
 						comparison: z.string().min(1),
+						layout: LayoutEngineSchema.optional(),
+						theme: PaneThemePreferenceSchema.optional(),
+						hoverLight: PaneHoverLightSchema.optional(),
+						page: PanePageSchema.optional(),
+						navigatorMode: z.enum(["architecture", "code"]).optional(),
+						file: z.string().min(1).optional(),
+						fileRepo: z.string().min(1).optional(),
+						ref: z.string().min(1).optional(),
+						hideKinds: z.array(z.string()).optional(),
+						hideEffects: z.array(LineEffectSchema).optional(),
+						ephemeralFlow: z
+							.strictObject({
+								name: z.string().min(1),
+								grammar: z.enum(["flowchart", "sequence"]),
+							})
+							.optional(),
 					})
 					.optional(),
 			})

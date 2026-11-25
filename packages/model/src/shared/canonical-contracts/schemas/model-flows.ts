@@ -194,6 +194,7 @@ const RecordedFlowChangeSchema = z.discriminatedUnion("type", [
 export {
 	FlowCollectionSchema,
 	ModelFlowSchema,
+	NewFlowSchema,
 	NewStepSchema,
 	FlowChangeSchema,
 	RecordedFlowChangeSchema,

@@ -9,8 +9,8 @@ afterEach(cleanupCommandContractTest);
 
 describe("command-contract schemas", () => {
 	test("browser result schemas accept the protected server response shapes", async () => {
-		const { PaneOpenResultSchema, ShowResultSchema } =
-			await import("#cli/commands/pane/operations/pane.ts");
+		const { PaneOpenResultSchema } = await import("#cli/commands/pane/operations/pane.ts");
+		const { ShowResultSchema } = await import("#cli/commands/pane/operations/show.ts");
 		const pane = { paneId: "pane-2", clientId: "client-2", place: "right", position: 2 };
 		expect(
 			PaneOpenResultSchema.parse({

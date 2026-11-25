@@ -9,23 +9,35 @@ import { useSubjectSelection } from "#ui/architecture-drawing/model-reader/hooks
  * One pane owns ordinary selection across asynchronous reads.
  * @param props The explicit starting subject and composed reader.
  * @param props.subject The destination selected by navigation, or no selection.
+ * @param props.selected Explicit multi-subject selection from an agent arrival.
  * @param props.arrival Which time the pane has been pointed at a reading from outside.
  * @param props.children The header and model reader.
  * @returns Shared presentation state without a copy of model content.
  */
 function ModelPane(props: {
 	subject: string | null;
+	selected?: readonly string[] | undefined;
 	arrival?: number | undefined;
 	children: ReactNode;
 }): JSX.Element {
-	const initial = useMemo(() => (props.subject === null ? [] : [props.subject]), [props.subject]);
+	const initial = useMemo(
+		() =>
+			props.selected !== undefined
+				? [...props.selected]
+				: props.subject === null
+					? []
+					: [props.subject],
+		[props.selected, props.subject],
+	);
 	const selection = useSubjectSelection(initial);
-	const { subject, arrival } = props;
-	const [seeded, setSeeded] = useState({ subject, arrival });
+	const { subject, selected, arrival } = props;
+	const [seeded, setSeeded] = useState({ subject, selected, arrival });
 	// A new destination seeds the pane's selection. Leaving one keeps whatever the reader holds.
-	if (seeded.subject !== subject || seeded.arrival !== arrival) {
-		setSeeded({ subject, arrival });
-		if (subject !== null || seeded.arrival !== arrival) selection.seed(initial);
+	if (seeded.subject !== subject || seeded.selected !== selected || seeded.arrival !== arrival) {
+		setSeeded({ subject, selected, arrival });
+		if (subject !== null || selected !== undefined || seeded.arrival !== arrival) {
+			selection.seed(initial);
+		}
 	}
 	const [handover] = useState(cameraHandover);
 	const [head, attachHead] = useState<HTMLElement | null>(null);

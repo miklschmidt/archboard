@@ -26,6 +26,10 @@ export interface WebSocketMessage {
 	vault?: string;
 	/** On `pane_place`: the repository that vault is listed under, or null. */
 	repository?: string | null;
+	/** On `pane_settings`: browser display settings applied in place. */
+	layout?: unknown;
+	theme?: unknown;
+	hoverLight?: unknown;
 	/**
 	 * On `agent_activity`: every model of the named vault that an agent holds
 	 * or has just written, as one snapshot. Keyless, and told to every pane.
