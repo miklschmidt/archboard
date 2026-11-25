@@ -3,11 +3,11 @@
 use super::Stage;
 use crate::between::{Heading, PHASES};
 use crate::cpu::CpuCanvas;
-use crate::draw::tests::painting;
 use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::passage::{Plane, Side};
 use crate::presentation::{Camera, Light, Shine};
+use crate::testing::painting;
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Purpose, Role, Shape, Subject, SubjectKind};
 use std::collections::HashMap;

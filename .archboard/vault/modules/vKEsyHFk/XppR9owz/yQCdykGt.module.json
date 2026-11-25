@@ -3,7 +3,7 @@
   "name": "Vault check",
   "kind": "module",
   "responsibility": "Runs canonical model and policy checks, with code and embed checks owned by their existing operations.",
-  "description": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners.",
+  "description": "With --fail-shallow-modules, or when the selected model's policy turns the gate on, it promotes MODULE_SHALLOW on the modules that the branch touched to a warning before the existing exit rule. --base names the branch base; without it the default-base lookup decides. A base that does not resolve is a refusal, never a pass.",
   "groups": [
     "checks"
   ],

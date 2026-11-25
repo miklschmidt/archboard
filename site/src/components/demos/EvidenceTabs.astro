@@ -13,13 +13,13 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		key: "code",
 		icon: "code",
 		label: "Where the map and the code disagree",
-		line: "Broken bindings, backwards lines, missing calls",
+		line: "Broken bindings, missing calls, shallow modules",
 	},
 	{
 		key: "interface",
 		icon: "stack",
 		label: "What a module exposes",
-		line: "Entry points, hidden parts and callers",
+		line: "Its interface in the model and in its code",
 	},
 	{
 		key: "changes",
@@ -81,7 +81,8 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 			<div class="copy">
 				<p>
 					A module's interface is what its outside callers reach. Archboard shows the entry points, the
-					hidden parts behind them and the callers that depend on them.
+					hidden parts behind them and the callers that depend on them. Beside them, Measures counts
+					what the module's code exports, from the last code check.
 				</p>
 				<p>
 					Compare two states and the interface changes come first, because an interface change costs

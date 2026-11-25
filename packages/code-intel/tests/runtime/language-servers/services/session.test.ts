@@ -4,6 +4,7 @@
 // session closes.
 
 import { afterEach, describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { openLanguageServers } from "#runtime/language-servers/services/session.ts";
 import {
@@ -88,6 +89,30 @@ describe("a pass's language servers", () => {
 		).toEqual(unasked);
 		await session.close();
 		expect(at.pids().every((pid) => !running(pid))).toBe(true);
+	});
+
+	test("type a name from the server's tokens of its line, and ask a server that types only whole files nothing", async () => {
+		const at = withFile();
+		// `helper` on line 5 is the server's `function`: line 4 from 0, column 9, 6 long.
+		writeFileSync(
+			join(at.state, "answers.json"),
+			JSON.stringify({ "tokens:src/load.ts": [4, 9, 6, 1, 0] }),
+		);
+		const question = { root: at.root, file: "src/load.ts", line: 5, symbol: "helper" };
+		const typed = async (mode: string) => {
+			const session = openLanguageServers({
+				servers: at.table(mode),
+				signal: new AbortController().signal,
+				stopMs: STOP_MS,
+			});
+			const type = await session.tokenType(question);
+			await session.close();
+			return type;
+		};
+		expect(await typed("whole-file-tokens")).toBeUndefined();
+		expect(await typed("tokens")).toBe("function");
+		const asked = at.methods().filter((method) => method === "textDocument/semanticTokens/range");
+		expect(asked).toHaveLength(1);
 	});
 
 	test("say once for the checkout that a language has no server, and start nothing", async () => {

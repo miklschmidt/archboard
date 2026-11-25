@@ -9,7 +9,10 @@ import {
 import { cn } from "@archboard/ui-kit/components";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import { GROUP_START } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasureHead.tsx";
 import {
+	groupStarts,
+	isCodeMeasure,
 	isHistoryMeasure,
 	measureOf,
 	type Measure,
@@ -101,8 +104,15 @@ function ModelMeasureRow(props: ModelMeasureRowProps): JSX.Element {
 					</button>
 				</span>
 			</th>
-			{measures.map(({ key }) => (
-				<Cell key={key} row={row} measure={key} sorted={key === sorted} most={most} />
+			{measures.map((one) => (
+				<Cell
+					key={one.key}
+					row={row}
+					measure={one.key}
+					starts={groupStarts(measures, one)}
+					sorted={one.key === sorted}
+					most={most}
+				/>
 			))}
 		</tr>
 	);
@@ -117,55 +127,178 @@ function ModelMeasureRow(props: ModelMeasureRowProps): JSX.Element {
  * @param props.most The most of the measure in the table.
  * @returns The cell.
  */
-function Cell(props: {
+function Cell(props: CellProps): JSX.Element {
+	const count = measureOf(props.row, props.measure);
+	if (count === undefined) return <EmptyCell {...props} />;
+	if (props.measure === "codeFindings" && count === 0) return <ClearCell {...props} />;
+	return <CountCell {...props} count={count} />;
+}
+
+/** Inputs for one cell of a row. */
+interface CellProps {
 	readonly row: MeasureRow;
 	readonly measure: MeasureKey;
+	/** Whether it starts a group of columns after another, so a rule stands before it. */
+	readonly starts: boolean;
 	readonly sorted: boolean;
 	readonly most: number;
-}): JSX.Element {
-	const count = measureOf(props.row, props.measure);
-	if (count === undefined) return <EmptyCell row={props.row} measure={props.measure} />;
-	return <CountCell {...props} count={count} />;
+}
+
+/** The kinds of export that the count of exports adds up, as a row says them. */
+const EXPORT_KINDS = [
+	["functions", "functions"],
+	["classes", "classes"],
+	["methods", "public methods"],
+	["values", "values"],
+	["types", "types"],
+] as const;
+
+/**
+ * What a cell says beyond its count: the kinds behind a count of exports, and what a code pass
+ * did not read of a module it read in part.
+ * @param row The row.
+ * @param measure The measure.
+ * @returns The words, or nothing.
+ */
+function cellNote(row: MeasureRow, measure: MeasureKey): string | undefined {
+	const { code } = row;
+	if (code?.kind !== "read") return undefined;
+	const partial = partialWords(code);
+	if (measure === "codeExports") return [exportKinds(code), partial].join(" ").trim();
+	return measure === "codeFindings" ? partial : undefined;
+}
+
+/** What the code pass says of a module it read. */
+type ReadCode = Extract<NonNullable<MeasureRow["code"]>, { kind: "read" }>;
+
+/**
+ * A module's exports, kind by kind.
+ * @param code What the pass says of it.
+ * @returns The words.
+ */
+function exportKinds(code: ReadCode): string {
+	return `${EXPORT_KINDS.map(([key, words]) => `${code.exports[key]} ${words}`).join(", ")}.`;
+}
+
+/**
+ * What the pass did not read of a module.
+ * @param code What the pass says of it.
+ * @returns The words, or nothing for a whole read.
+ */
+function partialWords(code: ReadCode): string | undefined {
+	return code.partial.length === 0 ? undefined : `Read in part: ${code.partial.join("; ")}.`;
+}
+
+/**
+ * Whether the code pass read a module only in part.
+ * @param row The row.
+ * @returns True when it did.
+ */
+function partOnly(row: MeasureRow): boolean {
+	return row.code?.kind === "read" && row.code.partial.length > 0;
+}
+
+/**
+ * The rule before a cell that starts a group of columns.
+ * @param starts Whether the cell starts one.
+ * @returns The rule, or nothing.
+ */
+function edge(starts: boolean): string | undefined {
+	return starts ? GROUP_START : undefined;
+}
+
+/**
+ * Words that a cell says to assistive technology beyond what it shows.
+ * @param props The words.
+ * @param props.note The words, or nothing.
+ * @returns The words, or nothing.
+ */
+function CellNote(props: { readonly note: string | undefined }): JSX.Element | null {
+	if (props.note === undefined) return null;
+	return <span className="sr-only">. {props.note}</span>;
+}
+
+/** What the findings cell of a module with none says: clean after a whole read, else partial. */
+const CLEAR = { clean: "Clean", partial: "Partial" } as const;
+
+/**
+ * The findings cell of a module the code pass found nothing on: clean after a whole read, and
+ * partial after a read in part, which never passes for clean.
+ * @param props The row.
+ * @returns The cell.
+ */
+function ClearCell(props: CellProps): JSX.Element {
+	const { row, sorted, starts } = props;
+	const kind = partOnly(row) ? "partial" : "clean";
+	const note = cellNote(row, "codeFindings");
+	return (
+		<td
+			data-measure="codeFindings"
+			data-count={0}
+			data-code={kind}
+			data-sorted={sorted ? "" : undefined}
+			title={note ?? "No finding on the module itself."}
+			className={cn(CELL, "text-body text-right", QUIET_INK, edge(starts))}
+		>
+			{CLEAR[kind]}
+			<CellNote note={note} />
+		</td>
+	);
 }
 
 /** The ink of a count: quieter for none, full for the sorted column, and prose ink for the rest. */
 const COUNT_INK = { none: QUIET_INK, sorted: "text-foreground", other: "text-body-foreground" };
 
 /**
+ * The ink of a count.
+ * @param count The count.
+ * @param sorted Whether the table is sorted by it.
+ * @returns The ink.
+ */
+function inkOf(count: number, sorted: boolean): string {
+	if (count === 0) return COUNT_INK.none;
+	return sorted ? COUNT_INK.sorted : COUNT_INK.other;
+}
+
+/**
+ * How long the bar of a sorted count is, against the most in the table.
+ * @param sorted Whether the table is sorted by it.
+ * @param count The count.
+ * @param most The most of the measure in the table.
+ * @returns The length, or nothing for a count with no bar.
+ */
+function shareOf(sorted: boolean, count: number, most: number): CSSProperties | undefined {
+	if (!sorted) return undefined;
+	return { "--share": most === 0 ? 0 : count / most };
+}
+
+/**
  * A count. The sorted count stands on its bar, as long as it is against the most in the table.
- * @param props The measure, its count, whether the table is sorted by it and the most of it.
- * @param props.measure The measure.
- * @param props.count The count.
- * @param props.sorted Whether the table is sorted by it.
- * @param props.most The most of the measure in the table.
+ * @param props The row, the measure, its count, whether the table is sorted by it and the most of it.
  * @returns The cell.
  */
-function CountCell(props: {
-	readonly measure: MeasureKey;
-	readonly count: number;
-	readonly sorted: boolean;
-	readonly most: number;
-}): JSX.Element {
-	const { measure, count, sorted, most } = props;
-	const share = useMemo<CSSProperties | undefined>(
-		() => (sorted ? { "--share": most === 0 ? 0 : count / most } : undefined),
-		[sorted, count, most],
-	);
-	const ink = count === 0 ? "none" : sorted ? "sorted" : "other";
+function CountCell(props: CellProps & { readonly count: number }): JSX.Element {
+	const { row, measure, count, sorted, most, starts } = props;
+	const note = cellNote(row, measure);
+	const share = useMemo(() => shareOf(sorted, count, most), [sorted, count, most]);
 	return (
 		<td
 			data-measure={measure}
 			data-count={count}
 			data-sorted={sorted ? "" : undefined}
+			data-partial={partOnly(row) ? "" : undefined}
 			style={share}
+			title={note}
 			className={cn(
 				CELL,
 				"text-technical text-right font-mono tabular-nums",
 				sorted && SORTED_BAR,
-				COUNT_INK[ink],
+				inkOf(count, sorted),
+				edge(starts),
 			)}
 		>
 			{count}
+			<CellNote note={note} />
 		</td>
 	);
 }
@@ -178,24 +311,53 @@ function CountCell(props: {
  * @param props.measure The measure.
  * @returns The cell.
  */
-function EmptyCell(props: { readonly row: MeasureRow; readonly measure: MeasureKey }): JSX.Element {
-	const { history } = props.row;
-	if (!isHistoryMeasure(props.measure) || history?.kind !== "skipped")
+function EmptyCell(props: CellProps): JSX.Element {
+	const { measure, starts } = props;
+	const skipped = skippedOf(props.row, measure);
+	if (skipped === undefined)
 		return (
-			<td className={CELL}>
+			<td className={cn(CELL, edge(starts))}>
 				<span className="sr-only">No count</span>
 			</td>
 		);
 	return (
 		<td
-			data-not-read={history.reason}
-			title={`Not read: ${NOT_READ[history.reason]}`}
-			className={cn(CELL, "text-technical text-right font-mono", QUIET_INK)}
+			data-not-read={skipped.reason}
+			title={skipped.words}
+			className={cn(CELL, "text-technical text-right font-mono", QUIET_INK, edge(starts))}
 		>
 			<span aria-hidden="true">–</span>
-			<span className="sr-only">Not read: {NOT_READ[history.reason]}</span>
+			<span className="sr-only">{skipped.words}</span>
 		</td>
 	);
+}
+
+/**
+ * Why a read skipped a module, for a measure that the read counts.
+ * @param row The row.
+ * @param measure The measure.
+ * @returns The reason and its words, or nothing where the module has no such measure.
+ */
+function skippedOf(
+	row: MeasureRow,
+	measure: MeasureKey,
+): { readonly reason: string; readonly words: string } | undefined {
+	if (isCodeMeasure(measure)) return codeSkipped(row.code);
+	const { history } = row;
+	if (!isHistoryMeasure(measure) || history?.kind !== "skipped") return undefined;
+	return { reason: history.reason, words: `Not read: ${NOT_READ[history.reason]}` };
+}
+
+/**
+ * Why the code pass did not judge a module.
+ * @param code What the pass says of it.
+ * @returns The reason and its words, or nothing where the pass judged it or names it not.
+ */
+function codeSkipped(
+	code: MeasureRow["code"],
+): { readonly reason: string; readonly words: string } | undefined {
+	if (code?.kind !== "skipped") return undefined;
+	return { reason: code.reason, words: `Not judged: ${code.words}` };
 }
 
 export { ModelMeasureRow, NOT_READ };

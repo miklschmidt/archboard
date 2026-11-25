@@ -8,6 +8,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
+import { passesTo } from "#runtime/code-facts/typescript/operations/typescript-pass-through.ts";
 
 /** The syntax that can hold a declaration and keep it at module level. */
 const HOLDERS = new Set([
@@ -107,6 +108,9 @@ const CLASSES = new Set([
 	"enum_declaration",
 ]);
 
+/** Declarations of a type alone, which a caller neither runs nor reads. */
+const TYPES = new Set(["interface_declaration", "type_alias_declaration", "enum_declaration"]);
+
 /**
  * The kind syntax proves, including callable and class literals assigned to a name.
  * @param declaration The declaration or its value.
@@ -122,19 +126,81 @@ function declaredKind(declaration: Node): Definition["kind"] | undefined {
 	return CLASSES.has(declaration.type) ? "class" : undefined;
 }
 
+/** Expressions that hold a value and keep it what it is. */
+const WRAPPERS = new Set(["as_expression", "satisfies_expression", "parenthesized_expression"]);
+
+/** A name, or a chain of names through `.`, that another declaration may define. */
+const NAMED = /^[\p{L}\p{N}_$]+(?:\.[\p{L}\p{N}_$]+)*$/u;
+
+/** The calls that return their first argument: with more members on it, or frozen. */
+const RETURNS_FIRST = new Set(["Object.assign", "Object.freeze"]);
+
 /**
- * The kind of a declaration or a literal assigned through an expression wrapper.
+ * The function a call names, as the file spells it.
+ * @param expression The expression.
+ * @returns The callee, or undefined for an expression that is no call.
+ */
+function calleeOf(expression: Node): string | undefined {
+	return expression.type === "call_expression"
+		? expression.childForFieldName("function")?.text
+		: undefined;
+}
+
+/**
+ * The first argument of a call to `Object.assign` or `Object.freeze`, which
+ * the call returns, with more members on it or frozen.
+ * @param expression The expression.
+ * @returns The argument, or undefined for another expression.
+ */
+function assignedOnto(expression: Node): Node | undefined {
+	if (!RETURNS_FIRST.has(calleeOf(expression) ?? "")) return undefined;
+	return expression.childForFieldName("arguments")?.namedChildren[0] ?? undefined;
+}
+
+/**
+ * What a declaration holds, through what keeps a value what it is: `as`,
+ * `satisfies`, parentheses, `Object.assign` onto it and `Object.freeze`.
  * @param declaration The declaration or expression.
+ * @returns The innermost expression, or the declaration itself when it holds none.
+ */
+function heldValue(declaration: Node): Node {
+	if (declaredKind(declaration) !== undefined) return declaration;
+	const value = WRAPPERS.has(declaration.type)
+		? declaration.namedChildren[0]
+		: (declaration.childForFieldName("value") ?? assignedOnto(declaration));
+	return value == null ? declaration : heldValue(value);
+}
+
+/**
+ * The kind of a declaration, or of the literal it holds.
+ * @param declaration The declaration.
  * @returns Its kind.
  */
 function kindOf(declaration: Node): Definition["kind"] {
-	const kind = declaredKind(declaration);
-	if (kind !== undefined) return kind;
-	const wrapper = ["as_expression", "satisfies_expression", "parenthesized_expression"].includes(
-		declaration.type,
-	);
-	const value = wrapper ? declaration.namedChildren[0] : declaration.childForFieldName("value");
-	return value == null ? "value" : kindOf(value);
+	return declaredKind(heldValue(declaration)) ?? "value";
+}
+
+/**
+ * The name whose value a declaration holds, as `const Dialog =
+ * Object.assign(DialogRoot, {...})` holds `DialogRoot`'s.
+ * @param declaration The declaration.
+ * @returns The name as the file spells it, or undefined when it holds another expression.
+ */
+function aliasOf(declaration: Node): string | undefined {
+	const held = heldValue(declaration);
+	const named = held.type === "identifier" || held.type === "member_expression";
+	return held !== declaration && named && NAMED.test(held.text) ? held.text : undefined;
+}
+
+/**
+ * The mark of a declaration that holds what a call returns, as `const
+ * buttonClass = cva(...)` does: a tagged template, as `styled.div` writes, is
+ * a call too.
+ * @param declaration The declaration.
+ * @returns The mark, or nothing.
+ */
+function madeByCall(declaration: Node): Pick<Definition, "madeByCall"> {
+	return heldValue(declaration).type === "call_expression" ? { madeByCall: true } : {};
 }
 
 /**
@@ -291,6 +357,39 @@ function visibilityOf(
 	return { visibility, own: visibility.startsWith("export") };
 }
 
+/** The methods JavaScript calls itself, which no caller names. */
+const CALLED_BY_LANGUAGE = new Set([
+	"constructor",
+	"toString",
+	"toLocaleString",
+	"valueOf",
+	"toJSON",
+]);
+
+/**
+ * What a declaration's syntax says beside its kind: that it declares a type,
+ * the call it only passes on, the name whose value it holds, that a call
+ * made it, and that the language calls it.
+ * @param name The declared name.
+ * @param declaration The declaration.
+ * @returns Those that hold.
+ */
+function traitsOf(
+	name: Node,
+	declaration: Node,
+): Pick<Definition, "type" | "passes" | "aliases" | "madeByCall" | "calledByLanguage"> {
+	const passes = passesTo(declaration);
+	const aliases = aliasOf(declaration);
+	const called = declaration.type === "method_definition" && CALLED_BY_LANGUAGE.has(name.text);
+	return {
+		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
+		...(aliases === undefined ? {} : { aliases }),
+		...madeByCall(declaration),
+		...(called ? { calledByLanguage: true as const } : {}),
+	};
+}
+
 /**
  * The definition one captured name declares, where it is at module level.
  * @param name The captured name.
@@ -316,6 +415,7 @@ function definitionOf(
 		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
+		...traitsOf(name, declaration),
 	};
 }
 

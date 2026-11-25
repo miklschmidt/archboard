@@ -30,7 +30,8 @@ function scratch(): string {
 
 /**
  * Write a stand-in for the `archboard` program. It answers from files in a directory it is told
- * about by FAKE_DIR, and exits as FAKE_EXIT says for `check`.
+ * about by FAKE_DIR, keeps the arguments of `check` in `check-args` there, one a line, and exits
+ * as FAKE_EXIT says for `check`.
  * @param directory Where to write it.
  * @returns The program's path.
  */
@@ -46,6 +47,7 @@ case "$1" in
 		if [ "$2" = list ]; then cat "$FAKE_DIR/repos.json"; fi ;;
 	stop) ;;
 	check)
+		printf '%s\n' "$@" > "$FAKE_DIR/check-args"
 		cat "$FAKE_DIR/check.json"
 		echo "stand-in diagnostics" >&2
 		exit "\${FAKE_EXIT:-0}" ;;

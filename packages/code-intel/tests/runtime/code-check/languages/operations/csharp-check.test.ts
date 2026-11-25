@@ -202,8 +202,10 @@ test("anchors, binding symbols and the relationships between parts bound to C# f
 		[
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pGone warning",
-			// The API's project exposes its public controller, which no file outside it uses.
-			"EXPOSED_UNUSED pApi information",
+			// The API's project exposes its public controller, which no file outside it
+			// uses: the read is whole, so Module depth warns of it. The partial `Ledger`
+			// is used through its part in `Ledger.cs`, though `Ledger.Audit.cs` declares it first.
+			"EXPOSED_UNUSED pApi warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_BACKWARDS e4 information",
 			"RELATIONSHIP_UNDRAWN pAudit warning",

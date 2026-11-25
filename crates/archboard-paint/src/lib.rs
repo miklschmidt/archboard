@@ -20,6 +20,8 @@ pub mod presentation;
 mod raise;
 pub mod stage;
 pub mod sweep;
+#[cfg(test)]
+mod testing;
 pub mod timing;
 mod traffic;
 pub mod warnings;

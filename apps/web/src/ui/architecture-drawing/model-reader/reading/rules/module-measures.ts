@@ -6,6 +6,7 @@ import {
 	type InterfaceKey,
 } from "#ui/architecture-drawing/model-reader/rules/interface-counts.ts";
 import { moduleInterface } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
+import type { ModuleCode } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Locality = Pick<LocalityAnswer, "hotspots" | "coupling" | "skipped">;
@@ -24,8 +25,11 @@ type HistorySource = "bound" | "unbound" | "original" | "branch";
 /** How the code history of a reading stands, each with one thing to say. */
 type HistoryState = Exclude<HistorySource, "bound"> | "reading" | "read" | "failed";
 
+/** What the last code pass counts of a module: its exports, its values, its logic and its findings. */
+type CodeKey = "codeExports" | "codeValues" | "codeLogic" | "codeFindings";
+
 /** What a reader can sort the modules of a model by. */
-type MeasureKey = "commits" | "together" | "unjoined" | InterfaceKey;
+type MeasureKey = "commits" | "together" | "unjoined" | InterfaceKey | CodeKey;
 
 /** The history measures that count the modules a module changes with. */
 type CouplingKey = "together" | "unjoined";
@@ -67,6 +71,8 @@ interface MeasureRow {
 	readonly counts: readonly InterfaceCount[] | null;
 	/** What its history says, or nothing while no answer holds it. */
 	readonly history?: ModuleHistory | undefined;
+	/** What the last code pass says of it, or nothing while no pass names it. */
+	readonly code?: ModuleCode | undefined;
 }
 
 /** One measure: what the column and the sort control call it, and what it counts and shows. */
@@ -74,7 +80,12 @@ interface Measure {
 	readonly key: MeasureKey;
 	readonly label: string;
 	readonly description: string;
+	/** Whether the model or its code says it, where a table sets the two side by side. */
+	readonly group?: MeasureGroup;
 }
+
+/** Who says a measure, where a table sets the model and its code side by side. */
+type MeasureGroup = "model" | "code";
 
 /** Every measure, in the order of the columns and of the sort control. */
 const MEASURES: readonly Measure[] = [
@@ -95,28 +106,61 @@ const MEASURES: readonly Measure[] = [
 	},
 	{
 		key: "entryPoints",
+		group: "model",
 		label: "Entries",
 		description: "Parts that callers outside reach. Shows how wide the interface is.",
 	},
 	{
 		key: "hiddenParts",
+		group: "model",
 		label: "Hidden",
 		description: "Parts that nothing outside reaches. Shows what it keeps to itself.",
 	},
 	{
 		key: "callers",
+		group: "model",
 		label: "Callers",
 		description: "Parts outside that reach in. Shows how far a change can spread.",
 	},
 	{
 		key: "wholeModule",
+		group: "model",
 		label: "To module",
 		description: "Callers that name the module, not a part. Shows calls no part answers.",
 	},
 	{
 		key: "passThrough",
+		group: "model",
 		label: "Pass-through",
 		description: "Entries that pass one call on. Shows parts to question.",
+	},
+	{
+		key: "codeExports",
+		group: "code",
+		label: "Exports",
+		description:
+			"Names its code exports: functions, classes, public methods, values and types. Shows how wide the code's interface is.",
+	},
+	{
+		key: "codeValues",
+		group: "code",
+		label: "Values",
+		description:
+			"Values its code exports. Code outside that reads one holds logic that belongs in it.",
+	},
+	{
+		key: "codeLogic",
+		group: "code",
+		label: "Logic",
+		description:
+			"Calls, operators, conditions, loops and hidden values behind its exports. Shows how much it hides.",
+	},
+	{
+		key: "codeFindings",
+		group: "code",
+		label: "Findings",
+		description:
+			"Findings of the last code check on the module itself. Clean is none, from a whole read.",
 	},
 ];
 
@@ -170,6 +214,15 @@ function historyState(
  */
 function isHistoryMeasure(key: MeasureKey): key is "commits" | CouplingKey {
 	return key === "commits" || isCoupling(key);
+}
+
+/**
+ * Whether a measure is read from the last code pass, so it waits for the remembered findings.
+ * @param key The measure.
+ * @returns True for a measure of the code.
+ */
+function isCodeMeasure(key: MeasureKey): key is CodeKey {
+	return key.startsWith("code");
 }
 
 /**
@@ -281,14 +334,45 @@ function interfaceMeasure(row: MeasureRow, key: InterfaceKey): number | undefine
 }
 
 /**
+ * One count of the last code pass. A module the pass did not judge has none.
+ * @param row The module.
+ * @param key The count.
+ * @returns The count, or nothing.
+ */
+function codeMeasure(row: MeasureRow, key: CodeKey): number | undefined {
+	const { code } = row;
+	if (code?.kind !== "read") return undefined;
+	const { exports } = code;
+	if (key === "codeValues") return exports.values;
+	if (key === "codeLogic") return code.logic;
+	if (key === "codeFindings") return code.findings;
+	return exports.functions + exports.classes + exports.methods + exports.values + exports.types;
+}
+
+/**
  * One measure of one module.
  * @param row The module.
  * @param key The measure.
  * @returns The count, or nothing where the module has no such measure.
  */
 function measureOf(row: MeasureRow, key: MeasureKey): number | undefined {
+	if (isCodeMeasure(key)) return codeMeasure(row, key);
 	if (!isHistoryMeasure(key)) return interfaceMeasure(row, key);
 	return row.history?.kind === "read" ? row.history[key] : undefined;
+}
+
+/**
+ * The modules with what the last code pass says of each.
+ * @param rows The modules.
+ * @param code What the pass says of each module it names, or nothing while no pass read the reading.
+ * @returns The modules.
+ */
+function withCode(
+	rows: readonly MeasureRow[],
+	code: ReadonlyMap<string, ModuleCode> | undefined,
+): readonly MeasureRow[] {
+	if (code === undefined) return rows;
+	return rows.map((row) => ({ ...row, code: code.get(row.id) }));
 }
 
 /**
@@ -403,13 +487,47 @@ function mostOf(rows: readonly MeasureRow[], key: MeasureKey): number {
 	return rows.reduce((most, row) => Math.max(most, measureOf(row, key) ?? 0), 0);
 }
 
+/**
+ * The groups of the columns, each with how many columns it spans, in their order. A table whose
+ * columns belong to no group has none.
+ * @param measures The measures of the table.
+ * @returns The groups.
+ */
+function groupsOf(
+	measures: readonly Measure[],
+): { readonly group: MeasureGroup; readonly span: number }[] {
+	const groups: { group: MeasureGroup; span: number }[] = [];
+	for (const { group } of measures) {
+		if (group === undefined) continue;
+		const last = groups.at(-1);
+		if (last?.group === group) last.span += 1;
+		else groups.push({ group, span: 1 });
+	}
+	return groups;
+}
+
+/**
+ * Whether a column starts a group after another group, so a rule stands before it.
+ * @param measures The measures of the table.
+ * @param measure The column.
+ * @returns True for the first column of a later group.
+ */
+function groupStarts(measures: readonly Measure[], measure: Measure): boolean {
+	const index = measures.indexOf(measure);
+	const before = measures[index - 1];
+	return before !== undefined && measure.group !== undefined && before.group !== measure.group;
+}
+
 export {
 	MEASURES,
 	MEASURE_VIEW,
 	SHOWS,
+	groupStarts,
+	groupsOf,
 	historySource,
 	historyState,
 	interfaceRows,
+	isCodeMeasure,
 	isHistoryMeasure,
 	measureOf,
 	measuresOf,
@@ -417,10 +535,12 @@ export {
 	shownRows,
 	sortedBy,
 	sortedRows,
+	withCode,
 	withHistory,
 	type HistoryReading,
 	type HistoryState,
 	type Measure,
+	type MeasureGroup,
 	type MeasureKey,
 	type MeasureRow,
 	type MeasureView,

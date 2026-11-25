@@ -147,8 +147,11 @@ test("anchors, binding symbols and the relationships between parts bound to Go p
 		[
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pGone warning",
-			// The ledger exports `Archive`, which no other package calls.
-			"EXPOSED_UNUSED pLed information",
+			// The ledger exports `Archive`, which no other package calls: the read of
+			// every Go package is whole, so Module depth warns of each name.
+			"EXPOSED_UNUSED pLed warning",
+			// The money package has no parts, and its interface is read all the same.
+			"EXPOSED_UNUSED pMoney warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			// The shop's relationship to the book stands for its imports of the ledger and its money.
 			"RELATIONSHIP_UNDRAWN pLed information",

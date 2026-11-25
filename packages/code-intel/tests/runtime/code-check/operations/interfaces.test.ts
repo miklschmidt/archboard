@@ -6,7 +6,8 @@
 // Write through the index and Cache past it; a file of the store drawn outside
 // it that calls Hook; a report no part binds that calls Audit and names Util's
 // type; a system test that calls an exposed helper nothing else uses; and a
-// file of tests beside the index.
+// file of tests beside the index. A timing module with no parts exposes two
+// durations, and a kit with no parts exposes TypeScript and Python functions.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -110,6 +111,14 @@ beforeAll(async () => {
 			"",
 		].join("\n"),
 		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
+		"src/timing/index.ts": "export const RETRY_MS = 5;\nexport const IDLE_MS = 9;\n",
+		"src/server/retry.ts":
+			'import { RETRY_MS } from "../timing";\nexport function retry(): number { return RETRY_MS * 2; }\n',
+		"src/kit/index.ts": "export function tsUsed(): void {}\nexport function tsUnused(): void {}\n",
+		"src/kit/__init__.py": "def py_used():\n    pass\n\n\ndef py_unused():\n    pass\n",
+		"src/server/kit.ts":
+			'import { tsUsed } from "../kit";\nexport function useKit(): void { tsUsed(); }\n',
+		"src/app.py": "from kit import py_used\n\n\ndef main():\n    py_used()\n",
 		"docs/guide.md": "# Guide\n",
 		"infra/flake/flake.nix": '{ outputs = { self }: { lib.version = "1"; }; }\n',
 		"infra/chart/Chart.yaml": "apiVersion: v2\nname: cart\nversion: 1.0.0\n",
@@ -185,6 +194,20 @@ beforeAll(async () => {
 			},
 		},
 	]);
+	// Modules with no parts: one language, and two.
+	for (const [name, path] of [
+		["Timing", "src/timing"],
+		["Kit", "src/kit"],
+	] as const) {
+		document(vault, name, [
+			{
+				id: "v1",
+				name: "Built",
+				lifecycle: "current",
+				content: { nodes: [part(name, path)], edges: [], flows: [] },
+			},
+		]);
+	}
 	// A directory no language the check reads has a root file in.
 	document(vault, "Docs", [
 		{
@@ -349,23 +372,57 @@ test("a container with no caller on its document has no caller to miss", () => {
 	expect(findings("CALLER_UNDRAWN", "Store alone")).toEqual([]);
 });
 
-test("exposed names no file outside the module uses are information on the container, and a test is no caller and no root file", () => {
+test("each exposed name no file outside the module uses is a finding of its own, and a test is no caller and no root file", () => {
 	for (const documentName of ["Shop", "Store alone"]) {
-		const unused = findings("EXPOSED_UNUSED", documentName);
-		expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
-			["Store", "information"],
-		]);
+		const unused = findings("EXPOSED_UNUSED", documentName).filter(
+			(each) => each.subject?.id === "Store",
+		);
 		// The system test calls the helper, and the report names the type.
-		expect(unused[0]?.message).toContain("unusedHelper");
-		expect(unused[0]?.message).not.toContain("ShelfType");
-		expect(unused[0]?.message).not.toContain("shelfFixture");
+		expect(unused.map((each) => [each.export, each.severity])).toEqual([
+			["unusedHelper", "warning"],
+		]);
 	}
+});
+
+test("a bound module with no parts reports its interface", () => {
+	const unused = findings("EXPOSED_UNUSED", "Timing");
+	expect(unused.map((each) => [each.subject?.id, each.export, each.severity])).toEqual([
+		["Timing", "IDLE_MS", "warning"],
+	]);
+});
+
+test("a bound module that holds two languages reports the exports and the uses of both", () => {
+	const unused = findings("EXPOSED_UNUSED", "Kit");
+	// Each language's unused export is named by itself, and each language's caller is a use.
+	expect(unused.map((each) => [each.subject?.id, each.export])).toEqual([
+		["Kit", "tsUnused"],
+		["Kit", "py_unused"],
+	]);
 });
 
 test("a container whose module exposes nothing the check can read is listed as not judged", () => {
 	const skip = outcome.skipped.find((each) => each.model === "Docs");
 	expect(skip).toMatchObject({ reason: "exposure-unknown", subject: { id: "Manual" }, repo: SHOP });
 	expect(outcome.findings.some((each) => each.model === "Docs")).toBe(false);
+});
+
+test("a part bound to a file or a symbol is judged through the measured module that holds it, and listed as not judged only when none does", () => {
+	const skips = outcome.skipped
+		.filter((each) => each.reason === "binding-not-a-module")
+		.map((each) => [each.model, each.subject?.id, each.detail]);
+	// The store holds Inner and its own parts, the flake its version, and the chart its template.
+	// The manual exposes nothing the check reads, and the routes, a compose file and a plain
+	// manifest lie in no folder a measured module stands for, so their parts stay listed.
+	expect(skips.toSorted()).toEqual(
+		[
+			["Docs", "Guide", "docs/guide.md"],
+			["Chart", "Routes", "infra/routes.yaml"],
+			["Compose", "Module", "infra/compose/compose.yaml"],
+			["Compose", "Content", "infra/compose/compose.yaml"],
+			["Manifest", "Module", "infra/plain/config.yaml"],
+			["Manifest", "Content", "infra/plain/config.yaml"],
+		].toSorted(),
+	);
 });
 
 test("external tests use public entry files, while tests inside the module can exercise private files", () => {
@@ -410,7 +467,10 @@ test("flake outputs and chart values receive interface findings, and chart templ
 		).toEqual([[id, "information"]]);
 		expect(
 			outcome.skipped.some(
-				(each) => each.model === documentName && each.reason === "exposure-unknown",
+				(each) =>
+					each.model === documentName &&
+					each.subject?.id === id &&
+					each.reason === "exposure-unknown",
 			),
 		).toBe(false);
 	}
@@ -431,13 +491,16 @@ test("flake outputs and chart values receive interface findings, and chart templ
 	]);
 });
 
-test("containers bound to compose files and plain manifests still have unknown exposure", () => {
-	for (const documentName of ["Compose", "Manifest"]) {
+test("a part bound to a YAML file that is no chart file names no module, so it is not judged", () => {
+	for (const documentName of ["Compose", "Manifest", "Chart"]) {
 		expect(
-			outcome.skipped
-				.filter((each) => each.model === documentName && each.reason === "exposure-unknown")
-				.map((each) => each.subject?.id),
-		).toEqual(["Module"]);
+			outcome.skipped.filter(
+				(each) => each.model === documentName && each.reason === "exposure-unknown",
+			),
+		).toEqual([]);
+	}
+	for (const documentName of ["Compose", "Manifest"]) {
 		expect(findings("EXPOSED_UNUSED", documentName)).toEqual([]);
 	}
+	expect(outcome.findings.filter((each) => each.subject?.id === "Routes")).toEqual([]);
 });

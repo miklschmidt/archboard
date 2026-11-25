@@ -40,7 +40,9 @@
 // read, which keep their names too (csharp-preprocessor.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
+import { CSHARP_MATH } from "#runtime/code-facts/csharp/operations/csharp-depth.ts";
 import { csharpDefinitions } from "#runtime/code-facts/csharp/operations/csharp-definitions.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { firstBranches } from "#runtime/code-facts/csharp/operations/csharp-preprocessor.ts";
 import type {
@@ -66,6 +68,7 @@ interface Captured {
 	readonly friend: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -80,6 +83,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	friend: "friend",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** How .NET names an interface: `I` and a capital, as `IOrderService`. */
@@ -105,6 +109,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		friend: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -415,6 +420,33 @@ function distinct(references: readonly Reference[]): Reference[] {
 }
 
 /**
+ * The uses at run time of names other files may define, at the name each
+ * chain starts with: a name the file neither declares nor binds, so no
+ * parameter or local, where it is no member after a `.`.
+ * @param captured The captures.
+ * @param context The file's declared names and spans.
+ * @returns The names.
+ */
+function outsideUses(captured: Captured, context: UseContext): Node[] {
+	const bound = new Set(captured.binding.map((node) => node.text));
+	return captured.reference.filter(
+		(node) =>
+			!bound.has(node.text) && !afterDot(node) && codeReference(node, context)?.typeOnly === false,
+	);
+}
+
+/**
+ * Whether a name is the member a `.` reads.
+ * @param node The name.
+ * @returns True when it is.
+ */
+function afterDot(node: Node): boolean {
+	const access = node.parent;
+	if (access?.type !== "member_access_expression") return false;
+	return access.childForFieldName("name")?.id === node.id;
+}
+
+/**
  * The code facts of one parsed C# file, before the names it uses are resolved.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -448,6 +480,8 @@ function csharpFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		references: distinct([...inCode, ...inStrings]),
 		imports,
 		unparsed: unparsedOf(captured.unparsed),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsOf(outsideUses(captured, context), CSHARP_MATH),
 	};
 }
 

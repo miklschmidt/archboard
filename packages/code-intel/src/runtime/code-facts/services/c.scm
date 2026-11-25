@@ -14,6 +14,8 @@
 ; @skip        code whose names are no use: an attribute, and the condition
 ;              of `#if` or `#elif`.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, an operator, a condition or a loop.
+;              C++ adds its own in cpp.scm.
 
 (identifier) @name
 (type_identifier) @name
@@ -33,5 +35,21 @@
 (ms_declspec_modifier) @skip
 (preproc_if condition: (_) @skip)
 (preproc_elif condition: (_) @skip)
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (binary_expression)
+  (unary_expression)
+  (update_expression)
+  (conditional_expression)
+  (if_statement)
+  (case_statement)
+  (for_statement)
+  (while_statement)
+  (do_statement)
+] @logic
+(assignment_expression
+  operator: ["+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>="]) @logic
 
 (ERROR) @unparsed

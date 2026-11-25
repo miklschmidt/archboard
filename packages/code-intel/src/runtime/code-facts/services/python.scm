@@ -24,6 +24,7 @@
 ;                    body of `if TYPE_CHECKING:`.
 ; @skip              code where no name is a use: import statements.
 ; @unparsed          code that did not parse.
+; @logic             one piece of logic: a call, an operator, a condition or a loop.
 
 ; ── Definitions ─────────────────────────────────────────────────────────────
 (function_definition name: (identifier) @definition)
@@ -128,5 +129,24 @@
 (import_statement) @skip
 (import_from_statement) @skip
 (future_import_statement) @skip
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call)
+  (binary_operator)
+  (unary_operator)
+  (boolean_operator)
+  (not_operator)
+  (comparison_operator)
+  (augmented_assignment)
+  (conditional_expression)
+  (if_statement)
+  (elif_clause)
+  (if_clause)
+  (case_clause)
+  (for_statement)
+  (for_in_clause)
+  (while_statement)
+] @logic
 
 (ERROR) @unparsed

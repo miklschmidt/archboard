@@ -15,12 +15,22 @@
 // the name `*`. A bare name that the file does not define leads to the one file a
 // glob of the file opens that offers it: a module offers what it defines or
 // imports, every name to the modules inside it and only what it opens with
-// `pub` to any other. A name the file defines, a name the file binds in a
-// narrower scope, and a member reached through a value lead nowhere here: the
+// `pub` to any other. A use at run time whose path ends at a module's name,
+// as the call `archboard_text::shape(..)`, names a value, and no module is
+// one: it reaches the value of that name the module above offers, as
+// `pub fn shape` or `pub use shape::shape;` beside `mod shape;`. A name the
+// file defines, a name the file binds in a narrower scope, and a member
+// reached through a value lead nowhere here: the
 // first two are the file's own reading, and only the value's type tells the
 // third. Every such use is resolved, because the module tree and the manifest
 // name the file; a name a glob of a crate outside the checkout brings in is
 // not read.
+//
+// A use an import names leads where the import does, except a value written
+// alone through a `use` leaf that names a module: Rust brings a name in from
+// each namespace, so the call `outline(..)` after `use text::outline;`
+// reaches the function `outline` that the module above `outline` offers, not
+// the module (TASK-646.16).
 //
 // A `Cargo.toml` names the local packages its crate depends on, and that use
 // leads to the directory of the dependency's library, written with a trailing
@@ -119,20 +129,16 @@ function holds(outer: Place, inner: Place): boolean {
 }
 
 /**
- * Whether a use is the file's own to read: it reaches through an import, is
- * no use in code, starts at a value, at a name the file binds in a narrower
- * scope, or at a name the file defines.
+ * Whether a use no import names is the file's own to read: it is no use in
+ * code, starts at a value, at a name the file binds in a narrower scope, or
+ * at a name the file defines.
  * @param use The use.
  * @param lookup The file's names.
  * @returns True when it leads nowhere here.
  */
-function ownUse(
-	use: Reference & { readonly through?: ReferenceThroughImport },
-	lookup: FileLookup,
-): boolean {
+function ownUse(use: Reference, lookup: FileLookup): boolean {
 	const [first = ""] = use.symbol.split(".");
-	const unled = use.via !== "code" || use.through !== undefined;
-	return unled || first === "" || lookup.own.has(use.symbol);
+	return use.via !== "code" || first === "" || lookup.own.has(use.symbol);
 }
 
 /**
@@ -144,6 +150,57 @@ function ownUse(
  */
 function ownName(first: string, lookup: FileLookup): boolean {
 	return !ABOVE.has(first) && lookup.own.has(first);
+}
+
+/**
+ * Whether the use can name a value beside a module.
+ * @param use The written reference.
+ * @returns True for the final name of a path used at run time.
+ */
+function canNameValue(use: Reference & Pick<RustUse, "pathPrefix">): boolean {
+	return !use.typeOnly && !use.pathPrefix;
+}
+
+/**
+ * The `use` leaf a use is written through where the use can only be a value:
+ * written alone, at run time, through a leaf that names no glob.
+ * @param use The use, through an import.
+ * @param imports The file's imports.
+ * @returns The leaf's import, or undefined.
+ */
+function valueLeaf(
+	use: Reference & Pick<RustUse, "pathPrefix"> & { readonly through: ReferenceThroughImport },
+	imports: readonly Import[],
+): Import | undefined {
+	const found = imports[use.through.import];
+	const alone = use.symbol === use.through.local && canNameValue(use);
+	return alone && found?.names[0]?.imported !== "*" ? found : undefined;
+}
+
+/**
+ * Where a module's import passes a name on as a value: the file and the name
+ * it leads to.
+ * @param crates The checkout's crates.
+ * @param module The module's file.
+ * @param imports Its imports.
+ * @param name The name.
+ * @returns The target, or undefined where no import passes the name on.
+ */
+function passedValue(
+	crates: Crates,
+	module: string,
+	imports: readonly Import[],
+	name: string,
+): Target | undefined {
+	const passed = imports.find((found) =>
+		found.names.some((each) => each.local === name && each.imported !== "*"),
+	);
+	if (passed === undefined) return undefined;
+	const there = resolveImport(crates, module, passed);
+	const imported = there.names[0]?.imported ?? "*";
+	return there.resolved === undefined || imported === "*"
+		? undefined
+		: { path: there.resolved, symbol: imported };
 }
 
 /**
@@ -302,13 +359,37 @@ function createRustResolver(
 	 * @param lookup The file and what its globs open.
 	 * @returns The target, or undefined.
 	 */
-	const useTarget = async (use: Reference, lookup: FileLookup): Promise<Target | undefined> => {
+	const useTarget = async (
+		use: Reference & Pick<RustUse, "pathPrefix">,
+		lookup: FileLookup,
+	): Promise<Target | undefined> => {
 		const [first = ""] = use.symbol.split(".");
 		if (ownName(first, lookup)) return { path: lookup.from, symbol: use.symbol };
 		const target = crates().resolvePath(lookup.from, use.symbol.split("."));
 		if (target === undefined) return globTarget(use, lookup);
-		const whole = target.item.length === 0;
-		return { path: target.file, symbol: whole ? "*" : target.item.join(".") };
+		return target.item.length > 0
+			? { path: target.file, symbol: target.item.join(".") }
+			: wholeTarget(use, lookup.from, target.file);
+	};
+
+	/**
+	 * Where a use that no import names leads when its path ends at a module:
+	 * at run time, to the value of that name the module above offers, else to
+	 * the whole module.
+	 * @param use The use.
+	 * @param from The file.
+	 * @param module The module's file.
+	 * @returns The target.
+	 */
+	const wholeTarget = async (
+		use: Reference & Pick<RustUse, "pathPrefix">,
+		from: string,
+		module: string,
+	): Promise<Target> => {
+		const value = canNameValue(use)
+			? await valueBesideModule(from, use.symbol.split("."))
+			: undefined;
+		return value ?? { path: module, symbol: "*" };
 	};
 
 	/**
@@ -335,7 +416,70 @@ function createRustResolver(
 	};
 
 	/**
-	 * Where the uses of one Rust file lead that no import names.
+	 * The file of the module a path names, where it names a whole module.
+	 * @param from The file the path is written in.
+	 * @param names The path's names.
+	 * @returns The module's file, or undefined where the path names an item.
+	 */
+	const moduleFileOf = (from: string, names: readonly string[]): string | undefined => {
+		const target = crates().resolvePath(from, names);
+		return target?.item.length === 0 ? target.file : undefined;
+	};
+
+	/**
+	 * The value a module offers under a name: where an import of it there
+	 * leads, else its own function or value of that name.
+	 * @param module The module's file.
+	 * @param name The name.
+	 * @returns The value's target, or undefined where it offers none.
+	 */
+	const offeredValue = async (module: string, name: string): Promise<Target | undefined> => {
+		const facts = await parsed(module);
+		if (facts === undefined) return undefined;
+		const own = facts.definitions.some((each) => each.symbol === name && each.kind !== "class");
+		const target: Target | undefined = own ? { path: module, symbol: name } : undefined;
+		return passedValue(crates(), module, facts.imports, name) ?? target;
+	};
+
+	/**
+	 * The value a path names where its last name also names a module: the
+	 * value of that name the module above offers.
+	 * @param from The file the path is written in.
+	 * @param names The path's names.
+	 * @returns The value's target, or undefined where the path names no such value.
+	 */
+	const valueBesideModule = async (
+		from: string,
+		names: readonly string[],
+	): Promise<Target | undefined> => {
+		const name = names.at(-1);
+		const parent = moduleFileOf(from, names.slice(0, -1));
+		const whole = moduleFileOf(from, names) !== undefined;
+		return whole && parent !== undefined && name !== undefined
+			? offeredValue(parent, name)
+			: undefined;
+	};
+
+	/**
+	 * Where a value use of a `use` leaf that names a module leads: to the
+	 * value of that name the module above offers.
+	 * @param from The file.
+	 * @param use The use, through an import.
+	 * @param imports The file's imports.
+	 * @returns The value's target, or undefined where the use is no such value.
+	 */
+	const valueTarget = async (
+		from: string,
+		use: Reference & Pick<RustUse, "pathPrefix"> & { readonly through: ReferenceThroughImport },
+		imports: readonly Import[],
+	): Promise<Target | undefined> => {
+		const found = valueLeaf(use, imports);
+		return found === undefined ? undefined : valueBesideModule(from, pathOf(found));
+	};
+
+	/**
+	 * Where the uses of one Rust file lead that no import names, and the uses
+	 * of a module's name that can only be the value of that name.
 	 * @param from The file.
 	 * @param facts Its facts.
 	 * @returns The target of each use.
@@ -349,12 +493,15 @@ function createRustResolver(
 			globbed: [],
 		};
 		return Promise.all(
-			facts.references.map(async (use: Reference & Partial<Pick<RustUse, "local" | "globs">>) => {
-				if (use.local === true || ownUse(use, lookup)) return undefined;
-				const imports = (use.globs ?? []).flatMap((index) => facts.imports[index] ?? []);
-				const globbed = await globbedBy(from, imports, place);
-				return useTarget(use, { ...lookup, globbed });
-			}),
+			facts.references.map(
+				async ({ through, ...use }: ParsedFacts["references"][number] & Partial<RustUse>) => {
+					if (through !== undefined) return valueTarget(from, { ...use, through }, facts.imports);
+					if (use.local === true || ownUse(use, lookup)) return undefined;
+					const imports = (use.globs ?? []).flatMap((index) => facts.imports[index] ?? []);
+					const globbed = await globbedBy(from, imports, place);
+					return useTarget(use, { ...lookup, globbed });
+				},
+			),
 		);
 	};
 

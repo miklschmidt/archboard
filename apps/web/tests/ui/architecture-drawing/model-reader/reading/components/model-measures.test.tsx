@@ -1,11 +1,15 @@
 // What a table of Measures says in each state a read can reach: the interface stands at once, the
 // history arrives with the answer, a failed read says what happened and reads again, and a module
-// the lens did not read says why. A column's head sorts the rows, and a row selects its module.
+// the lens did not read says why. What a module exposes sets the model's counts beside its code's,
+// from the remembered code pass and never a new one: a module with no findings is clean, one read
+// in part never is, and one the pass skipped says why. A column's head sorts the rows, and a row
+// selects its module.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import type { z } from "zod";
 
@@ -16,6 +20,10 @@ const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-libr
 const { ModelMeasures } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx");
 const { kindLookOf } = await import("#ui/architecture-drawing/canvas/picture/rules/kind-look.ts");
+const { readRetainedFrom, retainedReads } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts");
+const { fetchCodeFindings } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts");
 
 type Props = ComponentProps<typeof ModelMeasures>;
 type HistoryAnswer = Extract<
@@ -28,6 +36,7 @@ const clients: InstanceType<typeof QueryClient>[] = [];
 const REVISION = { digest: "a".repeat(64), files: [] };
 /** The columns of each table, as the dialog gives them. */
 const EXPOSES = ["entryPoints", "hiddenParts", "passThrough", "callers", "wholeModule"] as const;
+const CODE = ["codeExports", "codeValues", "codeLogic", "codeFindings"] as const;
 const TOGETHER = ["together", "unjoined", "commits"] as const;
 /** A table of history, sorted by its commits. */
 const BY_COMMITS: Props["view"] = { measure: "commits", fewest: false, show: "all" };
@@ -115,6 +124,28 @@ function answering(...answer: readonly (() => Promise<Response>)[]): { reads: nu
 		{ preconnect: realFetch.preconnect },
 	);
 	return count;
+}
+
+/**
+ * Answer the server as the code columns read it: the remembered passes from the findings route,
+ * and every other route with nothing, while each address asked for is kept.
+ * @param remembered What the server remembers.
+ * @returns The addresses asked for, in turn.
+ */
+function remembering(remembered: RememberedFindings): string[] {
+	const asked: string[] = [];
+	readRetainedFrom({ ...retainedReads(), codeFindings: fetchCodeFindings });
+	globalThis.fetch = Object.assign(
+		async (input: RequestInfo | URL) => {
+			const url = String(input instanceof Request ? input.url : input);
+			asked.push(url);
+			return url.includes("/api/vault/code-findings")
+				? Response.json({ success: true, ...remembered })
+				: Response.json({ success: false, error: "not here" }, { status: 404 });
+		},
+		{ preconnect: realFetch.preconnect },
+	);
+	return asked;
 }
 
 /**
@@ -395,4 +426,171 @@ test("a row chooses its module, beside the reading with Alt, and the keys walk t
 		["worker", true],
 		[last, false],
 	]);
+});
+
+/** A table of what a module exposes in the model and in its code, as the dialog gives it. */
+const EXPOSED_CODE: Partial<Props> = { ...EXPOSED, keys: [...EXPOSES, ...CODE] };
+
+/** The projection with a fourth module, `store`, which the pass read in part and found nothing on. */
+const WITH_STORE: Props["projection"] = {
+	complete: {
+		...PROJECTION.complete,
+		nodes: [...PROJECTION.complete.nodes, { id: "store", name: "store", kind: "module", order: 4 }],
+	},
+};
+
+/** A module's exports by kind. */
+type Exports = Record<"functions" | "classes" | "methods" | "values" | "types", number>;
+
+/**
+ * One module the pass measured.
+ * @param id The module.
+ * @param languages The languages judged, and those no rule judges.
+ * @param languages.judged The languages judged.
+ * @param languages.unjudged The languages no rule judges.
+ * @param exports Its exports by kind.
+ * @returns What the pass remembers of it.
+ */
+function measured(
+	id: string,
+	languages: { readonly judged: string[]; readonly unjudged: string[] },
+	exports: Exports,
+) {
+	return {
+		model: "Shop",
+		state: "Current",
+		subject: subject(id),
+		repo: "example/shop",
+		directory: `src/${id}`,
+		languages: languages.judged,
+		unjudged: languages.unjudged,
+		exports,
+		logic: exports.functions * 3,
+	};
+}
+
+/**
+ * The pass over this version of the reading: `api` is clean, `route` carries two findings, `store`
+ * was read in part and holds none, and `worker` has no root file the check reads.
+ */
+const REMEMBERED: RememberedFindings = {
+	readings: [],
+	models: [
+		{
+			model: "Shop",
+			state: "Current",
+			revision: REVISION,
+			checkedAt: "2026-11-19T12:00:00.000Z",
+			findings: ["EXPOSED_VALUE", "MODULE_SHALLOW"].map((code) => ({
+				code,
+				severity: code === "EXPOSED_VALUE" ? "warning" : "information",
+				file: "route.module.json",
+				model: "Shop",
+				state: "Current",
+				subject: subject("route"),
+				message: "route hands its insides to its callers.",
+			})),
+			depth: [
+				measured(
+					"api",
+					{ judged: ["typescript"], unjudged: [] },
+					{ functions: 2, classes: 1, methods: 2, values: 0, types: 3 },
+				),
+				measured(
+					"route",
+					{ judged: ["typescript"], unjudged: [] },
+					{ functions: 0, classes: 0, methods: 0, values: 2, types: 0 },
+				),
+				measured(
+					"store",
+					{ judged: ["typescript"], unjudged: ["python"] },
+					{ functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
+				),
+			],
+			skipped: [
+				{
+					reason: "exposure-unknown",
+					model: "Shop",
+					state: "Current",
+					subject: subject("worker"),
+				},
+			],
+		},
+	],
+};
+
+/**
+ * One cell of a row.
+ * @param id The module.
+ * @param measure The measure.
+ * @returns The cell.
+ */
+function cell(id: string, measure: string): HTMLElement | null {
+	return row(id).querySelector<HTMLElement>(`[data-measure="${measure}"]`);
+}
+
+test("what a module exposes sets the model's counts beside its code's, and a code column sorts", async () => {
+	remembering(REMEMBERED);
+	const { views } = mount({ ...EXPOSED_CODE, projection: WITH_STORE });
+	await waitFor(() => expect(cell("api", "codeExports")?.dataset["count"]).toBe("8"));
+	const model = document.querySelector<HTMLTableCellElement>('[data-measure-group="model"]');
+	const code = document.querySelector<HTMLTableCellElement>('[data-measure-group="code"]');
+	// Nothing reaches a module as a whole, so the model has four columns.
+	expect(model?.colSpan).toBe(4);
+	expect(code?.colSpan).toBe(CODE.length);
+	expect(cell("route", "codeValues")?.dataset["count"]).toBe("2");
+	expect(cell("api", "codeLogic")?.dataset["count"]).toBe("6");
+	await act(async () => {
+		fireEvent.click(document.querySelector('[data-measure-head="codeExports"]')!);
+	});
+	expect(views).toEqual([{ ...EXPOSED.view!, measure: "codeExports" }]);
+	cleanup();
+	mount({ ...EXPOSED_CODE, projection: WITH_STORE, view: views[0]! });
+	await waitFor(() => expect(cell("api", "codeExports")?.dataset["sorted"]).toBe(""));
+	expect(order()).toEqual(["api", "route", "store", "worker"]);
+});
+
+test("a module with no findings is clean, one read in part never is, and a skipped one says why", async () => {
+	remembering(REMEMBERED);
+	mount({ ...EXPOSED_CODE, projection: WITH_STORE });
+	await waitFor(() => expect(cell("api", "codeFindings")?.dataset["code"]).toBe("clean"));
+	expect(cell("route", "codeFindings")?.dataset["count"]).toBe("2");
+	expect(cell("store", "codeFindings")?.dataset["code"]).toBe("partial");
+	const notJudged = [...row("worker").querySelectorAll<HTMLElement>("[data-not-read]")];
+	expect(notJudged.map((one) => one.dataset["notRead"])).toEqual(
+		CODE.map(() => "exposure-unknown"),
+	);
+	expect(notJudged[0]?.title).not.toBe("");
+	expect(document.querySelector('[data-slot="model-measures-code"]')?.textContent).toContain(
+		"3 of 4",
+	);
+});
+
+test("a C++ module whose checkout has no clangd is read in part, though the pass names the server by C", async () => {
+	const exports = { functions: 2, classes: 0, methods: 0, values: 0, types: 0 };
+	const depth = [measured("api", { judged: ["cpp"], unjudged: [] }, exports)];
+	const skip = {
+		reason: "language-server-missing",
+		repo: "example/shop",
+		detail: "c: none",
+	} as const;
+	const models = REMEMBERED.models?.map((one) => ({ ...one, depth, skipped: [skip] }));
+	remembering({ readings: [], models });
+	mount(EXPOSED_CODE);
+	await waitFor(() => expect(cell("api", "codeExports")?.dataset["count"]).toBe("2"));
+	expect(cell("api", "codeFindings")?.dataset["code"]).toBe("partial");
+});
+
+test("the code columns read the remembered pass, and opening them never starts a pass", async () => {
+	const asked = remembering({ readings: [], models: [] });
+	mount(EXPOSED_CODE);
+	await waitFor(() => expect(asked.length).toBeGreaterThan(0));
+	await act(async () => {
+		await Bun.sleep(5);
+	});
+	expect(asked.every((url) => url.includes("/api/vault/code-findings"))).toBe(true);
+	// No pass read this version of the reading, so no code count stands in for one.
+	expect(cell("api", "codeExports")).toBeNull();
+	expect(document.querySelector('[data-slot="model-measures-code"]')).not.toBeNull();
+	expect(cell("api", "entryPoints")?.dataset["count"]).toBe("1");
 });

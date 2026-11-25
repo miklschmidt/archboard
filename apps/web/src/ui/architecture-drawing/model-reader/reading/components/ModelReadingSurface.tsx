@@ -1,4 +1,11 @@
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import {
+	useCallback,
+	useMemo,
+	useState,
+	type ComponentProps,
+	type JSX,
+	type ReactNode,
+} from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
@@ -164,9 +171,16 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const aboutPage = useMemo(
 		() =>
 			page === "about" && (
-				<ReadingAbout key={about} surface={props} place={place} outlineSlot={outlineSlot} />
+				<ReadingAbout
+					key={about}
+					surface={props}
+					code={code.reading}
+					codeRead={code.read}
+					place={place}
+					outlineSlot={outlineSlot}
+				/>
 			),
-		[page, about, props, place, outlineSlot],
+		[page, about, props, code.reading, code.read, place, outlineSlot],
 	);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
@@ -215,12 +229,16 @@ function aboutKey(reader: Reader): string {
  * can be done stays at the foot of the right panel beside it.
  * @param props The surface, and what the page offers.
  * @param props.surface The surface's inputs.
+ * @param props.code The code pass that read the reading on screen, or null when none did.
+ * @param props.codeRead How the read of the remembered code passes stands.
  * @param props.place Where the page was scrolled to, which it comes back to.
  * @param props.outlineSlot The slot at the top of the right panel, which the outline stands in.
  * @returns The page.
  */
 function ReadingAbout(props: {
 	readonly surface: ModelReadingSurfaceProps;
+	readonly code: ComponentProps<typeof ModelAbout>["code"];
+	readonly codeRead: ComponentProps<typeof ModelAbout>["codeRead"];
 	readonly place: AboutPlace;
 	readonly outlineSlot: HTMLElement | null;
 }): JSX.Element {
@@ -255,6 +273,9 @@ function ReadingAbout(props: {
 				scope={shown.projection.opened}
 				projection={shown.projection}
 				selection={selection}
+				code={props.code}
+				codeRead={props.codeRead}
+				onCodeTargetNotice={surface.onCodeTargetNotice}
 			/>
 		</AboutOutlineContext>
 	);

@@ -1,5 +1,5 @@
 // The code check's route,
-// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
+// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...[&base=<ref>][&touched=true]`
 // (ADR 0046).
 //
 // `archboard check code` and `archboard check all` ask it, and so does the code view
@@ -20,14 +20,27 @@
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
 // JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
+// `base` names the base that the modules the branch touched are read from,
+// and `touched=true` asks for them from the default base (TASK-646.04); a base
+// that does not resolve is refused, as `BASE_UNRESOLVED`. Neither changes a
+// severity, so the memory holds the same findings whoever ran the pass.
 //
 // Only the code view of Measures starts a pass from a page; the panes read (TASK-367.24).
 // Each pass that finishes leaves its findings in the server's memory, and
 // `GET /api/vault/code-findings` answers from that memory alone, so the panes that
 // read it on a timer never cost a reading of code. A pass the caller cancelled, or a refusal, leaves the memory
 // as it was.
+//
+// `GET /api/vault/code-exports?model=<model>[&state=<state>]&revision=<digest>&module=<module>`
+// answers how the last pass over that exact reading measured one module, with the names of its
+// exports, as the `depth` of a code-check answer that holds that module alone, from the same memory
+// (TASK-646.08). The findings answer and the code check's own answer leave the names out, because
+// every canvas reads the one, `archboard check` prints the other on every run, and only the About
+// page of one module shows them. No remembered pass of that version that measured the
+// module is a 404.
 
 import type { Express, Request, Response } from "express";
+import { z } from "zod";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
@@ -36,6 +49,10 @@ import {
 import { callerGone } from "#server/http/middleware/caller-gone.ts";
 import { checkoutWork, codeCheck } from "#server/wiring/server-owners.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+
+/** One module a pass measured, without the names of its exports. */
+type Measured = Omit<NonNullable<CodeCheckAnswer["depth"]>[number], "names">;
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface CodeCheckRouteDependencies {
@@ -66,6 +83,16 @@ function variantOf(request: Request): string | undefined {
 }
 
 /**
+ * The base a request names for the modules the branch touched.
+ * @param request The request.
+ * @returns Its `base`, or undefined when it is absent or blank.
+ */
+function baseOf(request: Request): string | undefined {
+	const asked = queryString(request, "base")?.trim();
+	return asked === "" ? undefined : asked;
+}
+
+/**
  * The plans a request names.
  * @param request The request.
  * @returns Each `plan`, in order.
@@ -74,6 +101,21 @@ function plansOf(request: Request): string[] {
 	const named = request.query["plan"];
 	const each = Array.isArray(named) ? named : [named];
 	return each.filter((plan): plan is string => typeof plan === "string" && plan.trim() !== "");
+}
+
+/**
+ * A pass's answer as the route gives it: each measured module without the names of its exports,
+ * which the memory keeps for `GET /api/vault/code-exports` (TASK-646.08).
+ * @param answer The pass's answer.
+ * @returns The answer without the names.
+ */
+function withoutNames(
+	answer: CodeCheckAnswer,
+): Omit<CodeCheckAnswer, "depth"> & { readonly depth?: Measured[] } {
+	const { depth, ...rest } = answer;
+	return depth === undefined
+		? rest
+		: { ...rest, depth: depth.map(({ names: _names, ...counts }) => counts) };
 }
 
 /**
@@ -91,6 +133,8 @@ async function answerCodeCheck(
 	const variant = variantOf(request);
 	const everyDraft = queryString(request, "every-draft") === "true";
 	const plans = plansOf(request);
+	const base = baseOf(request);
+	const touched = queryString(request, "touched") === "true";
 	const checkedAt = new Date();
 	try {
 		const answer = await dependencies.runCheckout(
@@ -98,7 +142,15 @@ async function answerCodeCheck(
 			response,
 			"GET /api/vault/code-check",
 			async (signal) => {
-				const checked = await dependencies.check({ vault, variant, everyDraft, plans, signal });
+				const checked = await dependencies.check({
+					vault,
+					variant,
+					everyDraft,
+					plans,
+					base,
+					touched,
+					signal,
+				});
 				// A cancelled pass may have stopped short, so it is nobody's news.
 				if ("states" in checked && !signal.aborted) {
 					dependencies.memory.remember(vault, checked, checkedAt);
@@ -107,7 +159,7 @@ async function answerCodeCheck(
 			},
 		);
 		if (callerGone(request, response)) return;
-		if ("states" in answer) response.json({ success: true, ...answer });
+		if ("states" in answer) response.json({ success: true, ...withoutNames(answer) });
 		else response.status(422).json({ success: false, ...answer });
 	} catch (error) {
 		if (!callerGone(request, response)) {
@@ -116,9 +168,45 @@ async function answerCodeCheck(
 	}
 }
 
+/** The exact reading and module whose exports are asked for. A reading with no state names none. */
+const ExportsQuerySchema = z.object({
+	model: z.string().min(1),
+	state: z.string().min(1).optional(),
+	revision: z.string().min(1),
+	module: z.string().min(1),
+});
+
 /**
- * Mount `GET /api/vault/code-check` and `GET /api/vault/code-findings`, which
- * answers what the finished passes found from memory and never starts one.
+ * Answer one request for how the remembered pass measured one module, with its exports.
+ * @param memory What the finished passes found.
+ * @param request The request.
+ * @param response Its response.
+ */
+function answerExports(memory: CodeFindingsMemory, request: Request, response: Response): void {
+	const asked = ExportsQuerySchema.safeParse(request.query);
+	if (!asked.success) {
+		response
+			.status(400)
+			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(asked.error) });
+		return;
+	}
+	const { state, ...rest } = asked.data;
+	const exports = memory.exportsOf(vaultOfRequest(request), { ...rest, state: state ?? null });
+	if (exports === null) {
+		response.status(404).json({
+			success: false,
+			code: "CODE_EXPORTS_UNREAD",
+			error: "No remembered code check measured this module on this version of the reading.",
+		});
+		return;
+	}
+	response.json({ success: true, depth: [exports] });
+}
+
+/**
+ * Mount `GET /api/vault/code-check`, `GET /api/vault/code-findings`, which
+ * answers what the finished passes found from memory and never starts one, and
+ * `GET /api/vault/code-exports`, which answers one module's exports from the same memory.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -151,6 +239,9 @@ function mountCodeCheckRoute(
 	});
 	app.get("/api/vault/code-findings", requireVault, (request, response) => {
 		response.json({ success: true, ...dependencies.memory.recall(vaultOfRequest(request)) });
+	});
+	app.get("/api/vault/code-exports", requireVault, (request, response) => {
+		answerExports(dependencies.memory, request, response);
 	});
 }
 

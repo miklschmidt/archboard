@@ -18,6 +18,7 @@
 ;              and the name `export default <name>` exports. An export passes
 ;              a name on, also one an import brought in, and never uses it.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, an operator, a condition or a loop.
 
 ; ── Definitions ─────────────────────────────────────────────────────────────
 (function_declaration name: (identifier) @definition)
@@ -115,5 +116,22 @@
 (export_statement source: (string)) @skip
 (export_clause) @skip
 (export_statement value: (identifier) @skip)
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (new_expression)
+  (binary_expression)
+  (unary_expression)
+  (update_expression)
+  (augmented_assignment_expression)
+  (ternary_expression)
+  (if_statement)
+  (switch_case)
+  (for_statement)
+  (for_in_statement)
+  (while_statement)
+  (do_statement)
+] @logic
 
 (ERROR) @unparsed

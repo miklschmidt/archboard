@@ -37,6 +37,7 @@ import {
 	type Fullscreen,
 } from "#ui/application/hooks/use-fullscreen.ts";
 import { useNotices, type NoticeStack } from "#ui/application/hooks/use-notices.ts";
+import { useLanguageServerFix } from "#ui/application/hooks/use-language-server-fix.ts";
 import { useListingNotice } from "#ui/application/hooks/use-listing-notice.ts";
 import { usePanes, type Panes } from "#ui/application/hooks/use-panes.ts";
 import { useAgentActivity, type AgentActivity } from "#ui/application/hooks/use-agent-activity.ts";
@@ -81,6 +82,7 @@ import { Shell } from "#ui/shell/components/Shell.tsx";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { OpenStart } from "#ui/panes/reading-routing/rules/start.ts";
 import { ModelDraftContext } from "#ui/architecture-drawing/model-reader/state/draft.ts";
+import { LanguageServerFixContext } from "#ui/architecture-drawing/model-reader/state/language-server-fix.ts";
 import { useRouter } from "@tanstack/react-router";
 import {
 	type SettingsSurface,
@@ -468,18 +470,28 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? start.first;
 	const { ask, draft, panel } = agent;
-	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
-	// The server tells the workbench socket of the switch before it answers, but that answer can
-	// arrive first. A read on the socket comes after the news, so the repair is composed for the
-	// conversation shown now, not refused because the workbench moved under it.
-	const askAboutDiagnosed = useCallback(
-		(text: string): void => {
-			void activate(livePanes.active.status.paneId)
-				.then(() => transport?.refresh())
-				.catch(() => undefined)
-				.then(() => ask(text));
+	// A fix goes to the workhorse of the checkout it is about, so that checkout is shown first: the
+	// pane's own, or one named. The server tells the workbench socket of the switch before it
+	// answers, but that answer can arrive first. A read on the socket comes after the news, so the
+	// fix is composed for the conversation shown now, not refused because the workbench moved under
+	// it. A named checkout the tab cannot show gets no message, which would go to another one.
+	const askIn = useCallback(
+		async (text: string, checkout?: string): Promise<boolean> => {
+			const { paneId } = livePanes.active.status;
+			const shown = await activate(paneId, checkout === undefined ? {} : { checkout });
+			if (!shown && checkout !== undefined) return false;
+			await transport?.refresh().catch(() => undefined);
+			ask(text);
+			return true;
 		},
 		[activate, livePanes, ask, transport],
+	);
+	// A repair goes to the workhorse of the repository diagnosed.
+	const askAboutDiagnosed = useCallback(
+		(text: string): void => {
+			void askIn(text);
+		},
+		[askIn],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
@@ -496,6 +508,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		},
 		[activate, livePanes, panel, draft],
 	);
+	const serverFix = useLanguageServerFix(catalogNow, askIn, raise);
 	useLastReading();
 
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
@@ -509,29 +522,31 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	return (
 		<ModelArrivalContext value={addressing.modelArriving}>
 			<ModelDraftContext value={fillDraft}>
-				<OrbStageProvider>
-					{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-					<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-						<AnswerFilesContext value={openAnswerFile}>
-							<Tooltip.Provider>
-								<Shell
-									view={view}
-									actions={actions}
-									diagnostics={diagnostics}
-									voiceControls={slots.voiceControls}
-									agentDock={slots.dock}
-									agentPanel={slots.panel}
-									agentPanelOpen={agent.panel.open}
-									onAgentPanelClose={agent.panel.closePanel}
-									navigatorMode={listing.mode}
-									onLeaveCode={listing.leaveCode}
-									attachStage={fullscreen.attachStage}
-								/>
-								<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
-							</Tooltip.Provider>
-						</AnswerFilesContext>
-					</VoiceSurfaceProvider>
-				</OrbStageProvider>
+				<LanguageServerFixContext value={serverFix}>
+					<OrbStageProvider>
+						{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+						<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+							<AnswerFilesContext value={openAnswerFile}>
+								<Tooltip.Provider>
+									<Shell
+										view={view}
+										actions={actions}
+										diagnostics={diagnostics}
+										voiceControls={slots.voiceControls}
+										agentDock={slots.dock}
+										agentPanel={slots.panel}
+										agentPanelOpen={agent.panel.open}
+										onAgentPanelClose={agent.panel.closePanel}
+										navigatorMode={listing.mode}
+										onLeaveCode={listing.leaveCode}
+										attachStage={fullscreen.attachStage}
+									/>
+									<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
+								</Tooltip.Provider>
+							</AnswerFilesContext>
+						</VoiceSurfaceProvider>
+					</OrbStageProvider>
+				</LanguageServerFixContext>
 			</ModelDraftContext>
 		</ModelArrivalContext>
 	);

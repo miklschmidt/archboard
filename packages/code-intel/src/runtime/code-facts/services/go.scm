@@ -15,6 +15,7 @@
 ;              which constructs a value.
 ; @skip        code where no name is a use: the package clause and imports.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, an operator, a condition or a loop.
 
 ; ── Names written where they are bound, never a use ─────────────────────────
 (parameter_declaration name: (identifier) @binding)
@@ -55,5 +56,21 @@
 
 (package_clause) @skip
 (import_declaration) @skip
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (binary_expression)
+  (unary_expression)
+  (inc_statement)
+  (dec_statement)
+  (if_statement)
+  (expression_case)
+  (type_case)
+  (communication_case)
+  (for_statement)
+] @logic
+(assignment_statement
+  operator: ["+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>=" "&^="]) @logic
 
 (ERROR) @unparsed

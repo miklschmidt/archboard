@@ -2,10 +2,12 @@ import type { Stats } from "node:fs";
 import path from "node:path";
 
 import { CodeBindingSchema, type CodeBinding } from "#shared/schemas/code-binding.ts";
-import type { checkoutHead, RegisteredRepo } from "@archboard/workspace/checkouts";
+import type { checkoutHead, chosenCheckouts } from "@archboard/workspace/checkouts";
 
 /** What a checkout has out: the branch it is on and the commit at HEAD. */
 type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
+/** A registry entry: a chosen checkout of a repository. */
+type RegisteredRepo = ReturnType<typeof chosenCheckouts>[number];
 
 /** Why a binding resolves to no code here; the code opener answers each as a failure of the open. */
 type ResolutionFailureCode =

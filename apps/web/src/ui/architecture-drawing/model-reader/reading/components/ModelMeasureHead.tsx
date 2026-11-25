@@ -3,6 +3,8 @@ import { useCallback, useId, type JSX } from "react";
 import { cn, Select } from "@archboard/ui-kit/components";
 import {
 	SHOWS,
+	groupStarts,
+	groupsOf,
 	type Measure,
 	type MeasureKey,
 	type MeasureView,
@@ -25,7 +27,8 @@ interface MeasureHeadProps {
 
 /**
  * The head of the table, which stands over the rows while they scroll: the name of each column,
- * and each one sorts the rows. A press sorts by a column with the most first, and a second press
+ * and each one sorts the rows. Where the columns belong to groups, such as what the model says and
+ * what its code says, a row over them names each group. A press sorts by a column with the most first, and a second press
  * turns the order round, as the site's table does.
  * @param props How the table stands, and its measures.
  * @returns The head.
@@ -37,19 +40,37 @@ function MeasureHead(props: MeasureHeadProps): JSX.Element {
 			onView({ ...view, measure: key, fewest: key === measure ? !view.fewest : false }),
 		[view, measure, onView],
 	);
+	const groups = groupsOf(measures);
 	return (
 		<thead className="bg-tray-sink sticky top-0 z-10">
+			{groups.length > 0 && (
+				<tr>
+					<ModuleHead rows={2} />
+					{groups.map(({ group, span }, index) => (
+						<th
+							key={group}
+							scope="colgroup"
+							colSpan={span}
+							data-measure-group={group}
+							className={cn(
+								"text-body text-foreground h-8 px-3 pt-2 text-right align-bottom font-semibold",
+								index > 0 && GROUP_START,
+							)}
+						>
+							<span className="block pb-1 shadow-[inset_0_-1px_0_var(--border)]">
+								{GROUP_LABELS[group]}
+							</span>
+						</th>
+					))}
+				</tr>
+			)}
 			<tr>
-				<th
-					scope="col"
-					className="text-body text-muted-foreground h-10 px-3 text-left font-medium shadow-[inset_0_-1px_0_var(--border)]"
-				>
-					Module
-				</th>
+				{groups.length === 0 && <ModuleHead rows={1} />}
 				{measures.map((one) => (
 					<ColumnHead
 						key={one.key}
 						measure={one}
+						starts={groupStarts(measures, one)}
 						sorted={one.key === measure ? (view.fewest ? "ascending" : "descending") : null}
 						onSort={sort}
 					/>
@@ -60,17 +81,46 @@ function MeasureHead(props: MeasureHeadProps): JSX.Element {
 }
 
 /**
+ * The head of the column of module names, as tall as the rows of the head.
+ * @param props How many rows of the head it spans.
+ * @param props.rows The rows.
+ * @returns The head.
+ */
+function ModuleHead(props: { readonly rows: number }): JSX.Element {
+	return (
+		<th
+			scope="col"
+			rowSpan={props.rows}
+			className="text-body text-muted-foreground h-10 px-3 text-left align-bottom font-medium shadow-[inset_0_-1px_0_var(--border)]"
+		>
+			<span className="flex h-10 items-center">Module</span>
+		</th>
+	);
+}
+
+/** What each group of columns is called over its columns. */
+const GROUP_LABELS: Readonly<Record<NonNullable<Measure["group"]>, string>> = {
+	model: "Model",
+	code: "Code",
+};
+
+/** The rule that parts a group of columns from the group before it. */
+const GROUP_START = "border-l border-border/55";
+
+/**
  * The head of one column: its name, which says what it counts on hover, and the key that sorts by
  * it. The sorted column's head is lit with a piece of gold under it and an arrow that says which
  * end comes first.
  * @param props The measure, how the table is sorted by it, and the sort.
  * @param props.measure The measure.
+ * @param props.starts Whether it starts a group of columns after another.
  * @param props.sorted The order of the table by it, or null when it sorts by another.
  * @param props.onSort Sort by it.
  * @returns The head.
  */
 function ColumnHead(props: {
 	readonly measure: Measure;
+	readonly starts: boolean;
 	readonly sorted: "ascending" | "descending" | null;
 	readonly onSort: (key: MeasureKey) => void;
 }): JSX.Element {
@@ -81,7 +131,10 @@ function ColumnHead(props: {
 		<th
 			scope="col"
 			aria-sort={sorted ?? undefined}
-			className="h-10 w-28 px-1.5 text-right font-medium shadow-[inset_0_-1px_0_var(--border)]"
+			className={cn(
+				"h-10 w-24 px-1.5 text-right font-medium shadow-[inset_0_-1px_0_var(--border)]",
+				props.starts && GROUP_START,
+			)}
 		>
 			<button
 				type="button"
@@ -139,4 +192,4 @@ function MeasureShow(props: Pick<MeasureHeadProps, "view" | "onView">): JSX.Elem
 	);
 }
 
-export { MeasureHead, MeasureShow };
+export { GROUP_START, MeasureHead, MeasureShow };

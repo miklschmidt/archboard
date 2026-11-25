@@ -3,7 +3,7 @@
 // Node runs this file as it is. It reads its inputs from the environment the action sets.
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { annotationsForAll } from "./annotations.ts";
@@ -24,6 +24,71 @@ import {
 } from "../shared/workflow-commands.ts";
 
 const CHECKS = ["all", "semantics", "code", "embeds"];
+/** The checks that read the modules a branch touched, so they take `--base`. */
+const GATED_CHECKS = new Set(["all", "code"]);
+/** The vault configuration, from the root of a checkout: only `<root>/.archboard/vault` counts. */
+const VAULT_CONFIGURATION = ".archboard/vault/.archboard/config.yaml";
+/** The args that check drafts, which keep the gate setting each draft was made with. */
+const DRAFT_ARGS = ["--every-draft", "--state"];
+
+/**
+ * Whether the shallow-module gate can be on: the args name `--fail-shallow-modules`, the args check
+ * drafts (`--every-draft` or `--state`), each of which keeps the setting it was made with, or the
+ * vault configuration of the checkout sets `codeCheck.failShallowModules: true`. Node reads no YAML, and
+ * the schema allows that key nowhere else, so the text decides. A match the YAML would not read,
+ * such as a comment, costs one fetch and nothing else.
+ * @param request What the action was asked to do.
+ * @returns True when it can.
+ */
+function gateCanBeOn(request: Request): boolean {
+	if (request.args.includes("--fail-shallow-modules")) return true;
+	if (
+		request.args.some((arg) =>
+			DRAFT_ARGS.some((name) => arg === name || arg.startsWith(`${name}=`)),
+		)
+	)
+		return true;
+	const configuration = join(repositoryRoot(request.directory), VAULT_CONFIGURATION);
+	if (!existsSync(configuration)) return false;
+	return /\bfailShallowModules["']?\s*:\s*(?:true|True|TRUE)\b/u.test(
+		readFileSync(configuration, "utf8"),
+	);
+}
+
+/**
+ * Whether the run needs the pull request's base: it is a pull request, its check reads touched
+ * modules, its args name no base, and the gate can be on.
+ * @param request What the action was asked to do.
+ * @param base The pull request's base branch, empty on a run that is no pull request.
+ * @returns True when it does.
+ */
+function needsBase(request: Request, base: string): boolean {
+	const named = request.args.some((arg) => arg === "--base" || arg.startsWith("--base="));
+	return base !== "" && !named && GATED_CHECKS.has(request.checks) && gateCanBeOn(request);
+}
+
+/**
+ * The base of the pull request that the run checks, as `--base`: the shallow-module gate reads the
+ * modules the branch touched from it, and a runner's checkout has no default base. It fetches the
+ * base branch, with the whole history when the checkout is shallow, so the merge base is there. A
+ * run that does not need it gets none. A fetch that fails gets none either, and says so: the check
+ * then reads the default base.
+ * @param request What the action was asked to do.
+ * @returns The arguments, or none.
+ */
+function pullRequestBase(request: Request): string[] {
+	const base = input("GITHUB_BASE_REF", "");
+	if (!needsBase(request, base)) return [];
+	const cwd = request.directory;
+	const shallow = run("git", ["rev-parse", "--is-shallow-repository"], { cwd }).stdout.trim();
+	const deepen = shallow === "true" ? ["--unshallow"] : [];
+	const refspec = `+refs/heads/${base}:refs/remotes/origin/${base}`;
+	const fetched = run("git", ["fetch", "--no-tags", ...deepen, "origin", refspec], { cwd });
+	if (fetched.exitCode === 0) return ["--base", `origin/${base}`];
+	const message = `The base ${base} of the pull request could not be fetched: ${fetched.stderr.trim()}`;
+	process.stdout.write(`${annotationLine("warning", { title: "archboard check" }, message)}\n`);
+	return [];
+}
 
 /**
  * Register the checkouts a check reads. A binding names a repository by identity, so a platform
@@ -205,7 +270,8 @@ function execute(request: Request): number {
 	const refusal = registerCheckouts(cli, [directory, ...request.extraCheckouts]);
 	if (refusal !== undefined) throw new Error(refusal);
 
-	const result = run(cli, ["check", request.checks, ...request.args], { cwd: directory });
+	const args = ["check", request.checks, ...request.args, ...pullRequestBase(request)];
+	const result = run(cli, args, { cwd: directory });
 	process.stderr.write(result.stderr);
 	const report = join(input("RUNNER_TEMP", tmpdir()), "archboard-check.json");
 	mkdirSync(join(report, ".."), { recursive: true });

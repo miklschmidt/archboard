@@ -12,6 +12,14 @@
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "outgoing": [
     {
+      "order": 900,
+      "kind": "call",
+      "label": "the brief for a missing server, in a fix asked for",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#eIAHRejk",
+      "to": "vKEsyHFk#8xqOjFa6"
+    },
+    {
       "order": 1000,
       "kind": "render",
       "label": "the desktop frame",

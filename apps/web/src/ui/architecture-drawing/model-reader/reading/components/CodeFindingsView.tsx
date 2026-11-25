@@ -9,6 +9,7 @@ import {
 } from "react";
 import { cn } from "@archboard/ui-kit/components";
 import {
+	ExportName,
 	FindingCard,
 	FindingCounts,
 	SEVERITY_WORDS,
@@ -365,6 +366,7 @@ function FindingRowHead(props: {
 					{route.from === null ? route.to : `${route.from} → ${route.to}`}
 				</span>
 			)}
+			{finding.export !== undefined && <ExportName name={finding.export} />}
 		</span>
 	);
 }

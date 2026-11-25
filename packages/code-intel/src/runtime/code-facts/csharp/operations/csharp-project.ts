@@ -20,6 +20,9 @@
 import path from "node:path";
 import type { Import, ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
 
+/** A C# file. */
+const CSHARP_FILE = /\.cs$/u;
+
 /** One start or empty tag: its element's name, its attributes, its line and where it ends. */
 interface Tag {
 	readonly name: string;
@@ -196,4 +199,4 @@ function projectFacts(text: string): ParsedFacts {
 	return { definitions: [], references, imports, unparsed: [] };
 }
 
-export { projectDirectoryOf, projectFacts };
+export { CSHARP_FILE, projectDirectoryOf, projectFacts };

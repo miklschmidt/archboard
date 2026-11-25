@@ -3,7 +3,7 @@
   "name": "Code check",
   "kind": "module",
   "responsibility": "Checks selected canonical architecture against source evidence",
-  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read.",
+  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, module depth and document references with canonical identities. It reads the interface of every bound module, with or without parts, in every language that the module holds, and hands Module depth what it read. EXPOSED_UNUSED is a warning when the reader resolved every use in that language and the model draws no outside caller of the entry; otherwise it is information. The answer marks the modules that the branch touched and carries the selected model's shallow-module setting; severities in the answer never depend on the caller's flags. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-check"
@@ -33,6 +33,22 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "judge exposure, resolved uses, coverage and caller owners",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#0BYKx4Tg",
+      "to": "vKEsyHFk#ds3DX618"
+    },
+    {
+      "order": 920,
+      "kind": "call",
+      "label": "modules touched since the base, working tree included",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#BBrO3vfV",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
     {
       "order": 43000,
       "kind": "call",

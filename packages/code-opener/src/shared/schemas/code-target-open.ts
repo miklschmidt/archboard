@@ -21,6 +21,15 @@ const CodeTargetOpenRequestSchema = z.union([
 		),
 	// A file an agent's answer names. It opens only inside a checkout that the vault reads (ADR 0018).
 	z.strictObject({ path: NonemptyString, line: z.number().int().positive().optional() }),
+	// A file of a repository, as a code export names it: its path in that repository, the symbol
+	// it defines and the line the code check read it at. It opens only inside a checkout of that
+	// repository that the vault reads, at the line that defines the symbol now (TASK-646.08).
+	z.strictObject({
+		repo: NonemptyString,
+		path: NonemptyString,
+		symbol: NonemptyString.optional(),
+		line: z.number().int().positive().optional(),
+	}),
 ]);
 type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 

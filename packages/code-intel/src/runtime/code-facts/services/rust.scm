@@ -21,6 +21,8 @@
 ;              attributes, macro definitions, visibility paths and the type an
 ;              `impl` block adds to.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, a macro call, an operator, a
+;              condition, a match arm, a loop or a `?` (TASK-646.10).
 
 ; ── Names written where they are bound, never a use ─────────────────────────
 (let_declaration pattern: (identifier) @binding)
@@ -105,5 +107,20 @@
 (macro_definition) @skip
 (visibility_modifier) @skip
 (impl_item type: (_) @skip)
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (macro_invocation)
+  (binary_expression)
+  (unary_expression)
+  (compound_assignment_expr)
+  (if_expression)
+  (match_arm)
+  (for_expression)
+  (while_expression)
+  (loop_expression)
+  (try_expression)
+] @logic
 
 (ERROR) @unparsed

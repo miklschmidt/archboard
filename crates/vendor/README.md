@@ -19,7 +19,7 @@ port of Graphviz 16.1.0. The core lays out the graphs of a solve with it
   names Graphviz's authors and the MIT-licensed code inside
   (`graphviz-pure-core/LICENSES`, `graphviz-pure-geom/LICENSES`).
 
-archboard changed six things:
+archboard changed seven things:
 
 1. Each `Cargo.toml` names its sibling crates by `path` as well as version.
 2. `graphviz-pure-layout` sorts as musl's `qsort` does. Graphviz sorts with
@@ -94,6 +94,12 @@ archboard changed six things:
    constant x directly instead of recomputing it at every spline sample.
    The zero-coordinate cases retain the previous path.
    Both complete corpora remain byte-identical in the exploration comparison.
+
+7. Two tests import the items they use directly from public modules of
+   `graphviz-pure-core`. The tests in `graphviz-pure-parser/src/canon.rs` import
+   `charset::{decode, encode}`. The tests in
+   `graphviz-pure-render/src/emit/emit.rs` import `arrows::ARR_TYPE_NORM`
+   (TASK-646.14.02).
 
 ## Why they are not workspace members
 

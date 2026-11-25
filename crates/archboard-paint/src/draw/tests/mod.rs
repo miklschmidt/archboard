@@ -1,15 +1,14 @@
 //! What a frame draws, recorded: the order of the shapes, where each stands and
 //! how heavy or solid it is. No GPU and no DOM.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 use archboard_scene::drawing::Toggle;
 use archboard_scene::geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::request::{Arrowhead, Dash, LineAppearance};
 use archboard_scene::scene::{
-    Atlas, Cap, Colour, Definition, Geometry, Group, Item, LineFacts, Mask, MaskId, Motion,
-    Painting, PathStep, PulseLook, Purpose, Role, Scene, Shape, Stroke, Subject, SubjectKind,
-    Token, TrafficMark,
+    Cap, Colour, Definition, Geometry, Group, Item, LineFacts, Mask, MaskId, Motion, Painting,
+    PathStep, PulseLook, Purpose, Role, Shape, Stroke, Subject, SubjectKind, Token, TrafficMark,
 };
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 
@@ -19,6 +18,7 @@ use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::presentation::{Camera, Light, Marks, Recede, Shine};
 use crate::stage::Stage;
+use crate::testing::painting;
 
 mod kept;
 
@@ -119,24 +119,6 @@ fn route(x: f64) -> Vec<Item> {
         )
     };
     vec![line(Purpose::Halo), line(Purpose::Line)]
-}
-
-pub(crate) fn painting(body: Vec<Item>) -> Painting {
-    Painting {
-        scene: Scene {
-            width: 400.0,
-            height: 400.0,
-            title: String::new(),
-            description: None,
-            reading: None,
-            background: Colour::White,
-            definitions: Vec::new(),
-            body,
-            atlas: Atlas::default(),
-            placed: Vec::new(),
-        },
-        icons: BTreeMap::new(),
-    }
 }
 
 /// What a stage draws at a moment, the ground left out.

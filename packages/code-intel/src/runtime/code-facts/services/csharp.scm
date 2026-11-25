@@ -22,6 +22,8 @@
 ; @skip         code where no name is a use: using directives, namespace names,
 ;               the members a property pattern names, preprocessor conditions.
 ; @unparsed     code that did not parse.
+; @logic        one piece of logic: a call, a construction, an operator, a
+;               condition or a loop.
 
 ; ── Names written where they are declared or bound, never a use ─────────────
 (class_declaration name: (identifier) @binding)
@@ -137,5 +139,24 @@
 (subpattern (_) @skip . ":")
 (preproc_define) @skip
 (preproc_undef) @skip
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (invocation_expression)
+  (object_creation_expression)
+  (binary_expression)
+  (prefix_unary_expression)
+  (postfix_unary_expression)
+  (conditional_expression)
+  (if_statement)
+  (switch_section)
+  (switch_expression_arm)
+  (for_statement)
+  (foreach_statement)
+  (while_statement)
+  (do_statement)
+] @logic
+(assignment_expression
+  operator: ["+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>=" ">>>=" "??="]) @logic
 
 (ERROR) @unparsed

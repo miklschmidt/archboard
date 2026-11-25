@@ -34,6 +34,7 @@ import {
 	openConversation,
 } from "./support/shell-dom.ts";
 import { productionServer } from "../server-state/support/production-server.ts";
+import { PYTHON_SERVER, fixMissingServer } from "./support/missing-server.ts";
 
 const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 
@@ -328,7 +329,8 @@ async function sendMessage(browser: Browser, text: string): Promise<void> {
 
 // The shown conversation (ADR 0050, TASK-472.11), as a person meets it: the dock shows the
 // conversation of the checkout whose pane they last focused, an agent's show of that pane changes
-// nothing, and the dock's list picks another conversation by keyboard.
+// nothing, the dock's list picks another conversation by keyboard, and Fix with Codex on a missing
+// language server asks in the conversation of the checkout that misses it (TASK-646.09).
 test(
 	"the dock follows the pane the person focuses, not an agent's show, and its list picks a conversation",
 	async () => {
@@ -460,6 +462,19 @@ test(
 		);
 		expect(placed.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
 		expect(placed.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
+		// Measures in the orders pane reads a pass that found no Python server in the shop checkout.
+		// Fix with Codex asks for the setup in the shop conversation, which holds the shop's message,
+		// behind its open turn, and not in the orders one shown before.
+		await fixMissingServer(browser, { vault: ordersVault, missing: shopVault });
+		await pollUntil(
+			() => agentSurface(browser),
+			({ prompts, held }) =>
+				prompts.some((text) => text.includes(MESSAGE)) &&
+				[...prompts, ...held.map(({ text }) => text)].some((text) => text.includes(PYTHON_SERVER)),
+			"the setup asked for in the shop conversation",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		await browser.run(["press", "Escape"]);
 		await browser.run(["reload"]);
 		const restored = await pollUntil(
 			() =>

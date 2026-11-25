@@ -10,6 +10,7 @@ import {
 	KindChip,
 	RelationshipChip,
 } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import { ModuleCodeExports } from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
@@ -55,6 +56,8 @@ import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kin
 /** Inputs for what the panel says of a selection. */
 interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly code: ReturnType<typeof useModelCodeFindings>["reading"];
+	/** How the read of the remembered code passes stands. */
+	readonly codeRead: ReturnType<typeof useModelCodeFindings>["read"];
 	/** The code path of a module, when it has one. */
 	readonly pathOf: (id: string) => string | undefined;
 	readonly onReveal: () => void;
@@ -289,6 +292,14 @@ function ModuleSubject(
 					<ModuleDefinition module={module} />
 				</div>
 			</ModelPanel.Section>
+			<ModuleCodeExports
+				vault={props.vault}
+				model={source}
+				module={module}
+				reading={props.code}
+				read={props.codeRead}
+				onNotice={props.onCodeTargetNotice}
+			/>
 			<ModelHistory
 				vault={props.vault}
 				model={source}

@@ -78,7 +78,7 @@ Open Measures in the left column. It lists every module and sorts by the measure
 | Change amplification: one change touches many places       | Commits, Changes with, and Callers. Select a module to see what changes with it in the Right panel. Each pair states its shared commits.             |
 | Information leakage: two modules that share a secret       | Unjoined counts modules that change together without an authored relationship. Sort by Unjoined to see modules with the most such connections first. |
 
-Archboard gives you no score. Each count describes the model or its commits, and you judge what it means. The model does not measure implementation behavior, so Measures never calls a module shallow. Read the code, or ask your agent to read it.
+Archboard gives you no score. Each count is evidence, and you judge what it means. The code check also measures each bound module from its code. In What a module exposes, its Code columns sit beside the model's: the exports, the exported values and the logic behind them. The code check names what makes a module shallow as findings, such as an exported value that callers read. `archboard check --fail-shallow-modules` fails on a shallow module that your branch touched.
 
 Your agent reads the same facts through the CLI, a command-line interface. Use `archboard model inspect <module>` for an interface. Use `archboard model locality` for commit counts and modules that change together.
 
@@ -422,7 +422,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Does Archboard score my design?</b></summary>
 <br>
 
-No. Measures states how many entries a module has, what it hides, and what changes with it. A count can look bad for a good reason. You and your agent read the code and judge. The model does not measure implementation behavior, so it cannot prove that a module is shallow.
+No. Archboard gives no score. Measures states how many entries a module has, what it hides, and what changes with it. The code check reads each bound module's code and names what it finds, one finding at a time: an exported value that code outside reads, an export that only passes its call on, an export that nothing uses, and a shallow module, whose every export carries such a finding. Each finding names the code and says how to clear it. A count can still look bad for a good reason, so you and your agent read the code and judge.
 </details>
 
 <details><summary><b>Which agents does it work with?</b></summary>

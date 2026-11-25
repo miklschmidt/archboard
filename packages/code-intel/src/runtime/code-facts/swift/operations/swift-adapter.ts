@@ -48,7 +48,9 @@ import type {
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
+import { computationsThrough } from "#runtime/code-facts/operations/math-grammar.ts";
 import { definitionsOf } from "#runtime/code-facts/swift/operations/swift-definitions.ts";
+import { chain, SWIFT_MATH } from "#runtime/code-facts/swift/operations/swift-math.ts";
 
 /** The facts of a Swift file, with the names it binds in a scope narrower than the file. */
 type SwiftFacts = ParsedFacts & { readonly scoped: readonly string[] };
@@ -65,6 +67,7 @@ interface Captured {
 	readonly runtime: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -79,6 +82,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	runtime: "runtime",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** A whole word, as the text reading spells one. */
@@ -111,35 +115,13 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		runtime: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
 		if (list !== undefined) lists[list].push(capture.node);
 	}
 	return lists;
-}
-
-/**
- * The member a navigation names after its `.`.
- * @param navigation The navigation.
- * @returns The member's name, or undefined for anything else, such as a tuple's `.0`.
- */
-function memberName(navigation: Node): string | undefined {
-	const suffix = navigation.childForFieldName("suffix")?.childForFieldName("suffix");
-	return suffix?.type === "simple_identifier" ? suffix.text : undefined;
-}
-
-/**
- * How code spells a chain of names through `.`, from a name.
- * @param node A navigation or a name.
- * @returns The spelling, or undefined when the chain starts at something else, such as a call.
- */
-function chain(node: Node): string | undefined {
-	if (node.type === "simple_identifier") return node.text;
-	const target = node.type === "navigation_expression" ? node.childForFieldName("target") : null;
-	const base = target === null ? undefined : chain(target);
-	const member = base === undefined ? undefined : memberName(node);
-	return member === undefined ? undefined : `${base}.${member}`;
 }
 
 /**
@@ -378,6 +360,22 @@ function scopedNames(bindings: readonly Node[], definitions: ParsedFacts["defini
 }
 
 /**
+ * The names a file uses at run time that start a chain of names: not a
+ * member after `.`, which the chain holds.
+ * @param references The captured names.
+ * @param context The file's bound names and spans.
+ * @returns The names.
+ */
+function runtimeUses(references: readonly Node[], context: UseContext): Node[] {
+	return references.filter((node) => {
+		if (node.type !== "simple_identifier" || node.parent?.type === "navigation_suffix")
+			return false;
+		const use = codeReference(node, context);
+		return use !== undefined && !use.typeOnly;
+	});
+}
+
+/**
  * The code facts of one parsed Swift file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -407,6 +405,8 @@ function swiftFacts(tree: Tree, grammar: Grammar): SwiftFacts {
 		imports,
 		unparsed: uncertainPart(tree.rootNode),
 		scoped: scopedNames(captured.binding, definitions),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsThrough(runtimeUses(captured.reference, context), SWIFT_MATH),
 	};
 }
 

@@ -1,6 +1,7 @@
 // The language servers of one pass of the code check (ADR 0046).
 //
-// The pass asks where the name that a file uses on a line is defined. The
+// The pass asks where the name that a file uses on a line is defined, and
+// what type the server's semantic tokens give a name a file declares. The
 // session starts the server of the file's language in the file's checkout on
 // the first question there, and asks it every later question. Answers are kept
 // for the pass, since the documents of one vault ask about the same files, and
@@ -48,6 +49,10 @@ import {
 	type OutlineSymbol,
 } from "#runtime/language-servers/operations/outline.ts";
 import { positionOf } from "#runtime/language-servers/operations/position.ts";
+import {
+	tokenTypeAt,
+	type SemanticToken,
+} from "#runtime/language-servers/operations/semantic-tokens.ts";
 import type { LanguageServer } from "#runtime/language-servers/operations/server-command.ts";
 import type { CheckTiming } from "#shared/protocol/code-check.ts";
 import {
@@ -102,6 +107,12 @@ interface LanguageServerSession {
 	 * whose server cannot answer, is unknown.
 	 */
 	readonly declaration: (root: string, location: DefinitionLocation) => Promise<Declaration>;
+	/**
+	 * The type a server's semantic tokens give the name a file writes on a
+	 * line, such as `function`, `class` or `variable`. A file no server reads,
+	 * or whose server gives no tokens, gives none.
+	 */
+	readonly tokenType: (question: DefinitionQuestion) => Promise<string | undefined>;
 	/** Each language the pass could not ask about, once for each reason and checkout. */
 	readonly unavailable: () => readonly UnavailableServer[];
 	/** Stop every server the session started, and return once each has ended. */
@@ -162,6 +173,7 @@ class Session {
 	>();
 	readonly #texts = new Map<string, Promise<string | undefined>>();
 	readonly #outlines = new Map<string, Promise<readonly OutlineSymbol[] | undefined>>();
+	readonly #tokens = new Map<string, Promise<readonly SemanticToken[]>>();
 	readonly #answers = new Map<string, Promise<DefinitionAnswer>>();
 	readonly #unavailable = new Map<string, UnavailableServer>();
 	#closed = false;
@@ -221,6 +233,24 @@ class Session {
 		}
 		const symbols = await outline;
 		return symbols === undefined ? "unknown" : declarationAt(symbols, location);
+	}
+
+	/**
+	 * The type a server's semantic tokens give the name a file writes on a
+	 * line, from the tokens of the line, asked once for each line in the pass.
+	 * @param question The file, the line and the name.
+	 * @returns The type, or undefined when no server answered or no token stands there.
+	 */
+	async tokenType(question: DefinitionQuestion): Promise<string | undefined> {
+		const target = await this.#target(question);
+		if (target === undefined) return undefined;
+		const key = `${target.file}\0${target.position.line}`;
+		let tokens = this.#tokens.get(key);
+		if (tokens === undefined) {
+			tokens = this.#tokensOf(target);
+			this.#tokens.set(key, tokens);
+		}
+		return tokenTypeAt(await tokens, target.position);
 	}
 
 	/**
@@ -298,6 +328,20 @@ class Session {
 		} catch (error) {
 			this.#failed(running, error);
 			return undefined;
+		}
+	}
+
+	/**
+	 * Ask a server for the semantic tokens of the line a question stands on.
+	 * @param target The server, the file and the position.
+	 * @returns The tokens, none when the server failed.
+	 */
+	async #tokensOf(target: Target): Promise<readonly SemanticToken[]> {
+		try {
+			return await target.running.server.tokens(target.file, target.position.line);
+		} catch (error) {
+			this.#failed(target.running, error);
+			return [];
 		}
 	}
 

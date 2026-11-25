@@ -255,11 +255,12 @@ _Avoid_: group interface, region, group edge
 
 **Design lens**:
 A read that states facts about a design and gives no verdict: an interface, an interface change, locality or a branch footprint.
+Module depth is no design lens: the code check gives its verdicts as findings (ADR 0082).
 _Avoid_: score, audit, lint
 
 **Vault policy**:
 The vault configuration that holds the vault vocabulary and how each word looks: its name, icon, color, dash and arrowhead.
-It changes how a model looks and never what it means.
+It changes how a model looks and never what it means. It also holds whether plain `archboard check` runs the shallow-module gate.
 _Avoid_: visual policy, model content, style override
 
 **Color palette**:
@@ -787,6 +788,64 @@ _Avoid_: match, hit, guess, possible finding, unresolved evidence
 One thing that the code check reports about one module, relationship or flow step, with the evidence that it rests on.
 Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
+
+**Module depth**:
+What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
+The counts are evidence and never a score; only the findings are verdicts.
+_Avoid_: depth score, depth ratio, interface measures (those are what the model claims)
+
+**Export kind**:
+What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
+A type counts for no verdict, and a TypeScript enum is a type. So are a Python type alias, a Go interface or a Go named type without methods in its file, a C# interface, enum or delegate, a Swift protocol, alias or enum without methods, an Objective-C protocol, and a C struct, union or enum with no methods.
+A C# `static` member of an exported class is read through the class's name, so it is a function or a value of its own.
+In Rust, a trait or a type alias is a type, and a struct, an enum or a union is a class with its public methods. An associated function or constant is read through its type's name, as a C# `static` member is, and a `const` of a function pointer's type is a function.
+A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
+_Avoid_: export type (a type is one kind), symbol kind
+
+**Piece of logic**:
+One call, operator, condition, loop or hidden value in a module's own files, which module depth counts as evidence of what the module hides.
+_Avoid_: line count, complexity, implementation size
+
+**Exposed value**:
+An exported value that code outside its module reads at run time, a value that a call makes included: `EXPOSED_VALUE`, a warning.
+Where a call makes the value and no language server types it, it may be a function, so the finding is information.
+A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
+_Avoid_: exported constant, leaked config, global
+
+**Repeated math**:
+The same math that two or more modules write on one exported value or getter: `EXPOSED_VALUE_COMPUTED`, a warning on that export, with every line that writes it as evidence.
+The match ignores the callers' own names, sorts the operands of `+`, `*` and each language's commutative math functions, such as `min` and `max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
+_Avoid_: duplicated logic, copy-paste, computed constant
+
+**Code pass-through**:
+An exported function or public method whose body is one call that hands on its own parameters, so it decides nothing for its callers: `CODE_PASS_THROUGH`, information.
+A call into a value that its own file defines at module level, such as a hidden schema, is a decision, not a pass-through.
+_Avoid_: wrapper, delegate, pass-through entry point (that is about the model)
+
+**Two doors to one name**:
+A name that one module passes on from another, while files outside both also import the defining module directly: `REEXPORT_PASS_THROUGH`, a warning. With one door, it is information.
+_Avoid_: duplicate export, barrel leak
+
+**Unused export**:
+An exported name that no file outside its module uses, as code or as a type, and, in a folder module that declares no interface, no other file of the module imports: `EXPOSED_UNUSED`. It is a warning only after a complete read, when the model draws no caller of it whose code the check does not read; otherwise information. A test is no user.
+_Avoid_: dead code (no export reaches hidden code), unreferenced symbol
+
+**Undeclared interface**:
+A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and how many only its own files import, naming the first five.
+_Avoid_: missing barrel, missing index
+
+**Shallow module**:
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
+_Avoid_: thin module, wrapper, pass-through container (that is about the model)
+
+**Shallow-module gate**:
+What fails `archboard check` on a shallow module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`.
+The CLI applies it to the answer, whose severities never depend on the caller.
+_Avoid_: depth gate, shallow check
+
+**Touched module**:
+A module whose bound code, or a part's inside its module, the branch changed between the merge base with its base and the working tree.
+_Avoid_: changed file, dirty module
 
 **Source excerpt**:
 The lines of a file around one piece of evidence: the evidence line, with up to 3 lines on each side.

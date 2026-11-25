@@ -17,6 +17,8 @@
 ;              name, a property's or an instance variable's name, a forward
 ;              declaration, `self`, `super` and `_cmd`.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, a send, an operator, a condition or
+;              a loop.
 
 (identifier) @name
 (type_identifier) @name
@@ -62,5 +64,22 @@
 (ms_declspec_modifier) @skip
 (preproc_if condition: (_) @skip)
 (preproc_elif condition: (_) @skip)
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (binary_expression)
+  (unary_expression)
+  (update_expression)
+  (conditional_expression)
+  (if_statement)
+  (case_statement)
+  (for_statement)
+  (while_statement)
+  (do_statement)
+  (message_expression)
+] @logic
+(assignment_expression
+  operator: ["+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>="]) @logic
 
 (ERROR) @unparsed

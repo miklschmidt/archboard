@@ -437,6 +437,9 @@ subpaths with 11 names, where code outside imported 7 module paths. It imports `
   `terraform/`), each with its `operations/`; `code-facts/services/` holds the reader that caches
   facts by content, the grammars and the tree-sitter query files. `runtime/code-check/` holds the
   judging: the pass in `operations/`, and `claims/`, `evidence/` and `interfaces/`.
+  `runtime/module-depth/` measures each module that the check judges from its code, and gives the
+  verdicts of module depth (ADR 0082). It reads what the check hands it and the code facts, and
+  never imports the check.
   `runtime/history-lens/` holds the lens, with the Git client in `clients/`, and
   `runtime/language-servers/` speaks JSON-RPC to a server, with the server child in `processes/`.
 - The query files (`*.scm`) stay beside `grammars.ts`, which reads them with

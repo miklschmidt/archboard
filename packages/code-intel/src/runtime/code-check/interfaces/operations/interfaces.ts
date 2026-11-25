@@ -7,7 +7,12 @@
 // module the container binds exposes: a bound directory, or the file that
 // stands for one, such as `index.ts`. Code facts say what a module exposes,
 // by the rule of its language. A container bound to another file or to a
-// symbol names no module, and is not judged.
+// symbol names no module. It is judged through the module the document
+// measures that holds it, and skipped as `binding-not-a-module` only where
+// none does. A part with no parts of its own
+// that binds a module is judged too, for what its module exposes, and a part
+// that binds the module of a part that holds it is judged with that part
+// (TASK-646.01).
 //
 // Each exposed name belongs to the part with the narrowest binding that holds
 // its definition, as all evidence does (evidence.ts). A child owns what it or
@@ -29,28 +34,41 @@
 //   where the document draws a caller of the container at all: a document that
 //   draws none says nothing about the interface (ADR 0044).
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
-//   outside it uses, as code or as a type.
+//   outside it uses, as code or as a type, in a language Module depth does
+//   not judge yet. Module depth judges the names of the others one by one.
+//   A module the model marks `external` gets neither (TASK-646.18).
+//
+// - Module depth (module-depth.ts, TASK-646.04, TASK-646.05): each judged
+//   module's exports counted by kind, the logic behind them, one finding per
+//   exported name and `MODULE_SHALLOW`, from what this check already read of
+//   the module: its uses with the part that reads each and the module that
+//   defines what each reaches, the files it could not read whole, and the
+//   callers the document draws whose code the pass does not read.
 //
 // What a module exposes and how the files outside it use it is read once a
 // pass (module-reading.ts). A Terraform module is reached only through its
 // outputs, so no entry point of it is judged unexposed, and its container
 // also gets the findings about the module's shape (terraform-modules.ts).
 
-import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import type { Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import {
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
-	type Owners,
 } from "#runtime/code-check/evidence/operations/ownership.ts";
 import {
 	moduleReading,
-	type ModuleReading,
 	type ModuleReadings,
-	type OutsideUse,
 } from "#runtime/code-check/interfaces/operations/module-reading.ts";
-import type { PartCode, ReadPart, RepoCheckout } from "#runtime/code-check/operations/part-code.ts";
+import {
+	type DepthRecord,
+	type InterfaceOutcome,
+	type InterfaceReading,
+	type Judged,
+	measureDepth,
+	sideOf,
+} from "#runtime/code-check/interfaces/operations/judged-module.ts";
+import type { ReadPart } from "#runtime/code-check/operations/part-code.ts";
 import { siteOf } from "#runtime/code-check/evidence/operations/relationships.ts";
 import { terraformFindings } from "#runtime/code-check/interfaces/operations/terraform-modules.ts";
 import {
@@ -58,7 +76,8 @@ import {
 	within,
 	type ExposedName,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
-import { type Definition } from "#runtime/code-facts/operations/facts.ts";
+import { topLevel } from "#runtime/module-depth/operations/module-depth.ts";
+import { reaches, usesOf } from "#runtime/module-depth/operations/depth-reading.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 import { nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
@@ -68,86 +87,6 @@ import { describeSubject } from "@archboard/model/policy";
 import type { interfaceMeasures } from "@archboard/model/container-interface";
 
 type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
-
-/** What judging the containers of one document needs. */
-interface InterfaceReading {
-	readonly read: StateToCheck;
-	readonly codes: ReadonlyMap<string, PartCode>;
-	/** Each part and the parts that hold it, the part first. */
-	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
-	/** The evidence between the document's bound parts. */
-	readonly pieces: readonly Piece[];
-	readonly facts: FactsPass;
-	readonly modules: ModuleReadings;
-}
-
-/** What the containers of one document give. */
-interface InterfaceOutcome {
-	readonly findings: CodeFinding[];
-	readonly skipped: CodeCheckSkip[];
-}
-
-/** One container bound to a module, and what judging it reads. */
-interface Judged {
-	readonly reading: InterfaceReading;
-	readonly inspection: ContainerInterface;
-	readonly module: ModuleReading;
-	readonly checkout: RepoCheckout;
-	readonly owners: Owners;
-}
-
-/**
- * Whether a C++ definition is a member of another by its name, as
- * `shop::Store::open` is of `shop::Store`: a method is often defined in
- * another file than its class.
- * @param member The definition.
- * @param holder The other definition.
- * @returns True when it is.
- */
-function memberOf(member: Definition, holder: Definition): boolean {
-	return member.symbol.startsWith(`${holder.symbol}::`);
-}
-
-/**
- * Whether a use reaches an exposed definition or one inside it, such as a member.
- * @param name The exposed name.
- * @param use The use.
- * @returns True when it does.
- */
-function reaches(name: ExposedName, use: OutsideUse): boolean {
-	const { path, definition } = use.site;
-	const inside =
-		path === name.path &&
-		name.definition.start <= definition.start &&
-		definition.end <= name.definition.end;
-	return inside || memberOf(definition, name.definition);
-}
-
-/**
- * Whether an exposed name is a declaration of its file, not a member of one,
- * as its language's rule says where its names say more than their dots: a C#
- * type is qualified by its namespace.
- * @param name The exposed name.
- * @param exposed Every name its module exposes.
- * @returns True for a top-level name.
- */
-function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
-	if (name.member !== undefined) return !name.member;
-	const member = exposed.some((holder) => memberOf(name.definition, holder.definition));
-	return !name.definition.symbol.includes(".") && !member;
-}
-
-/**
- * Each part and every part inside it.
- * @param reading The document.
- * @param id The part.
- * @returns The ids.
- */
-function sideOf(reading: InterfaceReading, id: string): Set<string> {
-	return new Set(
-		[...reading.lineages].flatMap(([inside, chain]) => (chain.has(id) ? [inside] : [])),
-	);
-}
 
 /**
  * The exposed names a child of the container owns: names whose definition
@@ -204,21 +143,27 @@ async function parsedAny(facts: FactsPass, code: ReadPart): Promise<boolean> {
 }
 
 /**
- * The finding on a container whose exposed names nothing outside it uses.
+ * The finding on a container whose exposed names nothing outside it uses,
+ * among the names Module depth does not judge.
  * @param judged The container.
+ * @param depthNames The names Module depth judged.
  * @returns The finding, or undefined when every name has a use.
  */
-function unusedFinding(judged: Judged): CodeFinding | undefined {
+function unusedFinding(judged: Judged, depthNames: ReadonlySet<string>): CodeFinding | undefined {
 	const { exposure, uses } = judged.module;
-	const declared = exposure.exposed.filter((name) => topLevel(name, exposure.exposed));
+	const declared = exposure.exposed.filter(
+		(name) => topLevel(name, exposure.exposed) && !depthNames.has(name.name),
+	);
 	// A name declared in several places, a C# partial type or an overload, is used where any is.
 	const used = new Set(
-		declared.filter((name) => uses.some((use) => reaches(name, use))).map((name) => name.name),
+		declared
+			.filter((name) => usesOf(exposure.directory, name, uses).length > 0)
+			.map((name) => name.name),
 	);
 	const names = [...new Set(declared.map((name) => name.name))].filter((name) => !used.has(name));
 	if (names.length === 0) return undefined;
 	const all = new Set(declared.map((name) => name.name)).size;
-	const { container } = judged.inspection;
+	const { container } = judged;
 	const subject = nodeSubject(container);
 	return {
 		...siteOf(judged.reading.read, `nodes.${container.id}`, subject),
@@ -278,7 +223,7 @@ function unexposedFinding(
 		severity: resolved ? "warning" : "information",
 		code: "ENTRY_POINT_UNEXPOSED",
 		message:
-			`${describeSubject(subject)} is an entry point of ${JSON.stringify(judged.inspection.container.name)}, ` +
+			`${describeSubject(subject)} is an entry point of ${JSON.stringify(judged.container.name)}, ` +
 			`and the module ${JSON.stringify(directory || ".")} exposes none of its code: no name that ` +
 			`${rootFiles.map((file) => JSON.stringify(file)).join(", ")} export reaches it. The code ` +
 			"of its callers reaches it from outside the module all the same, past the interface. Make " +
@@ -327,7 +272,7 @@ function callerFinding(
 	pieces: readonly CodeEvidence[],
 ): CodeFinding {
 	const subject = nodeSubject(hidden);
-	const container = JSON.stringify(judged.inspection.container.name);
+	const container = JSON.stringify(judged.container.name);
 	const files = new Set(pieces.map((piece) => piece.path)).size;
 	const resolved = pieces.some((piece) => piece.resolution === "resolved");
 	return {
@@ -347,14 +292,19 @@ function callerFinding(
 /**
  * Judge each child of one container against what its module exposes.
  * @param judged The container.
+ * @param inspection The container's interface.
  * @param findings The document's findings, which this adds to.
  */
-async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<void> {
-	const { inspection } = judged;
+async function judgeChildren(
+	judged: Judged,
+	inspection: ContainerInterface,
+	findings: CodeFinding[],
+): Promise<void> {
 	const { nodes } = judged.reading.read.variant.content;
-	for (const child of nodes.filter((node) => node.parent === inspection.container.id)) {
+	for (const child of nodes.filter((node) => node.parent === judged.container.id)) {
 		// oxlint-disable-next-line no-await-in-loop -- one child at a time keeps the findings in document order
-		if (await judgedChild(judged, child)) findings.push(...childFindings(judged, child));
+		if (await judgedChild(judged, child))
+			findings.push(...childFindings(judged, inspection, child));
 	}
 }
 
@@ -363,11 +313,15 @@ async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<v
  * nothing the module exposes, or a hidden part whose exposed code outside
  * files use with no caller on the document.
  * @param judged The container.
+ * @param inspection The container's interface.
  * @param child The child.
  * @returns Its findings.
  */
-function childFindings(judged: Judged, child: SemanticNode): CodeFinding[] {
-	const { inspection } = judged;
+function childFindings(
+	judged: Judged,
+	inspection: ContainerInterface,
+	child: SemanticNode,
+): CodeFinding[] {
 	const entry = inspection.entryPoints.find((each) => each.node.id === child.id);
 	if (entry !== undefined) {
 		const pieces = ownedBy(judged, child).length === 0 ? reachesPast(judged, entry) : [];
@@ -379,23 +333,27 @@ function childFindings(judged: Judged, child: SemanticNode): CodeFinding[] {
 }
 
 /**
- * Judge one container, or say why the pass does not.
+ * Judge the module one part binds, with or without parts of its own, and each
+ * child of a part that holds some; or say why the pass does not.
  * @param reading The document and the pass.
- * @param container The container.
+ * @param container The part.
  * @param outcome What the document gives, which this adds to.
  */
 async function judgeContainer(
 	reading: InterfaceReading,
 	container: SemanticNode,
-	outcome: InterfaceOutcome,
+	outcome: Gathering,
 ): Promise<void> {
-	const judged = await containerToJudge(reading, container, outcome.skipped);
+	const judged = await containerToJudge(reading, container, outcome);
 	if (judged === undefined) return;
+	outcome.measured.push(judged);
 	outcome.findings.push(...testImportFindings(judged));
-	const unused = unusedFinding(judged);
+	const depthNames = await measureDepth(judged, outcome);
+	const unused = judged.external ? undefined : unusedFinding(judged, depthNames);
 	if (unused !== undefined) outcome.findings.push(unused);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
-	await judgeChildren(judged, outcome.findings);
+	const inspection = inspectContainer(reading.read.variant.content, container);
+	if (inspection.holdsParts) await judgeChildren(judged, inspection, outcome.findings);
 }
 
 /**
@@ -404,7 +362,7 @@ async function judgeContainer(
  * @returns One warning per test and imported file.
  */
 function testImportFindings(judged: Judged): CodeFinding[] {
-	const { container } = judged.inspection;
+	const { container } = judged;
 	const subject = nodeSubject(container);
 	return judged.module.testImports.map(({ file, found }) => ({
 		...siteOf(judged.reading.read, `nodes.${container.id}`, subject),
@@ -444,57 +402,131 @@ function containerSkip(
 	return { model, variant, subject, ...skip };
 }
 
-/**
- * A node the pass judges as a container bound to a module, or nothing, with
- * the skip of a container whose code the pass does not read.
- * @param reading The document and the pass.
- * @param container The node.
- * @param skipped What the document does not judge, which this adds to.
- * @returns What judging it reads, or undefined.
- */
-async function containerToJudge(
-	reading: InterfaceReading,
-	container: SemanticNode,
-	skipped: CodeCheckSkip[],
-): Promise<Judged | undefined> {
-	const inspection = inspectContainer(reading.read.variant.content, container);
-	const code = reading.codes.get(container.id);
-	if (!inspection.holdsParts || code === undefined) return undefined;
-	if (code.status === "skipped") skipped.push(containerSkip(reading, container, code.skip));
-	return code.status === "read" ? judgedContainer(reading, inspection, code, skipped) : undefined;
+/** A part bound to a file or a symbol, which names no module of its own. */
+interface Unmodular {
+	readonly container: SemanticNode;
+	readonly code: ReadPart;
+}
+
+/** What judging one document gathers: its outcome, the modules it measures, and its unmodular parts. */
+interface Gathering extends InterfaceOutcome {
+	readonly measured: Judged[];
+	readonly unmodular: Unmodular[];
 }
 
 /**
- * What judging a container reads: what its module exposes and who owns each
- * exposed definition.
+ * A node the pass judges as a part bound to a module, with or without parts,
+ * or nothing. A part whose code the pass does not read is skipped where its
+ * binding is read.
  * @param reading The document and the pass.
- * @param inspection The container's interface.
- * @param code The container's code.
- * @param skipped What the document does not judge, which gains the container
- * when no language the check reads has its module's root files.
- * @returns It, or undefined when its binding names no module or the module is unknown.
+ * @param container The node.
+ * @param gathering What the document gathers, which this adds to.
+ * @returns What judging it reads, or undefined.
+ */
+function containerToJudge(
+	reading: InterfaceReading,
+	container: SemanticNode,
+	gathering: Gathering,
+): Promise<Judged | undefined> {
+	const code = reading.codes.get(container.id);
+	return code?.status === "read"
+		? judgedContainer(reading, container, code, gathering)
+		: Promise.resolve(undefined);
+}
+
+/**
+ * Whether a part that holds this one binds the same module, so the pass
+ * judges the module with that part.
+ * @param reading The document.
+ * @param node The part.
+ * @param code The part's code.
+ * @param directory The module the part binds.
+ * @returns True when one does.
+ */
+function heldModule(
+	reading: InterfaceReading,
+	node: SemanticNode,
+	code: ReadPart,
+	directory: string,
+): boolean {
+	const holders = [...(reading.lineages.get(node.id) ?? [])].filter((id) => id !== node.id);
+	return holders.some((id) => {
+		const holder = reading.codes.get(id);
+		return (
+			holder?.status === "read" &&
+			holder.checkout.root === code.checkout.root &&
+			moduleDirectory(holder) === directory
+		);
+	});
+}
+
+/**
+ * What judging a part reads: what its module exposes and who owns each
+ * exposed definition. A part that binds the module of a part that holds it
+ * is judged with that part.
+ * @param reading The document and the pass.
+ * @param container The part.
+ * @param code The part's code.
+ * @param gathering What the document gathers: the part when its binding
+ * names no module, or a skip when no language the check reads has its
+ * module's root files.
+ * @returns It, or undefined when its binding names no module, a part that
+ * holds it binds the same module, or the module is unknown.
  */
 async function judgedContainer(
 	reading: InterfaceReading,
-	inspection: ContainerInterface,
+	container: SemanticNode,
 	code: ReadPart,
-	skipped: CodeCheckSkip[],
+	gathering: Gathering,
 ): Promise<Judged | undefined> {
+	const { skipped } = gathering;
 	const directory = moduleDirectory(code);
-	if (directory === undefined) return undefined;
+	if (directory === undefined) {
+		gathering.unmodular.push({ container, code });
+		return undefined;
+	}
+	if (heldModule(reading, container, code, directory)) return undefined;
 	const module = await moduleReading(reading, code.checkout, directory);
 	if (module === undefined) {
 		const detail =
 			`${directory || "."}: no language the check reads has a root file there, or its ` +
 			"package.json exports names no file of the checkout";
 		const skip = { reason: "exposure-unknown", repo: code.checkout.repo, detail } as const;
-		skipped.push(containerSkip(reading, inspection.container, skip));
+		skipped.push(containerSkip(reading, container, skip));
 		return undefined;
 	}
 	const parts = [...reading.codes.values()].filter(
 		(each): each is ReadPart => each.status === "read" && each.checkout.root === code.checkout.root,
 	);
-	return { reading, inspection, module, checkout: code.checkout, owners: ownersOf(parts) };
+	const { checkout } = code;
+	const external = isExternal(reading, container);
+	return { reading, container, module, checkout, owners: ownersOf(parts), external };
+}
+
+/**
+ * A binding that names no module: its file, or its symbol in its file.
+ * @param code The part's code.
+ * @returns The binding, in words.
+ */
+function bindingWords(code: ReadPart): string {
+	const { grain } = code;
+	return grain.kind === "symbol" ? `${grain.definition.symbol} in ${grain.file}` : boundPath(code);
+}
+
+/** The kind of a part that stands for code the repository does not own (ADR 0029). */
+const EXTERNAL_KIND = "external";
+
+/**
+ * Whether the model marks a part, or a part that holds it, `external`.
+ * @param reading The document.
+ * @param container The part.
+ * @returns True when it does.
+ */
+function isExternal(reading: InterfaceReading, container: SemanticNode): boolean {
+	const chain = reading.lineages.get(container.id) ?? new Set([container.id]);
+	return reading.read.variant.content.nodes.some(
+		(node) => chain.has(node.id) && node.kind === EXTERNAL_KIND,
+	);
 }
 
 /**
@@ -513,12 +545,39 @@ function moduleDirectory(code: ReadPart): string | undefined {
  * @returns The findings and what was not judged.
  */
 async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutcome> {
-	const outcome: InterfaceOutcome = { findings: [], skipped: [] };
+	const gathering: Gathering = {
+		findings: [],
+		skipped: [],
+		depth: [],
+		measured: [],
+		unmodular: [],
+	};
 	for (const node of reading.read.variant.content.nodes) {
 		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in document order
-		await judgeContainer(reading, node, outcome);
+		await judgeContainer(reading, node, gathering);
+	}
+	const { measured, unmodular, ...outcome } = gathering;
+	for (const { container, code } of unmodular) {
+		if (measured.some((judged) => holds(judged, code))) continue;
+		const skip = { reason: "binding-not-a-module", repo: code.checkout.repo } as const;
+		outcome.skipped.push(
+			containerSkip(reading, container, { ...skip, detail: bindingWords(code) }),
+		);
 	}
 	return outcome;
 }
 
-export { type ModuleReadings, judgeInterfaces };
+/**
+ * Whether a measured module holds a part's bound code, so the part is judged through it.
+ * @param judged The measured module.
+ * @param code The part's code.
+ * @returns True when it does.
+ */
+function holds(judged: Judged, code: ReadPart): boolean {
+	return (
+		judged.checkout.root === code.checkout.root &&
+		within(judged.module.exposure.directory, boundPath(code))
+	);
+}
+
+export { type DepthRecord, type ModuleReadings, judgeInterfaces };

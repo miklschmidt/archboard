@@ -17,6 +17,10 @@
 // walk marks such a part `partial` before the default (`partial internal`),
 // and the resolver settles it.
 //
+// A property with a body is a getter, so its kind is a function. What the
+// syntax says of module depth (TASK-646.11), such as a `static` member or a
+// type alone, is csharp-depth.ts's.
+//
 // A constructor is spelled with its type's name (`Ledger.Ledger`). Locals,
 // local functions and lambdas are not definitions, and nor are indexers,
 // operators and finalizers, which have no name a binding could spell. A
@@ -25,6 +29,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
+import { depthTraits, getter } from "#runtime/code-facts/csharp/operations/csharp-depth.ts";
 
 /** The kind of a type, which decides the default accessibility of its members. */
 type TypeKind = "class" | "struct" | "interface" | "enum" | "delegate";
@@ -58,9 +63,8 @@ const VARIABLE_MEMBERS = new Set(["field_declaration", "event_field_declaration"
  */
 function kindOf(node: Node): Definition["kind"] {
 	if (TYPE_KINDS[node.type] !== undefined) return "class";
-	return ["method_declaration", "constructor_declaration"].includes(node.type)
-		? "function"
-		: "value";
+	const callable = ["method_declaration", "constructor_declaration"].includes(node.type);
+	return callable || getter(node) ? "function" : "value";
 }
 
 /** The access modifiers, in the order C# writes a pair of them. */
@@ -150,6 +154,7 @@ function definitionAt(
 		source: sourceRange(node),
 		visibility,
 		exposed: visibility === "public" && (scope.holder?.exposed ?? true),
+		...depthTraits(node, name),
 	};
 }
 

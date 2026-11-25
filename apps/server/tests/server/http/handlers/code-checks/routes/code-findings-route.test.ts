@@ -16,7 +16,11 @@ import { join } from "node:path";
 import express from "express";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { createCodeFindingsMemory } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
-import { RememberedFindingsSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import {
+	CodeCheckAnswerSchema,
+	RememberedFindingsSchema,
+	type CodeCheckAnswer,
+} from "@archboard/code-intel/code-check";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
 const ownVault = vaultIn(scratch);
@@ -262,4 +266,104 @@ test("canonical findings keep the exact model revision and replace only the sele
 	);
 	expect(await models(vaultIn(join(scratch, "other")))).toEqual([]);
 	expect(passes()).toBe(3);
+});
+
+test("a canonical reading keeps each module's depth and what the pass skipped, a module with no findings included", async () => {
+	const revision = { digest: "c".repeat(64), files: [] };
+	const node = (id: string) => ({ kind: "node", id, name: id }) as const;
+	const depthOf = (id: string, state: string) => ({
+		model: "Shop",
+		state,
+		subject: node(id),
+		repo: "example/shop",
+		directory: `src/${id}`,
+		languages: ["typescript"],
+		unjudged: [],
+		exports: { functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
+		names: [{ name: "run", kind: "function" as const, path: `src/${id}/index.ts`, line: 1 }],
+		logic: 2,
+	});
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		states: [],
+		models: [
+			{ model: "Shop", state: "Now", revision },
+			{ model: "Shop", state: "Draft", revision },
+		],
+		findings: [],
+		skipped: [
+			{ reason: "exposure-unknown", model: "Shop", state: "Now", subject: node("docs") },
+			{ reason: "exposure-unknown", model: "Shop", state: "Draft", subject: node("other") },
+			{ reason: "language-server-missing", repo: "example/shop", detail: "python" },
+		],
+		behind: [],
+		depth: [depthOf("clean", "Now"), depthOf("drafted", "Draft")],
+	};
+	const { base } = await serverWith([answer]);
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+
+	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
+	const { models } = RememberedFindingsSchema.parse(await reply.json());
+	const now = models?.find((reading) => reading.state === "Now");
+	expect(now?.depth?.map((each) => each.subject.id)).toEqual(["clean"]);
+	expect(now?.depth?.[0]?.exports.functions).toBe(1);
+	expect(now?.skipped?.map((skip) => skip.reason)).toEqual([
+		"exposure-unknown",
+		"language-server-missing",
+	]);
+	expect(now?.skipped?.[0]?.subject?.id).toBe("docs");
+});
+
+test("every canvas reads no export names, and the exports of one module are read alone, for the exact reading", async () => {
+	const revision = { digest: "d".repeat(64), files: [] };
+	const node = (id: string) => ({ kind: "node", id, name: id }) as const;
+	const depthOf = (id: string, count: number) => ({
+		model: "Shop",
+		state: "Now",
+		subject: node(id),
+		repo: "example/shop",
+		directory: `src/${id}`,
+		languages: ["typescript"],
+		unjudged: [],
+		exports: { functions: count, classes: 0, methods: 0, values: 0, types: 0 },
+		names: Array.from({ length: count }, (_, index) => ({
+			name: `run${index}`,
+			kind: "function" as const,
+			path: `src/${id}/index.ts`,
+			line: index + 1,
+		})),
+		logic: count,
+	});
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		states: [],
+		models: [{ model: "Shop", state: "Now", revision }],
+		findings: [],
+		skipped: [],
+		behind: [],
+		depth: [depthOf("gateway", 2), depthOf("ledger", 400)],
+	};
+	const { base, passes } = await serverWith([answer]);
+	// The answer of the pass, which `archboard check` prints on every run, leaves the names out too.
+	const checked = await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+	expect(JSON.stringify(checked)).not.toContain("run0");
+
+	const all = await fetch(`${base}/api/vault/code-findings?${named()}`);
+	expect(JSON.stringify(await all.json())).not.toContain("run0");
+
+	const exportsOf = (module: string, digest = revision.digest) =>
+		fetch(
+			`${base}/api/vault/code-exports?${named()}&${new URLSearchParams({ model: "Shop", state: "Now", revision: digest, module })}`,
+		);
+	const gateway = await exportsOf("gateway");
+	expect(gateway.status).toBe(200);
+	const measured = CodeCheckAnswerSchema.pick({ depth: true }).parse(await gateway.json()).depth;
+	expect(measured?.map((module) => module.subject.id)).toEqual(["gateway"]);
+	expect(measured?.[0]?.names.map(({ name, line }) => ({ name, line }))).toEqual([
+		{ name: "run0", line: 1 },
+		{ name: "run1", line: 2 },
+	]);
+	expect((await exportsOf("gateway", "e".repeat(64))).status).toBe(404);
+	expect((await exportsOf("unmeasured")).status).toBe(404);
+	expect(passes()).toBe(1);
 });

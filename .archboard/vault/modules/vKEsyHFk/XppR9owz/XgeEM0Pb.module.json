@@ -37,6 +37,14 @@
   ],
   "outgoing": [
     {
+      "order": 50,
+      "kind": "call",
+      "label": "the brief for the repository's servers",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#4uc2nkyx",
+      "to": "vKEsyHFk#8xqOjFa6"
+    },
+    {
       "order": 69000,
       "kind": "call",
       "label": "make the vault; remove an earlier block",

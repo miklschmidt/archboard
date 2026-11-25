@@ -189,6 +189,8 @@ test("a part bound to a flake output is held to the outputs the flake gives, and
 			"ANCHOR_MISMATCH e2 warning",
 			"ANCHOR_SYMBOL_MISSING e3 warning",
 			"BINDING_SYMBOL_MISSING pG warning",
+			// The bound directory tools exposes names that no file outside it uses.
+			"EXPOSED_UNUSED pT information",
 			"RELATIONSHIP_UNDRAWN pV warning",
 		].toSorted(),
 	);

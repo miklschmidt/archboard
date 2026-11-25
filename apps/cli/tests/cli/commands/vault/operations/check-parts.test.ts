@@ -6,6 +6,9 @@
 // fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
+// `--fail-shallow-modules`, or a model's policy, makes `MODULE_SHALLOW` on a
+// module the branch touched a warning, and `--base` names the base
+// (TASK-646.04).
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
@@ -13,7 +16,10 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import {
+	CodeCheckResultSchema,
+	type CodeCheckResult,
+} from "#cli/commands/vault/protocol/code-check-result.ts";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
@@ -22,7 +28,7 @@ import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vau
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
+type CodeFinding = CodeCheckResult["findings"][number];
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -42,7 +48,7 @@ const warned: VaultCheck = {
 		},
 	],
 };
-const codeCheck = CodeCheckAnswerSchema.parse(codeCheckFixture);
+const codeCheck = CodeCheckResultSchema.parse(codeCheckFixture);
 
 const vault = makeStandInVault();
 let service = "";
@@ -81,6 +87,12 @@ const server = Bun.serve({
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
 				{ success: false, code: "STATE_NOT_FOUND", error: "No such state." },
+				{ status: 422 },
+			);
+		}
+		if (pathname === "/api/vault/code-check" && asking.searchParams.get("base") === "nope") {
+			return Response.json(
+				{ success: false, code: "BASE_UNRESOLVED", error: "No such base." },
 				{ status: 422 },
 			);
 		}
@@ -150,8 +162,8 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings }).optional(),
-	code: CodeCheckAnswerSchema.optional(),
+	semantics: VaultCheckSchema.extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
+	code: CodeCheckResultSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });
 /** The embeds part of a vault in no Git checkout: no file of it can be an embed. */
@@ -463,4 +475,124 @@ test("check embeds passes on a checkout with no embed, and every command that ra
 	// The embed is not part of the semantics check or the code check.
 	expect((await run(["check", "code"])).exited).toBe(0);
 	expect((await run(["check", "semantics"])).exited).toBe(0);
+});
+
+/**
+ * A shallow module's finding, as the code check answers it: information.
+ * @param id The module's id.
+ * @returns The finding.
+ */
+function shallow(id: string): CodeFinding {
+	return {
+		severity: "information",
+		code: "MODULE_SHALLOW",
+		file: "modules/timing.module.json",
+		model: "Orders",
+		state: "Built",
+		subject: { kind: "node", id, name: id },
+		message: "Shallow.",
+	};
+}
+
+/**
+ * An answer with two shallow modules, one of which the branch touched, and the model's policy. The
+ * route measures each module without the names of its exports.
+ */
+function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
+	return {
+		...codeCheck,
+		models: [
+			{
+				model: "Orders",
+				state: "Built",
+				revision: { digest: "d", files: [] },
+				failShallowModules: gate,
+			},
+		],
+		depth: ["Orders#Timing", "Orders#Clock"].map((id) => ({
+			model: "Orders",
+			state: "Built",
+			subject: { kind: "node" as const, id, name: id },
+			repo: "github.com/acme/orders",
+			directory: "src/timing",
+			languages: ["typescript"],
+			unjudged: [],
+			exports: { functions: 0, classes: 0, methods: 0, values: 2, types: 0 },
+			logic: 0,
+		})),
+		findings: [shallow("Orders#Timing"), shallow("Orders#Clock")],
+		touched: [
+			{ model: "Orders", state: "Built", base: "main", modules: ["Orders#Timing"], unread },
+		],
+	};
+}
+
+/**
+ * The severity each shallow module ends with in a command's answer.
+ * @param stdout The command's answer.
+ * @returns Each module's id and severity.
+ */
+function shallowSeverities(stdout: string) {
+	return (PartsSchema.parse(JSON.parse(stdout)).code?.findings ?? []).map((each) => [
+		each.subject?.id,
+		each.severity,
+	]);
+}
+
+test("--fail-shallow-modules asks for the touched modules and fails on a shallow one the branch touched, not on older ones", async () => {
+	plain = clean;
+	try {
+		answered = shallowAnswer(false);
+		expect((await run(["check", "code"])).exited).toBe(0);
+		expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(1);
+		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+			expect(shallowSeverities((await run(argv)).stdout)).toEqual([
+				["Orders#Timing", "information"],
+				["Orders#Clock", "information"],
+			]);
+			asked.length = 0;
+			const gated = await run([...argv, "--fail-shallow-modules"]);
+			expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("touched")).toBe("true");
+			expect(shallowSeverities(gated.stdout)).toEqual([
+				["Orders#Timing", "warning"],
+				["Orders#Clock", "information"],
+			]);
+		}
+	} finally {
+		answered = codeCheck;
+	}
+});
+
+test("the model's policy turns the same gate on without the flag", async () => {
+	plain = clean;
+	try {
+		answered = shallowAnswer(true);
+		const gated = await run(["check", "code"]);
+		expect(gated.exited).toBe(1);
+		// The measured modules pass through without the names of their exports.
+		const depth = PartsSchema.parse(JSON.parse(gated.stdout)).code?.depth ?? [];
+		expect(depth.map((module) => module.subject.id)).toEqual(["Orders#Timing", "Orders#Clock"]);
+		expect(shallowSeverities(gated.stdout)).toEqual([
+			["Orders#Timing", "warning"],
+			["Orders#Clock", "information"],
+		]);
+	} finally {
+		answered = codeCheck;
+	}
+});
+
+test("--base names the base, and a base that does not resolve, or a gated module the branch range could not read, is a refusal", async () => {
+	plain = clean;
+	asked.length = 0;
+	expect((await run(["check", "code", "--base", "release"])).exited).toBe(0);
+	expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("base")).toBe("release");
+	const refused = await run(["check", "code", "--base", "nope", "--fail-shallow-modules"]);
+	expect(refused.exited).toBe(2);
+	try {
+		answered = shallowAnswer(true, ["Orders#Clock"]);
+		const unread = await run(["check", "code"]);
+		expect(unread.exited).toBe(2);
+	} finally {
+		answered = codeCheck;
+	}
 });

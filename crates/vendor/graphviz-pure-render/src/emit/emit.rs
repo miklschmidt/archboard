@@ -1873,7 +1873,8 @@ fn strtok<'s>(s: &'s [u8], delims: &'s [u8]) -> impl Iterator<Item = &'s [u8]> {
 #[cfg(test)]
 mod tests {
     use super::super::job::FILLCOLOR_CALLS;
-    use graphviz_pure_core::{BezierSegment, BoundingBox, Point, Spline, arrows};
+    use graphviz_pure_core::arrows::ARR_TYPE_NORM;
+    use graphviz_pure_core::{BezierSegment, BoundingBox, Point, Spline};
 
     /// #385: `tok` yields an empty token at a leading or trailing `:`, none inside a run.
     #[test]
@@ -1937,7 +1938,7 @@ mod tests {
                 start_arrow: None,
                 end_arrow: Some(Point::new(27.0, 36.0)),
                 sflag: 0,
-                eflag: arrows::ARR_TYPE_NORM,
+                eflag: ARR_TYPE_NORM,
             }],
         };
         FILLCOLOR_CALLS.with_borrow_mut(Vec::clear);

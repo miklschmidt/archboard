@@ -119,6 +119,7 @@ test("a removed module reads its change partners and references from its retaine
 				scope: null,
 				selection,
 				code: null,
+				codeRead: "success",
 				pathOf: noPath,
 				look: kindLookOf(model.policy, new Map()),
 				onCodeTargetNotice: nothing,

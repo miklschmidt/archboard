@@ -3,6 +3,7 @@
   "name": "Vault configuration",
   "kind": "function",
   "responsibility": "Reads the vault's vocabulary and appearance from its config.yaml, and seeds that file in a new vault",
+  "description": "Its policy also holds whether plain archboard check fails on shallow modules, so that CI and agent loops share one gate. The canonical reader carries it in each model's policy.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/store/configuration.ts"

@@ -19,6 +19,7 @@
 ; @skip        code where no name is a use: imports, compiler directives and
 ;              the member a leading `.` names, whose type only the context says.
 ; @unparsed    code that did not parse.
+; @logic       one piece of logic: a call, an operator, a condition or a loop.
 
 ; ── Names written where they are bound, never a use ─────────────────────────
 (_ bound_identifier: (simple_identifier) @binding)
@@ -80,5 +81,29 @@
 (directive) @skip
 ; `!ready`, `-offset` and `&buffer` use their name.
 (prefix_expression operation: "." target: (simple_identifier) @skip)
+
+; ── Pieces of logic ─────────────────────────────────────────────────────────
+[
+  (call_expression)
+  (additive_expression)
+  (multiplicative_expression)
+  (comparison_expression)
+  (equality_expression)
+  (conjunction_expression)
+  (disjunction_expression)
+  (nil_coalescing_expression)
+  (bitwise_operation)
+  (ternary_expression)
+  (if_statement)
+  (guard_statement)
+  (switch_entry)
+  (for_statement)
+  (while_statement)
+  (repeat_while_statement)
+] @logic
+(prefix_expression operation: ["-" "+" "~"]) @logic
+(prefix_expression operation: (bang)) @logic
+(assignment
+  operator: ["+=" "-=" "*=" "/=" "%="]) @logic
 
 (ERROR) @unparsed

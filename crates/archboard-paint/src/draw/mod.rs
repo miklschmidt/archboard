@@ -27,7 +27,7 @@ const BOX_TOLERANCE: f64 = 0.1;
 mod kept;
 mod masked;
 #[cfg(test)]
-pub(crate) mod tests;
+mod tests;
 mod viewer;
 
 /// A scene with its definitions found.

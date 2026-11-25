@@ -45,6 +45,8 @@ import {
 	type Shadows,
 	shadowsOf,
 } from "#runtime/code-facts/python/operations/python-scopes.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
+import { PYTHON_MATH } from "#runtime/code-facts/python/operations/python-depth.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
@@ -63,6 +65,7 @@ interface Captured {
 	readonly type: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -79,6 +82,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	type: "type",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** A name, or names joined by `.`, in a string annotation. */
@@ -128,6 +132,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		type: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -502,6 +507,31 @@ function distinct(
 }
 
 /**
+ * The uses at run time of the names a file imports, at the name each chain
+ * starts with, where no scope binds that name for itself.
+ * @param captured The captures.
+ * @param context The file's declared names and spans.
+ * @param imports The file's imports.
+ * @returns The names.
+ */
+function importedUses(captured: Captured, context: UseContext, imports: readonly Import[]): Node[] {
+	const imported = new Set(
+		imports.flatMap((found) =>
+			found.reexport ? [] : found.names.map((name) => name.local.split(".")[0] ?? ""),
+		),
+	);
+	const shadows = shadowsOf(captured.import, boundNames(captured));
+	return captured.reference.filter(
+		(node) =>
+			imported.has(node.text) &&
+			spelling(node) === node.text &&
+			!notAUse(node, context) &&
+			!context.types.holds(node.startIndex) &&
+			!isLocal(node, node.text, shadows),
+	);
+}
+
+/**
  * The code facts of one parsed Python file, before its imports are resolved.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -531,6 +561,8 @@ function pythonFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		references: distinct(references, locals),
 		imports: [...withUses(written, references, locals), ...passedOn(written, listed)],
 		unparsed: unparsedOf(captured.unparsed),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsOf(importedUses(captured, context, written), PYTHON_MATH),
 	};
 }
 
