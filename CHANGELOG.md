@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.6.0](https://github.com/miklschmidt/archboard/compare/v0.5.0...v0.6.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* codex-realtime-voice removes 21 published names and turns 3 constants into functions.
+    - `./server`: `resolveCodexExecutable` is gone; pass `codex: opts` or
+    leave `codex` out. `projectCodexBrowserState` and
+    `BrowserProjectionInput` are gone, with no replacement.
+    - `./runtime`: `ADDITIONAL_CONTEXT_POLICY` becomes
+    `additionalContextPolicy()`. `createCodexRealtimeAdapter`,
+    `CodexRealtimeAdapter`, `CodexRealtimeAdapterOptions`,
+    `CodexRealtimeBinding`, `EMPTY_SPOKEN_APPROVAL_SNAPSHOT` and
+    `emptyManifest` are gone, with no replacement.
+    - `./realtime`: `INITIAL_REALTIME_STATE`, `REALTIME_PHASES`,
+    `REALTIME_TRANSITIONS`, `transitionRealtimeState`,
+    `parseRealtimeCorrelationId`, `parseRealtimeItemId`,
+    `parseRealtimeSessionId`, `RealtimeCorrelation` and
+    `RealtimeSemanticEvent` are gone, with no replacement.
+    - `./schemas`: `JsonValueSchema` becomes `parseJsonValue(value)`.
+    `BROWSER_IDLE_SPOKEN_APPROVAL`,
+    `BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES` and `CodexBrowserModel` are
+    gone, with no replacement.
+    - `./controllers`: `VOICE_OUTPUT_SPEAKING_LEVEL` becomes
+    `isSpeakingLevel(level)`.
+
+### Features
+
+* **code-intel:** judge module depth from the code (TASK-646) ([#135](https://github.com/miklschmidt/archboard/issues/135)) ([0702694](https://github.com/miklschmidt/archboard/commit/0702694c17a3a0b6f63e7cd4517a15c5208416b7))
+* **code-intel:** module-depth rules, wide and shallow findings, and archboard-deepen (TASK-650, 651, 652) ([#141](https://github.com/miklschmidt/archboard/issues/141)) ([5a4c9a7](https://github.com/miklschmidt/archboard/commit/5a4c9a7a930c0fa0679d5e92931624f94131c750))
+* lines say how they travel and what they do, Blocks draws cables, and Lanes replaces Track ([#154](https://github.com/miklschmidt/archboard/issues/154)) ([2a20593](https://github.com/miklschmidt/archboard/commit/2a205930ab4e582d8dd6ef5c69301797a9227e89))
+* **web:** browse a checkout's files in the navigator and read one beside the picture ([#138](https://github.com/miklschmidt/archboard/issues/138)) ([d4947be](https://github.com/miklschmidt/archboard/commit/d4947be8d0daac67d7ab3eb8a7ab008cbd1704a8))
+* **web:** keep the right panel beside About, with About's outline on top ([#137](https://github.com/miklschmidt/archboard/issues/137)) ([675d6ca](https://github.com/miklschmidt/archboard/commit/675d6ca5c0a14cde964e1544ecb62fe522f53a3a))
+* **web:** part the comparison interface, resize the navigator and section the panels ([#136](https://github.com/miklschmidt/archboard/issues/136)) ([3c88b1d](https://github.com/miklschmidt/archboard/commit/3c88b1d0247ab0cd802a4c92f88fa762ec1d1744))
+
+
+### Bug Fixes
+
+* **cli:** remove the hand-maintained CLI command audit ([#132](https://github.com/miklschmidt/archboard/issues/132)) ([e9be3a0](https://github.com/miklschmidt/archboard/commit/e9be3a0e9b8aad94427652a668fd736b3befb9b1))
+* **code-opener:** offer the GitHub link when a canonical module's file cannot be opened ([#131](https://github.com/miklschmidt/archboard/issues/131)) ([73186e3](https://github.com/miklschmidt/archboard/commit/73186e38562b5e87dfc528d675bc2f0404ea7b56))
+* **layout:** Lanes draws its own bus look on the kinds layer ([#151](https://github.com/miklschmidt/archboard/issues/151)) ([464dd22](https://github.com/miklschmidt/archboard/commit/464dd22a128885f0dddbf52c2ad60f69e266fe86))
+* **layout:** settle cable crossings as whole ribbons without crosswise arc overlaps ([#161](https://github.com/miklschmidt/archboard/issues/161)) ([bef67ec](https://github.com/miklschmidt/archboard/commit/bef67ec44d233e7a518b0b408f7145a87a3c3fce))
+* **model-reader:** a read during an agent's write waits for it instead of failing ([#146](https://github.com/miklschmidt/archboard/issues/146)) ([ac57863](https://github.com/miklschmidt/archboard/commit/ac57863ed5539fea55d829b6245bdff3451d82ed))
+* **reader:** a hidden relationship kind takes the cards that drew only its lines off the picture ([#134](https://github.com/miklschmidt/archboard/issues/134)) ([2e21988](https://github.com/miklschmidt/archboard/commit/2e21988830b5a4f599f549383d0ceb6390eaa69a))
+* **renderer:** a refused Blocks reading draws, and nested open frames compact (TASK-624, TASK-658) ([#144](https://github.com/miklschmidt/archboard/issues/144)) ([c0fa6d0](https://github.com/miklschmidt/archboard/commit/c0fa6d0988fb8792f06e7a79f457c59c03672eb7))
+* **renderer:** wrap card words to the placed box width ([#159](https://github.com/miklschmidt/archboard/issues/159)) ([e49c3bb](https://github.com/miklschmidt/archboard/commit/e49c3bb86b83d4a33404dd2f19e53bd36a2aa270))
+* **web:** align Navigator flows with shared ModelPanel rows ([#160](https://github.com/miklschmidt/archboard/issues/160)) ([e91e19b](https://github.com/miklschmidt/archboard/commit/e91e19b1118be8235d9bd9c14267207dfc999520))
+* **web:** every section of the right panel folds, with the navigator's head ([#150](https://github.com/miklschmidt/archboard/issues/150)) ([7b9fd3d](https://github.com/miklschmidt/archboard/commit/7b9fd3d953cddac0e2e7d95320ddd7d2e2496ec7))
+* **workspace:** a command handed to another checkout never hands itself off again ([#153](https://github.com/miklschmidt/archboard/issues/153)) ([d6bb411](https://github.com/miklschmidt/archboard/commit/d6bb4115c93dd93e8de708ada057cb34e48d1ef6))
+
+
+### Code Refactoring
+
+* this repository obeys the module-depth rules (TASK-646.14) ([#139](https://github.com/miklschmidt/archboard/issues/139)) ([fe4cae1](https://github.com/miklschmidt/archboard/commit/fe4cae134b6a6ebf23bd6395ea5cf11389458731))
+
 ## [0.5.0](https://github.com/miklschmidt/archboard/compare/v0.4.1...v0.5.0) (2026-11-18)
 
 
