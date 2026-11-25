@@ -12,11 +12,11 @@ const CodeBindingSchema = z
 	.object({
 		repo: NonemptyString.meta({
 			description:
-				"Repository identity as registered with `archboard repo add`, such as `github.com/acme/payments`, never a local filesystem path.",
+				"Repository identity used by the checkout registry, such as `github.com/acme/payments`.",
 		}),
 		path: z.string().meta({
 			description:
-				"Repository-relative path to the bound directory or file, or empty string for the repository root. End directory names that contain a dot with `/`.",
+				"Repository-relative path to the bound directory or file. Use an empty string for the repository root. A `.csproj` file stands for its project directory in the code check. End dotted directory names with `/` when binding a Terraform symbol.",
 		}),
 		symbol: NonemptyString.optional().meta({
 			description:
@@ -27,7 +27,7 @@ const CodeBindingSchema = z
 		}),
 		commit: NonemptyString.optional().meta({
 			description:
-				"Optional Git commit SHA where the bound code was confirmed; takes precedence over `branch`.",
+				"Optional Git commit SHA where the bound code was confirmed. It takes precedence over `branch`.",
 		}),
 		confirmedAt: NonemptyString.optional().meta({
 			description: "Optional timestamp when the binding was last confirmed against source.",
@@ -35,7 +35,7 @@ const CodeBindingSchema = z
 	})
 	.strict()
 	.meta({
-		description: "Primary source location implementing a module's responsibility.",
+		description: "Primary source location where a module does or will do its work.",
 	});
 type CodeBinding = z.infer<typeof CodeBindingSchema>;
 /**
@@ -53,21 +53,22 @@ const CodeAnchorSchema = z
 			description: "Repository-relative path to the file containing the cited symbol.",
 		}),
 		symbol: NonemptyString.meta({
-			description: "Qualified symbol name in `path` proving the relationship or flow step.",
+			description:
+				"Name of the cited definition or use in `path`, including declaration addresses.",
 		}),
 	})
 	.strict()
 	.meta({
 		description:
-			"Source citation proving a relationship or flow step: repository, file path, and symbol name, with no line number. May cite a definition or a use; when a relationship kind declares an `evidence` list and the code check finds evidence kinds for the anchor, one accepted kind (resolved or candidate) satisfies the check.",
+			"Source citation for a relationship or flow step. If the code check locates the symbol's definition and rules out the bound code of both ends and their descendants, it flags the citation. You can also cite an infrastructure declaration that joins the ends. For a relationship kind with an `evidence` list, one accepted kind, resolved or candidate, satisfies the evidence-kind rule when the check identifies evidence kinds.",
 	});
 type CodeAnchor = z.infer<typeof CodeAnchorSchema>;
 /**
  * One file in a repository that a variant draws, such as a design document, an
  * ADR or a task (ADR 0054). It has a binding's shape without what only code
- * has, so the binding's resolver reads it: `commit` names one exact version
- * and wins over `branch`, and with neither it names the file in the checkout
- * the vault reads for that repository.
+ * has, so the binding's resolver reads it. `commit` takes precedence over
+ * `branch`. The code check reads a Git tree if the ref differs from the
+ * checkout's HEAD or branch, and the working tree otherwise.
  */
 const DocumentReferenceSchema = CodeBindingSchema.pick({
 	repo: true,
@@ -78,18 +79,17 @@ const DocumentReferenceSchema = CodeBindingSchema.pick({
 		path: NonemptyString.meta({
 			description: "Repository-relative path to the referenced document file.",
 		}),
-		branch: NonemptyString.optional().meta({
-			description: "Optional Git branch from which to read the document when `commit` is absent.",
+		branch: CodeBindingSchema.shape.branch.meta({
+			description: "Optional Git branch to use when `commit` is absent.",
 		}),
-		commit: NonemptyString.optional().meta({
-			description:
-				"Optional Git commit SHA pinning the exact document revision; takes precedence over `branch`.",
+		commit: CodeBindingSchema.shape.commit.meta({
+			description: "Optional Git commit SHA. It takes precedence over `branch`.",
 		}),
 	})
 	.strict()
 	.meta({
 		description:
-			"Reference to a tracked document file such as a design doc, ADR, or task. Without `commit` or `branch`, reads from the checkout the vault uses for that repository.",
+			"Reference to a repository document such as a design doc, ADR, or task. A working-tree code check reads the vault's checkout for `repo` when no ref is specified or the selected ref is checked out. Otherwise it looks in the selected Git tree.",
 	});
 type DocumentReference = z.infer<typeof DocumentReferenceSchema>;
 

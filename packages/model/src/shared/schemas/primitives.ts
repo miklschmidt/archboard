@@ -31,7 +31,7 @@ const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME).meta({
 /** A concise explanation of what a node is for; the renderer wraps its lines. */
 const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY).meta({
 	description:
-		"One-line statement of what the module is responsible for, drawn on its card (max 200 characters).",
+		"Short statement of what the module is responsible for, drawn on its card (max 200 characters).",
 });
 
 /**
@@ -89,7 +89,7 @@ function sameSemanticOrder(one: readonly string[], other: readonly string[]): bo
 /** The longer explanation, reached by inspecting a node rather than drawn on it. */
 const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION).meta({
 	description:
-		"Longer plain-text explanation of responsibilities, boundaries, or design decisions shown when inspecting the subject (max 2000 characters).",
+		"Plain-text explanation of the subject, such as its responsibilities, boundaries, or design decisions (max 2000 characters).",
 });
 
 /** Model[/original-board]#local-id. Namespace segments preserve identity provenance. */

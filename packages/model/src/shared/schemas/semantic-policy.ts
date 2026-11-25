@@ -66,15 +66,10 @@ const EvidenceKindSchema = z.enum([
 	"build-dependency",
 	"provisioning",
 ]);
-/**
- * What a relationship does at its target: it changes state or has an effect
- * outside the caller (`mutation`), it reads held or fetched state (`query`), or
- * its answer follows from what it hands over alone (`compute`). The kind says
- * how a relationship travels and the effect what it does (TASK-663).
- */
+/** What an operation does at its target (ADR 0094). */
 const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]).meta({
 	description:
-		"What the relationship asks its target to do: `mutation` (observable side effect), `query` (reads held or fetched state), or `compute` (depends only on inputs passed by the caller). Required on every relationship except `dependency`, which omits it when it is a declared requirement only.",
+		"What an operation does at its target. A `mutation` can change state or have an external effect. A `query` reads held or fetched state. A `compute` depends only on inputs from the caller. Current module files require an effect for each relationship. A `dependency` may omit it to record a declared requirement.",
 });
 /**
  * What a line's dash and head say it does: its effect, or `declared` for a
@@ -93,7 +88,7 @@ const EvidenceListSchema = z
 	.meta({
 		uniqueItems: true,
 		description:
-			"The evidence kinds that prove a relationship of this kind to `archboard check code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
+			"The evidence kinds `archboard check code` accepts for this relationship kind (ADR 0046). If the list is absent, every evidence kind is accepted. The check still reports calls on dependencies.",
 	});
 /**
  * One relationship kind as a vault writes it. The kind is the color of its

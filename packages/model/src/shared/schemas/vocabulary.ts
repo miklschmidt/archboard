@@ -27,7 +27,7 @@ const NodeKindSchema = VocabularyNameSchema.meta({
  */
 const EdgeKindSchema = VocabularyNameSchema.meta({
 	description:
-		"Relationship kind ID describing how the connection travels: built-in (`sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, `dependency`) or a vault-added kind in `relationshipKinds`. The retired kind `call` is refused.",
+		"Relationship kind ID describing how the connection travels. Use a built-in kind (`sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, `dependency`) or a vault-added kind in `relationshipKinds`. New edits refuse the retired kind `call`. Retained readings may still contain it.",
 });
 
 /**

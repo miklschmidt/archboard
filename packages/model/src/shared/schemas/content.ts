@@ -46,16 +46,17 @@ const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL).meta({
 const EdgeTrafficSchema = z
 	.object({
 		speed: z.number().finite().positive().default(DEFAULT_TRAFFIC_SPEED).meta({
-			description: "Controls how fast pulses travel along the line.",
+			description:
+				"Requested pulse speed in diagram units per second. The renderer scales it and enforces a minimum.",
 		}),
 		volume: z.number().finite().positive().default(DEFAULT_TRAFFIC_VOLUME).meta({
-			description: "Requested pulse rate, subject to the renderer's spacing limits.",
+			description:
+				"Requested pulses per second. The renderer adjusts the spacing to fit the line and keep pulses apart.",
 		}),
 	})
 	.strict()
 	.meta({
-		description:
-			"Optional illustrative traffic animation on a relationship. Presence enables motion; omission turns it off.",
+		description: "Adds a stream of illustrative pulses to the relationship in animated views.",
 	});
 type EdgeTraffic = z.infer<typeof EdgeTrafficSchema>;
 

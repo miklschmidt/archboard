@@ -160,10 +160,11 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 		description: "Previous display names retained for stable selection and history.",
 	}),
 	documents: z.array(documentReferenceSchema()).optional().meta({
-		description: "Tracked documents (such as ADRs, design docs, or tasks) attached to this module.",
+		description:
+			"Repository documents such as ADRs, design docs, or tasks attached to this module.",
 	}),
 	references: z.array(ModelReferenceSchema).optional().meta({
-		description: "Explicit cross-model references for drilling into another model.",
+		description: "Explicit references for drilling into a module in this model or another model.",
 	}),
 	outgoing: z.array(OwnedRelationshipSchema).meta({
 		description: "Directed relationships owned by this source module.",
