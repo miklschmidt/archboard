@@ -9,16 +9,16 @@ import { reference, type JsonSchema } from "../../../lib/reference";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-/** Where each schema is used, in a reader's words. */
+/** Where each schema is used. */
 const uses: Record<string, string> = {
-	"model-manifest": "The manifest of a model: `model.json` in the vault. It names the model and its current state, and holds no modules.",
-	module: "One module definition: a `<id>.module.json` file in the vault, with its parts, relationships and binding.",
-	flows: "One flow collection: a `<id>.flows.json` file in the vault, with its flows and their steps.",
-	"model-initialize": "The request that `archboard model init` sends to make an empty planning model.",
-	"model-edit": "The request that `archboard model edit --input` reads: one complete revision, a claim and a batch of changes.",
-	"model-import": "The portable installation that `archboard model import` reads, with its retained history.",
-	"model-migrate": "The request that moves a legacy vault to canonical models.",
-	"vault-config": "The vocabulary of a vault: `.archboard/config.yaml`, with its module kinds, relationship kinds and the evidence each kind accepts.",
+	"model-manifest": "Vault manifest (`model.json`). Stores the model identity, name, and current state without duplicating module definitions.",
+	module: "Single module file (`<id>.module.json`). Defines a module's metadata, child containment, outgoing relationships, and code binding.",
+	flows: "Flow collection file (`<id>.flows.json`). Stores a named group of flows and their ordered steps.",
+	"model-initialize": "Input payload for `archboard model init` to create an empty planning model.",
+	"model-edit": "Input payload for `archboard model edit --input`: expected revision, claim, and a batch of model operations.",
+	"model-import": "Portable archive payload for `archboard model import`, including retained history.",
+	"model-migrate": "Input payload for migrating a legacy vault to the canonical model format.",
+	"vault-config": "Vault configuration (`.archboard/config.yaml`). Defines module kinds, relationship kinds, accepted evidence, lenses, and code-check rules.",
 };
 
 const headings = reference.schemas.map((entry) => ({ depth: 2, slug: entry.name, text: entry.title }));
@@ -30,15 +30,15 @@ const inline = (text: string) =>
 
 <Docs
 	title="Schemas"
-	description="The JSON Schemas of the files in a vault and of the requests that change them, rendered from the validation that the CLI runs."
+	description="JSON Schemas for vault files and CLI write payloads, generated directly from the CLI's validators."
 	path="reference/schemas"
 	headings={headings}
 	source="apps/cli/src/cli/commands/model/operations/schema.ts"
 >
 	<p>
-		An agent reads these schemas from the CLI on its <code>PATH</code>, so they always match the
-		installed program. A valid shape is not yet valid architecture: a write also checks names,
-		identities, the claim and the complete revision.
+		Agents should read schemas directly from the installed CLI on <code>PATH</code> so definitions
+		always match the running version. Schema validation checks JSON structure only. Write commands
+		also validate names, identities, claims, and revision digests.
 	</p>
 	<Code code={`archboard model schema\narchboard model schema model-edit > model-edit.schema.json`} lang="sh" frame="terminal" />
 	{
