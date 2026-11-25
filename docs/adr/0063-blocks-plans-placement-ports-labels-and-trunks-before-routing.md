@@ -8,6 +8,12 @@ Amended on 2026-11-09. The dense placement states one cost and searches for the 
 That cost replaces the rules of TASK-559.09, which chose each door's wall by the room the page costs.
 Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
 
+Amended on 2026-11-21 (TASK-624). A reading can crowd a card with more line ends than its walls can space.
+When every dense placement and every legacy candidate refuses, the solve answers the legacy Blocks placement with its own routes.
+That drawing is not told as planned, and the drawing settles its crossings as it settles Track's.
+"No unchecked route reaches the painter" holds for every drawing told as planned.
+A Graphviz failure still fails the solve.
+
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.
 The owner selected the hybrid direction after three iterations failed to improve the six reference pictures with planner-owned placement.
 The legacy placer composes the boards better, while planned routing supplies explicit ownership, complete geometry guards, and bounded search.
