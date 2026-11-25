@@ -7,6 +7,7 @@
 import { RiCloseLine, type RemixiconComponentType } from "@remixicon/react";
 import {
 	createContext,
+	Fragment,
 	useCallback,
 	useContext,
 	useLayoutEffect,
@@ -389,11 +390,15 @@ function Rows<Item>(props: {
 		<>
 			{groupOf === undefined
 				? shown.map((item) => children(item))
-				: sectionRuns(shown, groupOf).map((run) => (
-						<Group key={run.key} label={run.label}>
-							{run.entries.map((item) => children(item))}
-						</Group>
-					))}
+				: sectionRuns(shown, groupOf).map((run) =>
+						run.label === "" ? (
+							<Fragment key={run.key}>{run.entries.map((item) => children(item))}</Fragment>
+						) : (
+							<Group key={run.key} label={run.label}>
+								{run.entries.map((item) => children(item))}
+							</Group>
+						),
+					)}
 			{shown.length < items.length && (
 				<li>
 					<button
@@ -432,6 +437,7 @@ function rowState(button: ComponentProps<"button">): RowState {
  * @param props The row's words and the button's own attributes.
  * @param props.name What it names.
  * @param props.detail What it says of that.
+ * @param props.mark A status mark at the row's end, such as an active claim lamp.
  * @param props.stacked Whether the detail stands under the name.
  * @param props.action What else can be done with what it names, at its end.
  * @param props.foot A mark along the foot of the row, such as a meter.
@@ -440,6 +446,7 @@ function rowState(button: ComponentProps<"button">): RowState {
 function Row({
 	name,
 	detail,
+	mark,
 	stacked = false,
 	action,
 	foot,
@@ -447,6 +454,7 @@ function Row({
 }: ComponentProps<"button"> & {
 	readonly name: ReactNode;
 	readonly detail?: ReactNode;
+	readonly mark?: ReactNode;
 	readonly stacked?: boolean;
 	readonly action?: ReactNode;
 	readonly foot?: ReactNode;
@@ -464,6 +472,9 @@ function Row({
 				)}
 			>
 				<RowWords name={name} detail={detail} stacked={stacked} />
+				{mark !== undefined && (
+					<span className="ml-auto flex shrink-0 items-center self-center">{mark}</span>
+				)}
 				{foot}
 			</button>
 			{action}
@@ -540,7 +551,11 @@ function Group(props: { readonly label: string; readonly children: ReactNode }):
 				<SECTION_ICONS.collections className="text-muted-foreground size-4 shrink-0" />
 				<span className="truncate">{props.label}</span>
 			</span>
-			<ul aria-label={props.label} className={cn("flex flex-col", UNDER_NAME, GROUP_RAILS)}>
+			<ul
+				aria-label={props.label}
+				data-tree-section={props.label}
+				className={cn("flex flex-col", UNDER_NAME, GROUP_RAILS)}
+			>
 				{props.children}
 			</ul>
 		</li>
