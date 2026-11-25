@@ -225,6 +225,33 @@
             ];
             # rust-analyzer reads the standard library's source from here.
             RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+            # `nix develop` puts its nix-shell temp directory under the inherited TMPDIR and
+            # exports TMPDIR/TMP/TEMP/TEMPDIR there. Harnesses that place TMPDIR inside another
+            # Git checkout or at a long path break Unix socket limits (SUN_LEN) and tests that
+            # expect os.tmpdir() outside any checkout.
+            shellHook = ''
+              if [ -n "''${TMPDIR:-}" ] && [ -d /tmp ] && [ -w /tmp ]; then
+                _ab_bad_tmp=0
+                if [ "''${#TMPDIR}" -gt 50 ]; then
+                  _ab_bad_tmp=1
+                else
+                  _ab_dir="$TMPDIR"
+                  while [ -n "$_ab_dir" ]; do
+                    if [ -e "$_ab_dir/.git" ]; then
+                      _ab_bad_tmp=1
+                      break
+                    fi
+                    _ab_parent="''${_ab_dir%/*}"
+                    [ "$_ab_parent" = "$_ab_dir" ] && break
+                    _ab_dir="$_ab_parent"
+                  done
+                fi
+                if [ "$_ab_bad_tmp" -eq 1 ]; then
+                  export TMPDIR=/tmp TMP=/tmp TEMP=/tmp TEMPDIR=/tmp
+                fi
+                unset _ab_bad_tmp _ab_dir _ab_parent
+              fi
+            '';
           };
         }
       ) bunPlatforms;
