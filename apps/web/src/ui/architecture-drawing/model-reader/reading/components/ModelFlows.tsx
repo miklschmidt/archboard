@@ -79,7 +79,7 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 	);
 	return (
 		<div ref={list} className="py-1 pr-3 pl-2">
-			<ul aria-label="Flows" className="flex flex-col">
+			<ul aria-label="Flows" className="flex flex-col [&_[data-flow-id]]:scroll-mt-(--stuck-top)">
 				<ModelPanel.Rows items={flows} limit={flows.length} groupOf={collectionOf}>
 					{(entry) => (
 						<FlowRow
