@@ -31,7 +31,6 @@ function ModelLensPresets(props: {
 		},
 		[onSelect],
 	);
-	const resetCurrent = useCallback((): void => onSelect(lens), [onSelect, lens]);
 	return (
 		<li className="pt-1 pb-2.5">
 			<Select value={lens} onValueChange={choose}>
@@ -43,13 +42,7 @@ function ModelLensPresets(props: {
 				</Select.Trigger>
 				<Select.Content>
 					{entries.map(([id, choice]) => (
-						<Select.Item
-							key={id}
-							value={id}
-							data-lens-id={id}
-							description={choice.question}
-							onClick={id === lens ? resetCurrent : undefined}
-						>
+						<Select.Item key={id} value={id} data-lens-id={id} description={choice.question}>
 							{choice.name}
 						</Select.Item>
 					))}
