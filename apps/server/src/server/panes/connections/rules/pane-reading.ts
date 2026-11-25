@@ -432,9 +432,9 @@ function resolveDirectionalFocus(
 	const hiddenKindSet = new Set(hiddenKinds(hideKinds ?? [], model.policy));
 	const hiddenEffectSet = new Set<LineEffect>(hideEffects ?? []);
 	const matched = directional.filter((edge) => {
+		// As the picture does: a relationship of an old reading that states no effect is never hidden by effect.
 		const effect = lineEffect(edge);
-		const effectAllowed =
-			effect === undefined ? hiddenEffectSet.size === 0 : !hiddenEffectSet.has(effect);
+		const effectAllowed = effect === undefined || !hiddenEffectSet.has(effect);
 		return activeLens.draws(edge) && !hiddenKindSet.has(edge.kind) && effectAllowed;
 	});
 	if (matched.length === 0) {

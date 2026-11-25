@@ -163,6 +163,19 @@ describe("pane-reading resolution", () => {
 		expect(resolved.reading.hideEffects).toEqual(["query", "compute", "declared"]);
 	});
 
+	test("focuses an effectless relationship that an effect filter leaves drawn", () => {
+		const legacy = {
+			...model,
+			relationships: [
+				...model.relationships,
+				{ id: "Shop#r5", from: "Shop#gw", to: "Shop#auth", kind: "sync", label: "check" },
+			],
+		} as unknown as typeof model;
+		const resolved = resolvePaneReading(legacy, { to: ["Auth Server"], hideEffects: ["query"] });
+		expect(resolved.ok).toBe(true);
+		if (resolved.ok) expect(resolved.reading.focus).toEqual(["Shop#r5"]);
+	});
+
 	test("refuses directional filters when no relationships match", () => {
 		const resolved = resolvePaneReading(model, {
 			onlyKinds: ["http"],
