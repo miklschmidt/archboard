@@ -16,6 +16,19 @@ import { useThemePreference } from "#ui/application/hooks/use-theme.ts";
 import { useNavigatorMode } from "#ui/application/hooks/use-navigator-mode.ts";
 
 type Action = ExplanationInvocation["request"]["action"];
+type ExplanationLocation = Pick<
+	ReturnType<typeof useModelLocation>,
+	| "scope"
+	| "focus"
+	| "expand"
+	| "filters"
+	| "grammar"
+	| "flow"
+	| "subject"
+	| "state"
+	| "checkpoint"
+	| "against"
+>;
 
 /** Browser-level presentation state included in pane reports outside explanation guards. */
 interface ReadingPresentation {
@@ -26,6 +39,86 @@ interface ReadingPresentation {
 	readonly ephemeralFlow?:
 		| { readonly name: string; readonly grammar: "flowchart" | "sequence" }
 		| undefined;
+}
+
+/** Inputs required to assemble a pane architecture capture. */
+interface CaptureInputs {
+	readonly vault: string;
+	readonly model: Model;
+	readonly location: ExplanationLocation;
+	readonly selected: ReadonlySet<string>;
+	readonly source: ReturnType<typeof captureSource>;
+	readonly display: ReturnType<typeof useReadingDisplay>;
+	readonly temporary: boolean;
+}
+
+/**
+ * Filter selected subject ids so a temporary flow's synthetic actors and steps never leak into pane reports.
+ * @param model The coherent canonical model.
+ * @param selected Currently selected subject ids.
+ * @param temporary Whether a temporary flow is currently displayed.
+ * @returns Subject ids valid for the canonical reading.
+ */
+function reportedSubjects(
+	model: Model,
+	selected: ReadonlySet<string>,
+	temporary: boolean,
+): string[] {
+	if (!temporary) return [...selected];
+	const canonical = new Set(modelSubjects(model).map(({ id }) => id));
+	return [...selected].filter((id) => canonical.has(id));
+}
+
+/**
+ * Assemble the canonical reading intent nested inside a pane capture.
+ * @param model The coherent canonical model.
+ * @param location The router-owned reading intent.
+ * @param grammar The validated canonical grammar.
+ * @param temporary Whether a temporary flow is currently displayed.
+ * @returns The canonical reading snapshot.
+ */
+function buildCapturedReading(
+	model: Model,
+	location: ExplanationLocation,
+	grammar: NonNullable<PaneReading["architecture"]>["reading"]["grammar"],
+	temporary: boolean,
+): NonNullable<PaneReading["architecture"]>["reading"] {
+	const flow = temporary ? undefined : (location.flow ?? undefined);
+	return {
+		scope: location.scope ?? undefined,
+		focus: location.focus ?? [],
+		expand: location.expand,
+		lens: readingLens(model.policy, location.filters.lens).id,
+		relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
+			(kind) => !location.filters.hideKinds.includes(kind),
+		),
+		grammar,
+		flow,
+		referenceSubject: location.subject ?? undefined,
+	};
+}
+
+/**
+ * Build the captured pane reading and explanation guards for the current visible architecture.
+ * @param params The vault, model, location, selection, source, display, and temporary-flow flag.
+ * @returns The captured pane architecture, or null when the reading cannot be captured.
+ */
+function buildReadingCapture(
+	params: CaptureInputs,
+): NonNullable<PaneReading["architecture"]> | null {
+	const { vault, model, location, selected, source, display, temporary } = params;
+	const mode = diagramGrammarSchema().safeParse(temporary ? "architecture" : location.grammar);
+	if (!mode.success || !readsVaultOnDisk(model)) return null;
+	return {
+		vault,
+		model: model.manifest.id,
+		display,
+		expectedRevision: model.revision.digest,
+		expectedComparisonRevision: model.comparison?.revision.digest,
+		subjects: reportedSubjects(model, selected, temporary),
+		...source,
+		reading: buildCapturedReading(model, location, mode.data, temporary),
+	};
 }
 
 /**
@@ -41,26 +134,13 @@ interface ReadingPresentation {
 function useModelExplanation(
 	vault: string,
 	model: Model,
-	location: Pick<
-		ReturnType<typeof useModelLocation>,
-		| "scope"
-		| "focus"
-		| "expand"
-		| "filters"
-		| "grammar"
-		| "flow"
-		| "subject"
-		| "state"
-		| "checkpoint"
-		| "against"
-	>,
+	location: ExplanationLocation,
 	selected: ReadonlySet<string>,
 	reporting?: Parameters<typeof useModelReadingReport>[1],
 	presentation?: ReadingPresentation,
 ) {
 	const host = useContext(ModelExplanationContext);
-	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against } =
-		location;
+	const { state, checkpoint, against, filters } = location;
 	const source = useMemo(
 		() =>
 			captureSource(model, {
@@ -70,53 +150,13 @@ function useModelExplanation(
 			}),
 		[state, checkpoint, against, model],
 	);
-	const referenceSubject = subject ?? undefined;
-	const comparisonRevision = model.comparison?.revision.digest;
 	const display = useReadingDisplay(vault, model, filters, presentation);
 	// A temporary flow is not in the vault: report the canonical reading under it, explain nothing.
 	const temporary = presentation?.ephemeralFlow !== undefined;
-	const capture = useMemo(() => {
-		const mode = diagramGrammarSchema().safeParse(temporary ? "architecture" : grammar);
-		if (!mode.success || !readsVaultOnDisk(model)) return null;
-		// A temporary flow's own actors and steps are in no model, so no report names them as selected.
-		const canonical = temporary ? new Set(modelSubjects(model).map(({ id }) => id)) : null;
-		return {
-			vault,
-			model: model.manifest.id,
-			display,
-			expectedRevision: model.revision.digest,
-			expectedComparisonRevision: comparisonRevision,
-			subjects: [...selected].filter((id) => canonical?.has(id) ?? true),
-			...source,
-			reading: {
-				scope: scope ?? undefined,
-				focus: focus ?? [],
-				expand,
-				lens: readingLens(model.policy, filters.lens).id,
-				relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
-					(kind) => !filters.hideKinds.includes(kind),
-				),
-				grammar: mode.data,
-				flow: temporary ? undefined : (flow ?? undefined),
-				referenceSubject,
-			},
-		};
-	}, [
-		vault,
-		model,
-		selected,
-		scope,
-		focus,
-		expand,
-		filters,
-		grammar,
-		flow,
-		temporary,
-		referenceSubject,
-		source,
-		comparisonRevision,
-		display,
-	]);
+	const capture = useMemo(
+		() => buildReadingCapture({ vault, model, location, selected, source, display, temporary }),
+		[vault, model, location, selected, source, display, temporary],
+	);
 	useModelReadingReport(capture, reporting);
 	const invoke = host?.invoke;
 	const act = useCallback(
@@ -135,7 +175,34 @@ function useModelExplanation(
 		},
 		[capture, temporary, invoke],
 	);
-	return { act, unavailable: host === null || host.pending || capture === null || temporary };
+	const unavailable = host === null || host.pending || capture === null || temporary;
+	return { act, unavailable };
+}
+
+/**
+ * Extract optional presentation fields (page, file, fileRepo, ref, ephemeralFlow) for pane reports.
+ * @param presentation Optional browser presentation state.
+ * @returns Present optional presentation fields.
+ */
+function presentationDisplayFields(
+	presentation: ReadingPresentation | undefined,
+): Partial<ReadingPresentation> {
+	if (presentation === undefined) return {};
+	return Object.fromEntries(
+		Object.entries(presentation).filter(([, value]) => value !== undefined),
+	);
+}
+
+/**
+ * Extract active filter hide lists for pane reports when non-empty.
+ * @param filters The active kind and effect hide lists.
+ * @returns Present hide lists.
+ */
+function filterDisplayFields(filters: ReturnType<typeof useModelLocation>["filters"]) {
+	return {
+		...(filters.hideKinds.length === 0 ? {} : { hideKinds: [...filters.hideKinds] }),
+		...(filters.hideEffects.length === 0 ? {} : { hideEffects: [...filters.hideEffects] }),
+	};
 }
 
 /**
@@ -169,15 +236,8 @@ function useReadingDisplay(
 			theme,
 			hoverLight,
 			navigatorMode,
-			...(presentation?.page === undefined ? {} : { page: presentation.page }),
-			...(presentation?.file === undefined ? {} : { file: presentation.file }),
-			...(presentation?.fileRepo === undefined ? {} : { fileRepo: presentation.fileRepo }),
-			...(presentation?.ref === undefined ? {} : { ref: presentation.ref }),
-			...(filters.hideKinds.length === 0 ? {} : { hideKinds: [...filters.hideKinds] }),
-			...(filters.hideEffects.length === 0 ? {} : { hideEffects: [...filters.hideEffects] }),
-			...(presentation?.ephemeralFlow === undefined
-				? {}
-				: { ephemeralFlow: presentation.ephemeralFlow }),
+			...presentationDisplayFields(presentation),
+			...filterDisplayFields(filters),
 		}),
 		[model, savedAt, layout, theme, hoverLight, navigatorMode, filters, presentation],
 	);

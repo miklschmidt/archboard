@@ -9,6 +9,104 @@ import { drawableGrammar, isNarrowed } from "#ui/architecture-drawing/model-read
 import type { ActiveEphemeralFlow } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
 
 /**
+ * Serialize the router location fields that anchor a temporary flow, so navigating away clears it.
+ * @param location The current pane location.
+ * @returns A stable string key for the reading location.
+ */
+function readingLocationKey(location: ReturnType<typeof useModelLocation>): string {
+	return JSON.stringify([
+		location.model,
+		location.preview,
+		location.bookmark,
+		location.legacyAddress,
+		location.scope,
+		location.focus,
+		location.expand,
+		location.filters,
+		location.grammar,
+		location.flow,
+		location.state,
+		location.checkpoint,
+		location.against,
+		location.ref,
+	]);
+}
+
+/**
+ * Anchor an active temporary flow to the reading location where it arrived and dismiss it on navigation.
+ * @param location The current pane location.
+ * @param ephemeralFlow The temporary flow held by the arrival hook, if any.
+ * @param onClearEphemeralFlow Callback that clears the temporary flow.
+ * @returns The temporary flow while still at its arrival location, or null once the reader moves away.
+ */
+function useAnchoredEphemeral(
+	location: ReturnType<typeof useModelLocation>,
+	ephemeralFlow: ActiveEphemeralFlow | null | undefined,
+	onClearEphemeralFlow: (() => void) | undefined,
+): ActiveEphemeralFlow | null {
+	const current = ephemeralFlow ?? null;
+	const locationKey = readingLocationKey(location);
+	const [anchored, setAnchored] = useState({ ephemeral: current, locationKey });
+	if (anchored.ephemeral !== current) {
+		setAnchored({ ephemeral: current, locationKey });
+	}
+	const movedAway = current !== null && anchored.locationKey !== locationKey;
+	useEffect(() => {
+		if (movedAway) onClearEphemeralFlow?.();
+	}, [movedAway, onClearEphemeralFlow]);
+	return movedAway ? null : current;
+}
+
+/**
+ * Project the active flow (temporary or authored) over the structural projection.
+ * @param structure The projected architecture.
+ * @param grammar The router grammar.
+ * @param flow The router flow id.
+ * @param activeEphemeral The active temporary flow, if any.
+ * @returns The flow or structural projection.
+ */
+function projectActiveReading(
+	structure: ReturnType<typeof projectModel>,
+	grammar: string,
+	flow: string | null,
+	activeEphemeral: ActiveEphemeralFlow | null,
+) {
+	if (activeEphemeral !== null) {
+		return projectFlow(structure, activeEphemeral.flow, activeEphemeral.syntheticParticipants);
+	}
+	const selectedFlow = structure.depicted.flows.find((entry) => entry.id === flow);
+	return grammar === "architecture" || selectedFlow === undefined
+		? structure
+		: projectFlow(structure, selectedFlow);
+}
+
+/**
+ * Resolve the effective grammar and flow id, preferring an active temporary flow over router state.
+ * @param activeEphemeral Active unsaved temporary flow, or null.
+ * @param grammar Router grammar.
+ * @param flow Router flow id.
+ * @returns The grammar and flow id for scene rendering.
+ */
+function effectiveFlowTarget(
+	activeEphemeral: ActiveEphemeralFlow | null,
+	grammar: string,
+	flow: string | null,
+): { readonly grammar: string; readonly flow: string | null } {
+	if (activeEphemeral === null) return { grammar, flow };
+	return { grammar: activeEphemeral.grammar, flow: activeEphemeral.flow.id };
+}
+
+/**
+ * Extract the imported bookmark reading and its visibility, if present.
+ * @param model The coherent model.
+ * @returns The bookmark reading and visibility.
+ */
+function bookmarkOf(model: Model) {
+	const reading = importedReadings(model)?.bookmark?.reading;
+	return { reading, visibility: reading?.visibility };
+}
+
+/**
  * The destination the address asks for, as one request.
  * @param vault The reading vault.
  * @param paneId The pane that owns the address.
@@ -31,40 +129,11 @@ function useModelReading(
 ) {
 	const comparison = useModelComparison(vault, model);
 	const { reference } = comparison;
-	const bookmark = importedReadings(model)?.bookmark?.reading;
+	const { reading: bookmark, visibility } = bookmarkOf(model);
 	const location = useModelLocation(paneId, bookmark);
-	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against, ref } =
+	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against } =
 		location;
-	const locationKey = JSON.stringify([
-		location.model,
-		location.preview,
-		location.bookmark,
-		location.legacyAddress,
-		scope,
-		focus,
-		expand,
-		filters,
-		grammar,
-		flow,
-		state,
-		checkpoint,
-		against,
-		ref,
-	]);
-	const [anchored, setAnchored] = useState<{
-		readonly ephemeral: ActiveEphemeralFlow | null;
-		readonly locationKey: string;
-	}>({ ephemeral: ephemeralFlow ?? null, locationKey });
-	if (anchored.ephemeral !== (ephemeralFlow ?? null)) {
-		setAnchored({ ephemeral: ephemeralFlow ?? null, locationKey });
-	}
-	const movedAway = ephemeralFlow != null && anchored.locationKey !== locationKey;
-	useEffect(() => {
-		if (movedAway) onClearEphemeralFlow?.();
-	}, [movedAway, onClearEphemeralFlow]);
-	const activeEphemeral = movedAway ? null : (ephemeralFlow ?? null);
-
-	const visibility = bookmark?.visibility;
+	const activeEphemeral = useAnchoredEphemeral(location, ephemeralFlow, onClearEphemeralFlow);
 	const structure = useMemo(
 		() =>
 			projectModel(
@@ -77,17 +146,11 @@ function useModelReading(
 			),
 		[model, scope, focus, expand, filters, reference, visibility],
 	);
-	const effectiveGrammar = activeEphemeral?.grammar ?? grammar;
-	const effectiveFlow = activeEphemeral?.flow.id ?? flow;
-	const projection = useMemo(() => {
-		if (activeEphemeral !== null) {
-			return projectFlow(structure, activeEphemeral.flow, activeEphemeral.syntheticParticipants);
-		}
-		const selectedFlow = structure.depicted.flows.find((entry) => entry.id === flow);
-		return grammar === "architecture" || selectedFlow === undefined
-			? structure
-			: projectFlow(structure, selectedFlow);
-	}, [structure, grammar, flow, activeEphemeral]);
+	const target = effectiveFlowTarget(activeEphemeral, grammar, flow);
+	const projection = useMemo(
+		() => projectActiveReading(structure, grammar, flow, activeEphemeral),
+		[structure, grammar, flow, activeEphemeral],
+	);
 	const entry = useRouterState({
 		/**
 		 * The history entry names the reading a reader can come back to.
@@ -105,8 +168,8 @@ function useModelReading(
 			focus,
 			expand,
 			filters,
-			grammar: effectiveGrammar,
-			flow: effectiveFlow,
+			grammar: target.grammar,
+			flow: target.flow,
 			subject,
 			state,
 			checkpoint,
@@ -117,8 +180,8 @@ function useModelReading(
 			focus,
 			expand,
 			filters,
-			effectiveGrammar,
-			effectiveFlow,
+			target.grammar,
+			target.flow,
 			subject,
 			state,
 			checkpoint,
@@ -130,12 +193,12 @@ function useModelReading(
 			model,
 			projection,
 			reading,
-			grammar: drawableGrammar(effectiveGrammar, projection),
+			grammar: drawableGrammar(target.grammar, projection),
 			settled,
 			failed,
 			entry,
 		}),
-		[model, projection, reading, effectiveGrammar, settled, failed, entry],
+		[model, projection, reading, target.grammar, settled, failed, entry],
 	);
 	const narrowed = isNarrowed(reading) || visibility !== undefined;
 	const onWholeScope = narrowed ? location.showWholeScope : undefined;

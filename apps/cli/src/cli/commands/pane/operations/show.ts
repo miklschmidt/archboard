@@ -191,7 +191,12 @@ const browserShowContract = defineCommand({
 		...(
 			[
 				["focus", "--focus", "id|name", "Focus subjects or module names"],
-				["select", "--select", "id|name", "Select subjects or module names without changing scope"],
+				[
+					"select",
+					"--select",
+					"id|name",
+					"Select subjects or module names (pass --keep to preserve current scope and focus)",
+				],
 				["expand", "--expand", "id|name", "Modules to expand beside the open scope"],
 				["hideKinds", "--hide-kind", "kind", "Relationship kinds to hide"],
 				["onlyKinds", "--only-kind", "kind", "Show only these relationship kinds"],
@@ -271,36 +276,61 @@ const browserShowContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "Show architecture");
-		const { pane, input: file, flowInput, noCompare, ...flags } = input;
-		if (file === "-" && flowInput === "-") {
-			throw new CliUsageError(
-				"--input - and --flow-input - both read standard input: pass one of them as a file.",
-			);
-		}
-		if (noCompare === true && flags.against !== undefined) {
-			throw new CliUsageError(
-				"--no-compare turns comparison off and --against turns it on: pass one of them.",
-			);
-		}
-		let reading =
-			file === undefined
-				? { ...flags, ...(noCompare === true ? { compare: false } : {}) }
-				: context.parse(
-						architecturePaneReadingSchema(),
-						await statedJson({ input: file }, context),
-					);
-		if (flowInput !== undefined) {
-			const ephemeralFlow = context.parse(
-				ephemeralFlowInputSchema(),
-				await statedJson({ input: flowInput }, context),
-			);
-			reading = { ...reading, ephemeralFlow };
-		}
+		const reading = await buildShowReading(input, context);
 		const opened = await openCanvas(context.vault?.path ?? null, "Show architecture");
-		const result = await showModelInPane(reading, pane ?? opened ?? undefined);
+		const result = await showModelInPane(reading, input.pane ?? opened ?? undefined);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
 	},
 });
+
+/**
+ * Refuse mutually exclusive flag combinations on `browser show` before opening any browser.
+ * @param file The optional `--input` source.
+ * @param flowInput The optional `--flow-input` source.
+ * @param noCompare Whether `--no-compare` was passed.
+ * @param against The optional `--against` target.
+ */
+function assertShowFlagCompatibility(
+	file: string | undefined,
+	flowInput: string | undefined,
+	noCompare: boolean | undefined,
+	against: string | undefined,
+): void {
+	if (file === "-" && flowInput === "-") {
+		throw new CliUsageError(
+			"--input - and --flow-input - both read standard input: pass one of them as a file.",
+		);
+	}
+	if (noCompare === true && against !== undefined) {
+		throw new CliUsageError(
+			"--no-compare turns comparison off and --against turns it on: pass one of them.",
+		);
+	}
+}
+
+/**
+ * Assemble the pane reading payload from CLI flags, optional `--input`, and optional `--flow-input`.
+ * @param input The validated CLI arguments.
+ * @param context The command invocation context.
+ * @returns The pane reading payload ready for the server.
+ */
+async function buildShowReading(
+	input: z.infer<typeof ShowInputSchema>,
+	context: Parameters<NonNullable<typeof browserShowContract.handler>>[1],
+): Promise<z.infer<ReturnType<typeof architecturePaneReadingSchema>>> {
+	const { pane: _pane, input: file, flowInput, noCompare, ...flags } = input;
+	assertShowFlagCompatibility(file, flowInput, noCompare, flags.against);
+	const base =
+		file === undefined
+			? { ...flags, ...(noCompare === true ? { compare: false } : {}) }
+			: context.parse(architecturePaneReadingSchema(), await statedJson({ input: file }, context));
+	if (flowInput === undefined) return base;
+	const ephemeralFlow = context.parse(
+		ephemeralFlowInputSchema(),
+		await statedJson({ input: flowInput }, context),
+	);
+	return { ...base, ephemeralFlow };
+}
 
 const SettingsInputSchema = paneDisplaySettingsSchema().extend({
 	pane: z.string().optional(),

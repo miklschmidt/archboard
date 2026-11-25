@@ -11,6 +11,7 @@ function modelReading(address: ModelAddress) {
 	const { id, subject, scope, checkpoint, against, ...reading } = address;
 	return architecturePaneReadingSchema().parse({
 		...reading,
+		grammar: reading.grammar ?? "architecture",
 		...comparisonIntent(against ?? null),
 		model: id,
 		module: subject,

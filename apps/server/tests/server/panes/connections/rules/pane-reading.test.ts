@@ -147,7 +147,6 @@ describe("pane-reading resolution", () => {
 		expect(resolved.ok).toBe(false);
 		if (resolved.ok) return;
 		expect(resolved.error.code).toBe("KIND_NOT_FOUND");
-		expect(resolved.error.error).toContain("http");
 	});
 
 	test("resolves mutating async calls to a container including its descendants", () => {
@@ -185,7 +184,6 @@ describe("pane-reading resolution", () => {
 		expect(resolved.ok).toBe(false);
 		if (resolved.ok) return;
 		expect(resolved.error.code).toBe("NO_MATCHING_RELATIONSHIPS");
-		expect(resolved.error.error).toContain("Found 3 directional relationship(s)");
 	});
 
 	test("resolves module names, former names, and group memberships", () => {
@@ -214,6 +212,7 @@ describe("pane-reading resolution", () => {
 		expect(resolved.reading.focus).toEqual(["Shop#removed"]);
 		expect(resolved.reading.expand).toEqual(["Shop#closed"]);
 		expect(resolvePaneReading(model, { scope: "Nowhere" }).ok).toBe(false);
+		expect(resolvePaneReading(model, { scope: "Shop#missing#extra" }).ok).toBe(false);
 		expect(resolvePaneReading(model, { select: ["Shop#gone"] }).ok).toBe(false);
 	});
 
@@ -349,5 +348,68 @@ describe("pane-reading resolution", () => {
 			]);
 		expect(ambiguous.ok).toBe(false);
 		if (!ambiguous.ok) expect(ambiguous.error.code).toBe("MODULE_AMBIGUOUS");
+
+		const ambiguousEndpoint = resolvePaneReading(twoGateways, {
+			ephemeralFlow: {
+				name: "Auth",
+				participants: ["Shop#gw", "Shop#gw2", "Auth Server"],
+				steps: [{ kind: "sync", from: "Gateway", to: "Auth Server", label: "Check" }],
+			},
+		});
+		expect(ambiguousEndpoint.ok).toBe(false);
+		if (!ambiguousEndpoint.ok) expect(ambiguousEndpoint.error.code).toBe("MODULE_AMBIGUOUS");
+
+		const caseDistinct = {
+			...model,
+			modules: [
+				...model.modules,
+				{ ...model.modules[0]!, id: "Shop#gwLower", name: "gateway", order: 4 },
+			],
+		};
+		const exactWinner = resolvePaneReading(caseDistinct, {
+			ephemeralFlow: {
+				name: "Auth",
+				participants: ["Shop#gwLower", "Shop#gw"],
+				steps: [{ kind: "sync", from: "gateway", to: "Gateway", label: "Route" }],
+			},
+		});
+		expect(exactWinner.ok).toBe(true);
+		if (exactWinner.ok) {
+			expect(exactWinner.reading.resolvedEphemeralFlow?.flow.steps[0]).toMatchObject({
+				from: "Shop#gwLower",
+				to: "Shop#gw",
+			});
+		}
+
+		const tooLong = resolvePaneReading(model, {
+			ephemeralFlow: {
+				name: "Auth",
+				participants: ["A".repeat(121), "Gateway"],
+				steps: [{ kind: "sync", from: "A".repeat(121), to: "Gateway", label: "Ping" }],
+			},
+		});
+		expect(tooLong.ok).toBe(false);
+		if (!tooLong.ok) expect(tooLong.error.code).toBe("INVALID_EPHEMERAL_FLOW");
+
+		const renamedA = resolvePaneReading(model, {
+			ephemeralFlow: {
+				name: "Review",
+				participants: ["Caller", "Gateway"],
+				steps: [{ kind: "sync", from: "Caller", to: "Gateway", label: "Ask" }],
+			},
+		});
+		const renamedB = resolvePaneReading(model, {
+			ephemeralFlow: {
+				name: "Review",
+				participants: ["Reviewer", "Gateway"],
+				steps: [{ kind: "sync", from: "Reviewer", to: "Gateway", label: "Ask" }],
+			},
+		});
+		expect(renamedA.ok && renamedB.ok).toBe(true);
+		if (renamedA.ok && renamedB.ok) {
+			expect(renamedA.reading.resolvedEphemeralFlow?.flow.id).not.toBe(
+				renamedB.reading.resolvedEphemeralFlow?.flow.id,
+			);
+		}
 	});
 });

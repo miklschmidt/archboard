@@ -250,31 +250,51 @@ function plural(word: string, count: number): string {
 }
 
 /**
+ * Describe the active flow or grammar in human-readable words.
+ * @param architecture What the pane reported.
+ * @returns A temporary flow description, non-architecture grammar name, or undefined.
+ */
+function flowWords(architecture: PaneArchitecture): string | undefined {
+	const ephemeral = architecture.display?.ephemeralFlow;
+	if (ephemeral !== undefined) return `temporary ${ephemeral.grammar} "${ephemeral.name}"`;
+	const { grammar } = architecture.reading;
+	return grammar === "architecture" ? undefined : grammar;
+}
+
+/**
+ * Describe extra display state (branch ref, About page, open file, layout) when reported.
+ * @param display The pane's reported display details.
+ * @returns Words naming active display state.
+ */
+function displayDetailWords(display: PaneArchitecture["display"]): readonly (string | undefined)[] {
+	if (display === undefined) return [];
+	return [
+		display.ref === undefined ? undefined : `ref ${display.ref}`,
+		display.page === "about" ? "about" : undefined,
+		display.file === undefined ? undefined : `file ${display.file}`,
+		display.layout === undefined ? undefined : `${display.layout} layout`,
+	];
+}
+
+/**
  * What a pane is reading, in the words of its reading: the model, then the state it opens and
  * what it is compared with, then the diagram it draws when that is not the architecture.
  * @param architecture What the pane reported.
  * @returns The phrase.
  */
 function architectureWords(architecture: PaneArchitecture): string {
-	const { display, selection, reading } = architecture;
+	const { display, selection } = architecture;
 	const labels =
 		display === undefined
 			? intentWords(architecture)
 			: [display.model, display.state, display.comparison];
-	const flowLabel =
-		display?.ephemeralFlow === undefined
-			? reading.grammar === "architecture"
-				? undefined
-				: reading.grammar
-			: `temporary ${display.ephemeralFlow.grammar} "${display.ephemeralFlow.name}"`;
+	const [refWord, ...presentationWords] = displayDetailWords(display);
 	return [
 		...labels,
-		display?.ref === undefined ? undefined : `ref ${display.ref}`,
+		refWord,
 		checkpointWords(selection?.checkpoint),
-		flowLabel,
-		display?.page === "about" ? "about" : undefined,
-		display?.file === undefined ? undefined : `file ${display.file}`,
-		display?.layout === undefined ? undefined : `${display.layout} layout`,
+		flowWords(architecture),
+		...presentationWords,
 	]
 		.filter(Boolean)
 		.join(", ");

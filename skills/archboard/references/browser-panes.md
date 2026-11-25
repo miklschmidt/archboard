@@ -19,7 +19,7 @@ Module names and qualified IDs both resolve on `--module`, `--scope`, `--focus`,
 - **Adjusting the current view:**
   - `--keep`: preserve the target pane's current scope, focus, expand, state, comparison, filters, file, and page for any field not overridden by this call. A branch reading (`--ref`) or migration preview reports no capture, so `--keep` keeps nothing there: restate its selectors.
 - **Selection, code view, branches, comparison, and pages:**
-  - `--select <subject>` (repeatable): select subjects in the pane without changing its scope or focus.
+  - `--select <subject>` (repeatable): select subjects in the pane. Without `--keep`, the pane's scope and focus are not carried over; pass `--keep` to preserve them.
   - `--group <id|name>`: select all modules belonging to a configured semantic group (refuses unknown groups with `GROUP_NOT_FOUND`).
   - `--state`, `--checkpoint`, `--ref <branch|commit>`, `--preview`, `--bookmark`, or `--legacy-address`: choose which version or branch reading is shown.
   - `--against <state|checkpoint>` or `--no-compare`: choose an explicit comparison base or turn comparison off.

@@ -13,13 +13,27 @@ import {
 function contextWith(received: PaneSettingsRequest[]): MessageContext {
 	return {
 		clientId: "c1",
+		/**
+		 * Report no legacy pane key.
+		 * @returns Null.
+		 */
 		paneKey: () => null,
+		/**
+		 * Report a fixed test vault path.
+		 * @returns The test vault path.
+		 */
 		vault: () => "/vault",
+		/** Ignore model adoption in this settings test. */
 		adoptModel: () => {},
+		/** Ignore status publishing in this settings test. */
 		publishStatus: () => {},
 		onLayoutRequest: undefined,
 		onPresentRequest: undefined,
 		onModelRequest: undefined,
+		/**
+		 * Record incoming display settings for assertion.
+		 * @param settings The parsed display settings.
+		 */
 		onSettingsRequest: (settings) => {
 			received.push(settings);
 		},

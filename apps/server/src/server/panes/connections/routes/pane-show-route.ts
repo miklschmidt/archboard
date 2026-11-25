@@ -39,7 +39,7 @@ const RequestSchema = z.strictObject({
 	pane: z.string().optional(),
 	agent: z.boolean().optional(),
 	session: z.string().optional(),
-	reading: architecturePaneReadingSchema(),
+	reading: architecturePaneReadingSchema().omit({ resolvedEphemeralFlow: true }),
 });
 type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
@@ -59,6 +59,25 @@ function lensRefusal(model: Model, lens: string | undefined): NavigationError | 
 }
 
 /**
+ * Find the first expanded id absent from the model.
+ * @param model The complete canonical reading.
+ * @param expand The requested expanded module ids.
+ * @returns Its refusal, when an expanded module is missing.
+ */
+function unknownExpandRefusal(
+	model: Model,
+	expand: readonly string[] | undefined,
+): NavigationError | undefined {
+	const unknown = expand?.find((id) => !model.modules.some((module) => module.id === id));
+	return unknown === undefined
+		? undefined
+		: {
+				code: "MODULE_NOT_FOUND",
+				error: `No module matches "${unknown}" in ${model.manifest.name}.`,
+			};
+}
+
+/**
  * Refuse a missing scope, focus or expanded module before pane navigation changes state.
  * @param model The complete canonical reading.
  * @param request The requested presentation.
@@ -73,13 +92,7 @@ function structuralRefusal(model: Model, request: Reading): NavigationError | un
 	);
 	if (projection.missing || projection.missingFocus.length !== 0)
 		return { code: "MODULE_NOT_FOUND", error: "The requested scope or focus is unavailable." };
-	const unknown = request.expand?.find((id) => !model.modules.some((module) => module.id === id));
-	return unknown === undefined
-		? undefined
-		: {
-				code: "MODULE_NOT_FOUND",
-				error: `No module matches "${unknown}" in ${model.manifest.name}.`,
-			};
+	return unknownExpandRefusal(model, request.expand);
 }
 
 /**
@@ -118,6 +131,21 @@ function agentRefusal(model: Model, request: Reading, agent: boolean): Navigatio
 }
 
 /**
+ * Whether the request asks for a non-architecture grammar without an authored or temporary flow.
+ * @param model The complete canonical reading.
+ * @param request The requested grammar and flow.
+ * @returns True when a flow is missing.
+ */
+function needsAuthoredFlow(model: Model, request: Reading): boolean {
+	const grammar = request.grammar ?? "architecture";
+	return (
+		grammar !== "architecture" &&
+		model.selectedFlow === undefined &&
+		request.resolvedEphemeralFlow === undefined
+	);
+}
+
+/**
  * Require the addressed model and authored flow before presentation resolution.
  * @param model The complete canonical reading.
  * @param request The requested model and grammar.
@@ -134,12 +162,7 @@ function selectionRefusal(
 		![model.manifest.id, model.manifest.name].includes(request.model)
 	)
 		return { code: "TARGET_CHANGED", error: "The addressed vault contains another model." };
-	const grammar = request.grammar ?? "architecture";
-	if (
-		grammar !== "architecture" &&
-		model.selectedFlow === undefined &&
-		request.resolvedEphemeralFlow === undefined
-	)
+	if (needsAuthoredFlow(model, request))
 		return { code: "FLOW_REQUIRED", error: "Select an authored flow for this grammar." };
 	return agentRefusal(model, request, agent) ?? narrativeRefusal(model, request);
 }
@@ -263,6 +286,35 @@ function applyDisplaySettingsOnly(body: z.infer<typeof RequestSchema>, res: Resp
 }
 
 /**
+ * Resolve an explicitly named pane for a settings update, writing a 400 on failure.
+ * @param live Connected panes.
+ * @param spec The non-empty pane selector.
+ * @param res The response used for refusals.
+ * @returns The target pane, or null after writing a refusal.
+ */
+function resolveNamedSettingsPane(
+	live: PaneRegistration[],
+	spec: string,
+	res: Response,
+): PaneRegistration | null {
+	try {
+		return resolvePane(live, spec);
+	} catch (error) {
+		res.status(400).json({ success: false, error: messageOf(error) });
+		return null;
+	}
+}
+
+/**
+ * Pick the default target pane for a settings update: focused, then primary, then first connected.
+ * @param live Connected panes.
+ * @returns The default target pane, or null.
+ */
+function defaultSettingsPane(live: readonly PaneRegistration[]): PaneRegistration | null {
+	return live.find((pane) => pane.focused) ?? primaryPane() ?? live[0] ?? null;
+}
+
+/**
  * Resolve a pane for a vaultless display-settings update.
  * @param spec The optional pane selector.
  * @param res The response used for refusals.
@@ -275,18 +327,9 @@ function settingsPane(spec: unknown, res: Response): PaneRegistration | null {
 		return null;
 	}
 	if (typeof spec === "string" && spec.trim()) {
-		try {
-			return resolvePane(live, spec);
-		} catch (error) {
-			res.status(400).json({ success: false, error: messageOf(error) });
-			return null;
-		}
+		return resolveNamedSettingsPane(live, spec, res);
 	}
-	const target = live.find((pane) => pane.focused) ?? primaryPane() ?? live[0] ?? null;
-	if (target === null) {
-		res.status(503).json(noBrowserBody("Changing browser settings"));
-	}
-	return target;
+	return defaultSettingsPane(live);
 }
 
 /**
@@ -337,39 +380,28 @@ function answerUnread(
 }
 
 /**
- * Resolve a canonical reading before pointing the existing pane at it.
- * @param req The explicit vault and reading.
- * @param res The navigation receipt or refusal.
+ * Merge `--keep` onto the target pane's reported reading only when that pane shows the same vault.
+ * @param vault The addressed vault.
+ * @param body The parsed show request.
+ * @returns The merged reading request.
  */
-async function showPaneRoute(req: Request, res: Response): Promise<void> {
-	const parsed = RequestSchema.safeParse(req.body);
-	if (!parsed.success) {
-		res
-			.status(400)
-			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-		return;
-	}
-	const body = parsed.data;
-	if (isSettingsOnlyRequest(body.reading)) {
-		applyDisplaySettingsOnly(body, res);
-		return;
-	}
-	const named = namedVault(queryString(req, "vault") ?? bodyOf(req)["vault"]);
-	if (!named.ok) {
-		const { status, code, error } = named.refusal;
-		res.status(status).json({ success: false, code, error });
-		return;
-	}
-	const vault = named.vault;
-	// Only a pane already in this vault has a reading to keep: another vault's scope and focus name
-	// subjects of another model.
-	const keptTarget = body.reading.keep === true ? tryPane(vault, body.pane) : null;
-	const mergedReading = mergeKeptReading(
-		body.reading,
+function prepareReading(vault: string, body: z.infer<typeof RequestSchema>): Reading {
+	if (body.reading.keep !== true) return body.reading;
+	const keptTarget = tryPane(vault, body.pane);
+	const current =
 		keptTarget?.vault === vault
 			? (semanticPaneContextFor(keptTarget.clientId)?.architecture ?? null)
-			: null,
-	);
+			: null;
+	return mergeKeptReading(body.reading, current);
+}
+
+/**
+ * Read the model addressed by a merged pane reading request.
+ * @param vault The addressed vault.
+ * @param reading The merged reading request.
+ * @returns The model read result.
+ */
+function readModelForShow(vault: string, reading: Reading) {
 	const {
 		module,
 		flow,
@@ -398,24 +430,88 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		ephemeralFlow: _ephemeralFlow,
 		resolvedEphemeralFlow: _resolvedEphemeralFlow,
 		...selectors
-	} = mergedReading;
-	const model = await readArchitectureModel(vault, module, flow, selectors);
+	} = reading;
+	return readArchitectureModel(vault, module, flow, selectors);
+}
+
+/**
+ * Resolve selectors and validate a show request against the loaded model before navigation.
+ * @param model The complete canonical reading.
+ * @param reading The merged reading request.
+ * @param agent Whether an agent asked.
+ * @param res The HTTP response.
+ * @returns The resolved reading, or null after writing a 422 refusal.
+ */
+function validateShowReading(
+	model: Model,
+	reading: Reading,
+	agent: boolean,
+	res: Response,
+): Reading | null {
+	const resolved = resolvePaneReading(model, reading);
+	if (!resolved.ok) {
+		res.status(422).json({ success: false, ...resolved.error });
+		return null;
+	}
+	const refused = selectionRefusal(model, resolved.reading, agent);
+	if (refused !== undefined) {
+		res.status(422).json({ success: false, ...refused });
+		return null;
+	}
+	return resolved.reading;
+}
+
+/**
+ * Resolve a canonical reading before pointing the existing pane at it.
+ * @param req The explicit vault and reading.
+ * @param res The navigation receipt or refusal.
+ */
+async function showPaneRoute(req: Request, res: Response): Promise<void> {
+	const parsed = RequestSchema.safeParse(req.body);
+	if (!parsed.success) {
+		res
+			.status(400)
+			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
+		return;
+	}
+	const body = parsed.data;
+	if (isSettingsOnlyRequest(body.reading)) {
+		applyDisplaySettingsOnly(body, res);
+		return;
+	}
+	const named = namedVault(queryString(req, "vault") ?? bodyOf(req)["vault"]);
+	if (!named.ok) {
+		res.status(named.refusal.status).json({
+			success: false,
+			code: named.refusal.code,
+			error: named.refusal.error,
+		});
+		return;
+	}
+	await showVaultReading(named.vault, body, res);
+}
+
+/**
+ * Read, validate, and dispatch a vault-backed show request to a connected pane.
+ * @param vault The addressed vault.
+ * @param body The parsed show request.
+ * @param res The HTTP response.
+ */
+async function showVaultReading(
+	vault: string,
+	body: z.infer<typeof RequestSchema>,
+	res: Response,
+): Promise<void> {
+	const mergedReading = prepareReading(vault, body);
+	const model = await readModelForShow(vault, mergedReading);
 	if (!model.success) {
 		answerUnread(model, body, vault, res);
 		return;
 	}
-	const resolved = resolvePaneReading(model, mergedReading);
-	if (!resolved.ok) {
-		res.status(422).json({ success: false, ...resolved.error });
-		return;
-	}
-	const refused = selectionRefusal(model, resolved.reading, body.agent === true);
-	if (refused !== undefined) {
-		res.status(422).json({ success: false, ...refused });
-		return;
-	}
+	const reading = validateShowReading(model, mergedReading, body.agent === true, res);
+	if (reading === null) return;
 	const pane = showablePane(vault, body.pane, res);
-	if (pane !== null) showResolvedPane(body, resolved.reading, vault, model, pane, res);
+	if (pane !== null) showResolvedPane(body, reading, vault, model, pane, res);
 }
 
 /**

@@ -16,6 +16,7 @@ import { chooseTheme } from "#ui/application/clients/theme.ts";
 import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 
 type ResolvedEphemeralFlow = z.infer<ReturnType<typeof resolvedEphemeralFlowSchema>>;
+type PresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
 
 /** An unsaved temporary flow currently displayed in one pane session. */
 interface ActiveEphemeralFlow extends ResolvedEphemeralFlow {
@@ -33,6 +34,60 @@ function applyDisplaySettings(settings: PaneSettingsRequest): void {
 }
 
 /**
+ * Apply inline display settings carried on a pane_model reading.
+ * @param reading The arriving pane reading.
+ */
+function applyReadingSettings(reading: PaneModelRequest["reading"]): void {
+	applyDisplaySettings({
+		...(reading.layout === undefined ? {} : { layout: reading.layout }),
+		...(reading.theme === undefined ? {} : { theme: reading.theme }),
+		...(reading.hoverLight === undefined ? {} : { hoverLight: reading.hoverLight }),
+	});
+}
+
+/**
+ * Convert an arriving resolved ephemeral flow into active pane state.
+ * @param reading The arriving pane reading.
+ * @returns The active temporary flow, or null.
+ */
+function toActiveEphemeral(reading: PaneModelRequest["reading"]): ActiveEphemeralFlow | null {
+	if (reading.resolvedEphemeralFlow === undefined) return null;
+	return {
+		...reading.resolvedEphemeralFlow,
+		grammar: reading.grammar === "sequence" ? "sequence" : "flowchart",
+	};
+}
+
+/**
+ * Build the walkthrough presentation trigger carried by an arriving reading, when any.
+ * @param reading The arriving pane reading.
+ * @returns The presentation request, or null.
+ */
+function presentationForReading(reading: PaneModelRequest["reading"]): PresentRequest | null {
+	if (reading.walkthrough === undefined) return null;
+	return {
+		type: "pane_present",
+		request: crypto.randomUUID(),
+		walkthrough: reading.walkthrough,
+		beat: reading.beat ?? 0,
+	};
+}
+
+/**
+ * Whether an arriving reading carries local pane presentation state that still needs updating
+ * even when the router already displays the destination URL.
+ * @param reading The arriving pane reading.
+ * @returns True when an ephemeral flow, explicit selection, or page switch is present.
+ */
+function hasLocalPresentation(reading: PaneModelRequest["reading"]): boolean {
+	return (
+		reading.resolvedEphemeralFlow !== undefined ||
+		reading.select !== undefined ||
+		reading.page !== undefined
+	);
+}
+
+/**
  * Apply an external reading, display-settings update, or temporary flow before starting any walkthrough.
  * @param paneId The explicitly addressed pane.
  * @param onError The existing pane refusal surface.
@@ -46,9 +101,7 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	const [selected, setSelected] = useState<readonly string[] | undefined>(undefined);
 	const [requestedPage, setRequestedPage] = useState<Page | undefined>(undefined);
 	const [ephemeralFlow, setEphemeralFlow] = useState<ActiveEphemeralFlow | null>(null);
-	const [driven, onPresentRequest] = useState<z.infer<
-		ReturnType<typeof panePresentRequestSchema>
-	> | null>(null);
+	const [driven, onPresentRequest] = useState<PresentRequest | null>(null);
 	useEffect(
 		() => () => {
 			generation.current++;
@@ -60,26 +113,9 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	}, []);
 	const onModelRequest = useCallback(
 		(request: PaneModelRequest): void => {
-			applyDisplaySettings({
-				...(request.reading.layout === undefined ? {} : { layout: request.reading.layout }),
-				...(request.reading.theme === undefined ? {} : { theme: request.reading.theme }),
-				...(request.reading.hoverLight === undefined
-					? {}
-					: { hoverLight: request.reading.hoverLight }),
-			});
+			applyReadingSettings(request.reading);
 			const effect = modelArriving?.(paneId, request.reading, request.repository) ?? "replace";
-			const nextEphemeral: ActiveEphemeralFlow | null =
-				request.reading.resolvedEphemeralFlow === undefined
-					? null
-					: {
-							...request.reading.resolvedEphemeralFlow,
-							grammar: request.reading.grammar === "sequence" ? "sequence" : "flowchart",
-						};
-			const hasLocalPresentation =
-				nextEphemeral !== null ||
-				request.reading.select !== undefined ||
-				request.reading.page !== undefined;
-			if (effect === "keep" && !hasLocalPresentation) return;
+			if (effect === "keep" && !hasLocalPresentation(request.reading)) return;
 			const current = ++generation.current;
 			void openRequested(request, effect === "push")
 				.then(() => {
@@ -87,17 +123,8 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 					setArrival(current);
 					setSelected(request.reading.select);
 					setRequestedPage(request.reading.page);
-					setEphemeralFlow(nextEphemeral);
-					onPresentRequest(
-						request.reading.walkthrough === undefined
-							? null
-							: {
-									type: "pane_present",
-									request: crypto.randomUUID(),
-									walkthrough: request.reading.walkthrough,
-									beat: request.reading.beat ?? 0,
-								},
-					);
+					setEphemeralFlow(toActiveEphemeral(request.reading));
+					onPresentRequest(presentationForReading(request.reading));
 					return null;
 				})
 				.catch((error: unknown) => {

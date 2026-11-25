@@ -1,26 +1,39 @@
-import { allLens, readingLens } from "@archboard/model/content";
 import { everyStep } from "@archboard/model/flow";
-import type {
-	architecturePaneReadingSchema,
-	paneDisplaySettingsSchema,
-	semanticPaneContextSchema,
+import {
+	qualifiedSubjectIdSchema,
+	type architecturePaneReadingSchema,
+	type paneDisplaySettingsSchema,
 } from "@archboard/model/pane-context";
-import { hiddenKinds, lineEffect } from "@archboard/model/policy";
 import type { readArchitectureModel } from "@archboard/model/store-read";
 import type { z } from "zod";
 import { resolveEphemeralFlow } from "#server/panes/connections/rules/ephemeral-flow.ts";
+import {
+	resolveDirectionalFocus,
+	resolveFilterSelectors,
+	resolveGroupMembers,
+	type IdListResult,
+	type IdResult,
+	type NavigationError,
+	type ResolvedFilters,
+} from "#server/panes/connections/rules/pane-filters.ts";
+import { mergeKeptReading } from "#server/panes/connections/rules/pane-keep.ts";
 
 type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
 type DisplaySettings = z.infer<ReturnType<typeof paneDisplaySettingsSchema>>;
-type CapturedArchitecture = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"]
->;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
-type NavigationError = { readonly code: string; readonly error: string };
+type ModelModule = Model["modules"][number];
 
-const ALL_EFFECTS = ["mutation", "query", "compute", "declared"] as const;
-type LineEffect = (typeof ALL_EFFECTS)[number];
 const DISPLAY_SETTING_KEYS = new Set(["layout", "theme", "hoverLight"]);
+
+interface ResolvedReadingParts {
+	readonly scope: string | undefined;
+	readonly expand: string[] | undefined;
+	readonly focus: readonly string[];
+	readonly select: readonly string[];
+	readonly filters: ResolvedFilters;
+	readonly grammar: Reading["grammar"];
+	readonly resolvedEphemeralFlow: Reading["resolvedEphemeralFlow"];
+}
 
 /**
  * Extract the browser display settings from a reading request, when any are present.
@@ -49,94 +62,16 @@ function isSettingsOnlyRequest(reading: Reading): boolean {
 }
 
 /**
- * Merge a `--keep` request onto what the target pane currently reports so agents can adjust
- * one filter or selector without reconstructing every active field.
- * @param request The incoming request with `keep: true`.
- * @param current The pane's currently reported architecture context, if any.
- * @returns The merged reading request.
+ * Resolve one candidate list: single match succeeds, multiple matches refuse as ambiguous, empty
+ * returns null so the caller can try the next matching tier.
+ * @param raw The requested selector text.
+ * @param matches Candidate modules at this tier.
+ * @returns A single resolved id, an ambiguity refusal, or null.
  */
-function mergeKeptReading(request: Reading, current: CapturedArchitecture | null): Reading {
-	const { keep, ...incoming } = request;
-	if (keep !== true || current === null) return incoming;
-	const switchesVersion =
-		incoming.state !== undefined || incoming.checkpoint !== undefined || incoming.ref !== undefined;
-	const switchesFilters =
-		incoming.lens !== undefined ||
-		incoming.onlyKinds !== undefined ||
-		incoming.onlyEffects !== undefined;
-	const switchesStructural =
-		incoming.scope !== undefined ||
-		incoming.module !== undefined ||
-		incoming.focus !== undefined ||
-		incoming.to !== undefined ||
-		incoming.from !== undefined ||
-		switchesFilters;
-	const switchesBehavior =
-		incoming.grammar !== undefined ||
-		incoming.flow !== undefined ||
-		incoming.ephemeralFlow !== undefined;
-	const sel = current.selection;
-	const disp = current.display;
-	const kept: Reading = {
-		...(switchesVersion
-			? {}
-			: {
-					...(sel?.state === undefined ? {} : { state: sel.state }),
-					...(sel?.checkpoint === undefined ? {} : { checkpoint: sel.checkpoint }),
-					...(disp?.ref === undefined ? {} : { ref: disp.ref }),
-					...(sel?.preview === undefined ? {} : { preview: sel.preview }),
-					...(sel?.bookmark === undefined ? {} : { bookmark: sel.bookmark }),
-					...(sel?.legacyAddress === undefined ? {} : { legacyAddress: sel.legacyAddress }),
-				}),
-		...(incoming.against !== undefined || incoming.compare !== undefined
-			? {}
-			: {
-					...(sel?.against === undefined ? {} : { against: sel.against }),
-					...(sel?.compare === undefined ? {} : { compare: sel.compare }),
-				}),
-		...(incoming.scope !== undefined ||
-		incoming.module !== undefined ||
-		current.reading.scope === undefined
-			? {}
-			: { scope: current.reading.scope }),
-		...(incoming.focus !== undefined ||
-		incoming.to !== undefined ||
-		incoming.from !== undefined ||
-		incoming.scope !== undefined ||
-		current.reading.focus.length === 0
-			? {}
-			: { focus: current.reading.focus }),
-		...(incoming.expand !== undefined || current.reading.expand === undefined
-			? {}
-			: { expand: current.reading.expand }),
-		...(switchesFilters || current.reading.lens === undefined
-			? {}
-			: { lens: current.reading.lens }),
-		...(incoming.lens !== undefined ||
-		incoming.onlyKinds !== undefined ||
-		incoming.hideKinds !== undefined ||
-		!disp?.hideKinds?.length
-			? {}
-			: { hideKinds: disp.hideKinds }),
-		...(incoming.lens !== undefined ||
-		incoming.onlyEffects !== undefined ||
-		incoming.hideEffects !== undefined ||
-		!disp?.hideEffects?.length
-			? {}
-			: { hideEffects: disp.hideEffects }),
-		...(switchesBehavior || switchesStructural ? {} : { grammar: current.reading.grammar }),
-		...(switchesBehavior || switchesStructural || current.reading.flow === undefined
-			? {}
-			: { flow: current.reading.flow }),
-		...(incoming.file !== undefined || disp?.file === undefined
-			? {}
-			: {
-					file: disp.file,
-					...(disp.fileRepo === undefined ? {} : { fileRepo: disp.fileRepo }),
-				}),
-		...(incoming.page !== undefined || disp?.page === undefined ? {} : { page: disp.page }),
-	};
-	return { ...kept, ...incoming };
+function matchSingleModule(raw: string, matches: readonly ModelModule[]): IdResult | null {
+	if (matches.length === 1) return { ok: true, id: matches[0]!.id };
+	if (matches.length > 1) return ambiguousModule(raw, matches);
+	return null;
 }
 
 /**
@@ -145,27 +80,22 @@ function mergeKeptReading(request: Reading, current: CapturedArchitecture | null
  * @param raw The user- or agent-supplied module selector.
  * @returns The canonical qualified module id, or a structured refusal.
  */
-function resolveModuleRef(
-	model: Model,
-	raw: string,
-):
-	| { readonly ok: true; readonly id: string }
-	| { readonly ok: false; readonly error: NavigationError } {
+function resolveModuleRef(model: Model, raw: string): IdResult {
 	const trimmed = raw.trim();
 	const byId = model.modules.find(
 		(module) => module.id === trimmed || module.id === `${model.manifest.id}#${trimmed}`,
 	);
 	if (byId !== undefined) return { ok: true, id: byId.id };
-	const exactName = model.modules.filter((module) => module.name === trimmed);
-	if (exactName.length === 1) return { ok: true, id: exactName[0]!.id };
-	if (exactName.length > 1) return ambiguousModule(trimmed, exactName);
 	const lower = trimmed.toLowerCase();
-	const ciName = model.modules.filter((module) => module.name.toLowerCase() === lower);
-	if (ciName.length === 1) return { ok: true, id: ciName[0]!.id };
-	if (ciName.length > 1) return ambiguousModule(trimmed, ciName);
-	const former = model.modules.filter((module) => module.formerNames?.includes(trimmed) === true);
-	if (former.length === 1) return { ok: true, id: former[0]!.id };
-	if (former.length > 1) return ambiguousModule(trimmed, former);
+	const tiers = [
+		model.modules.filter((module) => module.name === trimmed),
+		model.modules.filter((module) => module.name.toLowerCase() === lower),
+		model.modules.filter((module) => module.formerNames?.includes(trimmed) === true),
+	];
+	for (const tier of tiers) {
+		const found = matchSingleModule(trimmed, tier);
+		if (found !== null) return found;
+	}
 	return {
 		ok: false,
 		error: {
@@ -183,7 +113,7 @@ function resolveModuleRef(
  */
 function ambiguousModule(
 	raw: string,
-	matches: readonly Model["modules"][number][],
+	matches: readonly ModelModule[],
 ): { readonly ok: false; readonly error: NavigationError } {
 	const ids = matches.map((module) => `${module.name} (${module.id})`).join(", ");
 	return {
@@ -196,6 +126,33 @@ function ambiguousModule(
 }
 
 /**
+ * Add collection, flow, and step subject ids into a set.
+ * @param model The complete canonical reading.
+ * @param ids The destination set.
+ */
+function addCollectionSubjectIds(model: Model, ids: Set<string>): void {
+	for (const collection of model.collections) {
+		ids.add(`${model.manifest.id}#${collection.id}`);
+		for (const flow of collection.flows) {
+			ids.add(flow.id);
+			for (const step of everyStep(flow.steps)) ids.add(step.id);
+		}
+	}
+}
+
+/**
+ * Add walkthrough and beat subject ids into a set.
+ * @param model The complete canonical reading.
+ * @param ids The destination set.
+ */
+function addWalkthroughSubjectIds(model: Model, ids: Set<string>): void {
+	for (const walkthrough of model.walkthroughs) {
+		ids.add(walkthrough.id);
+		for (const beat of walkthrough.beats) ids.add(beat.id);
+	}
+}
+
+/**
  * Collect every canonical subject id in a model for direct identity matching.
  * @param model The complete canonical reading.
  * @returns The set of known subject ids.
@@ -204,17 +161,8 @@ function knownSubjectIds(model: Model): Set<string> {
 	const ids = new Set<string>();
 	for (const module of model.modules) ids.add(module.id);
 	for (const edge of model.relationships) ids.add(edge.id);
-	for (const collection of model.collections) {
-		ids.add(`${model.manifest.id}#${collection.id}`);
-		for (const flow of collection.flows) {
-			ids.add(flow.id);
-			for (const step of everyStep(flow.steps)) ids.add(step.id);
-		}
-	}
-	for (const walkthrough of model.walkthroughs) {
-		ids.add(walkthrough.id);
-		for (const beat of walkthrough.beats) ids.add(beat.id);
-	}
+	addCollectionSubjectIds(model, ids);
+	addWalkthroughSubjectIds(model, ids);
 	return ids;
 }
 
@@ -225,13 +173,7 @@ function knownSubjectIds(model: Model): Set<string> {
  * @param raw The selector string.
  * @returns The canonical qualified id, or a structured refusal.
  */
-function resolveSubjectRef(
-	model: Model,
-	subjects: ReadonlySet<string>,
-	raw: string,
-):
-	| { readonly ok: true; readonly id: string }
-	| { readonly ok: false; readonly error: NavigationError } {
+function resolveSubjectRef(model: Model, subjects: ReadonlySet<string>, raw: string): IdResult {
 	const trimmed = raw.trim();
 	if (subjects.has(trimmed)) return { ok: true, id: trimmed };
 	const qualified = `${model.manifest.id}#${trimmed}`;
@@ -240,24 +182,19 @@ function resolveSubjectRef(
 }
 
 /**
- * Let a qualified id that the reading does not hold go through as it was given. A reader's own
- * address reaches the pane, which says what the reading lacks, and an agent hears of a missing
- * scope, focus or expanded module from the structural refusal of the show.
+ * Let a well-formed qualified id that the reading does not hold go through as it was given. A
+ * reader's own address reaches the pane, which says what the reading lacks, and an agent hears of a
+ * missing scope, focus or expanded module from the structural refusal of the show.
  * @param resolve One selector resolver.
- * @returns The resolver that passes unknown qualified ids through.
+ * @returns The resolver that passes valid unknown qualified ids through.
  */
-function orQualified(
-	resolve: (
-		raw: string,
-	) =>
-		| { readonly ok: true; readonly id: string }
-		| { readonly ok: false; readonly error: NavigationError },
-): typeof resolve {
+function orQualified(resolve: (raw: string) => IdResult): (raw: string) => IdResult {
+	const qualifiedId = qualifiedSubjectIdSchema();
 	return (raw) => {
 		const resolved = resolve(raw);
-		return !resolved.ok && resolved.error.code === "MODULE_NOT_FOUND" && raw.includes("#")
-			? { ok: true, id: raw.trim() }
-			: resolved;
+		if (resolved.ok || resolved.error.code !== "MODULE_NOT_FOUND") return resolved;
+		const trimmed = raw.trim();
+		return qualifiedId.safeParse(trimmed).success ? { ok: true, id: trimmed } : resolved;
 	};
 }
 
@@ -267,16 +204,7 @@ function orQualified(
  * @param resolve One selector resolver.
  * @returns Resolved unique ids or the first refusal.
  */
-function resolveList(
-	values: readonly string[],
-	resolve: (
-		raw: string,
-	) =>
-		| { readonly ok: true; readonly id: string }
-		| { readonly ok: false; readonly error: NavigationError },
-):
-	| { readonly ok: true; readonly ids: string[] }
-	| { readonly ok: false; readonly error: NavigationError } {
+function resolveList(values: readonly string[], resolve: (raw: string) => IdResult): IdListResult {
 	const ids: string[] = [];
 	for (const raw of values) {
 		const resolved = resolve(raw);
@@ -287,223 +215,158 @@ function resolveList(
 }
 
 /**
- * Collect a module and every descendant inside its containment subtree.
- * @param model The complete canonical reading.
- * @param rootId The root module id.
- * @returns The module id and all descendant ids.
+ * Resolve an optional single selector with a resolver function.
+ * @param raw The optional selector string.
+ * @param resolve The resolver function.
+ * @returns Resolved id or undefined, or a refusal.
  */
-function subtreeOf(model: Model, rootId: string): Set<string> {
-	const childrenByParent = new Map<string, string[]>();
-	for (const module of model.modules) {
-		if (module.parent === undefined) continue;
-		const list = childrenByParent.get(module.parent);
-		if (list === undefined) childrenByParent.set(module.parent, [module.id]);
-		else list.push(module.id);
-	}
-	const members = new Set<string>([rootId]);
-	const stack = [rootId];
-	while (stack.length > 0) {
-		const current = stack.pop()!;
-		for (const child of childrenByParent.get(current) ?? []) {
-			if (!members.has(child)) {
-				members.add(child);
-				stack.push(child);
-			}
-		}
-	}
-	return members;
+function resolveOptionalId(
+	raw: string | undefined,
+	resolve: (value: string) => IdResult,
+):
+	| { readonly ok: true; readonly id: string | undefined }
+	| { readonly ok: false; readonly error: NavigationError } {
+	return raw === undefined ? { ok: true, id: undefined } : resolve(raw);
 }
 
 /**
- * Match a relationship kind by exact id, case-insensitive id, or case-insensitive display name.
- * @param model The complete canonical reading.
- * @param raw The requested kind name or id.
- * @returns The canonical kind id, or undefined when unmatched.
+ * Resolve an optional list of selectors with a resolver function.
+ * @param values The optional selector strings.
+ * @param resolve The resolver function.
+ * @returns Resolved ids or undefined, or a refusal.
  */
-function matchRelationshipKind(model: Model, raw: string): string | undefined {
-	const trimmed = raw.trim();
-	if (Object.hasOwn(model.policy.relationshipKinds, trimmed)) return trimmed;
-	const lower = trimmed.toLowerCase();
-	for (const [id, spec] of Object.entries(model.policy.relationshipKinds)) {
-		if (id.toLowerCase() === lower || spec.name.toLowerCase() === lower) return id;
-	}
-	return undefined;
+function resolveOptionalList(
+	values: readonly string[] | undefined,
+	resolve: (value: string) => IdResult,
+):
+	| { readonly ok: true; readonly ids: string[] | undefined }
+	| { readonly ok: false; readonly error: NavigationError } {
+	return values === undefined ? { ok: true, ids: undefined } : resolveList(values, resolve);
 }
 
 /**
- * Resolve positive `--only-kind` and `--only-effect` selectors into canonical lens + hide lists.
+ * Resolve structural selectors (`scope`, `expand`, `focus`), letting valid unknown qualified ids
+ * pass through for reader addresses while agents hear structural refusals on the show route.
  * @param model The complete canonical reading.
- * @param request The reading selectors.
- * @returns Resolved lens, hideKinds, and hideEffects, or a structured refusal.
+ * @param subjects Known subject ids in the model.
+ * @param request The reading request.
+ * @returns Resolved scope, expand, and focus, or a refusal.
  */
-function resolveFilterSelectors(
+function resolveStructuralSelectors(
+	model: Model,
+	subjects: ReadonlySet<string>,
+	request: Reading,
+):
+	| {
+			readonly ok: true;
+			readonly scope: string | undefined;
+			readonly expand: string[] | undefined;
+			readonly focus: string[];
+	  }
+	| { readonly ok: false; readonly error: NavigationError } {
+	const moduleOrQualified = orQualified((raw) => resolveModuleRef(model, raw));
+	const subjectOrQualified = orQualified((raw) => resolveSubjectRef(model, subjects, raw));
+	const scope = resolveOptionalId(request.scope, moduleOrQualified);
+	if (!scope.ok) return scope;
+	const expand = resolveOptionalList(request.expand, moduleOrQualified);
+	if (!expand.ok) return expand;
+	const focus = resolveOptionalList(request.focus, subjectOrQualified);
+	if (!focus.ok) return focus;
+	return { ok: true, scope: scope.id, expand: expand.ids, focus: focus.ids ?? [] };
+}
+
+/**
+ * Resolve explicit `--select` subjects and `--group` memberships into one unique selection list.
+ * @param model The complete canonical reading.
+ * @param subjects Known subject ids in the model.
+ * @param request The reading request.
+ * @returns Resolved selection ids, or a refusal.
+ */
+function resolveSelectionSelectors(
+	model: Model,
+	subjects: ReadonlySet<string>,
+	request: Reading,
+): IdListResult {
+	const selected = resolveOptionalList(request.select, (raw) =>
+		resolveSubjectRef(model, subjects, raw),
+	);
+	if (!selected.ok) return selected;
+	const group =
+		request.group === undefined
+			? { ok: true as const, ids: [] }
+			: resolveGroupMembers(model, request.group);
+	if (!group.ok) return group;
+	return { ok: true, ids: [...new Set([...(selected.ids ?? []), ...group.ids])] };
+}
+
+/**
+ * Resolve an optional ephemeral flow on the reading request.
+ * @param model The complete canonical reading.
+ * @param request The reading request.
+ * @returns Effective grammar and resolved temporary flow, or a refusal.
+ */
+function resolveOptionalEphemeral(
 	model: Model,
 	request: Reading,
 ):
 	| {
 			readonly ok: true;
-			readonly lens: string | undefined;
-			readonly hideKinds: string[] | undefined;
-			readonly hideEffects: LineEffect[] | undefined;
+			readonly grammar: Reading["grammar"];
+			readonly resolvedEphemeralFlow: Reading["resolvedEphemeralFlow"];
 	  }
 	| { readonly ok: false; readonly error: NavigationError } {
-	const policyKinds = Object.keys(model.policy.relationshipKinds);
-	let lens = request.lens;
-	let hideKinds = request.hideKinds;
-	let hideEffects = request.hideEffects;
-	if (request.onlyKinds !== undefined && request.onlyKinds.length > 0) {
-		const keptKinds = new Set<string>();
-		for (const raw of request.onlyKinds) {
-			const matched = matchRelationshipKind(model, raw);
-			if (matched === undefined) {
-				return {
-					ok: false,
-					error: {
-						code: "KIND_NOT_FOUND",
-						error: `This vault has no relationship kind "${raw}". Available kinds: ${policyKinds.join(", ")}.`,
-					},
-				};
-			}
-			keptKinds.add(matched);
-		}
-		const complement = policyKinds.filter((kind) => !keptKinds.has(kind));
-		hideKinds = [...new Set([...complement, ...(hideKinds ?? [])])];
-		if (lens === undefined) lens = allLens();
+	if (request.ephemeralFlow === undefined) {
+		return { ok: true, grammar: request.grammar, resolvedEphemeralFlow: undefined };
 	}
-	if (request.onlyEffects !== undefined && request.onlyEffects.length > 0) {
-		const keptEffects = new Set<LineEffect>(request.onlyEffects);
-		const complement = ALL_EFFECTS.filter((effect) => !keptEffects.has(effect));
-		hideEffects = [...new Set([...complement, ...(hideEffects ?? [])])];
-		if (lens === undefined) lens = allLens();
-	}
-	return { ok: true, lens, hideKinds, hideEffects };
+	const ephemeral = resolveEphemeralFlow(model, request.ephemeralFlow, request.grammar, (raw) =>
+		resolveModuleRef(model, raw),
+	);
+	if (!ephemeral.ok) return ephemeral;
+	return { ok: true, grammar: ephemeral.grammar, resolvedEphemeralFlow: ephemeral.resolved };
 }
 
 /**
- * Resolve `--to` and `--from` into matching relationship ids after active lens, kind, and effect filters.
- * @param model The complete canonical reading.
- * @param to Target module selectors.
- * @param from Source module selectors.
- * @param lens Effective lens id.
- * @param hideKinds Effective hidden relationship kinds.
- * @param hideEffects Effective hidden effects.
- * @returns Matching relationship ids, or a structured refusal.
+ * Strip CLI-only sugar fields and combine resolved selector outputs into a canonical reading.
+ * @param request The original reading request.
+ * @param parts Resolved structural, selection, filter, directional, and ephemeral outputs.
+ * @returns The canonical pane reading.
  */
-function resolveDirectionalFocus(
-	model: Model,
-	to: readonly string[] | undefined,
-	from: readonly string[] | undefined,
-	lens: string | undefined,
-	hideKinds: readonly string[] | undefined,
-	hideEffects: readonly LineEffect[] | undefined,
-):
-	| { readonly ok: true; readonly relationshipIds: string[] }
-	| { readonly ok: false; readonly error: NavigationError } {
-	const hasTo = to !== undefined && to.length > 0;
-	const hasFrom = from !== undefined && from.length > 0;
-	if (!hasTo && !hasFrom) return { ok: true, relationshipIds: [] };
-	const resolvedTo = hasTo
-		? resolveList(to, (raw) => resolveModuleRef(model, raw))
-		: { ok: true as const, ids: [] };
-	if (!resolvedTo.ok) return resolvedTo;
-	const resolvedFrom = hasFrom
-		? resolveList(from, (raw) => resolveModuleRef(model, raw))
-		: { ok: true as const, ids: [] };
-	if (!resolvedFrom.ok) return resolvedFrom;
-	const toTrees = resolvedTo.ids.map((id) => ({ root: id, members: subtreeOf(model, id) }));
-	const fromTrees = resolvedFrom.ids.map((id) => ({ root: id, members: subtreeOf(model, id) }));
-	const both = hasTo && hasFrom;
-	const directional = model.relationships.filter((edge) => {
-		const matchesTo =
-			!hasTo ||
-			toTrees.some(
-				({ root, members }) =>
-					members.has(edge.to) && (both || !members.has(edge.from) || edge.to === root),
-			);
-		const matchesFrom =
-			!hasFrom ||
-			fromTrees.some(
-				({ root, members }) =>
-					members.has(edge.from) && (both || !members.has(edge.to) || edge.from === root),
-			);
-		return matchesTo && matchesFrom;
-	});
-	const activeLens = readingLens(model.policy, lens);
-	const hiddenKindSet = new Set(hiddenKinds(hideKinds ?? [], model.policy));
-	const hiddenEffectSet = new Set<LineEffect>(hideEffects ?? []);
-	const matched = directional.filter((edge) => {
-		// As the picture does: a relationship of an old reading that states no effect is never hidden by effect.
-		const effect = lineEffect(edge);
-		const effectAllowed = effect === undefined || !hiddenEffectSet.has(effect);
-		return activeLens.draws(edge) && !hiddenKindSet.has(edge.kind) && effectAllowed;
-	});
-	if (matched.length === 0) {
-		const targetDesc = [
-			...(hasFrom ? [`from ${from.join(", ")}`] : []),
-			...(hasTo ? [`to ${to.join(", ")}`] : []),
-		].join(" ");
-		const foundKinds = [...new Set(directional.map((edge) => edge.kind))].join(", ");
-		const foundEffects = [...new Set(directional.map((edge) => lineEffect(edge) ?? "none"))].join(
-			", ",
-		);
-		const detail =
-			directional.length === 0
-				? ""
-				: ` Found ${directional.length} directional relationship(s) with kinds [${foundKinds}] and effects [${foundEffects}].`;
-		return {
-			ok: false,
-			error: {
-				code: "NO_MATCHING_RELATIONSHIPS",
-				error: `No relationships match ${targetDesc} under the requested filters.${detail}`,
-			},
-		};
-	}
-	return { ok: true, relationshipIds: matched.map((edge) => edge.id) };
+function assembleResolvedReading(request: Reading, parts: ResolvedReadingParts): Reading {
+	const {
+		onlyKinds: _onlyKinds,
+		onlyEffects: _onlyEffects,
+		to: _to,
+		from: _from,
+		group: _group,
+		keep: _keep,
+		ephemeralFlow: _ephemeralFlow,
+		resolvedEphemeralFlow: _ignored,
+		...base
+	} = request;
+	const out: Reading = { ...base, grammar: parts.grammar ?? "architecture" };
+	assignDefined(out, "scope", parts.scope);
+	assignDefined(out, "expand", parts.expand);
+	assignDefined(out, "focus", parts.focus.length === 0 ? undefined : [...parts.focus]);
+	assignDefined(out, "select", parts.select.length === 0 ? undefined : [...parts.select]);
+	assignDefined(out, "lens", parts.filters.lens);
+	assignDefined(out, "hideKinds", parts.filters.hideKinds);
+	assignDefined(out, "hideEffects", parts.filters.hideEffects);
+	assignDefined(out, "resolvedEphemeralFlow", parts.resolvedEphemeralFlow);
+	return out;
 }
 
 /**
- * Resolve a `--group` selector into its member module ids.
- * @param model The complete canonical reading.
- * @param group The requested group id or name.
- * @returns The member module ids, or a structured refusal.
+ * Set a field on a reading object only when its value is defined.
+ * @param target The reading being built.
+ * @param key The field name.
+ * @param value The optional value.
  */
-function resolveGroupMembers(
-	model: Model,
-	group: string,
-):
-	| { readonly ok: true; readonly ids: string[] }
-	| { readonly ok: false; readonly error: NavigationError } {
-	const groups = model.policy.groups ?? {};
-	const trimmed = group.trim();
-	let matchedId: string | undefined;
-	if (Object.hasOwn(groups, trimmed)) {
-		matchedId = trimmed;
-	} else {
-		const lower = trimmed.toLowerCase();
-		for (const [id, spec] of Object.entries(groups)) {
-			if (id.toLowerCase() === lower || spec.name.toLowerCase() === lower) {
-				matchedId = id;
-				break;
-			}
-		}
-	}
-	if (matchedId === undefined) {
-		const available = Object.keys(groups);
-		return {
-			ok: false,
-			error: {
-				code: "GROUP_NOT_FOUND",
-				error:
-					available.length === 0
-						? `This vault defines no semantic groups (requested "${trimmed}").`
-						: `This vault has no group "${trimmed}". Available groups: ${available.join(", ")}.`,
-			},
-		};
-	}
-	const members = model.modules
-		.filter((module) => module.groups?.includes(matchedId) === true)
-		.map((module) => module.id);
-	return { ok: true, ids: members };
+function assignDefined<K extends keyof Reading>(
+	target: Reading,
+	key: K,
+	value: Reading[K] | undefined,
+): void {
+	if (value !== undefined) target[key] = value;
 }
 
 /**
@@ -519,96 +382,29 @@ function resolvePaneReading(
 	| { readonly ok: true; readonly reading: Reading }
 	| { readonly ok: false; readonly error: NavigationError } {
 	const subjects = knownSubjectIds(model);
-	// Scope, expand and focus pass through, because a reader's own address holds them and the
-	// show's structural refusal checks them for an agent. Nothing checks a selected id afterwards.
-	const resolvedScope =
-		request.scope === undefined
-			? { ok: true as const, id: undefined }
-			: orQualified((raw) => resolveModuleRef(model, raw))(request.scope);
-	if (!resolvedScope.ok) return resolvedScope;
-
-	const resolvedExpand =
-		request.expand === undefined
-			? { ok: true as const, ids: undefined }
-			: resolveList(
-					request.expand,
-					orQualified((raw) => resolveModuleRef(model, raw)),
-				);
-	if (!resolvedExpand.ok) return resolvedExpand;
-
-	const resolvedFocus =
-		request.focus === undefined
-			? { ok: true as const, ids: undefined }
-			: resolveList(
-					request.focus,
-					orQualified((raw) => resolveSubjectRef(model, subjects, raw)),
-				);
-	if (!resolvedFocus.ok) return resolvedFocus;
-
-	const resolvedSelect =
-		request.select === undefined
-			? { ok: true as const, ids: undefined }
-			: resolveList(request.select, (raw) => resolveSubjectRef(model, subjects, raw));
-	if (!resolvedSelect.ok) return resolvedSelect;
-
-	const resolvedGroup =
-		request.group === undefined
-			? { ok: true as const, ids: [] }
-			: resolveGroupMembers(model, request.group);
-	if (!resolvedGroup.ok) return resolvedGroup;
-
+	const structural = resolveStructuralSelectors(model, subjects, request);
+	if (!structural.ok) return structural;
+	const selection = resolveSelectionSelectors(model, subjects, request);
+	if (!selection.ok) return selection;
 	const filters = resolveFilterSelectors(model, request);
 	if (!filters.ok) return filters;
-
-	const directional = resolveDirectionalFocus(
-		model,
-		request.to,
-		request.from,
-		filters.lens,
-		filters.hideKinds,
-		filters.hideEffects,
+	const directional = resolveDirectionalFocus(model, request, filters, (values) =>
+		resolveList(values, (raw) => resolveModuleRef(model, raw)),
 	);
 	if (!directional.ok) return directional;
-
-	const mergedFocus = [...new Set([...(resolvedFocus.ids ?? []), ...directional.relationshipIds])];
-	const mergedSelect = [...new Set([...(resolvedSelect.ids ?? []), ...resolvedGroup.ids])];
-
-	let grammar = request.grammar;
-	let resolvedEphemeralFlow = request.resolvedEphemeralFlow;
-	if (request.ephemeralFlow !== undefined) {
-		const ephemeral = resolveEphemeralFlow(model, request.ephemeralFlow, request.grammar, (raw) =>
-			resolveModuleRef(model, raw),
-		);
-		if (!ephemeral.ok) return ephemeral;
-		grammar = ephemeral.grammar;
-		resolvedEphemeralFlow = ephemeral.resolved;
-	}
-
-	const {
-		onlyKinds: _onlyKinds,
-		onlyEffects: _onlyEffects,
-		to: _to,
-		from: _from,
-		group: _group,
-		keep: _keep,
-		ephemeralFlow: _ephemeralFlow,
-		...base
-	} = request;
-
+	const ephemeral = resolveOptionalEphemeral(model, request);
+	if (!ephemeral.ok) return ephemeral;
 	return {
 		ok: true,
-		reading: {
-			...base,
-			grammar: grammar ?? "architecture",
-			...(resolvedScope.id === undefined ? {} : { scope: resolvedScope.id }),
-			...(resolvedExpand.ids === undefined ? {} : { expand: resolvedExpand.ids }),
-			...(mergedFocus.length === 0 ? {} : { focus: mergedFocus }),
-			...(mergedSelect.length === 0 ? {} : { select: mergedSelect }),
-			...(filters.lens === undefined ? {} : { lens: filters.lens }),
-			...(filters.hideKinds === undefined ? {} : { hideKinds: filters.hideKinds }),
-			...(filters.hideEffects === undefined ? {} : { hideEffects: filters.hideEffects }),
-			...(resolvedEphemeralFlow === undefined ? {} : { resolvedEphemeralFlow }),
-		},
+		reading: assembleResolvedReading(request, {
+			scope: structural.scope,
+			expand: structural.expand,
+			focus: [...new Set([...structural.focus, ...directional.ids])],
+			select: selection.ids,
+			filters,
+			grammar: ephemeral.grammar,
+			resolvedEphemeralFlow: ephemeral.resolvedEphemeralFlow,
+		}),
 	};
 }
 

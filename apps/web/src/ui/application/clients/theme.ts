@@ -28,16 +28,27 @@ function systemTheme(): ThemeChoice {
 }
 
 /**
- * The remembered preference: light, dark, or system when nothing is stored.
+ * Whether a stored value is a remembered theme preference.
+ * @param value What storage held.
+ * @returns True for light, dark, or system.
+ */
+function isThemePreference(value: string | null): value is ThemePreference {
+	return isThemeChoice(value) || value === "system";
+}
+
+/**
+ * The remembered preference: the stored choice (`light`, `dark`, or `system`), or the initial
+ * resolved theme from the operating system when nothing was stored yet.
  * @returns The theme preference.
  */
 function rememberedPreference(): ThemePreference {
 	try {
 		const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-		return isThemeChoice(stored) ? stored : "system";
+		if (isThemePreference(stored)) return stored;
 	} catch {
-		return "system";
+		// Storage can be unavailable; fall back to the current system theme.
 	}
+	return systemTheme();
 }
 
 let preference: ThemePreference | undefined;
@@ -139,11 +150,7 @@ function chooseTheme(next: ThemePreference): void {
 	const previousEffective = themeNow();
 	preference = next;
 	try {
-		if (next === "system") {
-			window.localStorage.removeItem(THEME_STORAGE_KEY);
-		} else {
-			window.localStorage.setItem(THEME_STORAGE_KEY, next);
-		}
+		window.localStorage.setItem(THEME_STORAGE_KEY, next);
 	} catch {
 		// Storage can be unavailable; the choice still applies for this session.
 	}

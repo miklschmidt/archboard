@@ -10,5 +10,6 @@ export {
 	ephemeralFlowInputSchema,
 	paneDisplaySettingsSchema,
 	paneSettingsRequestSchema,
+	qualifiedSubjectIdSchema,
 	resolvedEphemeralFlowSchema,
 } from "#shared/schemas/model-pane.ts";

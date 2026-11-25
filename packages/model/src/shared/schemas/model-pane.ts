@@ -143,3 +143,11 @@ export function paneSettingsRequestSchema(): typeof PaneSettingsRequestSchema {
 export function resolvedEphemeralFlowSchema(): typeof ResolvedEphemeralFlowSchema {
 	return ResolvedEphemeralFlowSchema;
 }
+
+/**
+ * The schema `QualifiedSubjectIdSchema`, for validating qualified subject identities.
+ * @returns The schema.
+ */
+export function qualifiedSubjectIdSchema(): typeof QualifiedSubjectIdSchema {
+	return QualifiedSubjectIdSchema;
+}

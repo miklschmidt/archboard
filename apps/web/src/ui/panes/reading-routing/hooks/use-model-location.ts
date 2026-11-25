@@ -216,32 +216,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			if (reading.file !== undefined) {
 				chooseNavigatorMode("code");
 			}
-			const ephemeral = reading.resolvedEphemeralFlow !== undefined;
-			return navigate(
-				{
-					id: reading.model,
-					scope: reading.scope ?? null,
-					checkpoint: reading.checkpoint ?? null,
-					ref: reading.ref,
-					state: reading.state,
-					preview: reading.preview,
-					bookmark: reading.bookmark,
-					legacyAddress: reading.legacyAddress,
-					against: requestedComparison(reading),
-					subject: reading.module,
-					grammar: ephemeral ? undefined : requestedGrammar(reading),
-					flow: ephemeral ? undefined : reading.flow,
-					focus: reading.focus,
-					expand: reading.expand,
-					lens: reading.lens,
-					hideKinds: reading.hideKinds,
-					hideEffects: reading.hideEffects,
-					file: reading.file,
-					fileRepo: reading.file === undefined ? undefined : reading.fileRepo,
-				},
-				!push,
-				repository ?? undefined,
-			);
+			return navigate(requestedAddressPatch(reading), !push, repository ?? undefined);
 		},
 		[navigate],
 	);
@@ -545,6 +520,36 @@ function nullableParameter(value: string | undefined): string | null {
 }
 
 export { useModelLocation, type FileTarget, type FilterField, type ReadingTarget };
+
+/**
+ * Build the portable router address patch for an arriving server pane reading.
+ * @param reading The resolved navigation request.
+ * @returns The partial model address to write into the URL.
+ */
+function requestedAddressPatch(reading: PaneModelRequest["reading"]): Partial<ModelAddress> {
+	const ephemeral = reading.resolvedEphemeralFlow !== undefined;
+	return {
+		id: reading.model,
+		scope: reading.scope ?? null,
+		checkpoint: reading.checkpoint ?? null,
+		ref: reading.ref,
+		state: reading.state,
+		preview: reading.preview,
+		bookmark: reading.bookmark,
+		legacyAddress: reading.legacyAddress,
+		against: requestedComparison(reading),
+		subject: reading.module,
+		grammar: ephemeral ? undefined : requestedGrammar(reading),
+		flow: ephemeral ? undefined : reading.flow,
+		focus: reading.focus,
+		expand: reading.expand,
+		lens: reading.lens,
+		hideKinds: reading.hideKinds,
+		hideEffects: reading.hideEffects,
+		file: reading.file,
+		fileRepo: reading.file === undefined ? undefined : reading.fileRepo,
+	};
+}
 
 /**
  * The address field of a resolved request's comparison.
