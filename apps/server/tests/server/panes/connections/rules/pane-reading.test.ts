@@ -259,6 +259,15 @@ describe("pane-reading resolution", () => {
 		expect(byEffect.hideEffects).toBeUndefined();
 		const byKind = mergeKeptReading({ keep: true, onlyKinds: ["http"] }, narrowed);
 		expect(byKind.hideEffects).toEqual(["query"]);
+		const withCheckpoint = {
+			...current,
+			selection: { checkpoint: "cp-1", state: "draft-1", compare: false },
+		};
+		const toPreview = mergeKeptReading({ keep: true, preview: "Shop" }, withCheckpoint);
+		expect(toPreview.preview).toBe("Shop");
+		expect(toPreview.checkpoint).toBeUndefined();
+		expect(toPreview.state).toBeUndefined();
+		expect(toPreview.ref).toBeUndefined();
 	});
 
 	test("resolves an ephemeral flowchart with canonical and synthetic participants", () => {

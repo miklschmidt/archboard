@@ -10,13 +10,16 @@ type CapturedArchitecture = NonNullable<
 >;
 
 /**
- * Whether a reading request replaces the open version (state, checkpoint, or ref).
+ * Whether a reading request replaces the open version (state, checkpoint, preview, or ref).
  * @param incoming The incoming reading fields.
  * @returns True when any version selector is set.
  */
 function switchesVersion(incoming: Reading): boolean {
 	return (
-		incoming.state !== undefined || incoming.checkpoint !== undefined || incoming.ref !== undefined
+		incoming.state !== undefined ||
+		incoming.checkpoint !== undefined ||
+		incoming.preview !== undefined ||
+		incoming.ref !== undefined
 	);
 }
 
