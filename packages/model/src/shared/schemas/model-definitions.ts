@@ -164,7 +164,8 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 			"Repository documents such as ADRs, design docs, or tasks attached to this module.",
 	}),
 	references: z.array(ModelReferenceSchema).optional().meta({
-		description: "Explicit references for drilling into a module in this model or another model.",
+		description:
+			"Explicit references to subjects in this model or another model, such as a module, relationship, flow collection, flow, or step.",
 	}),
 	outgoing: z.array(OwnedRelationshipSchema).meta({
 		description: "Directed relationships owned by this source module.",
