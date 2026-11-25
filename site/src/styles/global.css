@@ -77,16 +77,24 @@
 	--removed: oklch(0.76 0.16 22);
 
 	/* The picture's named colours on graphite. */
+	--red: oklch(0.7106 0.1661 22.22);
+	--orange: oklch(0.7576 0.159 55.9);
+	--amber: oklch(0.837 0.164 84.4);
+	--yellow: oklch(0.86 0.125 86);
+	--lime: oklch(0.8493 0.2073 128.85);
+	--green: oklch(0.8003 0.1821 151.71);
+	--emerald: oklch(0.773 0.1535 163.2);
+	--teal: oklch(0.7845 0.1325 181.9);
+	--slate: oklch(0.73 0.06 198);
+	--cyan: oklch(0.797 0.134 211.5);
 	--sky: oklch(0.7535 0.139 232.66);
 	--blue: oklch(0.7137 0.1434 254.6);
-	--teal: oklch(0.7845 0.1325 181.9);
-	--emerald: oklch(0.773 0.1535 163.2);
+	--indigo: oklch(0.6801 0.1583 276.93);
 	--violet: oklch(0.709 0.159 293.5);
+	--purple: oklch(0.7217 0.1767 305.5);
+	--fuchsia: oklch(0.7477 0.207 322.16);
 	--pink: oklch(0.725 0.175 349.8);
-	--orange: oklch(0.7576 0.159 55.9);
-	--yellow: oklch(0.86 0.125 86);
-	--amber: oklch(0.837 0.164 84.4);
-	--cyan: oklch(0.797 0.134 211.5);
+	--rose: oklch(0.7192 0.169 13.43);
 	--neutral: oklch(0.72 0.01 80);
 
 	/* Text variants keep the secondary-text contrast floor without changing data marks. */

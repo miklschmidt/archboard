@@ -265,6 +265,21 @@ function apart(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly num
 }
 
 /**
+ * Drop groups whose roles the hero draws itself (lines, junctions, traffic and shadows), walking
+ * into nested groups such as the outer `move` group.
+ * @param items The scene items.
+ * @returns The items kept for the flat table texture.
+ */
+function stripHeroLayers(items: readonly Item[]): Item[] {
+	const dropped = new Set(["line", "junctions", "traffic", "shadow"]);
+	return items.flatMap((item) => {
+		if (item.item === "group" && dropped.has(roleOf(item) ?? "")) return [];
+		if (item.items === undefined) return [item];
+		return [{ ...item, items: stripHeroLayers(item.items) }];
+	});
+}
+
+/**
  * The hero's picture: the site model painted flat on no ground, with what the hero needs of it.
  * @returns The painting and its plan.
  */
@@ -276,11 +291,7 @@ async function hero() {
 	const found = groups(painting.scene.body);
 	// The hero draws each line as a beam, and the tiles that stand on its table cast their own
 	// shadows, so the picture keeps no line, junction, traffic or shadow of its own.
-	painting.scene.body = painting.scene.body.filter(
-		(item) =>
-			item.item !== "group" ||
-			!["line", "junctions", "traffic", "shadow"].includes(roleOf(item) ?? ""),
-	);
+	painting.scene.body = stripHeroLayers(painting.scene.body);
 	const of = (role: string) => found.filter((group) => roleOf(group) === role);
 
 	// A tray is the well a container's parts stand in, and its region adds the tab of its name.

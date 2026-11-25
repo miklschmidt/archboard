@@ -71,7 +71,7 @@ const RATES = { lift: 10, focus: 7, light: 9, look: 3 };
 /** How long the pointer rests on a card before it lights: a pointer passing over lights nothing. */
 const DWELL = 0.12;
 
-/** The colour of every beam's light. */
+/** The fallback colour for a beam whose line carries no named palette colour. */
 const LIGHT = "sky";
 
 interface Camera {
@@ -459,7 +459,15 @@ export function lightTable(
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	const score = compose();
 	const routes = buildRoutes(plan);
-	const light = token(LIGHT);
+	const palette = new Map<string, [number, number, number]>();
+	const beamColor = (name: string | null): [number, number, number] => {
+		const key = name ?? LIGHT;
+		const cached = palette.get(key);
+		if (cached !== undefined) return cached;
+		const colour = token(key);
+		palette.set(key, colour);
+		return colour;
+	};
 
 	// The picture's images, the parts they were painted for, and new images on their way to the
 	// table. When the canvas comes to need a finer picture than it has, as when its window grows,
@@ -525,7 +533,7 @@ export function lightTable(
 	const labelBoxes = plan.labels.slice(0, LIMITS.labels).flatMap((label) => edges(label.box));
 	const lineColours = (moving: boolean) =>
 		plan.lines.slice(0, LIMITS.lines).flatMap((line, index) => {
-			const [r, g, b] = light;
+			const [r, g, b] = beamColor(line.color);
 			const speed = line.traffic && moving ? line.traffic.speed * 1.9 + (index % 3) * 9 : 0;
 			return [r, g, b, speed];
 		});
