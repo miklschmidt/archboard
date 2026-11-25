@@ -35,7 +35,8 @@ Comparisons retain separate selected and comparison revisions.
 Checkpoints retain exact architecture without selecting current.
 An author uses complete revisions, explicit claims, public intents, and configured Git signing.
 
-The author never patches live architecture files directly.
+The author changes model documents through the canonical CLI.
+When the scenario declares `config-untouched`, require an exact match between the vault configuration bytes before and after the run.
 Only explicit requests authorize adoption or migration.
 A legacy refusal requires inventory, owner identity choices, preview, and explicit installation.
 Names and bindings do not establish shared identity.
