@@ -234,6 +234,28 @@ function resolveSubjectRef(
 }
 
 /**
+ * Let a qualified id that the reading does not hold go through as it was given. A reader's own
+ * address reaches the pane, which says what the reading lacks, and an agent hears of a missing
+ * scope or focus from the structural refusal of the show.
+ * @param resolve One selector resolver.
+ * @returns The resolver that passes unknown qualified ids through.
+ */
+function orQualified(
+	resolve: (
+		raw: string,
+	) =>
+		| { readonly ok: true; readonly id: string }
+		| { readonly ok: false; readonly error: NavigationError },
+): typeof resolve {
+	return (raw) => {
+		const resolved = resolve(raw);
+		return !resolved.ok && resolved.error.code === "MODULE_NOT_FOUND" && raw.includes("#")
+			? { ok: true, id: raw.trim() }
+			: resolved;
+	};
+}
+
+/**
  * Resolve a list of module or subject selectors in order, stopping at the first refusal.
  * @param values The raw selector strings.
  * @param resolve One selector resolver.
@@ -491,28 +513,28 @@ function resolvePaneReading(
 	| { readonly ok: true; readonly reading: Reading }
 	| { readonly ok: false; readonly error: NavigationError } {
 	const subjects = knownSubjectIds(model);
+	const moduleRef = orQualified((raw) => resolveModuleRef(model, raw));
+	const subjectRef = orQualified((raw) => resolveSubjectRef(model, subjects, raw));
 	const resolvedScope =
-		request.scope === undefined
-			? { ok: true as const, id: undefined }
-			: resolveModuleRef(model, request.scope);
+		request.scope === undefined ? { ok: true as const, id: undefined } : moduleRef(request.scope);
 	if (!resolvedScope.ok) return resolvedScope;
 
 	const resolvedExpand =
 		request.expand === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.expand, (raw) => resolveModuleRef(model, raw));
+			: resolveList(request.expand, moduleRef);
 	if (!resolvedExpand.ok) return resolvedExpand;
 
 	const resolvedFocus =
 		request.focus === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.focus, (raw) => resolveSubjectRef(model, subjects, raw));
+			: resolveList(request.focus, subjectRef);
 	if (!resolvedFocus.ok) return resolvedFocus;
 
 	const resolvedSelect =
 		request.select === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.select, (raw) => resolveSubjectRef(model, subjects, raw));
+			: resolveList(request.select, subjectRef);
 	if (!resolvedSelect.ok) return resolvedSelect;
 
 	const resolvedGroup =

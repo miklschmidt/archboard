@@ -189,6 +189,15 @@ describe("pane-reading resolution", () => {
 		expect(resolved.reading.select).toEqual(["Shop#auth", "Shop#gw", "Shop#bill"]);
 	});
 
+	test("passes a qualified id the reading does not hold through to the pane", () => {
+		const resolved = resolvePaneReading(model, { scope: "Shop#gone", focus: ["Shop#removed"] });
+		expect(resolved.ok).toBe(true);
+		if (!resolved.ok) return;
+		expect(resolved.reading.scope).toBe("Shop#gone");
+		expect(resolved.reading.focus).toEqual(["Shop#removed"]);
+		expect(resolvePaneReading(model, { scope: "Nowhere" }).ok).toBe(false);
+	});
+
 	test("merges --keep onto the pane's currently reported architecture", () => {
 		const current: CapturedArchitecture = {
 			vault: "/repo/.archboard/vault",
