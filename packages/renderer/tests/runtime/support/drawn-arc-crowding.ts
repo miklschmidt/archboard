@@ -48,9 +48,15 @@ type ArcCopies = [DrawnArc, ...DrawnArc[]];
 function arcCopies(arcs: readonly DrawnArc[]): ArcCopies[] {
 	const groups: ArcCopies[] = [];
 	for (const arc of arcs) {
-		const group = groups.find(([first]) => sameArc(first, arc));
-		if (group === undefined) groups.push([arc]);
-		else group.push(arc);
+		const matching: ArcCopies[] = [];
+		const other: ArcCopies[] = [];
+		for (const group of groups) {
+			if (group.some((member) => sameArc(member, arc))) matching.push(group);
+			else other.push(group);
+		}
+		const [first, ...rest] = matching.flat();
+		groups.length = 0;
+		groups.push(...other, first === undefined ? [arc] : [first, ...rest, arc]);
 	}
 	return groups;
 }

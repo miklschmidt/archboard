@@ -56,6 +56,22 @@ test("a crosswise overlap with a shifted trunk copy counts once in every paint o
 	expect(crowdedArcs({ svg: HOP + copy + verticalHop(49) })).toHaveLength(1);
 });
 
+/** A horizontal arc shifted vertically by `dy` from `HOP`. */
+function shiftedHop(id: string, dy: number): string {
+	return `<g data-semantic-kind="edge" data-semantic-id="${id}" data-arrowhead="none">
+<path d="M0,${50 + dy} L43,${50 + dy} C43,${46.134 + dy} 46.134,${43 + dy} 50,${43 + dy} C53.866,${43 + dy} 57,${46.134 + dy} 57,${50 + dy} L100,${50 + dy}"/>
+</g>`;
+}
+
+test("three trunk copies at 50, 52, and 54 count once in every paint order", () => {
+	const [a, b, c] = [shiftedHop("a", 0), shiftedHop("b", 2), shiftedHop("c", 4)];
+	const vertical = verticalHop(51);
+	for (const trunk of [a + b + c, a + c + b, b + a + c, b + c + a, c + a + b, c + b + a]) {
+		expect(crowdedArcs({ svg: trunk + vertical })).toHaveLength(1);
+		expect(crowdedArcs({ svg: vertical + trunk })).toHaveLength(1);
+	}
+});
+
 const crest = (from: number) =>
 	`C${from},46.13 ${from + 3.13},43 ${from + 7},43 L${from + 23},43 C${from + 26.87},43 ${from + 30},46.13 ${from + 30},50`;
 
