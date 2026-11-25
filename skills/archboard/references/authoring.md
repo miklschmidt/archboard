@@ -19,7 +19,7 @@ Tell the user which modules you combined and which code proved the match.
 
 Inspect the active vocabulary and registered checkouts before authoring.
 
-1. Run `archboard model config` and read `policy.nodeKinds`, `policy.relationshipKinds`, `policy.groups`, `policy.lenses`, and `policy.codeCheck` when present.
+1. Run `archboard model config` and read `policy.nodeKinds`, `policy.relationshipKinds`, `policy.groups`, `policy.lenses`, and `policy.codeCheck` when present. The configuration file is `.archboard/config.yaml` inside the vault.
 2. Run `archboard repo list` to confirm the repository identity (`repo`) for bindings and anchors. Register missing checkouts with `archboard repo add <directory>`.
 3. Read the repository layout, entry points, manifests, and key boundaries before naming modules.
 
@@ -43,7 +43,7 @@ When `check code` measures a bound `external` module or a part inside one, it re
 Model an owned adapter, client wrapper, or port as an internal module and draw its relationship to the `external` target.
 
 Use `groups` for cross-cutting concerns that span containment boundaries (for example a feature slice, compliance boundary, or runtime tier).
-Define groups under `groups` in `.archboard/config.yaml` with a display name and palette color.
+Define groups under `groups` in the vault's configuration file with a display name and palette color.
 Set `groups` explicitly on each member. Canonical module files store the IDs once each in sorted order.
 
 ## Bind modules to code
@@ -56,7 +56,7 @@ Choose the binding granularity to match what the module owns:
 - When `check code` reads a non-entry file or symbol binding, a measured module in the same model state and checkout whose directory contains that file covers it; otherwise `check code` skips depth measurement for that part with `binding-not-a-module`.
 
 Use the registered repository identity in `repo` and the repository-relative location in `path`.
-End a directory `path` with `/` if the directory name contains a dot.
+Use an empty `path` for the checkout root. When binding a Terraform symbol in a dotted directory, end the directory path with `/` so the containment check recognizes it.
 
 ## Author true relationships
 
@@ -94,7 +94,7 @@ Choose the kind by the mechanism at the two named ends:
 | `dependency` | Declares a requirement and runs nothing of the target: a type-only import, a package or a build.     |
 
 Take the most specific contract that the source relies on.
-When none of these says how a relationship travels, add a kind of the vault's own under `relationshipKinds` in `.archboard/config.yaml`, with its name and color.
+When none of these says how a relationship travels, consider a kind of the vault's own.
 JSON-RPC over HTTP is `rpc`.
 A service that asks a repository object for orders is `sync` or `async`, and the repository that issues the SQL is `storage`.
 Use `sync` or `async` for a function or value that the source uses within the same process when no more specific kind applies.
@@ -115,7 +115,7 @@ A relationship that stands for several calls takes the timing of the operation i
 The code facts already say how each call site runs its callee, where the language can tell: TypeScript, Rust, Python, C#, Swift, Go, Objective-C and C.
 `check code` reports `CALL_TIMING_MISMATCH`, as information, on a `sync` relationship whose anchored calls are all awaited or started, and on an `async` one whose anchored calls are all plain.
 Read the call, then correct the kind, or move the anchor to the call the relationship stands for.
-Where the sites disagree or one is unknown, the check says nothing, and your reading decides.
+The check leaves the decision to your source reading when both plain and asynchronous calls match the anchor or when any matching call has unknown timing.
 
 A reader reads the kind with the effect: a `sync` `compute` is where a caller waits for an answer it could have asked for in the background, and the `Sync compute` lens shows those.
 Never choose a kind to make a picture look better.
@@ -149,15 +149,14 @@ Judge every kind by its operation, as these examples do:
 
 When the code does not rule a side effect out, write `mutation` and name the gap in your report.
 A relationship that stands for several operations takes the strongest effect: `mutation`, then `query`, then `compute`.
-A `dependency` states no effect, which says that it is a declared requirement only.
-Give it one only when loading the target does the work that the relationship stands for, such as a registration on import.
-`check code` reports a dependency whose evidence is a call into the target, so that you state the call and its effect.
+Omit the effect for a declared-only `dependency`.
+When loading the target performs work such as registration on import, state that effect. If the source calls into the target, name the call's mechanism and effect. `check code` reports `DEPENDENCY_CALLED` when it finds call evidence for a `dependency`.
 
 Add a kind of the vault's own when several relationships travel by one mechanism of this repository's domain that no built-in kind names, such as starting a durable workflow.
 A kind earns its place when a reader of the picture would act on it and the code decides it.
 Do not add one for the role of the target, such as a cache or a logger: that belongs on the card.
 Do not add one to split `sync` by what the call does: that is the effect.
-Define it under `relationshipKinds` in `.archboard/config.yaml`, with a name, a color from the palette and the evidence kinds that prove it:
+Define it under `relationshipKinds` in the vault's configuration file with a name, a color from the palette, and the evidence kinds that prove it.
 
 ```yaml
 relationshipKinds:
@@ -187,11 +186,11 @@ The six evidence kinds are:
 - `build-dependency`: a package, workspace, or build-graph requirement.
 - `provisioning`: infrastructure provisioning of one part by another.
 
-An anchor can cite a symbol defined in the bound code of either end or one of its parts. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
-For `ANCHOR_MISMATCH`, check the symbol's definition and how the file uses it. A definition outside both ends is a warning, and a declaration outside both is information. If the mismatch is about evidence kind, any resolved use makes it a warning and candidate uses alone make it information.
+An anchor can cite a symbol defined in the bound code of either end or one of its parts. It can also cite an infrastructure declaration that joins the ends. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
+For `ANCHOR_MISMATCH`, check the symbol's definition and how the file uses it. When the check rules out the bound code of both ends and their parts, a definition outside that code produces a warning and a declaration alone produces an information finding. If the mismatch is about evidence kind, any resolved use makes it a warning and candidate uses alone make it information.
 
 For an unanchored relationship, `RELATIONSHIP_BACKWARDS` means accepted evidence runs only in the opposite direction, and `RELATIONSHIP_UNSUPPORTED` means no accepted evidence joins its ends. Read the source to correct the relationship or cite the code that proves it.
-For `RELATIONSHIP_UNDRAWN`, read the reported call, configured path, or build dependency and draw the relationship if it belongs in the model. A resolved use can produce a warning. If evidence is only tentative or the boundary already has a connection, the finding is information.
+For `RELATIONSHIP_UNDRAWN`, read the reported calls, configured paths, or build dependencies and draw the relationships that belong in the model. A finding groups evidence by the part it reaches. It warns when at least one resolved use crosses an unconnected boundary and otherwise reports information.
 
 ## Give each container a job
 
@@ -221,7 +220,6 @@ The exception uses these stated paths and symbols:
 - Terraform and OpenTofu: A `.tf` or `.tofu` file or root module directory with a resource, data, or module-call address.
   Nested modules and instance keys, such as `module.api[0].aws_lambda_function.web["blue"]`, receive the exception too.
 
-If a directory name contains a dot, end its path with `/`.
 In a directory, a code symbol such as `order_service.start` has the same form as a Terraform address.
 Bind its code file to distinguish it.
 Recognition reads no files and does not prove that a declaration runs code.
@@ -240,9 +238,9 @@ Connect every root to another root, or move it into the module that uses it.
 
 Start each relationship at the calling part and end it at the deepest modeled part that owns the receiving code.
 Containers need entry-point parts for their connections.
-Nesting already shows containment. An open module draws no line to its own part.
-`RELATIONSHIP_ON_CONTAINER` fails semantic inspection when a relationship ends on a container.
-A relationship to its own contained part instead produces `CONTAINER_LINE_TO_OWN_PART`.
+Nesting already shows containment.
+`RELATIONSHIP_ON_CONTAINER` fails semantic inspection when either endpoint is a container.
+When one endpoint contains the other, the check reports `CONTAINER_LINE_TO_OWN_PART` as a warning.
 
 Before repairing any reported shape, read the source.
 To repair an endpoint, read its source anchor.
@@ -251,8 +249,8 @@ If no part owns that responsibility, add a part for it.
 Model boundaries that callers name and architects need, not a part for every file.
 
 If two parts perform different jobs across a boundary, state two relationships.
-State each relationship once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind, effect and label say what the code does.
-For `RELATIONSHIP_UNDRAWN`, the check finds the two sides at the children of the nearest shared container, or at separate roots. A relationship or flow message joining those sides makes deeper undrawn calls across that boundary information.
+State each relationship once. `RELATIONSHIP_REPEATED` warns when two relationships have the same source, target, and explicit anchor. Keep the one whose kind, effect, and label say what the code does.
+For `RELATIONSHIP_UNDRAWN`, the check finds the two sides at the children of the nearest shared container, or at separate roots. A relationship or flow message joining any parts on those sides counts as a connection across that boundary.
 
 `CONTAINER_PASS_THROUGH` and `ROOT_UNCONNECTED` also identify shapes to inspect against source.
 Writes accept these shapes. Semantic inspection reports them.
@@ -271,9 +269,9 @@ Reads and writes that leave that flow alone still work. Retained readings keep t
 
 Read the sending code for each message, including messages inside decisions and loops. Cite its `repo`, file `path`, and `symbol` in the message's `anchor` when source exists.
 List `participants` in left-to-right reading order as the sequence columns should appear.
-Use these step forms:
+Choose the step form that matches the exchange.
 
-- Use `sync` (default) when the sender waits for the step, and `async` when it does not wait.
+- Use the message kind `sync` (default) when the sender waits for an answer, including for an awaited request. Use `async` when it sends the message and continues.
 - Use `self` for a self-call, with the same module at both ends.
 - Set `repeat` to the exact count when a message runs two or more times, such as a known batch size.
 - Use `loop` with a `condition` for steps that repeat together or a count that depends on data.
