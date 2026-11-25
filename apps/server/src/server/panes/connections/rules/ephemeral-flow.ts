@@ -56,6 +56,8 @@ function resolveEphemeralFlow(
 	for (const raw of input.participants) {
 		const trimmed = raw.trim();
 		const matched = resolveModule(trimmed);
+		// A name several modules share is a refusal, never a made-up actor in their place.
+		if (!matched.ok && matched.error.code === "MODULE_AMBIGUOUS") return matched;
 		let id: string;
 		if (matched.ok) {
 			id = matched.id;

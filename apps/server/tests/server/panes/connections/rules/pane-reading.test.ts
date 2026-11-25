@@ -304,5 +304,19 @@ describe("pane-reading resolution", () => {
 		});
 		expect(badParticipant.ok).toBe(false);
 		if (!badParticipant.ok) expect(badParticipant.error.code).toBe("INVALID_EPHEMERAL_FLOW");
+
+		const twoGateways = {
+			...model,
+			modules: [...model.modules, { ...model.modules[0]!, id: "Shop#gw2", order: 4 }],
+		};
+		const ambiguous = resolvePaneReading(twoGateways, {
+			ephemeralFlow: {
+				name: "Auth",
+				participants: ["Gateway", "Auth Server"],
+				steps: [{ kind: "sync", from: "Gateway", to: "Auth Server", label: "Check" }],
+			},
+		});
+		expect(ambiguous.ok).toBe(false);
+		if (!ambiguous.ok) expect(ambiguous.error.code).toBe("MODULE_AMBIGUOUS");
 	});
 });

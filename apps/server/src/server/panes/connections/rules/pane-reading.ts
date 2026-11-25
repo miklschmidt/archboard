@@ -189,7 +189,7 @@ function ambiguousModule(
 	return {
 		ok: false,
 		error: {
-			code: "MODULE_NOT_FOUND",
+			code: "MODULE_AMBIGUOUS",
 			error: `Module name "${raw}" is ambiguous. Pass a qualified id: ${ids}.`,
 		},
 	};
