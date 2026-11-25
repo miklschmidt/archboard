@@ -277,6 +277,11 @@ const browserShowContract = defineCommand({
 				"--input - and --flow-input - both read standard input: pass one of them as a file.",
 			);
 		}
+		if (noCompare === true && flags.against !== undefined) {
+			throw new CliUsageError(
+				"--no-compare turns comparison off and --against turns it on: pass one of them.",
+			);
+		}
 		let reading =
 			file === undefined
 				? { ...flags, ...(noCompare === true ? { compare: false } : {}) }
