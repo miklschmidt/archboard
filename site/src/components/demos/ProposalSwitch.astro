@@ -27,7 +27,7 @@ const proposal = drawings.queued;
 			src={today.url}
 			width={today.width}
 			height={today.height}
-			alt={`Today's shop, drawn by Archboard: ${today.label}. Checkout waits on stock, the card and the receipt email.`}
+			alt={`Current web shop architecture: ${today.label}. Checkout blocks on stock reservation, card payment, and the receipt email.`}
 			loading="lazy"
 			decoding="async"
 		/>
@@ -36,7 +36,7 @@ const proposal = drawings.queued;
 			src={proposal.url}
 			width={proposal.width}
 			height={proposal.height}
-			alt="The Queued fulfilment proposal drawn against today: new modules Order events and Fulfilment worker in green, changed relationships in orange, removed ones as red ghosts."
+			alt="Queued fulfilment proposal compared against current architecture: Order events and Fulfilment worker added in green, changed relationships in orange, removed items in red."
 			loading="lazy"
 			decoding="async"
 		/>

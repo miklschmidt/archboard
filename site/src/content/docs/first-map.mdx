@@ -1,37 +1,37 @@
 ---
-title: A first map in one session
-description: Take a team repository from nothing to a first map, three flows and a walkthrough for a newcomer in one working session. Then decide which findings fail CI.
+title: Map your first repository
+description: Build an initial architecture model, three sequence flows, and an onboarding walkthrough in one working session, then decide which check findings block CI.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 
-A coding session forgets what it learned when it ends. A team needs a map that stays. This path gives a team one in a single session of about two hours, with a person who knows the system beside the agent.
+Coding agents lose their understanding of a codebase when a session ends. This guide walks through creating a persistent architecture model in about two hours, pairing a coding agent with an engineer who knows the system.
 
-## Before the session
+## Prerequisites
 
-- A repository that the team owns, cloned on the machine of the session.
-- Archboard installed, as [Install and set up](../install/) says.
-- Codex or Claude Code on the `PATH`. The agent reads the code and writes the model.
-- A Codex sign-in, only for narration and the recording in step 4.
-- One person who can say "that is wrong" about the system. The agent finds structure. The person knows intent.
+- A local clone of a repository your team owns.
+- Archboard installed (see [Install and set up](../install/)).
+- Codex or Claude Code on your `PATH` to read the codebase and write the model.
+- A Codex sign-in, required only for voice narration and video recording in step 4.
+- An engineer who knows the system and can verify the agent's output. The agent extracts structure from code, and the engineer validates boundaries and intent.
 
-| Step                       | Time   | What you have after it                              |
-| -------------------------- | ------ | --------------------------------------------------- |
-| 1. Set the repository up   | 15 min | A vault, the skills and the language servers        |
-| 2. Draw the first map      | 40 min | The root modules, bound to their code               |
-| 3. Tell three flows        | 30 min | Three sequence diagrams backed by source lines      |
-| 4. Walk a newcomer through | 20 min | A narrated walkthrough, and a video if you want one |
-| 5. Decide what fails CI    | 15 min | The findings that the gate keeps failing            |
+| Step                                | Time   | Output                                            |
+| ----------------------------------- | ------ | ------------------------------------------------- |
+| 1. Initialize the repository        | 15 min | Vault, skills, and language servers configured    |
+| 2. Draw the first map               | 40 min | Root modules bound to source code                 |
+| 3. Document three flows             | 30 min | Three sequence diagrams backed by source anchors  |
+| 4. Create an onboarding walkthrough | 20 min | Narrated walkthrough and optional video recording |
+| 5. Decide what fails CI             | 15 min | List of finding codes that block pull requests    |
 
-## 1. Set the repository up
+## 1. Initialize the repository
 
 ```bash
 cd ~/Projects/payments-api
 archboard init
 ```
 
-`init` installs the `archboard`, `archboard-pr`, `archboard-plan` and `archboard-deepen` skills, makes the vault and registers the checkout. Then it starts your agent to set up the language servers. Let the agent finish, then commit what it made:
+`archboard init` installs the `archboard`, `archboard-pr`, `archboard-plan`, and `archboard-deepen` skills, creates the vault, and registers the checkout. It then launches your agent to configure language servers. Once the agent finishes, commit `.archboard`:
 
 ```bash
 git add .archboard
@@ -40,7 +40,7 @@ git commit -m "docs(architecture): add the Archboard vault"
 
 ## 2. Draw the first map
 
-Ask the agent for the parts that a newcomer needs first, not for every file. Paste this prompt into your agent:
+Start with the top-level responsibilities a new engineer needs to learn first rather than mapping every file. Give your agent this prompt:
 
 ```text title="Ask your agent" wrap
 Map this repository with Archboard. Start with the five to nine root modules that a new
@@ -49,41 +49,41 @@ Bind each module to the directory or the symbol that implements it, and mark sys
 we do not own as external. Then run archboard check and fix what it finds.
 ```
 
-Open the map while the agent works. `archboard status` prints the address of the local server as `url`. Open it in your browser and pick the repository. Every pane shows what the agent claims and why, and the agent can move a pane to what it talks about. If no browser is connected, `browser show` opens the map in your default browser first:
+Watch the model update in your browser while the agent works. Run `archboard status` to print the local server URL, open it, and pick your repository. Open panes show what the agent is currently claiming and why, and the agent can focus a pane on the module it is discussing. If no browser tab is open, `browser show` opens the model in your default browser:
 
 ```bash
 archboard status
 archboard browser show --module "<module>"
 ```
 
-Read the map with the person who knows the system. Three questions find most mistakes:
+Review the initial model with an engineer who knows the codebase. Check three things:
 
 <Steps>
 
-1. Is there a module that you would not explain to a new hire? Merge it into its parent, or drop it.
-2. Is there a responsibility that you name every week and that the map leaves out? Ask the agent to add it.
-3. Does a line run the wrong way, or join two modules that never talk? Ask the agent to read the code again and fix it.
+1. Would you skip a module when explaining the system to a new hire? Merge it into its parent or drop it.
+2. Is a major responsibility missing from the model? Ask the agent to add it.
+3. Does a relationship point the wrong way or connect two modules that do not interact? Ask the agent to re-read the source code and fix it.
 
 </Steps>
 
-Run the check after each round. A warning names a module or a relationship, the evidence and its file and line:
+Run `archboard check` after each round. Every warning identifies the affected module or relationship along with the supporting file and line number:
 
 ```bash
 archboard check
 ```
 
-<Aside type="tip" title="Leave the map small">
-	A first map with seven good modules beats one with forty. The agent can open any module into its
-	parts later, and the code check holds every part to its code.
+<Aside type="tip" title="Start small">
+	Seven clear modules are more useful than forty granular ones. You can decompose any module into
+	child parts later, and the code check validates bindings at every level.
 </Aside>
 
-## 3. Tell three flows
+## 3. Document three flows
 
-A flow is one request, job or event, told in order. Pick three that the team argues about. These three choices work for most systems:
+A flow records a single request, background job, or event as an ordered sequence of steps across modules. Pick three paths that matter most to the team:
 
-- The path that earns money, such as checkout or a paid API call.
-- The request that the system answers most often.
-- The job that wakes someone at night when it fails.
+- A revenue-critical path, such as checkout or a paid API request.
+- The highest-traffic request the system handles.
+- A background job or failure path that pages on-call engineers.
 
 ```text title="Ask your agent" wrap
 Add a flow for what happens when a customer pays, from the first request to the receipt.
@@ -91,15 +91,15 @@ Back every message with the line of source that sends it, then read the source a
 retries, fixed counts and calls that a module makes to itself.
 ```
 
-Draw each flow as a sequence diagram:
+Render each flow as a sequence diagram:
 
 ```bash
 archboard model render --flow "Pay for an order" --grammar sequence --out docs/architecture/pay.svg
 ```
 
-## 4. Walk a newcomer through
+## 4. Create an onboarding walkthrough
 
-A newcomer's walkthrough starts with two modules and adds a few at each beat, until the whole path is on screen. It stops where things go wrong and ends on the sentence worth remembering.
+A walkthrough steps through a series of readings (beats), each with a title and narrative. For onboarding, start with two modules, add more on each beat until the full path is visible, stop at the main failure point, and finish with the key takeaway.
 
 ```text title="Ask your agent" wrap
 I am new here. Make an Archboard walkthrough of what happens when a customer pays, in five
@@ -107,7 +107,7 @@ or six beats. Start with two modules and add a few at each beat. Stop at the pla
 fails most often, and end on the one thing I must remember.
 ```
 
-Open it in the browser and press Narrate to hear the Codex voice tell each beat. To keep a video, retain a checkpoint that holds the walkthrough, then record from it. The `--expect-revision` value is the `revision.digest` of `archboard model read`, and the answer of `model retain` names the new checkpoint:
+Open the walkthrough in the browser and click **Narrate** to play Codex voice narration for each beat. To export a video, save a checkpoint first, then record from that checkpoint. Pass the `revision.digest` from `archboard model read` to `--expect-revision`, and pass the checkpoint ID returned by `model retain` to `model record`:
 
 ```bash
 archboard model retain --operation-id keep-pay-walkthrough --writer agent \
@@ -117,19 +117,19 @@ archboard model record --checkpoint <checkpoint-id> --walkthrough "How a custome
 
 ## 5. Decide what fails CI
 
-Run every check once more and read the findings together:
+Run a full check and review every reported finding with the team:
 
 ```bash
 archboard check
 ```
 
-For each finding code that appears, decide one of three things, and write it down:
+Classify each finding code into one of three categories:
 
-- **Fail CI.** The team wants a pull request blocked when this appears. [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn) and [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) are the usual first choices.
-- **Show, do not fail.** The team wants to see it on the pull request but not to block on it. List these codes in the gate's [`allow-codes`](../reference/actions/#check-allow-codes).
-- **Fix the map.** The finding is right and the map is wrong. Fix it now.
+- **Fail CI.** Block pull requests whenever this finding appears. [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn) and [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) are common first choices.
+- **Report only.** Show the finding on pull requests without failing the job by adding it to the check Action's [`allow-codes`](../reference/actions/#check-allow-codes) input.
+- **Fix the model.** The finding caught a real mismatch in the model. Fix it now.
 
-Copy this record into the pull request that adds the vault, or into your notes:
+Save these decisions in the pull request that adds the vault or in your team docs:
 
 ```markdown title="Session record"
 ## Archboard session record
@@ -155,9 +155,10 @@ People:
 -
 ```
 
-Then follow [The check as a gate](../gate/) to make CI hold the decision.
+Next, follow [Run checks as a gate](../gate/) to enforce these rules in CI.
 
-<Aside type="note" title="Run it with us">
-	Archboard runs these sessions with design partners. To run one on your repository, [open an
-	issue](https://github.com/miklschmidt/archboard/issues/new) titled "Design partner session".
+<Aside type="note" title="Run a session with us">
+	Archboard runs onboarding sessions with design partners. To schedule one for your repository,
+	[open an issue](https://github.com/miklschmidt/archboard/issues/new) titled "Design partner
+	session".
 </Aside>

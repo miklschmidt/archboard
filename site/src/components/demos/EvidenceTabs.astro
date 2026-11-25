@@ -19,13 +19,13 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		key: "interface",
 		icon: "stack",
 		label: "What a module exposes",
-		line: "Its interface in the model and in its code",
+		line: "Model entry points beside code exports",
 	},
 	{
 		key: "changes",
 		icon: "commit",
 		label: "What changes together",
-		line: "Each commit, read through the modules it touched",
+		line: "Git co-change mapped onto modules",
 	},
 ];
 ---
@@ -57,14 +57,13 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		<div class="panel" role="tabpanel" tabindex="0" id="evidence-panel-code" aria-labelledby="evidence-tab-code" data-panel="code">
 			<div class="copy">
 				<p>
-					Bind a module to its file or to a function, class or value. <code>archboard check code</code>
-					finds broken bindings, relationships drawn backwards, and calls between mapped modules that
-					the architecture leaves out.
+					Bind a module to a file, function, class, or exported value. <code>archboard check code</code>
+					flags broken bindings, reversed relationships, and real calls between mapped modules that are
+					missing from the model.
 				</p>
 				<p>
-					Each piece of evidence says whether analysis resolved it or matched it only by name. It can
-					follow a connection across a network hop where application code and infrastructure declare
-					both ends.
+					Every finding reports whether static analysis resolved the call directly or matched it by
+					name, including cross-service hops where app code and infrastructure declare both ends.
 				</p>
 			</div>
 			<div class="demo"><CodeEvidence /></div>
@@ -80,13 +79,13 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		>
 			<div class="copy">
 				<p>
-					A module's interface is what its outside callers reach. Archboard shows the entry points, the
-					hidden parts behind them and the callers that depend on them. Beside them, Measures counts
-					what the module's code exports, from the last code check.
+					A module's interface is the set of parts that outside callers reach. Archboard lists those
+					entry points, the hidden parts behind them, and their callers, alongside the code's actual
+					exports from the latest code check.
 				</p>
 				<p>
-					Compare two states and the interface changes come first, because an interface change costs
-					every caller.
+					When you compare two states, interface changes show up first so you see caller impact before
+					internal edits.
 				</p>
 			</div>
 			<div class="demo"><InterfaceCompare /></div>
@@ -102,12 +101,12 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		>
 			<div class="copy">
 				<p>
-					Archboard maps each commit onto the modules it touched. See which modules change most often,
-					and which change together, including pairs with no authored relationship.
+					Archboard maps Git commits onto bound modules to surface hotspots and pairs that change
+					together, including coupled modules with no relationship in the model.
 				</p>
 				<p>
-					Set a branch against its proposal with <code>archboard model footprint --state "Queued fulfilment" --base main</code>, and
-					your agent sees changes outside the plan before it adopts it.
+					Check a branch against its proposal with <code>archboard model footprint --state "Queued fulfilment" --base main</code> to
+					catch unplanned changes before adoption.
 				</p>
 			</div>
 			<div class="demo"><ChangesTogether /></div>

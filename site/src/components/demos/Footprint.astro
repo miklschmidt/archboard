@@ -8,7 +8,7 @@ import type { Kind } from "../../lib/icons";
 const groups: { title: string; note: string; outside?: boolean; modules: { name: string; kind: Kind }[] }[] = [
 	{
 		title: "Planned and changed",
-		note: "The branch built what the proposal names.",
+		note: "Changed in code and listed in the proposal.",
 		modules: [
 			{ name: "Checkout API", kind: "service" },
 			{ name: "Fulfilment worker", kind: "job" },
@@ -17,13 +17,13 @@ const groups: { title: string; note: string; outside?: boolean; modules: { name:
 	},
 	{
 		title: "Changed outside the plan",
-		note: "Did the branch leave the plan, or does the plan miss a module?",
+		note: "Touched by the branch, not in the proposal. Scope creep, or a missing module?",
 		outside: true,
 		modules: [{ name: "Basket cache", kind: "cache" }],
 	},
 	{
 		title: "Planned, not changed yet",
-		note: "Is the work still to do, or does the module need no code change?",
+		note: "In the proposal with no commits yet. Remaining work, or no code change needed?",
 		modules: [{ name: "Payment webhook", kind: "route" }],
 	},
 ];
@@ -55,7 +55,7 @@ const groups: { title: string; note: string; outside?: boolean; modules: { name:
 		}
 	</div>
 </div>
-<p class="caption example-caption">Example branch for the shop's Queued fulfilment proposal.</p>
+<p class="caption example-caption">Sample branch footprint against the Queued fulfilment proposal.</p>
 
 <style>
 	.footprint {

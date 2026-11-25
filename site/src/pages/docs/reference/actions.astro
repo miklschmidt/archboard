@@ -24,7 +24,7 @@ const usage: Record<string, string> = {
     out-of-plan: warn`,
 };
 const guide: Record<string, { path: string; label: string }> = {
-	check: { path: "gate", label: "The check as a gate" },
+	check: { path: "gate", label: "Run checks as a gate" },
 	"pull-request": { path: "pull-requests", label: "Architecture on pull requests" },
 };
 const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slug, text: action.name }));
@@ -32,20 +32,19 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 
 <Docs
 	title="GitHub Actions"
-	description="The inputs and outputs of the two Actions that run `archboard check` and report the architecture of a pull request. Both install the published CLI, or run the one that `cli` names, and run only its commands."
+	description="Inputs and outputs for the GitHub Actions that run `archboard check` and report pull request architecture changes. Both install the published CLI or run an existing binary via `cli`."
 	path="reference/actions"
 	headings={headings}
 	source="actions/README.md"
 >
 	<p>
-		Use an Action by its path in this repository. The examples pin it to the commit of
-		<code>{actionsPin.ref}</code>, with the tag in a comment. Pin each Action to a commit, as you pin
-		any third-party Action, because a tag can move and the <code>pull-request</code> Action holds a
-		token that can comment. Pin <code>version</code> to the CLI release that your team runs, the way
-		you pin a compiler. Both
-		Actions set up Node.js, install <code>archboard</code> with npm, and stop the Archboard server
-		when they finish. With <a href="#check-cli"><code>cli</code></a>, an Action runs that CLI instead of
-		installing one.
+		Reference each Action by its path in this repository, pinned to the commit SHA for{" "}
+		<code>{actionsPin.ref}</code> with the tag in a comment. Pin to a commit SHA because tags can
+		move and the <code>pull-request</code> Action holds a token that can post comments. Pin{" "}
+		<code>version</code> to the CLI release your team uses. Both Actions set up Node.js, install{" "}
+		<code>archboard</code> via npm, and stop the local Archboard server when finished. Pass{" "}
+		<a href="#check-cli"><code>cli</code></a> to run an existing CLI binary instead of installing
+		one.
 	</p>
 	{
 		reference.actions.map((action) => (
@@ -57,7 +56,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 				<p set:html={inlineCode(action.description)} />
 				{guide[action.slug] && (
 					<p>
-						The guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
+						Guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
 					</p>
 				)}
 				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@${pin}`} lang="yaml" title={action.uses} />
@@ -66,7 +65,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 					<thead>
 						<tr>
 							<th scope="col">Input</th>
-							<th scope="col">What it does</th>
+							<th scope="col">Description</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -82,10 +81,10 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 									<span set:html={inlineCode(input.description)} />
 									<span class="detail">
 										{input.default === null || input.default === "" ? (
-											"No default: empty when you leave it out."
+											"No default (empty if omitted)."
 										) : (
 											<>
-												Default <code>{input.default}</code>.
+												Default: <code>{input.default}</code>.
 											</>
 										)}
 									</span>
@@ -101,7 +100,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 							<thead>
 								<tr>
 									<th scope="col">Output</th>
-									<th scope="col">What it holds</th>
+									<th scope="col">Description</th>
 								</tr>
 							</thead>
 							<tbody>
