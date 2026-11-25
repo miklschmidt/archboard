@@ -50,21 +50,23 @@ type AboutScope = string | null | undefined;
 /**
  * How the open module is read. The page is kept with the module it was chosen on, so another
  * module opens as a diagram. About describes the open scope, and the right panel the selection.
- * @param opened The open module.
+ * @param opened The open module on screen.
+ * @param arriving The module an external arrival opens, drawn or not yet.
  * @param requestedPage The page requested by an external arrival, if any.
  * @param arrival The external arrival counter.
  * @returns The page, and how to change it.
  */
 function useReaderPage(
 	opened: string | null,
+	arriving: string | null,
 	requestedPage: Page | undefined,
 	arrival: number | undefined,
 ) {
-	const [about, setAbout] = useState<AboutScope>(requestedPage === "about" ? opened : undefined);
+	const [about, setAbout] = useState<AboutScope>(requestedPage === "about" ? arriving : undefined);
 	const [seenArrival, setSeenArrival] = useState(arrival);
 	if (arrival !== seenArrival) {
 		setSeenArrival(arrival);
-		if (requestedPage === "about") setAbout(opened);
+		if (requestedPage === "about") setAbout(arriving);
 		else if (requestedPage === "diagram") setAbout(undefined);
 	}
 	const onPage = useCallback(
@@ -160,7 +162,12 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPage(shown.projection.opened, inputs.requestedPage, inputs.arrival);
+	const places = useReaderPage(
+		shown.projection.opened,
+		opened,
+		inputs.requestedPage,
+		inputs.arrival,
+	);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,
