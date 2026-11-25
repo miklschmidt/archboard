@@ -15,8 +15,12 @@ This record amends [ADR 0024](0024-vault-configuration-owns-vocabulary-and-prese
 
 Amended on 2026-11-22 (TASK-663.08 to TASK-663.12): the lenses select `sync` and `async` where
 they selected `call`, a new lens finds sync computes, a reader hides effects by hand as well as
-kinds, the legend offers every lens in one click, and the lens and its outcome stand above the
-picture.
+kinds, and the lens and its outcome stand above the picture.
+
+Amended on 2026-11-25: the legend picks a lens from a `Select` dropdown showing each lens's
+question under its name instead of a multi-row tab grid, and separates `Kinds`, `Effects`,
+`Hidden by <lens>` and `Line marks` into bounded sub-groups so read-only line marks cannot be
+mistaken for hidden items.
 
 ## Context
 
@@ -44,13 +48,13 @@ whole:
 
 | Id             | Name                  | Question                                                           | List                                                                  |
 | -------------- | --------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `main`         | Main lines            |                                                                    | hide `dependency`, and `query` and `compute` on `sync` and on `async` |
+| `main`         | Main lines            | Mutations and traffic between processes                            | hide `dependency`, and `query` and `compute` on `sync` and on `async` |
 | `effects`      | Side effects          | Where does state change?                                           | show `mutation`                                                       |
 | `sync-compute` | Sync compute          | Where does the caller wait while another part works out an answer? | show `sync` with `compute`                                            |
 | `network`      | Network               | How does traffic flow between processes?                           | show `http`, `rpc`, `queue`, `event`, `stream`                        |
 | `reads`        | Reads                 | Where is held or fetched state read?                               | show `query`                                                          |
-| `dependencies` | Declared dependencies |                                                                    | show `dependency`                                                     |
-| `all`          | All relationships     |                                                                    | hide nothing                                                          |
+| `dependencies` | Declared dependencies | What depends on what without a run-time call?                      | show `dependency`                                                     |
+| `all`          | All relationships     | Every relationship in this scope                                   | hide nothing                                                          |
 
 The lenses are offered in this order. "Side effects" is the old Effects, named in the owner's
 words ("a map of calls with side effects"). "Sync compute" is the owner's hunt, the case that
@@ -125,14 +129,14 @@ before the command reaches the server.
 
 ### The legend offers the lenses
 
-The `Relationships` section of the legend holds, from top to bottom: the lenses, one click each,
-in the order above; a row for each kind, its sample in the kind's ink, with an eye; a row for
-each effect, its sample in neutral ink with its head, with an eye; then the read-only marks of
-emphasis, traffic and comparison. The rows come from the whole scope, so hiding one moves no row.
-Clicking a row's name shows only that row, and its eye still turns it on and off. Rows that the
-lens leaves out sit dimmed under the caption `Left out by this lens`, with no switch, because
-turning them on would contradict the lens the reader chose. Isolating sync computes from `all`
-by hand took six clicks, and the lens takes one.
+The `Relationships` section of the legend opens with a `Select` dropdown that lists every lens in
+the order above with its question under its name. Under it stand up to four bounded sub-groups,
+separated by hairline rules: `Kinds` (each kind's sample in its ink, with an eye), `Effects` (each
+effect's sample in neutral ink with its head, with an eye), `Hidden by <lens>` (dimmed rows that the
+active lens hides, with no switch, because turning them on would contradict the lens), and
+`Line marks` (the read-only marks of emphasis, traffic and comparison). The rows come from the whole
+scope, so hiding one moves no row. Clicking a row's name shows only that row, and its eye still
+turns it on and off. Choosing the active lens again clears manual kind and effect filters.
 
 ## Considered and rejected
 

@@ -1,9 +1,10 @@
 // The owner of the legend's workflow: the picture is read through a lens that the address keeps
-// and the line above the picture names, each lens is one press, each kind and each effect is its
-// own switch and its name shows it alone, what the lens leaves out stands apart with no switch, the
-// rows stay where they stand while a reader hides and shows lines, Show all reads the picture
-// through the lens of every relationship, and a group's tag selects what the picture draws of that
-// group, from the pointer and from the keyboard.
+// and the line above the picture names, the legend picks a lens from a select dropdown with each
+// lens's question, each kind and each effect is its own switch and its name shows it alone, what
+// the lens hides stands apart under its own sub-group with no switch, line marks stand apart under
+// their own sub-group, the rows stay where they stand while a reader hides and shows lines, Show
+// all reads the picture through the lens of every relationship, and a group's tag selects what the
+// picture draws of that group, from the pointer and from the keyboard.
 
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -140,6 +141,36 @@ function addressed(browser: AgentBrowserSession, key: string): Promise<string | 
 	return browser.eval<string | null>(`new URLSearchParams(location.search).get('${key}')`);
 }
 
+/** Open the lens select popover and wait until the requested option is clickable. */
+async function openLens(browser: AgentBrowserSession, id: string): Promise<void> {
+	const item = `[data-lens-id="${id}"]`;
+	const trigger = '[data-slot="model-lens"]';
+	await pollUntil(
+		async () => {
+			const page = await browser.eval<{ open: boolean; clickable: boolean }>(`(() => {
+				const item = document.querySelector('${item}');
+				const rect = item?.getBoundingClientRect();
+				return {
+					open: document.querySelector('${trigger}')?.getAttribute('aria-expanded') === 'true',
+					clickable: rect !== undefined && rect.height > 0 &&
+						item.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)),
+				};
+			})()`);
+			if (!page.open) await browser.run(["click", trigger]).catch(() => undefined);
+			return page.clickable;
+		},
+		Boolean,
+		`the lens option ${id}`,
+		WAIT,
+	);
+}
+
+/** Choose a lens from the legend's select dropdown. */
+async function selectLens(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openLens(browser, id);
+	await browser.run(["click", `[data-lens-id="${id}"]`]);
+}
+
 /** Press where a control stands, with the pointer, as a person who does not move it again does. */
 async function clickAt(browser: AgentBrowserSession, at: { x: number; y: number }): Promise<void> {
 	await browser.run(["mouse", "move", String(at.x), String(at.y)]);
@@ -174,17 +205,31 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 	]);
 	expect(await lensOf(browser)).toBe("Main lines · 1 line left out");
 	expect(
-		await browser.eval<{ leftOut: string[]; marks: number; switches: number }>(`(() => {
+		await browser.eval<{
+			leftOut: string[];
+			leftOutHeading: string;
+			marks: number;
+			marksHeading: string;
+			switches: number;
+		}>(`(() => {
 			const leftOut = document.querySelector('[data-slot="model-legend-left-out"]');
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
 			return {
 				leftOut: [...leftOut.querySelectorAll('li [title]')].map((row) => row.textContent),
+				leftOutHeading: leftOut.previousElementSibling?.textContent?.trim() ?? "",
 				marks: marks.querySelectorAll('li [title]').length,
+				marksHeading: marks.previousElementSibling?.textContent?.trim() ?? "",
 				switches: leftOut.querySelectorAll('button').length + marks.querySelectorAll('button').length,
 			};
 		})()`),
-		"the dependency and its declared-only effect, which the lens leaves out, and the marks of lines, which no reader hides, stand apart with no switch",
-	).toEqual({ leftOut: ["Dependency", "Declared only"], marks: 2, switches: 0 });
+		"the dependency and its declared-only effect, which the lens hides, and the marks of lines, which no reader hides, stand in separate named sub-groups with no switch",
+	).toEqual({
+		leftOut: ["Dependency", "Declared only"],
+		leftOutHeading: "Hidden by Main lines",
+		marks: 2,
+		marksHeading: "Line marks",
+		switches: 0,
+	});
 
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
@@ -269,12 +314,30 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 	);
 	await browser.run(["press", "Escape"]);
 
+	await openLens(browser, "main");
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.getAttribute('data-lens-id'))`,
 		),
-		"every lens is one press in the legend, in the policy's order",
+		"every lens is listed in the select popover, in the policy's order",
 	).toEqual(["main", "effects", "sync-compute", "network", "reads", "dependencies", "all"]);
+	expect(
+		await browser.eval<boolean>(
+			`[...document.querySelectorAll('[data-lens-id]')].every((item) => (item.querySelector('[data-slot="select-description"]')?.textContent?.trim().length ?? 0) > 0)`,
+		),
+		"every built-in lens shows its question under its name",
+	).toBe(true);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-lens"]')?.getAttribute('aria-expanded') !== 'true'`,
+			),
+		Boolean,
+		"the lens popover closed",
+		WAIT,
+	);
+
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
 		() => addressed(browser, "hideKindsA"),
@@ -289,7 +352,7 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 		"an effect hidden under every relationship",
 		WAIT,
 	);
-	await browser.run(["click", '[data-lens-id="all"]']);
+	await selectLens(browser, "all");
 	await pollUntil(
 		async () => [await addressed(browser, "hideKindsA"), await addressed(browser, "hideEffectsA")],
 		(hidden) => hidden.every((list) => list === null),
@@ -299,7 +362,7 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 	await pollUntil(
 		() => lensOf(browser),
 		(lens) => lens === "All relationships",
-		"every relationship shown by the active preset",
+		"every relationship shown by the active lens",
 		WAIT,
 	);
 	await browser.run(["click", '[data-filter-kind="event"]']);
@@ -310,7 +373,7 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 		WAIT,
 	);
 
-	await browser.run(["click", '[data-lens-id="dependencies"]']);
+	await selectLens(browser, "dependencies");
 	await pollUntil(
 		() => lensOf(browser),
 		(lens) => lens === "Declared dependencies · 4 lines left out",
