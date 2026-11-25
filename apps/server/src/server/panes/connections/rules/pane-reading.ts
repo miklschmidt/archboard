@@ -519,28 +519,33 @@ function resolvePaneReading(
 	| { readonly ok: true; readonly reading: Reading }
 	| { readonly ok: false; readonly error: NavigationError } {
 	const subjects = knownSubjectIds(model);
-	const moduleRef = orQualified((raw) => resolveModuleRef(model, raw));
-	const subjectRef = orQualified((raw) => resolveSubjectRef(model, subjects, raw));
+	// Only scope and focus pass through: the show's structural refusal checks them for an agent,
+	// and nothing checks an expanded or selected id afterwards.
 	const resolvedScope =
-		request.scope === undefined ? { ok: true as const, id: undefined } : moduleRef(request.scope);
+		request.scope === undefined
+			? { ok: true as const, id: undefined }
+			: orQualified((raw) => resolveModuleRef(model, raw))(request.scope);
 	if (!resolvedScope.ok) return resolvedScope;
 
 	const resolvedExpand =
 		request.expand === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.expand, moduleRef);
+			: resolveList(request.expand, (raw) => resolveModuleRef(model, raw));
 	if (!resolvedExpand.ok) return resolvedExpand;
 
 	const resolvedFocus =
 		request.focus === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.focus, subjectRef);
+			: resolveList(
+					request.focus,
+					orQualified((raw) => resolveSubjectRef(model, subjects, raw)),
+				);
 	if (!resolvedFocus.ok) return resolvedFocus;
 
 	const resolvedSelect =
 		request.select === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.select, subjectRef);
+			: resolveList(request.select, (raw) => resolveSubjectRef(model, subjects, raw));
 	if (!resolvedSelect.ok) return resolvedSelect;
 
 	const resolvedGroup =

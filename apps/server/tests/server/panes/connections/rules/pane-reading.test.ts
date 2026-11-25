@@ -209,6 +209,8 @@ describe("pane-reading resolution", () => {
 		expect(resolved.reading.scope).toBe("Shop#gone");
 		expect(resolved.reading.focus).toEqual(["Shop#removed"]);
 		expect(resolvePaneReading(model, { scope: "Nowhere" }).ok).toBe(false);
+		expect(resolvePaneReading(model, { select: ["Shop#gone"] }).ok).toBe(false);
+		expect(resolvePaneReading(model, { expand: ["Shop#gone"] }).ok).toBe(false);
 	});
 
 	test("merges --keep onto the pane's currently reported architecture", () => {
