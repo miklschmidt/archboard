@@ -23,10 +23,10 @@ const CodeBindingSchema = z
 				"Optional qualified definition name in `path`, or an infrastructure or Nix declaration address. Omit to bind the whole file or directory.",
 		}),
 		branch: NonemptyString.optional().meta({
-			description: "Read the bound code from this Git branch when `commit` is absent.",
+			description: "Git branch that the binding names when `commit` is absent.",
 		}),
 		commit: NonemptyString.optional().meta({
-			description: "Read the bound code at this Git commit. It takes precedence over `branch`.",
+			description: "Full or abbreviated Git commit ID. It takes precedence over `branch`.",
 		}),
 		confirmedAt: NonemptyString.optional().meta({
 			description: "Optional timestamp when the binding was last confirmed against source.",
@@ -34,7 +34,8 @@ const CodeBindingSchema = z
 	})
 	.strict()
 	.meta({
-		description: "Primary source location where a module does or will do its work.",
+		description:
+			"Primary source location where a module does or will do its work. The code check normally uses the working tree when the checkout matches the named branch or commit, or when neither is set. It can read other refs from local Git. A proposal check can read inherited bindings on the proposal's own branch.",
 	});
 type CodeBinding = z.infer<typeof CodeBindingSchema>;
 /**
@@ -66,8 +67,8 @@ type CodeAnchor = z.infer<typeof CodeAnchorSchema>;
  * One file in a repository that a variant draws, such as a design document, an
  * ADR or a task (ADR 0054). It has a binding's shape without what only code
  * has, so the binding's resolver reads it. `commit` takes precedence over
- * `branch`. The code check reads a Git tree if the ref differs from the
- * checkout's HEAD or branch, and the working tree otherwise.
+ * `branch`. The code check normally uses the working tree when it matches
+ * the named ref or no ref is named. It can read other refs from local Git.
  */
 const DocumentReferenceSchema = CodeBindingSchema.pick({
 	repo: true,
@@ -79,16 +80,13 @@ const DocumentReferenceSchema = CodeBindingSchema.pick({
 			description: "Repository-relative path to the referenced document file.",
 		}),
 		branch: CodeBindingSchema.shape.branch.meta({
-			description: "Optional Git branch to use when `commit` is absent.",
-		}),
-		commit: CodeBindingSchema.shape.commit.meta({
-			description: "Optional Git commit SHA. It takes precedence over `branch`.",
+			description: "Git branch that the reference names when `commit` is absent.",
 		}),
 	})
 	.strict()
 	.meta({
 		description:
-			"Reference to a repository document such as a design doc, ADR, or task. A working-tree code check reads the vault's checkout for `repo` when no ref is specified or the selected ref is checked out. Otherwise it looks in the selected Git tree.",
+			"Reference to a repository document such as a design doc, ADR, or task. The code check normally reads the working tree when no ref is named or the checkout matches it. It can read other refs from local Git.",
 	});
 type DocumentReference = z.infer<typeof DocumentReferenceSchema>;
 
