@@ -9,6 +9,7 @@ import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hook
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
+import { modelSubjects } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import { useHoverLight } from "#ui/architecture-drawing/canvas/picture/hooks/use-hover-light.ts";
 import { useThemePreference } from "#ui/application/hooks/use-theme.ts";
@@ -77,13 +78,15 @@ function useModelExplanation(
 	const capture = useMemo(() => {
 		const mode = diagramGrammarSchema().safeParse(temporary ? "architecture" : grammar);
 		if (!mode.success || !readsVaultOnDisk(model)) return null;
+		// A temporary flow's own actors and steps are in no model, so no report names them as selected.
+		const canonical = temporary ? new Set(modelSubjects(model).map(({ id }) => id)) : null;
 		return {
 			vault,
 			model: model.manifest.id,
 			display,
 			expectedRevision: model.revision.digest,
 			expectedComparisonRevision: comparisonRevision,
-			subjects: [...selected],
+			subjects: [...selected].filter((id) => canonical?.has(id) ?? true),
 			...source,
 			reading: {
 				scope: scope ?? undefined,

@@ -88,3 +88,47 @@ test("pane labels survive the wire without entering an explanation request, and 
 	unmount();
 	client.clear();
 });
+
+test("a temporary flow reports the canonical reading beneath it and explains nothing", () => {
+	const client = new QueryClient();
+	/** Keep reports without an HTTP request. */
+	const report = mock((_reading: PaneReading | null): void => {});
+	/** Record any invocation, which a temporary flow must not make. */
+	const invoke = mock((_vault: string, _input: ExplanationInvocation): void => {});
+	const host = { report, invoke, userChanged: noUserChange, pending: false };
+	const location = { ...shopReading(), grammar: "flowchart", flow: "eph#flow" };
+	/**
+	 * Supply the query cache and the explanation host.
+	 * @param props The rendered hook.
+	 * @param props.children The hook.
+	 * @returns Its providers.
+	 */
+	const wrapper = ({ children }: { children: ReactNode }) =>
+		createElement(
+			QueryClientProvider,
+			{ client },
+			createElement(ModelExplanationContext.Provider, { value: host }, children),
+		);
+	const { result, unmount } = renderHook(
+		() =>
+			useModelExplanation(
+				"/checkout/.archboard/vault",
+				SHOP,
+				location,
+				new Set(["Shop#Gateway", "eph#p1", "eph#s1"]),
+				{ ready: true, presentation: null },
+				{ ephemeralFlow: { name: "Login", grammar: "flowchart" } },
+			),
+		{ wrapper },
+	);
+	expect(report.mock.calls.at(-1)?.[0]?.architecture).toMatchObject({
+		subjects: ["Shop#Gateway"],
+		reading: { grammar: "architecture", flow: undefined },
+		display: { ephemeralFlow: { name: "Login", grammar: "flowchart" } },
+	});
+	expect(result.current.unavailable).toBe(true);
+	result.current.act("explain-selection");
+	expect(invoke).not.toHaveBeenCalled();
+	unmount();
+	client.clear();
+});
