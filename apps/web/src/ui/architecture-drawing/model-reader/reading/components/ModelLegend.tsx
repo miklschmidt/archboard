@@ -298,9 +298,9 @@ function RelationshipGroup(props: {
 }): JSX.Element {
 	return (
 		<div className="not-first:border-border/65 flex flex-col not-first:mt-3 not-first:border-t not-first:pt-2.5">
-			<p title={props.label} className="text-body text-muted-foreground mb-1 truncate font-medium">
+			<h5 title={props.label} className="text-body text-muted-foreground mb-1 truncate font-medium">
 				{props.label}
-			</p>
+			</h5>
 			{props.children}
 		</div>
 	);
