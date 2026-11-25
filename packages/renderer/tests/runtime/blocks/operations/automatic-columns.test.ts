@@ -7,7 +7,7 @@ import { observedCloud, platformCloud } from "#tests/runtime/support/cloud-readi
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
 import cloud from "#tests/runtime/support/fixtures/branching-cloud.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 // Work-vault readings of Cloud Infrastructure, three versions of one document:
 // folded into columns each fit the pane better, but the steering line from
@@ -20,7 +20,7 @@ test.each([
 	["device migration", orderedFixture(cloud)],
 ] as const)("%s stays unfolded where a fold would cross its lines", async (_name, content) => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -53,7 +53,7 @@ test("a long reading selects three downward columns when two cannot fit", async 
 		})),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -68,7 +68,7 @@ test("a long reading selects three downward columns when two cannot fit", async 
 test("a marginal fit gain keeps the compact ownership reading in one column", async () => {
 	const content = orderedFixture(phone);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

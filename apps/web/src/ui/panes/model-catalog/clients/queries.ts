@@ -8,9 +8,9 @@
 // module that also draws them, and this catalog subscribes to it rather than
 // keeping a second copy under a second key.
 
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { modelCacheMs } from "@archboard/timing";
 import { fetchRepositories } from "#ui/panes/model-catalog/clients/repositories.ts";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */
@@ -43,9 +43,18 @@ function repositoriesQuery() {
 		 * @returns The listing.
 		 */
 		queryFn: (context) => fetchRepositories(context.signal),
-		staleTime: MODEL_CACHE_MS.listingStale,
+		staleTime: modelCacheMs("listingStale"),
 		refetchOnWindowFocus: "always",
 	});
 }
 
-export { modelCatalogKeys, repositoriesQuery };
+/**
+ * Read the repositories of this machine again.
+ * @param client The tab's query client.
+ * @returns When the read is invalidated.
+ */
+function invalidateRepositories(client: QueryClient): Promise<void> {
+	return client.invalidateQueries({ queryKey: modelCatalogKeys.repositories });
+}
+
+export { invalidateRepositories, repositoriesQuery };

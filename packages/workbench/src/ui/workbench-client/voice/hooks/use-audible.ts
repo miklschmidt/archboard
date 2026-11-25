@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@archboard/codex-realtime-voice/controllers";
+import { isSpeakingLevel } from "@archboard/codex-realtime-voice/controllers";
 import type { AgentVoiceView, VoiceStage } from "#ui/workbench-client/surfaces/state/contracts.ts";
 
 /** The stages in which the model's measured output can make it audible. */
@@ -21,7 +21,7 @@ function useAudible(voice: AgentVoiceView): boolean {
 	 * Whether the output is over the speaking level now.
 	 * @returns True when it is.
 	 */
-	const loud = (): boolean => level.read() >= VOICE_OUTPUT_SPEAKING_LEVEL;
+	const loud = (): boolean => isSpeakingLevel(level.read());
 	const overSpeaking = useSyncExternalStore(level.subscribe, loud, loud);
 	return LIVE_STAGES.has(voice.stage) && overSpeaking;
 }

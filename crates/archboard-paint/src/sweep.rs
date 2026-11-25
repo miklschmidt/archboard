@@ -59,7 +59,7 @@ pub(crate) struct Look {
 
 /// The copies of the lines that light, and the moment they are drawn at.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Sweep {
+pub(crate) struct Sweep {
     now: f64,
     copies: Vec<Copy>,
 }

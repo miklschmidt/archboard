@@ -17,8 +17,8 @@ import express from "express";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { createCodeFindingsMemory } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
 import {
-	CodeCheckAnswerSchema,
-	RememberedFindingsSchema,
+	codeCheckAnswerSchema,
+	rememberedFindingsSchema,
 	type CodeCheckAnswer,
 } from "@archboard/code-intel/code-check";
 
@@ -128,7 +128,7 @@ function named(vault = ownVault): string {
 async function readFindings(base: string, vault = ownVault): Promise<Map<string, number>> {
 	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 	expect(reply.status).toBe(200);
-	const { readings } = RememberedFindingsSchema.parse(await reply.json());
+	const { readings } = rememberedFindingsSchema().parse(await reply.json());
 	return new Map(readings.map((reading) => [reading.model, reading.findings.length]));
 }
 
@@ -140,7 +140,7 @@ test("a pass fills the memory, and reading it starts no pass", async () => {
 	expect(passes()).toBe(1);
 
 	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
-	const { readings } = RememberedFindingsSchema.parse(await reply.json());
+	const { readings } = rememberedFindingsSchema().parse(await reply.json());
 	expect(readings.map(({ model, variant, version }) => ({ model, variant, version }))).toEqual([
 		{ model: "orders", variant: "v1", version: 3 },
 		{ model: "payments", variant: "v1", version: 3 },
@@ -225,7 +225,7 @@ test("canonical findings keep the exact model revision and replace only the sele
 	async function models(vault = ownVault) {
 		const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 		expect(reply.status).toBe(200);
-		return RememberedFindingsSchema.parse(await reply.json()).models;
+		return rememberedFindingsSchema().parse(await reply.json()).models;
 	}
 	for (let pass = 0; pass < 2; pass += 1) {
 		const response = await fetch(`${base}/api/vault/code-check?${named()}`);
@@ -303,7 +303,7 @@ test("a canonical reading keeps each module's depth and what the pass skipped, a
 	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
 
 	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
-	const { models } = RememberedFindingsSchema.parse(await reply.json());
+	const { models } = rememberedFindingsSchema().parse(await reply.json());
 	const now = models?.find((reading) => reading.state === "Now");
 	expect(now?.depth?.map((each) => each.subject.id)).toEqual(["clean"]);
 	expect(now?.depth?.[0]?.exports.functions).toBe(1);
@@ -357,7 +357,9 @@ test("every canvas reads no export names, and the exports of one module are read
 		);
 	const gateway = await exportsOf("gateway");
 	expect(gateway.status).toBe(200);
-	const measured = CodeCheckAnswerSchema.pick({ depth: true }).parse(await gateway.json()).depth;
+	const measured = codeCheckAnswerSchema()
+		.pick({ depth: true })
+		.parse(await gateway.json()).depth;
 	expect(measured?.map((module) => module.subject.id)).toEqual(["gateway"]);
 	expect(measured?.[0]?.names.map(({ name, line }) => ({ name, line }))).toEqual([
 		{ name: "run0", line: 1 },

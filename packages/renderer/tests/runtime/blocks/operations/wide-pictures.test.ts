@@ -5,9 +5,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 import { expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultLayoutEngine, layoutEngineSchema } from "@archboard/model/render-reply";
 import { projectModel } from "@archboard/model/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -74,12 +74,12 @@ const RENDER_CASE_TIMEOUT_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIME
 const cases: { name: string; request: Parameters<typeof renderArchitecture>[0] }[] = [
 	...FIXTURES.map(({ name, content }) => ({
 		name,
-		request: { content: orderedFixture(content), policy: DEFAULT_SEMANTIC_POLICY },
+		request: { content: orderedFixture(content), policy: defaultSemanticPolicy() },
 	})),
 	...repositoryReadings(),
 ];
 for (const reading of cases) {
-	for (const layout of LayoutEngineSchema.options) {
+	for (const layout of layoutEngineSchema().options) {
 		const name = `${reading.name} (${layout}): complete architecture, clear cards, labels on their own routes`;
 		test(
 			name,
@@ -93,7 +93,7 @@ for (const reading of cases) {
 					layout,
 				});
 				const took = performance.now() - began;
-				if (layout === DEFAULT_LAYOUT_ENGINE)
+				if (layout === defaultLayoutEngine())
 					expect(took, "first layout, ms").toBeLessThan(LOADED_LAYOUT_BOUND_MS);
 				expectDrawingIntact(drawing, content, layout);
 			},

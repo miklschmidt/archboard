@@ -1,20 +1,28 @@
 import { expect } from "bun:test";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
+import { parseDynamicToolCallResponse } from "./codex-workbench-response.ts";
 import { reverseResponses } from "./codex-workbench-lifecycle.ts";
 
 const operationPattern = /^archboard:operation:h[a-f0-9]{32}\.h[a-f0-9]{32}\.h[a-f0-9]{32}$/;
 
+/**
+ * Compare the decoded response in wire order. The reader already checks that the text is compact.
+ * @param actual The decoded envelope.
+ * @param expected The expected envelope with keys in their wire order.
+ */
+function expectCanonicalEnvelope(actual: unknown, expected: unknown): void {
+	expect(JSON.stringify(actual)).toBe(JSON.stringify(expected));
+}
+
 function expectGeneralQueryEnvelopes(logPath: string): void {
 	const list = parseDynamicToolCallResponse(
-		"list_threads",
 		reverseResponses(logPath, "general-list")[0]?.frame?.result,
 	).envelope;
 	if (list.tag !== "ok") {
 		throw new Error("The controlled thread list was not successful.");
 	}
 	expect(list.operationId).toMatch(operationPattern);
-	expect(list).toEqual({
+	expectCanonicalEnvelope(list, {
 		tag: "ok",
 		operationId: list.operationId,
 		value: {
@@ -34,14 +42,13 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 		},
 	});
 	const read = parseDynamicToolCallResponse(
-		"read_thread",
 		reverseResponses(logPath, "general-read")[0]?.frame?.result,
 	).envelope;
 	if (read.tag !== "ok") {
 		throw new Error("The controlled thread read was not successful.");
 	}
 	expect(read.operationId).toMatch(operationPattern);
-	expect(read).toEqual({
+	expectCanonicalEnvelope(read, {
 		tag: "ok",
 		operationId: read.operationId,
 		value: {
@@ -59,7 +66,6 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 		},
 	});
 	const wait = parseDynamicToolCallResponse(
-		"wait_threads",
 		reverseResponses(logPath, "general-wait")[0]?.frame?.result,
 	).envelope;
 	if (wait.tag !== "ok") {
@@ -72,7 +78,7 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 	};
 	expect(wait.operationId).toMatch(operationPattern);
 	expect(waitValue.cursor).toMatch(/^[A-Za-z0-9_-]+$/);
-	expect(wait).toEqual({
+	expectCanonicalEnvelope(wait, {
 		tag: "ok",
 		operationId: wait.operationId,
 		value: { event: "completed", threadId: "thread-3", cursor: waitValue.cursor },
@@ -81,7 +87,7 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 
 function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): void {
 	if (kind === "fork") {
-		const envelope = parseDynamicToolCallResponse("fork_thread", result).envelope;
+		const envelope = parseDynamicToolCallResponse(result).envelope;
 		if (envelope.tag !== "ok") {
 			throw new Error("The controlled fork was not successful.");
 		}
@@ -90,7 +96,7 @@ function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): 
 		};
 		expect(envelope.operationId).toMatch(operationPattern);
 		expect(value.initialTurn.operationId).toMatch(operationPattern);
-		expect(envelope).toEqual({
+		expectCanonicalEnvelope(envelope, {
 			tag: "ok",
 			operationId: envelope.operationId,
 			value: {
@@ -106,12 +112,12 @@ function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): 
 		});
 		return;
 	}
-	const envelope = parseDynamicToolCallResponse("send_message_to_thread", result).envelope;
+	const envelope = parseDynamicToolCallResponse(result).envelope;
 	if (envelope.tag !== "ok") {
 		throw new Error("The controlled send was not successful.");
 	}
 	expect(envelope.operationId).toMatch(operationPattern);
-	expect(envelope).toEqual({
+	expectCanonicalEnvelope(envelope, {
 		tag: "ok",
 		operationId: envelope.operationId,
 		value: { threadId: "thread-3", delivery: "delivered" },

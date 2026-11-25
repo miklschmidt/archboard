@@ -8,9 +8,6 @@ use crate::names::word;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines, point, shape, text};
 use crate::paint::cards::{header_anchor, header_width, paint_header};
-use crate::paint::design::{
-    BAND_RADIUS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, TAB_PADDING,
-};
 use crate::paint::far_card::{Words, heading_runs, paint_heading_views};
 use crate::paint::far_view::{far_layer, near_layer};
 use crate::paint::palette::Palette;
@@ -25,6 +22,9 @@ use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{SequenceFlow, SequenceFrame, Standing};
 use crate::scene::{
     Colour, Geometry, Group, Item, PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
+};
+use crate::sizes::{
+    BAND_RADIUS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, TAB_PADDING,
 };
 
 const MARK_SPACING: f64 = 24.0;

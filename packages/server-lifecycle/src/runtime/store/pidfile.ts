@@ -36,7 +36,7 @@ function writePidFile(port: number, pid: number): void {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		fs.writeFileSync(file, ownerRecord(pid), "utf-8");
 	} catch (error) {
-		logger.warn("Failed to write server pidfile:", errorMessage(error));
+		logger().warn("Failed to write server pidfile:", errorMessage(error));
 	}
 }
 
@@ -139,7 +139,7 @@ function recordServerPid(port: number): void {
 	writePidFile(port, process.pid);
 	const swept = sweepDeadPidFiles();
 	if (swept > 0) {
-		logger.debug(`Removed ${swept} pidfiles of servers that are gone`);
+		logger().debug(`Removed ${swept} pidfiles of servers that are gone`);
 	}
 }
 

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { CodexProcessError } from "@archboard/codex-app-server/process";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { serverStartupFailureMessage } from "#server/start-stop/lifecycle/startup-error.ts";
 
 test("classifies process-group ownership refusal without install recovery", () => {
@@ -26,6 +26,6 @@ test("retains install recovery for a true child spawn failure", () => {
 	});
 
 	const message = serverStartupFailureMessage(failure);
-	expect(message).toContain(`@openai/codex ${CODEX_PROTOCOL_VERSION}`);
+	expect(message).toContain(`@openai/codex ${codexProtocolVersion()}`);
 	expect(message).toContain("Could not spawn the exact Codex app-server child");
 });

@@ -8,7 +8,7 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { routePoints, distanceToFrame, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const application = orderedFixture({
 	nodes: [
@@ -89,7 +89,7 @@ test.each([
 	"a frame's call into its own part leaves its title divider and stays inside in %s",
 	async (_, content: VariantContent) => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 		});
@@ -122,7 +122,7 @@ test("a part's call up to its own frame ends at the title divider", async () => 
 		edges: [{ id: "up", from: "hook", to: "app", kind: "call", label: "registers" }],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});

@@ -8,7 +8,7 @@
 
 import { useCallback, useId, type JSX } from "react";
 
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { Select } from "@archboard/ui-kit/components";
 import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import {
@@ -27,7 +27,7 @@ function SemanticEngineBar(): JSX.Element {
 	const engine = useLayoutEngine();
 	const id = useId();
 	const onChange = useCallback((value: string | null): void => {
-		const parsed = LayoutEngineSchema.safeParse(value);
+		const parsed = layoutEngineSchema().safeParse(value);
 		if (parsed.success) chooseLayoutEngine(parsed.data);
 	}, []);
 	return (

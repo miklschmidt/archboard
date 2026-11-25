@@ -5,7 +5,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Two parts calling each other, in the given authored order.
@@ -25,21 +25,21 @@ function cycle(order: readonly [string, string]) {
 test("a two-part cycle follows authored order across document array permutations", async () => {
 	const content = cycle(["a", "b"]);
 	const first = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
 	});
 	expect(first.atlas.nodes["a"]!.y).toBeLessThan(first.atlas.nodes["b"]!.y);
 	const reordered = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: { ...content, nodes: content.nodes.toReversed(), edges: content.edges.toReversed() },
 		theme: "light",
 		layout: "track",
 	});
 	expect(reordered.atlas.nodes).toEqual(first.atlas.nodes);
 	const flipped = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: cycle(["b", "a"]),
 		theme: "light",
 		layout: "track",
@@ -58,7 +58,7 @@ test("a longer cycle drops exactly the edge that closes it from the first part, 
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

@@ -176,11 +176,10 @@ holds files only. When it grows past about 12 files, split its behavior into sub
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
 grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
 `MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
-pulls against written beside it. A caller imports its owner's group and reads a key of it. A
-computation that callers would repeat from a group is one function of the package, such as the
-Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
-named constant. The six flat names that only the renderer imports, such as
-`SEMANTIC_RASTER_JOB_TIMEOUT_MS`, stay until its rewrite lands.
+pulls against written beside it. The groups stay inside: a caller asks the owner's function for one
+duration by its key, such as `paneMs("report")`. A computation that callers would repeat from a
+group is one function of the package, such as the Codex restart backoff `codexRestartDelayMs` or
+the deadline `codexApprovalExpiresAt(nowMs)`, and callers call it.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
@@ -249,18 +248,19 @@ It imports the lower process, diagnostics, and timing packages.
 It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
 
 The two shared entries are safe for the browser. The four runtime entries run only in Bun.
-Archboard owns captured architecture context in `workbench` through its `./semantic-context` entry.
+Archboard owns captured architecture context in `workbench`, which keeps its publisher private.
 
 - `shared/api/`: `./contract` holds the authored wrapper over the generated protocol types: the
-  request methods, the status types, the approval decisions and their schemas, and the connection
-  capacity constants. The generated tree is ignored by git. It lives in
+  status types, the approval decisions, `codexFieldSchema`, which hands out the schema of one closed
+  Codex vocabulary for a caller to compose into its own, and the reverse-request limit of a
+  connection. The generated tree is ignored by git. It lives in
   `src/shared/protocol/generated`, and `scripts/generate-codex-app-server-contract.ts` writes it on
   `bun install` and creates its parent directories. The wrapper imports it with `#` and only as
   types, and no other file of the package or outside it does. The capacity test is opt-in
   (`bunx vp run test:opt-in:capacity`). `./identity` holds the identity brands, the authorities, the
   correlations and the ledger.
-- `./protocol` is the pinned Codex version and the decode of a server notification. Outside tests
-  build their notification fixtures with the decoder. The method lists, the request and response
+- `./protocol` is `codexProtocolVersion()`, the pinned Codex version. A test outside the package
+  types its notification fixtures as the transport's `TransportServerNotification`. The decoder, the method lists, the request and response
   schemas and the thread, item and core schemas of `runtime/protocol/` and `runtime/schemas/` stay
   private.
 - `./transport` is the stdio transport of `runtime/transport/clients/`: it creates the transport and carries
@@ -269,17 +269,17 @@ Archboard owns captured architecture context in `workbench` through its `./seman
   `runtime/session/operations/` adopts the identities of a response. `runtime/protocol/wire.ts` decodes the JSON frames. The write-capacity test of the
   transport is opt-in too (`bunx vp run test:opt-in:capacity`).
 - `./session` is the session of `runtime/session/services/`. It creates the session and carries its
-  interface, its options, its errors and its control symbol. It also carries the decoded results of
-  a session request, such as `SessionThread`, and the schemas where code outside the package
-  validates: the reply to a server request, the supported login parameters and a queued
-  submission. The session's storage proof is in `runtime/session/store/`.
+  interface, its options, its errors, `codexSessionControl` for the owner that composed it, and the
+  thread source it reports. It also carries the decoded results of a session request, such as
+  `SessionThread`, and the checks where code outside the package validates: the reply to a server
+  request, the supported login parameters and a queued submission. The session's storage proof is in `runtime/session/store/`.
 - `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
   reports its lifecycle. It also carries the executable check, which finds the Codex executable of
   the installation that runs, through `installation()` of `workspace`, and refuses a global one
   or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
   `runtime/services/` holds the child's environment and its diagnostics buffer.
-- A test that needs the process owner's injected dependencies imports
-  `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
+- A test that needs the process owner's injected dependencies imports `createProcessOwner` from
+  `runtime/processes/process-owner.ts` inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
 The seventh is `model` (`@archboard/model`).
@@ -513,17 +513,17 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 9 names, where code outside
 imported 5 module paths. It imports `model`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
 The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
 - `./opening` is the wire contract of the open, as a reader outside sees it. It holds the notice a person reads,
-  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
-  the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
+  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the check
+  that the GitHub link of a notice must pass. The whole
   contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
-  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes. The
+  router's `openInEditor` plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
 - `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and
@@ -541,11 +541,12 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
   area.
 - The tests are in `tests/`: `shared/schemas/` tests the contract, `server/middleware/`, `server/projections/` and
-  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay
-  in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
+  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. `server/routes/` mounts the
+  routes behind the browser-origin guard with a fake opener, and holds each reply to the schemas of `shared/schemas/`.
+  The browser owner stays in `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
-(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 20 names, one
 operation or fact for each job a caller has. It imports `model`, `timing`, `workspace` and `renderer`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
 files of `runtime/api/` run only in Bun.
@@ -563,8 +564,7 @@ files of `runtime/api/` run only in Bun.
   recording keeps its talk (the directory asked for, or a new one in the state directory, which keeps the newest ten)
   and proves it free before anything starts. `keepTalk` makes a talk of its parts and writes it into a named directory,
   so the talk's format and file names stay private. `recordingContainerOf` reads the container a file name asks for.
-  `recordingPageUrl` is the address a recording opens, which the browser's contract test reads back. It is
-  `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
+  It is `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
   client of `runtime/recorder/clients/`, the talk files and the silent WAV of `runtime/recorder/store/`, and the
   container, encoder and browser of `runtime/recorder/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
 - `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/video-encoding/processes/video-encoder.ts`,
@@ -572,12 +572,12 @@ files of `runtime/api/` run only in Bun.
   `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
   package sits.
 - The tests are in `tests/`: `shared/protocol/` holds the talk's contract, `runtime/recorder/store/` the talk on
-  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and
+  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and the address a recording opens, and
   `runtime/video-encoding/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
-role for `runtime/` and exposes 2 subpaths with 2 names. It imports `model`, `timing`, `renderer`, `process` and
-`walkthrough`. Every file is Node-bound and runs only in Bun. The 2 files of `runtime/api/` are the
+role for `runtime/` and exposes 1 subpath with 1 name. It imports `model`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The file of `runtime/api/` is the
 interface.
 
 - The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
@@ -588,9 +588,6 @@ interface.
   (`runtime/evaluation/operations/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
   on real Flask checkouts, one blinded grader and a comparison report.
-- `./citations` is `anchorsOf`, the anchors of a markdown document. The grader's citations and
-  `tests/system/repository-policy/skill-links.test.ts` read them. That test stays in the repository lane, whose cache
-  follows every tracked file, so a changed skill always runs it.
 - `runtime/evaluation/` holds the evaluation by behavior. `batch/` holds a batch and its inputs, `run-world/` one
   author run's world: its vault, its installed skill, the Archboard server and the Flask checkout. `run-checks/` holds
   the captures and the re-audit, `audit/` that classifies what an author ran and what it reached for, and
@@ -603,7 +600,9 @@ interface.
   the move. No file of the package finds a path from where it sits. A test finds the checkout with
   `installation().root` of `@archboard/workspace/installation`.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
-  executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
+  executables and the fixtures. `skill-links.test.ts`, beside the citations' test, holds the links of the shipped
+  skills and of the repository's navigation to tracked files and headings. It runs in the repository lane, whose cache
+  follows every tracked file, so a changed skill always runs it. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`).
 It starts, finds, restarts, and stops the Archboard server and owns the identity-gated CLI request.
@@ -658,7 +657,7 @@ It bundles the four MIT packages into ESM and bundled declarations for each publ
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
 The release workflow packs that directory and publishes it to npm ([releasing](releasing.md)).
-`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
+`createVoiceAgent` finds the installed `@openai/codex` and proves its exact version with `resolveCodexExecutable` of `@archboard/codex-app-server/process` when the host leaves out `codex.executablePath`. The production host proves Codex before preparing storage, using `installation().codexLocation`. The example proves Codex after checking its browser assets and before creating the agent, with or without an explicit `--codex` path. Both hosts pass the proven executable to the agent, which proves it again at each start.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
@@ -668,7 +667,7 @@ Its public entries separate browser code from Bun code.
 It holds the transport and media owners, `createConversationControllers` for one chat, and the timeline projection.
 `./contract` holds only the snapshot types a conversation UI renders.
 `./schemas` holds the browser model's schemas and the dynamic approval wire rules, for a host server and its tests.
-`./realtime` holds the realtime contract, transcript events, and state transitions.
+`./realtime` holds the types of a voice run's phase and state.
 `./runtime` and `./server` run only in Bun.
 All four areas adopt the `api/` role.
 
@@ -681,7 +680,7 @@ The identity sets the Codex service name and thread source, with the neutral def
 A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, a voice narrative, and its own browser routing.
 A host that multiplexes its own socket uses `agent.browser` instead of either adapter.
 That extension contract is one type, and a host derives the parts it names from it.
-`./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, instruction byte checks, and the realtime adapter and thread-context delivery its tests build on.
+`./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, and instruction byte checks.
 The namespace of a dynamic approval on the browser wire is whatever the host names; Archboard sends `archboard_app`.
 A consumer never assembles the internal factories.
 Host context events carry generic fields (feed, sequence, freshness, identity, coalescing) and a payload that only the host's policy reads.
@@ -720,9 +719,8 @@ It adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
 
 `./browser-contract` holds Archboard conversation routes and presentation contracts.
 Archboard validates its walkthrough and recording payload before narration starts.
-`./semantic-context` publishes captured architecture context for coordinators and workhorses.
+Captured architecture context for coordinators and workhorses is published inside the package, and no entry exposes it.
 Its capture schemas, brief builder, and catalogue formatting stay in this integration.
-`./runtime` exposes application behavior needed by outside callers.
 
 `./server`, `./panes`, and `./host` expose Archboard server integration.
 The production adapter calls `createVoiceAgent` like any host: Archboard's identity (`archboard`), its role instructions and app tools, admitted vault checkouts, and its extensions.

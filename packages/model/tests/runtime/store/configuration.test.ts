@@ -7,7 +7,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
+import { defaultSemanticPolicy } from "#shared/schemas/semantic-policy.ts";
 import { readVaultConfiguration } from "#runtime/store/configuration.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-policy-"));
@@ -22,7 +22,7 @@ afterAll(() => rmSync(vault, { recursive: true, force: true }));
 function read(codeCheck: unknown) {
 	writeFileSync(
 		join(vault, ".archboard", "config.yaml"),
-		Bun.YAML.stringify({ ...DEFAULT_SEMANTIC_POLICY, codeCheck }),
+		Bun.YAML.stringify({ ...defaultSemanticPolicy(), codeCheck }),
 	);
 	return readVaultConfiguration(vault);
 }

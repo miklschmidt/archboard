@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { savePreviewPlan } from "#tests/runtime/legacy-boards/reading/inventory/operations/fixture.ts";
 
 const homes: string[] = [];
@@ -63,7 +63,7 @@ test("preview converts complete stable narrative readings and keeps only unused 
 			},
 		],
 	});
-	expect(ArchitectureModelReadSchema.safeParse(result).success).toBe(true);
+	expect(architectureModelReadSchema().safeParse(result).success).toBe(true);
 	expect(readFileSync(join(vault, "Shop.semantic.json"))).toEqual(bytes);
 	expect(readArchitectureModel(vault)).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 });
@@ -102,7 +102,7 @@ test("preview playback captures one converted model and reports unavailable beat
 			{ id: "Shop/System#Lost", status: "unavailable", diagnostics: [{ code: "FLOW_REQUIRED" }] },
 		],
 	});
-	expect(ArchitectureModelReadSchema.safeParse(result).success).toBe(true);
+	expect(architectureModelReadSchema().safeParse(result).success).toBe(true);
 	expect(
 		await readArchitectureModel(vault, undefined, undefined, {
 			preview: "Shop",
@@ -152,7 +152,7 @@ test("explicit original addresses and optional bookmarks resolve exact captured 
 			reading: { visibility: { modules: ["Shop/System#Db"], relationships: [], flows: [] } },
 		},
 	});
-	expect(ArchitectureModelReadSchema.safeParse(result).success).toBe(true);
+	expect(architectureModelReadSchema().safeParse(result).success).toBe(true);
 	expect(
 		await readArchitectureModel(vault, undefined, undefined, {
 			preview: "Shop",

@@ -12,15 +12,11 @@ import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { VariantContentSchema } from "@archboard/model/content";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import {
-	SEMANTIC_RASTER_CLEANUP_MS,
-	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
-	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@archboard/timing";
+import { rasterMs } from "@archboard/timing";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
@@ -55,7 +51,7 @@ let drawn: RenderedDiagram;
 
 beforeAll(async () => {
 	drawn = await renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CONTENT,
 		theme: "auto",
 		grammar: "architecture",
@@ -65,11 +61,11 @@ beforeAll(async () => {
 	chromium = await launchHeadlessChromium({
 		chromiumPath: discoveredChromiumPath(),
 		extraArgs: ["--disable-gpu", "--hide-scrollbars", "--force-color-profile=srgb"],
-		startupTimeoutMs: SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-		cleanupTimeoutMs: SEMANTIC_RASTER_CLEANUP_MS,
+		startupTimeoutMs: rasterMs("startupTimeout"),
+		cleanupTimeoutMs: rasterMs("cleanup"),
 		tempRootPrefix: "archboard-theme-following-",
 	});
-	page = await chromium.openPage(SEMANTIC_RASTER_STARTUP_TIMEOUT_MS);
+	page = await chromium.openPage(rasterMs("startupTimeout"));
 	const file = join(chromium.tempRoot, "auto.svg");
 	writeFileSync(file, drawn.svg, "utf8");
 	const size = `width:${drawn.width}px;height:${drawn.height}px`;
@@ -90,13 +86,9 @@ beforeAll(async () => {
 			deviceScaleFactor: 1,
 			mobile: false,
 		},
-		SEMANTIC_RASTER_JOB_TIMEOUT_MS,
+		rasterMs("jobTimeout"),
 	);
-	await page.call(
-		"Page.navigate",
-		{ url: pathToFileURL(html).href },
-		SEMANTIC_RASTER_JOB_TIMEOUT_MS,
-	);
+	await page.call("Page.navigate", { url: pathToFileURL(html).href }, rasterMs("jobTimeout"));
 });
 
 afterAll(async () => {
@@ -112,7 +104,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 	await page.call(
 		"Emulation.setEmulatedMedia",
 		{ features: [{ name: "prefers-color-scheme", value: scheme }] },
-		SEMANTIC_RASTER_JOB_TIMEOUT_MS,
+		rasterMs("jobTimeout"),
 	);
 	await page.evaluate(
 		`(async () => {
@@ -121,7 +113,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 			await document.fonts.ready;
 			await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
 		})()`,
-		{ timeoutMs: SEMANTIC_RASTER_JOB_TIMEOUT_MS },
+		{ timeoutMs: rasterMs("jobTimeout") },
 	);
 	const shots = new Map<string, Map<string, number>>();
 	for (const [index, placement] of PLACEMENTS.entries()) {
@@ -132,7 +124,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 				clip: { x: 0, y: index * drawn.height, width: drawn.width, height: drawn.height, scale: 1 },
 				fromSurface: true,
 			},
-			SEMANTIC_RASTER_JOB_TIMEOUT_MS,
+			rasterMs("jobTimeout"),
 		);
 		const data = (shot as { data: string }).data;
 		shots.set(placement, pngRgbCounts(Uint8Array.from(Buffer.from(data, "base64"))));

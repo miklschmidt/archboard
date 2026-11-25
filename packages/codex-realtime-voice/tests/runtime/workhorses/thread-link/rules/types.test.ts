@@ -1,17 +1,15 @@
-import { expect, test } from "bun:test";
-
 import { createCodexThreadLink } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
-import { createCodexThreadLinkBinding } from "#runtime/workhorses/thread-link/rules/binding.ts";
 import { createCodexThreadLinkClassifier } from "#runtime/workhorses/thread-link/rules/classifier.ts";
 import {
 	type CodexThreadLinkClassifierOptions,
+	type ThreadLinkBindingStore,
 	type ThreadLinkEpochAuthority,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import { type CodexThreadLinkOptions } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
 
 declare const session: CodexThreadLinkClassifierOptions["session"];
 declare const epoch: ThreadLinkEpochAuthority;
-declare const publicBinding: ReturnType<typeof createCodexThreadLinkBinding>;
+declare const injectedBinding: ThreadLinkBindingStore;
 
 function observationOnlyConstruction(): void {
 	const downstreamOptions = {
@@ -49,20 +47,9 @@ function rejectedConstruction(): void {
 		session,
 		epoch,
 		// @ts-expect-error The public port owns its binding; callers cannot inject a store.
-		binding: createCodexThreadLinkBinding(),
+		binding: injectedBinding,
 	});
-	// @ts-expect-error The standalone binding factory has no authority-taking option.
-	createCodexThreadLinkBinding({ epoch });
-	type PublicBindingHasNoBind = "bind" extends keyof typeof publicBinding ? never : true;
-	const publicBindingHasNoBind: PublicBindingHasNoBind = true;
-	void publicBindingHasNoBind;
 }
 
 void observationOnlyConstruction;
 void rejectedConstruction;
-
-test("keeps the public binding factory parameterless at runtime", () => {
-	const runtimeBinding = createCodexThreadLinkBinding();
-	expect(typeof runtimeBinding.snapshot).toBe("function");
-	expect("bind" in runtimeBinding).toBe(false);
-});

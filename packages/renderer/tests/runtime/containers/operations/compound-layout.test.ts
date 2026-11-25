@@ -3,7 +3,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -13,7 +13,7 @@ import {
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const NESTED = orderedFixture({
 	nodes: [
@@ -45,7 +45,7 @@ describe("compound architecture layout", () => {
 			],
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 		});
@@ -60,7 +60,7 @@ describe("compound architecture layout", () => {
 
 	test("ancestor and cross-container routes attach to their own semantic endpoints", async () => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: NESTED,
 			theme: "light",
 		});
@@ -104,15 +104,15 @@ describe("compound architecture layout", () => {
 			nodes: [{ id: "solo", name: "Another document", kind: "module" }],
 		});
 		const [first, separate, concurrent] = await Promise.all([
-			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),
-			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: other, theme: "dark" }),
-			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),
+			renderArchitecture({ policy: defaultSemanticPolicy(), content: NESTED, theme: "light" }),
+			renderArchitecture({ policy: defaultSemanticPolicy(), content: other, theme: "dark" }),
+			renderArchitecture({ policy: defaultSemanticPolicy(), content: NESTED, theme: "light" }),
 		]);
 		expect(first).toEqual(concurrent);
 		expect(Object.keys(separate.atlas.nodes)).toEqual(["solo"]);
 		expect(separate.atlas.edges).toEqual({});
 		const subsequent = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: NESTED,
 			theme: "light",
 		});
@@ -147,7 +147,7 @@ test("a container's direct dependency leaves its painted header", async () => {
 		edges: [{ id: "write", from: "frame", to: "store", kind: "data" }],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "blocks",
@@ -162,7 +162,7 @@ test("a container's direct dependency leaves its painted header", async () => {
 // card, its lines off both centres and its container that much wider: every
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a chain inside a container keeps its reading and measured cards (%s)",
 	async (layout) => {
 		const stages = ["a", "b", "c", "d"];
@@ -176,7 +176,7 @@ test.each(LayoutEngineSchema.options)(
 				.map((to, index) => ({ id: `e${index}`, from: stages[index]!, to, kind: "call" })),
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,
@@ -203,7 +203,7 @@ test.each(LayoutEngineSchema.options)(
 test("stacked cards joined through a label share a column or stand clearly apart", async () => {
 	const content = orderedFixture(nearMiss);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -217,11 +217,11 @@ test("stacked cards joined through a label share a column or stand clearly apart
 // A page kept its placement's slack: under Graphviz a frame's trimmed title
 // margin left 52 points above the drawing against 24 below it, and under the
 // block engines a frame at the document's edge stood 32 points in on one side.
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a %s page keeps the same margin on every side of what it draws",
 	async (layout) => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: NESTED,
 			theme: "light",
 			layout,

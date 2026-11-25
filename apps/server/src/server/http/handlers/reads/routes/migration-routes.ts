@@ -1,16 +1,16 @@
-import { ArchitectureMigrationRequestSchema } from "@archboard/model/contract";
+import { architectureMigrationRequestSchema } from "@archboard/model/contract";
 import { migrateArchitectureModel } from "@archboard/model/store-write";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 import type { Express, Response } from "express";
 import { z } from "zod";
 import { readLegacyInventory } from "@archboard/model/store-read";
 import { saveLegacyMappingPlan } from "@archboard/model/store-write";
-import { LegacyMappingWriteSchema, type LegacyInventoryRead } from "@archboard/model/migration";
+import { legacyMappingWriteSchema, type LegacyInventoryRead } from "@archboard/model/migration";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z.strictObject({ vault: z.string(), origin: z.string().min(1) });
-const WriteSchema = LegacyMappingWriteSchema.extend({ vault: z.string().optional() });
+const WriteSchema = legacyMappingWriteSchema().extend({ vault: z.string().optional() });
 
 /**
  * Return the shared runtime result with its transport status.
@@ -43,9 +43,11 @@ function mountLegacyMigrationRoutes(app: Express): void {
 		"/api/architecture/migration/apply",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = ArchitectureMigrationRequestSchema.extend({
-				vault: z.string().optional(),
-			}).safeParse(req.body);
+			const parsed = architectureMigrationRequestSchema()
+				.extend({
+					vault: z.string().optional(),
+				})
+				.safeParse(req.body);
 			if (!parsed.success) {
 				res
 					.status(400)

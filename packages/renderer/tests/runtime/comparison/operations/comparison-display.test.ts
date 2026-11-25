@@ -5,7 +5,7 @@ import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-m
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
 	const before = orderedFixture({
@@ -38,12 +38,12 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 	const decorated = await renderLegacyBoard(
 		document,
 		{ variant: "draft", theme: "light" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	const plain = await renderLegacyBoard(
 		document,
 		{ variant: "draft", theme: "light", comparison: false },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!decorated.ok || !plain.ok || !("svg" in decorated.reply) || !("svg" in plain.reply)) {
 		throw new Error("Expected two drawn proposals");
@@ -95,12 +95,12 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	const compared = await renderLegacyBoard(
 		document,
 		{ variant: "draft", theme: "light", layout: "track" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	const plain = await renderLegacyBoard(
 		document,
 		{ variant: "draft", theme: "light", layout: "track", comparison: false },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
 		throw new Error("Expected two drawn proposals");
@@ -211,7 +211,7 @@ test.each([
 		});
 		const visible = await renderArchitecture({
 			content: draft,
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			layout: "blocks",
 		});
 		expect(drawings.plain.atlas).toEqual(visible.atlas);

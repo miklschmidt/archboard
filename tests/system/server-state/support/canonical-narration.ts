@@ -19,12 +19,12 @@ import {
 } from "./codex-production.ts";
 import { createRequester } from "./http.ts";
 import {
-	SEMANTIC_PANE_CONTEXT_ROUTE,
-	type SemanticPaneContextSchema,
+	semanticPaneContextRoute,
+	type semanticPaneContextSchema,
 } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type Report = z.infer<typeof SemanticPaneContextSchema>;
+type Report = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
 
 export async function canonicalNarration(resources: AsyncDisposableStack, proposal = false) {
 	const fixture = prepareProductionFixture(
@@ -159,7 +159,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 		reading: { focus: [], relationshipKinds: [], grammar: "architecture" },
 	};
 	const report = (presentation: Report["presentation"], capture = architecture) =>
-		request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+		request(semanticPaneContextRoute(), {
 			method: "POST",
 			doing: false,
 			body: {

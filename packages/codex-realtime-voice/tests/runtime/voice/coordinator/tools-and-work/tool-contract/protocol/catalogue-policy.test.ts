@@ -1,364 +1,57 @@
-import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
-import {} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
 import {
-	VOICE_TOOL_CONTRACTS,
-	WORKHORSE_TOOL_CONTRACTS,
-	COORDINATOR_IDENTITY,
-	COORDINATOR_TOOL_CATALOGUE,
-	COORDINATOR_TOOL_CONTRACTS,
-	CoordinatorToolContractSchema,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/contracts.ts";
-import {
-	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	DYNAMIC_TOOL_REFUSAL_REASONS,
-	DynamicToolEnvelopeSchema,
-	DynamicToolResponseSchema,
-	UnknownDynamicToolResponseSchema,
+	outcomeUnknownEnvelope,
+	toolResponseFor,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 
-function expectDeepFrozen(value: unknown): void {
-	expect(Object.isFrozen(value)).toBe(true);
-	if (typeof value !== "object" || value === null) {
-		return;
-	}
-	for (const child of Object.values(value)) {
-		expectDeepFrozen(child);
-	}
-}
-
-function objectKeys(value: unknown): string[] {
-	return typeof value === "object" && value !== null ? Object.keys(value) : [];
-}
-
-describe("dynamic wire envelopes and metadata", () => {
-	test("accepts one canonical envelope and one inputText item", () => {
+describe("dynamic wire envelopes", () => {
+	test("wraps one canonical envelope as one inputText item", () => {
 		const envelope = { tag: "ok", operationId: "op-1", value: { threadId: "thread-1" } } as const;
-		expect(DynamicToolEnvelopeSchema.parse(envelope)).toEqual(envelope);
-		expect(
-			DynamicToolResponseSchema.parse({
-				contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-				success: true,
-			}),
-		).toEqual({
+		const response = toolResponseFor(envelope, true);
+		expect(response).toEqual({
 			contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
 			success: true,
 		});
-		expect(
-			DynamicToolEnvelopeSchema.parse({
-				tag: "refused",
-				reason: "not_ready",
-				message: "Inspect the linked workhorse first.",
-			}),
-		).toEqual({
+		expect(Object.isFrozen(response)).toBe(true);
+		expect(Object.isFrozen(response.contentItems[0])).toBe(true);
+
+		const refused = {
 			tag: "refused",
 			reason: "not_ready",
 			message: "Inspect the linked workhorse first.",
-		});
-		expect(
-			DynamicToolEnvelopeSchema.parse({
+		} as const;
+		expect(toolResponseFor(refused, true).contentItems[0].text).toBe(JSON.stringify(refused));
+		expect(toolResponseFor(outcomeUnknownEnvelope("op-2"), true).contentItems[0].text).toBe(
+			JSON.stringify({
 				tag: "outcome_unknown",
 				operationId: "op-2",
-				message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
+				message:
+					"The request may have taken effect. Inspect authoritative state before another mutation.",
 			}),
-		).toEqual({
-			tag: "outcome_unknown",
-			operationId: "op-2",
-			message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-		});
-		expect(() => DynamicToolResponseSchema.parse({ contentItems: [], success: true })).toThrow();
-		expect(() =>
-			DynamicToolResponseSchema.parse({
-				contentItems: [
-					{ type: "inputText", text: "x" },
-					{ type: "inputText", text: "y" },
-				],
-				success: true,
-			}),
-		).toThrow();
-		expect(() =>
-			DynamicToolEnvelopeSchema.parse({
-				tag: "outcome_unknown",
-				operationId: "op-2",
-				message: "lost",
-			}),
-		).toThrow();
-		expect(() =>
-			DynamicToolResponseSchema.parse({
-				contentItems: [{ type: "inputText", text: ` ${JSON.stringify(envelope)}` }],
-				success: true,
-			}),
-		).toThrow();
-		expect(
-			UnknownDynamicToolResponseSchema.parse({
-				contentItems: [
-					{
-						type: "inputText",
-						text: JSON.stringify({
-							tag: "refused",
-							reason: "invalid_call",
-							message: "The call was not understood.",
-						}),
-					},
-				],
-				success: false,
-			}),
-		).toMatchObject({ success: false });
-		expect(() =>
-			DynamicToolResponseSchema.parse({
-				contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
-				success: false,
-			}),
-		).toThrow();
-		expect(() =>
-			DynamicToolResponseSchema.parse({
-				contentItems: [
-					{
-						type: "inputText",
-						text: JSON.stringify({
-							tag: "refused",
-							reason: "not_ready",
-							message: "Inspect the linked workhorse first.",
-						}),
-					},
-				],
-				success: false,
-			}),
-		).toThrow();
+		);
 	});
 
-	test("keeps each entry's authority, links, result, and refusal set explicit", () => {
-		expect(
-			COORDINATOR_TOOL_CONTRACTS.map(
-				({
-					name,
-					role,
-					authorityTarget,
-					callerRole,
-					requiredLinks,
-					successResult,
-					refusalErrors,
-				}) => ({
-					name,
-					role,
-					authorityTarget,
-					callerRole,
-					requiredLinks,
-					successFields: objectKeys(successResult.valueSchema["properties"]),
-					refusalErrors,
-				}),
+	test("refuses an envelope that is not canonical", () => {
+		expect(() =>
+			toolResponseFor(
+				{ tag: "outcome_unknown", operationId: "op-2", message: "lost" } as never,
+				true,
 			),
-		).toEqual([
-			{
-				name: "inspect_workhorse",
-				role: "workhorse",
-				authorityTarget: "server_bound_workhorse",
-				callerRole: "coordinator",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-					"workhorseThreadId",
-				],
-				successFields: [
-					"threadId",
-					"status",
-					"activeTurnId",
-					"request",
-					"recentProgress",
-					"subAgents",
-					"queuedSubmissionIds",
-					"unavailable",
-					"lastStop",
-				],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-				],
-			},
-			{
-				name: "delegate_to_workhorse",
-				role: "workhorse",
-				authorityTarget: "server_bound_workhorse",
-				callerRole: "coordinator",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-					"workhorseThreadId",
-				],
-				successFields: ["mode", "clientUserMessageId", "queuedSubmissionId", "turnId"],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"not_controllable",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-					"approval_declined",
-					"busy",
-				],
-			},
-			{
-				name: "manage_workhorse_queue",
-				role: "workhorse",
-				authorityTarget: "server_created_workhorse_queue",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-					"workhorseThreadId",
-					"queuedSubmissionIds",
-				],
-				callerRole: "coordinator",
-				successFields: ["operation", "queuedSubmissionIds"],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"not_controllable",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-					"approval_declined",
-					"busy",
-					"expired",
-					"unsupported",
-				],
-			},
-			{
-				name: "steer_workhorse",
-				role: "workhorse",
-				authorityTarget: "server_proven_workhorse_turn",
-				callerRole: "coordinator",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-					"workhorseThreadId",
-					"expectedTurnId",
-				],
-				successFields: ["turnId", "delivery"],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"not_controllable",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-					"approval_declined",
-					"busy",
-				],
-			},
-			{
-				name: "stop_workhorses",
-				role: "workhorse",
-				authorityTarget: "server_tab_session_workhorses",
-				callerRole: "coordinator",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-				],
-				successFields: ["stopped"],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-					"busy",
-				],
-			},
-			{
-				name: "resolve_spoken_approval",
-				role: "voice",
-				authorityTarget: "server_validated_spoken_approval",
-				callerRole: "coordinator",
-				requiredLinks: [
-					"child",
-					"epoch",
-					"threadId",
-					"turnId",
-					"callId",
-					"namespace",
-					"tool",
-					"manifestHash",
-					"realtimeSessionId",
-					"classifierTurnId",
-					"finalUserItemId",
-					"finalUserSequence",
-					"effectFingerprint",
-					"expiry",
-				],
-				successFields: ["verdict", "settlement"],
-				refusalErrors: [
-					"invalid_call",
-					"not_ready",
-					"not_loaded",
-					"system_error",
-					"stale_child",
-					"prior_epoch",
-					"unknown_provenance",
-					"approval_declined",
-					"expired",
-					"unsupported",
-				],
-			},
-		]);
+		).toThrow();
+		expect(() => toolResponseFor({ tag: "ok", operationId: "", value: {} }, true)).toThrow();
+		expect(() =>
+			toolResponseFor({ tag: "ok", operationId: "op-1", value: {}, extra: true } as never, true),
+		).toThrow();
 	});
 
-	test("freezes canonical inputs, metadata, and catalogue aggregate", () => {
-		for (const contract of COORDINATOR_TOOL_CONTRACTS) {
-			expect(CoordinatorToolContractSchema.parse(contract)).toEqual<unknown>(contract);
-		}
-		for (const value of [
-			TEST_TOOLS,
-			COORDINATOR_IDENTITY,
-			WORKHORSE_TOOL_CONTRACTS,
-			VOICE_TOOL_CONTRACTS,
-			COORDINATOR_TOOL_CATALOGUE,
-			DYNAMIC_TOOL_REFUSAL_REASONS,
-		]) {
-			expectDeepFrozen(value);
-		}
+	test("a call rejected before a tool call was established returns only a refusal", () => {
+		const refused = {
+			tag: "refused",
+			reason: "invalid_call",
+			message: "The call was not understood.",
+		} as const;
+		expect(toolResponseFor(refused, false)).toMatchObject({ success: false });
+		expect(() => toolResponseFor({ tag: "ok", operationId: "op-1", value: {} }, false)).toThrow();
 	});
 });

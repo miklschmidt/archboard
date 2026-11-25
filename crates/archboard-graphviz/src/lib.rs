@@ -21,6 +21,8 @@ mod dot;
 #[cfg(any(target_arch = "wasm32", test))]
 mod fma;
 mod graph;
+#[cfg(test)]
+mod tests;
 
 /// Graphviz in the core: `dot` geometry with json0's precision and y inversion.
 /// The layout needs positions, cluster bounds, and named edge paths alone.
@@ -31,15 +33,6 @@ impl archboard_layout::Graphviz for InCore {
     fn render(&mut self, graph: &str) -> Result<String, String> {
         render_as(graph, true)
     }
-}
-
-/// Lay out a viz-js `Graph` object, given as JSON, with `dot`.
-///
-/// # Errors
-///
-/// A graph that does not read, or what Graphviz refused it with.
-pub fn render(graph: &str) -> Result<String, String> {
-    render_as(graph, false)
 }
 
 /// The layout reads geometry alone. The full answer remains the viz-js oracle.

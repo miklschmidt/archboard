@@ -1,14 +1,8 @@
 import { z } from "zod";
 
-import type {
-	CodexClientNotificationByMethod,
-	CodexServerRequestParamsByMethod,
-} from "#shared/protocol/app-server-contract.ts";
+import type { CodexServerRequestParamsByMethod } from "#shared/protocol/app-server-contract.ts";
 import { CommandActionSchema } from "#runtime/schemas/item-schemas.ts";
-import type {
-	ClientNotificationMethod,
-	ServerRequestMethod,
-} from "#runtime/protocol/protocol-methods.ts";
+import type { ServerRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import {
 	AdditionalPermissionProfileSchema,
 	ApplyPatchApprovalParamsSchema,
@@ -149,12 +143,6 @@ const SERVER_REQUEST_SCHEMAS = codexIngressSchemas<
 	execCommandApproval: ExecCommandApprovalParamsSchema,
 } as const);
 
-const CLIENT_NOTIFICATION_SCHEMAS = codexIngressSchemas<
-	Pick<CodexClientNotificationByMethod, ClientNotificationMethod>
->()({
-	initialized: z.strictObject({ method: z.literal("initialized") }),
-} as const);
-
 const JsonRpcErrorSchema = z.strictObject({
 	id: RequestIdSchema,
 	result: z.never().optional(),
@@ -174,13 +162,24 @@ const JSON_RPC_ERROR_CODES = Object.freeze({
 	internalError: -32603,
 });
 
+/** A standard JSON-RPC error, by what went wrong. */
+type JsonRpcErrorKind = keyof typeof JSON_RPC_ERROR_CODES;
+
+/**
+ * The JSON-RPC error code that answers one kind of failure.
+ * @param kind - What went wrong, such as `invalidParams`.
+ * @returns The standard code, such as -32602.
+ */
+function jsonRpcErrorCode(kind: JsonRpcErrorKind): number {
+	return JSON_RPC_ERROR_CODES[kind];
+}
+
 export {
 	ClientInfoSchema,
 	LoginAccountParamsSchema,
 	CancelLoginAccountParamsSchema,
 	AccountReadParamsSchema,
 	SERVER_REQUEST_SCHEMAS,
-	CLIENT_NOTIFICATION_SCHEMAS,
 	JsonRpcErrorSchema,
-	JSON_RPC_ERROR_CODES,
+	jsonRpcErrorCode,
 };

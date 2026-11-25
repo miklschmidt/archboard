@@ -12,7 +12,7 @@ import { messagesOf } from "@archboard/model/flow";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { labelPlates } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;
@@ -67,7 +67,7 @@ test("the heads of one flow stand one height, so every lifeline starts level und
 	// lifelines at as many heights down the page.
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		content: orderedFixture({
 			nodes: [
@@ -170,7 +170,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", asyn
 	});
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		content,
 	});
@@ -226,7 +226,7 @@ test("a message's words stand between the lifelines either side of them", async 
 	// centred over an arrow that passes a column stood on that column's lifeline.
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		content: orderedFixture({
 			nodes: ["a", "b", "c"].map((id) => ({ id, name: `Part ${id}`, kind: "service" })),

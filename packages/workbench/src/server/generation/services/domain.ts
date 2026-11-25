@@ -5,10 +5,7 @@ import type {
 } from "#runtime/voice/protocol/extension.ts";
 import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
-import {
-	ARCHBOARD_APP_NAMESPACE,
-	ARCHBOARD_APP_MANIFEST_SHA256,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createServerDynamicOperationIdAdapter } from "#server/generation/services/operation-lifecycle.ts";
 import {
 	requireDynamicOwners,
@@ -25,9 +22,7 @@ export function createArchboardDomainTools(
 	server: ArchboardWorkbenchServer,
 ): CodexWorkbenchDomainTools {
 	return Object.freeze<CodexWorkbenchDomainTools>({
-		registrations: [
-			{ namespace: ARCHBOARD_APP_NAMESPACE.name, manifestHash: ARCHBOARD_APP_MANIFEST_SHA256 },
-		],
+		registrations: [archboardAppBinding()],
 		/**
 		 * Build domain tools and their owners under the supplied generation capabilities.
 		 * @param scope The core-owned capabilities for this generation.

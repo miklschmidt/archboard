@@ -1,14 +1,54 @@
 //! The page a painting is drawn on: moved clear of the canvas edge, framed as
 //! planned when nothing it describes is built, and the boxes of its atlas.
 
-use crate::geometry::{Canvas, Point, Rect, covering, round_coord};
+use crate::geometry::{Point, Rect, covering, round_coord};
+use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, shape, text};
-use crate::paint::design::{PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
 use crate::paint::palette::Palette;
 use crate::scene::{
     Atlas, AtlasBox, Boxes, Group, Purpose, Role, Shape, Slot, Stroke, Text, Transform,
 };
+use crate::sizes::{PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
+
+/// The page a picture is drawn on, and how far its content had to move onto it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct Canvas {
+    /// The page's width, in diagram units.
+    pub(super) width: f64,
+    /// The page's height, in diagram units.
+    pub(super) height: f64,
+    /// How far the content moved right to clear the margin, in whole units.
+    pub(super) shift_x: f64,
+    /// How far the content moved down to clear the margin, in whole units.
+    pub(super) shift_y: f64,
+}
+
+/// A canvas big enough for everything that was drawn, never smaller than the
+/// size the layout asked for, and the whole-unit shift the drawing needs.
+pub(super) fn canvas_for(
+    laid_width: f64,
+    laid_height: f64,
+    drawn: Option<Rect>,
+    margin: f64,
+) -> Canvas {
+    let Some(drawn) = drawn else {
+        return Canvas {
+            width: laid_width,
+            height: laid_height,
+            shift_x: 0.0,
+            shift_y: 0.0,
+        };
+    };
+    let shift_x = js::js_max(0.0, margin - drawn.x).ceil();
+    let shift_y = js::js_max(0.0, margin - drawn.y).ceil();
+    Canvas {
+        width: (js::js_max(laid_width, drawn.x + drawn.width + margin) + shift_x).ceil(),
+        height: (js::js_max(laid_height, drawn.y + drawn.height + margin) + shift_y).ceil(),
+        shift_x,
+        shift_y,
+    }
+}
 
 /// A painted page: its body, its size and where each subject landed on it.
 #[derive(Debug)]
@@ -106,7 +146,7 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
     let dx = PLANNED_FRAME_MARGIN;
     let dy = PLANNED_FRAME_MARGIN + LABEL_RISE;
     let needed = label_width + 2.0 * (PLANNED_FRAME_INSET + LABEL_INDENT + LABEL_CLEARANCE);
-    let width = crate::js::js_max(page.width + 2.0 * dx, needed);
+    let width = js::js_max(page.width + 2.0 * dx, needed);
     let height = page.height + dx + dy;
     let top = PLANNED_FRAME_INSET + LABEL_RISE;
     let label_x = PLANNED_FRAME_INSET + LABEL_INDENT;

@@ -1,6 +1,6 @@
 import { test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -17,11 +17,11 @@ const fixtures = [
 ];
 
 for (const fixture of fixtures) {
-	for (const layout of LayoutEngineSchema.options) {
+	for (const layout of layoutEngineSchema().options) {
 		test(`${fixture.name} (${layout}): complete parts and clear drawing`, async () => {
 			const content = orderedFixture(fixture.content);
 			const drawing = await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content,
 				theme: "light",
 				layout,

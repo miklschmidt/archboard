@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { VariantContent } from "@archboard/model/content";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { pointsOf } from "#tests/runtime/support/drawn-traffic.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 export const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
@@ -88,7 +88,7 @@ const CHAIN_NODES = [
 export async function drawn(grammar: "architecture" | "sequence"): Promise<string> {
 	return (
 		await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: SAMPLE,
 			grammar,
 			theme: "light",
@@ -105,7 +105,7 @@ export async function chain(edges: Record<string, unknown>[]): Promise<string> {
 	const content = variant({ nodes: CHAIN_NODES, edges });
 	return (
 		await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			grammar: "architecture",
 			theme: "light",
@@ -128,7 +128,7 @@ export async function solo(traffic: Record<string, unknown>): Promise<string> {
 	});
 	return (
 		await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			grammar: "architecture",
 			theme: "light",

@@ -4,17 +4,17 @@
 
 /// A CSS `cubic-bezier()` timing function.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Curve(pub f64, pub f64, pub f64, pub f64);
+pub(crate) struct Curve(pub f64, pub f64, pub f64, pub f64);
 
 /// `ease-out`.
-pub const EASE_OUT: Curve = Curve(0.0, 0.0, 0.58, 1.0);
+pub(crate) const EASE_OUT: Curve = Curve(0.0, 0.0, 0.58, 1.0);
 /// `ease-in-out`.
-pub const EASE_IN_OUT: Curve = Curve(0.42, 0.0, 0.58, 1.0);
+pub(crate) const EASE_IN_OUT: Curve = Curve(0.42, 0.0, 0.58, 1.0);
 /// The far swap's curve, as the SVG's stylesheet spells it.
-pub const SWAP: Curve = Curve(0.4, 0.0, 0.2, 1.0);
+pub(crate) const SWAP: Curve = Curve(0.4, 0.0, 0.2, 1.0);
 /// The curve a move follows: a start the eye can catch, a long settle. The
 /// host's camera glides on the same curve (`glideEase`).
-pub const EMPHASISED: Curve = Curve(0.45, 0.0, 0.15, 1.0);
+pub(crate) const EMPHASISED: Curve = Curve(0.45, 0.0, 0.15, 1.0);
 
 /// One axis of a curve at a point along it.
 fn along(one: f64, other: f64, point: f64) -> f64 {
@@ -38,13 +38,13 @@ fn point_at(one: f64, other: f64, value: f64) -> f64 {
 
 impl Curve {
     /// The share of a change done a share of the way through its time.
-    pub fn at(self, progress: f64) -> f64 {
+    pub(crate) fn at(self, progress: f64) -> f64 {
         let Curve(x1, y1, x2, y2) = self;
         along(y1, y2, point_at(x1, x2, progress.clamp(0.0, 1.0)))
     }
 
     /// How far through its time a change has done a share of itself.
-    pub fn time_of(self, share: f64) -> f64 {
+    pub(crate) fn time_of(self, share: f64) -> f64 {
         let Curve(x1, y1, x2, y2) = self;
         along(x1, x2, point_at(y1, y2, share.clamp(0.0, 1.0)))
     }
@@ -52,7 +52,7 @@ impl Curve {
 
 /// A value on its way from one number to another.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Fade {
+pub(crate) struct Fade {
     from: f64,
     to: f64,
     start: f64,
@@ -62,7 +62,7 @@ pub struct Fade {
 
 impl Fade {
     /// A value that stands at a number.
-    pub const fn still(value: f64) -> Fade {
+    pub(crate) const fn still(value: f64) -> Fade {
         Fade {
             from: value,
             to: value,
@@ -73,7 +73,7 @@ impl Fade {
     }
 
     /// Where the value is at a moment, in milliseconds.
-    pub fn at(&self, now: f64) -> f64 {
+    pub(crate) fn at(&self, now: f64) -> f64 {
         if self.duration <= 0.0 {
             return if now >= self.start {
                 self.to
@@ -86,18 +86,18 @@ impl Fade {
     }
 
     /// Whether the value has arrived by a moment.
-    pub fn done(&self, now: f64) -> bool {
+    pub(crate) fn done(&self, now: f64) -> bool {
         now >= self.start + self.duration
     }
 
     /// Where the value is going.
-    pub const fn target(&self) -> f64 {
+    pub(crate) const fn target(&self) -> f64 {
         self.to
     }
 
     /// The same value, on its way from where it is at `now` to another number.
     #[must_use]
-    pub fn toward(&self, to: f64, now: f64, wait: f64, duration: f64, curve: Curve) -> Fade {
+    pub(crate) fn toward(&self, to: f64, now: f64, wait: f64, duration: f64, curve: Curve) -> Fade {
         Fade {
             from: self.at(now),
             to,

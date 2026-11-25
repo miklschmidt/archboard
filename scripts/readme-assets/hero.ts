@@ -3,8 +3,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-	ArchitectureModuleEditSchema,
-	ArchitectureModelReadSchema,
+	architectureModuleEditSchema,
+	architectureModelReadSchema,
 } from "@archboard/model/contract";
 
 import { messagesOf } from "@archboard/model/flow";
@@ -168,7 +168,7 @@ function proposalChanges(model: Model) {
 	const template: unknown = JSON.parse(
 		readFileSync(join(import.meta.dir, "hero-change.json"), "utf8"),
 	);
-	return ArchitectureModuleEditSchema.options[1].shape.changes.parse(filled(template, model));
+	return architectureModuleEditSchema().options[1].shape.changes.parse(filled(template, model));
 }
 
 const hero: Producer = {
@@ -215,7 +215,7 @@ const hero: Producer = {
 					},
 					INTENT,
 				);
-				const compared = ArchitectureModelReadSchema.parse(
+				const compared = architectureModelReadSchema().parse(
 					modelResult(
 						await commands.cli(["model", "compare", "--state", PROPOSAL, "--against", "current"]),
 					),

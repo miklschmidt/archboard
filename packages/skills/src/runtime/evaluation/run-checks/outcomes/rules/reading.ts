@@ -19,7 +19,7 @@ import {
 	plausibleSubjects,
 	variantNamed,
 } from "#runtime/evaluation/run-checks/outcomes/rules/naming.ts";
-import type { VaultDiagnosticSchema } from "@archboard/model/policy";
+import type { vaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type Model = Extract<import("@archboard/model/contract").ArchitectureModelRead, { success: true }>;
@@ -27,7 +27,7 @@ type EvaluatedDocument = Omit<
 	LegacyBoard,
 	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"
 > & { version?: number; revision?: string; architecture?: Model };
-type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+type VaultDiagnostic = z.infer<ReturnType<typeof vaultDiagnosticSchema>>;
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {

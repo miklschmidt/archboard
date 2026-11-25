@@ -1,13 +1,13 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { across, along, breadth, depth } from "#tests/runtime/support/drawn-reading.ts";
 import { routePoints, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a proposal skip clears its chain and retains its label (%s)",
 	async (layout) => {
 		const pairs = [
@@ -30,7 +30,7 @@ test.each(LayoutEngineSchema.options)(
 			],
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,

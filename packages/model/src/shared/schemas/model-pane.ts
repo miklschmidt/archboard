@@ -10,3 +10,11 @@ const ArchitecturePaneReadingSchema = ArchitectureRenderRequestSchema.omit({
 	beat: z.int().nonnegative().optional(),
 });
 export { ArchitecturePaneReadingSchema };
+
+/**
+ * The schema `ArchitecturePaneReadingSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architecturePaneReadingSchema(): typeof ArchitecturePaneReadingSchema {
+	return ArchitecturePaneReadingSchema;
+}

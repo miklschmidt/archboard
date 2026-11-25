@@ -1,12 +1,12 @@
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
 const CONTAINER_INSET = 20;
@@ -14,7 +14,7 @@ const CONTAINER_INSET = 20;
 // Track still pads a container whose cards fan out below it wider than its
 // insets, so that case holds on Blocks alone.
 test.each([
-	...LayoutEngineSchema.options.flatMap((layout) => [
+	...layoutEngineSchema().options.flatMap((layout) => [
 		{ count: 2, fan: 0, layout },
 		{ count: 10, fan: 0, layout },
 	]),
@@ -45,7 +45,7 @@ test.each([
 			})),
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,
@@ -111,7 +111,7 @@ test("external dependencies follow their contained sources beneath the frame", a
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		// This regression owns Track's downward fan below the frame.

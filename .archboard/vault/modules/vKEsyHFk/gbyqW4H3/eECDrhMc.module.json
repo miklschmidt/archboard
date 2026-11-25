@@ -10,6 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "SVG document"
   ],
@@ -39,20 +40,6 @@
       },
       "id": "vKEsyHFk#baNgC045",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
-    },
-    {
-      "order": 300,
-      "kind": "call",
-      "label": "print the viewer's marks as constants for the pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-svg/src/bin/export-marks.rs",
-        "symbol": "main"
-      },
-      "id": "vKEsyHFk#d0AyIVw1",
-      "to": "vKEsyHFk#GqMdZbTF"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

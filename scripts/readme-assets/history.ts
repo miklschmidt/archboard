@@ -1,7 +1,7 @@
 // Film exact canonical readings before and after a recorded adoption.
 
 import {
-	ArchitectureCheckpointRetainSchema,
+	architectureCheckpointRetainSchema,
 	type ArchitectureCheckpointRetain,
 } from "@archboard/model/contract";
 
@@ -65,7 +65,7 @@ function quoted(reason: string): string {
  */
 async function retainCurrent(server: TakeServer): Promise<Checkpoint> {
 	const model = await readModel(server);
-	const retained = ArchitectureCheckpointRetainSchema.parse(
+	const retained = architectureCheckpointRetainSchema().parse(
 		modelResult(
 			await server.cli([
 				"model",

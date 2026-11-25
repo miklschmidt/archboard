@@ -24,15 +24,15 @@ mod layout;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_layout::Node as GraphNode;
+use archboard_scene::CardWords;
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingEdge, DrawingNode, EdgeFacts, Emphasis, MeasuredLabel,
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
 };
 use archboard_scene::geometry::curve_through;
 use archboard_scene::js;
-use archboard_scene::measure::{self, CardWords};
 use archboard_scene::paint::design::{
-    FALLBACK_ICON, FLOW_ICON, FLOW_KIND, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
+    fallback_icon, flow_icon, is_flow_kind, shape_text_line, shape_text_size,
 };
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
@@ -89,11 +89,16 @@ pub struct FlowchartRequest {
 
 /// One shape's words, wrapped, and the width and height its box takes to hold them.
 fn shape_size(shape: FlowchartShape, name: &str) -> (Vec<String>, f64, f64) {
-    let lines = measure::message_lines(name, SHAPE_WORDS_WIDTH, SHAPE_TEXT_SIZE, SHAPE_TEXT_LINE);
+    let lines = archboard_scene::message_lines(
+        name,
+        SHAPE_WORDS_WIDTH,
+        shape_text_size(),
+        shape_text_line(),
+    );
     let text_width = lines
         .iter()
         .fold(0.0, |widest, line| js::js_max(widest, line.width));
-    let text_height = lines.len() as f64 * SHAPE_TEXT_LINE;
+    let text_height = lines.len() as f64 * shape_text_line();
     let words = lines.into_iter().map(|line| line.text).collect();
     match shape {
         FlowchartShape::Decision => {
@@ -156,9 +161,9 @@ fn measured(
                     toggle: None,
                 };
                 let measured = if node.parent.is_none() {
-                    measure::measure_flow_frame(node.facts(), &card)
+                    archboard_scene::measure_flow_frame(node.facts(), &card)
                 } else {
-                    measure::measure_node(node.facts(), &card, false)
+                    archboard_scene::measure_node(node.facts(), &card, false)
                 };
                 return (node.id.clone(), measured);
             };
@@ -180,7 +185,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for label in [&side.label, main] {
                     words
                         .entry(label.clone())
-                        .or_insert_with(|| measure::measure_label(label));
+                        .or_insert_with(|| archboard_scene::measure_label(label));
                 }
                 line_words(&side.blocks, words);
             }
@@ -188,7 +193,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for Answer { label, blocks } in answers {
                     words
                         .entry(label.clone())
-                        .or_insert_with(|| measure::measure_label(label));
+                        .or_insert_with(|| archboard_scene::measure_label(label));
                     line_words(blocks, words);
                 }
             }
@@ -196,7 +201,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for label in [REPEAT, DONE] {
                     words
                         .entry(label.to_owned())
-                        .or_insert_with(|| measure::measure_label(label));
+                        .or_insert_with(|| archboard_scene::measure_label(label));
                 }
                 line_words(body, words);
             }
@@ -341,7 +346,7 @@ fn node_appearances(
 ) -> BTreeMap<String, NodeAppearance> {
     let flow = KindLook {
         name: Some("Flow".to_owned()),
-        icon: Some(FLOW_ICON.to_owned()),
+        icon: Some(flow_icon().to_owned()),
         color: None,
     };
     let step = KindLook {
@@ -350,7 +355,7 @@ fn node_appearances(
         color: None,
     };
     let look = |kind: &str| match kind {
-        FLOW_KIND => Some(&flow),
+        _ if is_flow_kind(kind) => Some(&flow),
         SHAPE_KIND => Some(&step),
         _ => kinds.get(kind),
     };
@@ -380,7 +385,7 @@ fn node_appearances(
                 type_color: kind.and_then(|kind| kind.color),
                 icon: kind
                     .and_then(|kind| kind.icon.clone())
-                    .unwrap_or_else(|| FALLBACK_ICON.to_owned()),
+                    .unwrap_or_else(|| fallback_icon().to_owned()),
                 type_name: kind
                     .and_then(|kind| kind.name.clone())
                     .unwrap_or_else(|| node.kind.clone()),

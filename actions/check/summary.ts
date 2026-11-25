@@ -176,4 +176,13 @@ function checkSummary(reading: {
 	].join("\n");
 }
 
-export { checkSummary, DETAILED_FINDINGS, TABLE_ROWS };
+/**
+ * How much of a check the job summary shows.
+ * @returns How many findings its table lists, and how many errors and warnings it shows the
+ *   evidence of.
+ */
+function summaryLimits(): { readonly rows: number; readonly details: number } {
+	return { rows: TABLE_ROWS, details: DETAILED_FINDINGS };
+}
+
+export { checkSummary, summaryLimits };

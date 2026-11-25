@@ -18,7 +18,7 @@
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
 import { paneAddressKey, parsePaneKey } from "@archboard/model/legacy-address";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import {
 	type Arrangement,
@@ -31,15 +31,12 @@ import {
 	arrangementOf,
 	panesInOrder,
 } from "#runtime/rules/panes-layout.ts";
-import {
-	HOW_TO_OPEN_A_PANE,
-	addressablePanes,
-	resolvePaneSpec,
-	soloPane,
-} from "#runtime/rules/panes-addressing.ts";
+import { HOW_TO_OPEN_A_PANE, addressablePanes } from "#runtime/rules/panes-addressing.ts";
 
 type LegacyIdentity = ReturnType<typeof parsePaneKey>;
-type PaneArchitecture = NonNullable<z.infer<typeof SemanticPaneContextSchema>["architecture"]>;
+type PaneArchitecture = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"]
+>;
 
 /**
  * What the read-out says beyond naming the panes: the things an agent needs
@@ -392,4 +389,4 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 }
 
 export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
-export { buildPanesReport, resolvePaneSpec, soloPane };
+export { buildPanesReport };

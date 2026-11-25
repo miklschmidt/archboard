@@ -56,7 +56,7 @@ directory and as a packed `.tgz` file:
   platform under the alias that `@openai/codex` uses itself.
 
 Every package has the version of the root `package.json`. release-please sets
-that version. The Codex version comes from `CODEX_PROTOCOL_VERSION`. The build
+that version. The Codex version comes from `codexProtocolVersion()`. The build
 stops when `package.json` pins another Codex.
 
 Each package holds a `LICENSE` that names its version as the Licensed Work,

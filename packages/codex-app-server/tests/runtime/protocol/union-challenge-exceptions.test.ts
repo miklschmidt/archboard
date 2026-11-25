@@ -4,9 +4,11 @@ import {
 	ProtocolDecodeError,
 	decodeServerNotification,
 } from "#runtime/protocol/protocol-decoder.ts";
-import { SERVER_NOTIFICATION_METHODS } from "#runtime/protocol/protocol-methods.ts";
 import { threadFixture } from "#tests/runtime/support/protocol-fixtures.ts";
-import { notificationFixture } from "#tests/runtime/support/notification-fixtures.ts";
+import {
+	notificationFixture,
+	SERVER_NOTIFICATION_METHODS,
+} from "#tests/runtime/support/notification-fixtures.ts";
 import { SERVER_NOTIFICATION_UNION_CHALLENGES } from "#tests/runtime/support/union-challenges.ts";
 
 const EXPECTED_FUNCTION_CALL_OUTPUT_COLLAPSES = [

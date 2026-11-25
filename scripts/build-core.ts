@@ -13,32 +13,30 @@
 // itself again inside the `nix develop` shell of this checkout.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import {
-	CHECKOUT,
-	CORE_BUILD_DIRECTORY,
+	checkoutPath,
+	coreBuildPath,
 	CoreBuildError,
 	coreSourceHash,
 	loadCore,
 } from "@archboard/renderer/core";
-import { THEME_STYLESHEET } from "@archboard/renderer/assets";
-import { readThemeColors } from "@archboard/renderer/theme";
+import { themeColors } from "@archboard/renderer/theme";
 
 /** The crate that wasm-bindgen exports, and the file cargo builds from it. */
 const CRATE = "archboard-renderer-wasm";
 const TARGET = "wasm32-unknown-unknown";
-const BUILT = join(CHECKOUT, "target", TARGET, "release", "archboard_renderer_wasm.wasm");
+const BUILT = checkoutPath("target", TARGET, "release", "archboard_renderer_wasm.wasm");
 
 /** The painter that the browser loads beside the core (ADR 0071), and the file cargo builds from it. */
 const PAINTER_CRATE = "archboard-painter-wasm";
-const PAINTER_BUILT = join(CHECKOUT, "target", TARGET, "release", "archboard_painter_wasm.wasm");
+const PAINTER_BUILT = checkoutPath("target", TARGET, "release", "archboard_painter_wasm.wasm");
 
 /** The file the contract's TypeScript types are written to, beside the build. */
-const TYPES = join(CORE_BUILD_DIRECTORY, "types.ts");
+const TYPES = coreBuildPath("types.ts");
 /** The file the marks a pane draws beside a picture are written to, beside the build. */
-const MARKS = join(CORE_BUILD_DIRECTORY, "marks.ts");
+const MARKS = coreBuildPath("marks.ts");
 /** The file the theme colours a Bun host draws in are written to, beside the build. */
-const THEME_COLORS = join(CORE_BUILD_DIRECTORY, "theme-colors.ts");
+const THEME_COLORS = coreBuildPath("theme-colors.ts");
 
 /**
  * Run one tool in the checkout, with its errors shown.
@@ -75,7 +73,7 @@ function spawn(
 ): ReturnType<typeof Bun.spawnSync> {
 	try {
 		return Bun.spawnSync(command, {
-			cwd: CHECKOUT,
+			cwd: checkoutPath(),
 			env: { ...process.env, ...env },
 			stdout: output,
 			stderr: "inherit",
@@ -99,10 +97,10 @@ function currentBuild(hash: string): boolean {
 		return [
 			TYPES,
 			MARKS,
-			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm.d.ts"),
-			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm.d.ts"),
-			join(CORE_BUILD_DIRECTORY, "archboard_painter_wasm.js"),
-			join(CORE_BUILD_DIRECTORY, "archboard_painter_wasm_bg.wasm"),
+			coreBuildPath("archboard_renderer_wasm.d.ts"),
+			coreBuildPath("archboard_renderer_wasm_bg.wasm.d.ts"),
+			coreBuildPath("archboard_painter_wasm.js"),
+			coreBuildPath("archboard_painter_wasm_bg.wasm"),
 		].every(existsSync);
 	} catch (error) {
 		if (!(error instanceof CoreBuildError)) throw error;
@@ -116,7 +114,7 @@ function currentBuild(hash: string): boolean {
  * @throws {Error} When a wasm-bindgen update changes a boundary we must protect.
  */
 function guardCoreGlue(): void {
-	const path = join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm.js");
+	const path = coreBuildPath("archboard_renderer_wasm.js");
 	let glue = readFileSync(path, "utf8");
 	const boundaries = [
 		["wasm = instance.exports;", "wasm = coreGuard.exports(instance.exports);"],
@@ -134,7 +132,7 @@ function guardCoreGlue(): void {
 	for (const [before, after] of boundaries) {
 		if (glue.split(before).length !== 2) {
 			// A failed adaptation must never leave a loadable, unguarded build.
-			rmSync(join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm"));
+			rmSync(coreBuildPath("archboard_renderer_wasm_bg.wasm"));
 			throw new Error(
 				`The wasm-bindgen panic boundary changed: ${before}. Update guardCoreGlue before building the core.`,
 			);
@@ -159,8 +157,11 @@ const IN_SHELL = "ARCHBOARD_CORE_BUILD_IN_NIX";
  */
 function runs(tool: string): boolean {
 	if (Bun.which(tool) === null) return false;
-	return Bun.spawnSync([tool, "--version"], { cwd: CHECKOUT, stdout: "ignore", stderr: "ignore" })
-		.success;
+	return Bun.spawnSync([tool, "--version"], {
+		cwd: checkoutPath(),
+		stdout: "ignore",
+		stderr: "ignore",
+	}).success;
 }
 
 /**
@@ -174,11 +175,14 @@ function buildInNixShellWhenToolsAreMissing(): void {
 	console.error(
 		"cargo or wasm-bindgen does not run here, so the core builds inside `nix develop`.",
 	);
-	const ran = Bun.spawnSync(["nix", "develop", CHECKOUT, "--command", "bun", import.meta.path], {
-		cwd: CHECKOUT,
-		env: { ...process.env, [IN_SHELL]: "1" },
-		stdio: ["inherit", "inherit", "inherit"],
-	});
+	const ran = Bun.spawnSync(
+		["nix", "develop", checkoutPath(), "--command", "bun", import.meta.path],
+		{
+			cwd: checkoutPath(),
+			env: { ...process.env, [IN_SHELL]: "1" },
+			stdio: ["inherit", "inherit", "inherit"],
+		},
+	);
 	process.exit(ran.exitCode);
 }
 
@@ -203,35 +207,55 @@ if (currentBuild(hash)) {
 		{ ARCHBOARD_CORE_SOURCE_HASH: hash },
 	);
 	const types = run(
-		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-render"],
+		[
+			"cargo",
+			"run",
+			"--quiet",
+			"--release",
+			"--locked",
+			"--package",
+			"archboard-render",
+			"--bin",
+			"export-types",
+		],
 		{},
 		"pipe",
 	);
 	const marks = run(
-		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-svg"],
+		[
+			"cargo",
+			"run",
+			"--quiet",
+			"--release",
+			"--locked",
+			"--package",
+			"archboard-render",
+			"--bin",
+			"export-marks",
+		],
 		{},
 		"pipe",
 	);
 	// The WebAssembly, whose recorded hash says the build is whole, lands last:
 	// a build stopped before it is refused as missing and made again.
-	rmSync(CORE_BUILD_DIRECTORY, { recursive: true, force: true });
-	mkdirSync(CORE_BUILD_DIRECTORY, { recursive: true });
+	rmSync(coreBuildPath(), { recursive: true, force: true });
+	mkdirSync(coreBuildPath(), { recursive: true });
 	writeFileSync(TYPES, types);
 	writeFileSync(MARKS, marks);
-	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, PAINTER_BUILT]);
-	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
+	run(["wasm-bindgen", "--target", "web", "--out-dir", coreBuildPath(), PAINTER_BUILT]);
+	run(["wasm-bindgen", "--target", "web", "--out-dir", coreBuildPath(), BUILT]);
 	guardCoreGlue();
 	console.log(`Built the renderer core from these sources (${hash}).`);
 }
 // The theme colours of `theme.css`, one of the core's sources, beside the build, so that no host
 // loads the native addon of Lightning CSS to read them (ADR 0076). They need no Rust tools, so
 // every run brings them up to date.
-const themeColors =
+const themeColorsSource =
 	"// Generated by scripts/build-core.ts from packages/renderer/assets/theme.css.\n" +
 	"// `bun run build:core` writes it; do not edit it.\n" +
 	'import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";\n\n' +
 	"/** The colours of both themes, as the shared stylesheet defines them. */\n" +
-	`export const THEME_COLORS: ThemeColors = ${JSON.stringify(readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")), null, "\t")};\n`;
-if (!existsSync(THEME_COLORS) || readFileSync(THEME_COLORS, "utf8") !== themeColors) {
-	writeFileSync(THEME_COLORS, themeColors);
+	`export const THEME_COLORS: ThemeColors = ${JSON.stringify(themeColors(), null, "\t")};\n`;
+if (!existsSync(THEME_COLORS) || readFileSync(THEME_COLORS, "utf8") !== themeColorsSource) {
+	writeFileSync(THEME_COLORS, themeColorsSource);
 }

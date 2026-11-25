@@ -16,8 +16,19 @@ const LINE_MARKS = [
 	{ mark: "traffic", word: "Illustrated traffic" },
 ] as const;
 
+/** One of the two things a line says beside its kind, with the words a key says for it. */
+type LineMarkEntry = (typeof LINE_MARKS)[number];
+
 /** One of the two things a line says beside its kind. */
-type LineMark = (typeof LINE_MARKS)[number]["mark"];
+type LineMark = LineMarkEntry["mark"];
+
+/**
+ * The two things a line says beside its kind, in the order a key lists them.
+ * @returns Each mark with the words a key says for it.
+ */
+function lineMarks(): typeof LINE_MARKS {
+	return LINE_MARKS;
+}
 
 /** The standings a comparison marks, in the order a reader is told them. */
 const MARKED = [
@@ -42,4 +53,4 @@ function markCounts(standing: Readonly<Record<string, SubjectStanding>>): readon
 	})).filter((marked) => marked.count > 0);
 }
 
-export { LINE_MARKS, markCounts, type LineMark };
+export { LINE_MARKS, lineMarks, markCounts, type LineMark, type LineMarkEntry };

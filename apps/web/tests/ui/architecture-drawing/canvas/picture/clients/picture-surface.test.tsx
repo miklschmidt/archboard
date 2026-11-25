@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } fr
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useState, type JSX } from "react";
 
-import { PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import type { SemanticDrawing } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { stagePicture } from "#ui/architecture-drawing/canvas/picture/clients/picture-transition.ts";
 import { usePictureTransition } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
@@ -141,7 +141,7 @@ describe("the surface across pictures", () => {
 				createElement(Surface, { drawing: first, reducedMotion: false }),
 			);
 			const surface = container.querySelector("[data-slot='surface']")!;
-			runFrames(PICTURE_MS.entry + 1);
+			runFrames(pictureMs("entry") + 1);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 			forgetCalls();
 			frames.now = 1000;
@@ -150,7 +150,7 @@ describe("the surface across pictures", () => {
 			expect(followed).toEqual([{ x: -290, y: 0 }]);
 			expect(calls("carry")).toEqual([[second.painting, { x: -290, y: 0 }]]);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(true);
-			runFrames(1000 + PICTURE_MS.transition / 2);
+			runFrames(1000 + pictureMs("transition") / 2);
 			// The same picture answered again is not another picture: the flight
 			// keeps flying rather than landing on itself, and nothing moves the camera.
 			rerender(createElement(Surface, { drawing: { ...second }, reducedMotion: false }));
@@ -159,7 +159,7 @@ describe("the surface across pictures", () => {
 			// The third picture lands nothing: the stage starts it from what shows.
 			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));
 			expect(moves()).toEqual(["carry", "carry"]);
-			runFrames(1000 + PICTURE_MS.transition / 2 + PICTURE_MS.transition + 1);
+			runFrames(1000 + pictureMs("transition") / 2 + pictureMs("transition") + 1);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 			// Reduced motion cuts: the next picture is simply there.
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
@@ -178,13 +178,13 @@ describe("the surface across pictures", () => {
 			const surface = container.querySelector("[data-slot='surface']")!;
 			expect(moves()).toEqual(["enter"]);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(true);
-			runFrames(PICTURE_MS.entry + 1);
+			runFrames(pictureMs("entry") + 1);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 
 			frames.now = 2000;
 			rerender(createElement(Surface, { drawing: other, reducedMotion: false }));
 			expect(moves()).toEqual(["enter", "enter"]);
-			runFrames(2000 + PICTURE_MS.entry + 1);
+			runFrames(2000 + pictureMs("entry") + 1);
 
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
 			expect(moves()).toEqual(["enter", "enter", "show"]);

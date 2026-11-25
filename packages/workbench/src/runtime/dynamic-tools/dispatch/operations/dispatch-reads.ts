@@ -1,7 +1,4 @@
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { type DynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {
@@ -156,9 +153,8 @@ async function dispatchWaitThreads(
 		caller,
 		call: {
 			callId: request.logicalCall.callId,
-			namespace: ARCHBOARD_APP_NAMESPACE.name,
 			tool: "wait_threads",
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+			...archboardAppBinding(),
 		},
 		/**
 		 * Classify one wait target against the caller's own authority.

@@ -17,12 +17,12 @@ import { isHelpInvocation } from "#cli/routing/operations/bootstrap.ts";
 import { runCommand } from "#cli/contract/operations/runner.ts";
 import {
 	inapplicableSharedOptions,
-	SHARED_OPTIONS,
-	SHARED_OPTION_KEYS,
+	sharedOption,
+	sharedOptionKeys,
 } from "#cli/contract/protocol/shared-options.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
-import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
+import { gitMs } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "#cli/routing/protocol/route.ts";
 import { helpText, usageLine } from "#cli/routing/rules/help.ts";
 import { dispatchedCommand } from "#cli/routing/rules/dispatch.ts";
@@ -82,7 +82,7 @@ async function runInterruptibleCommand(
 		forceTimer = setTimeout(() => {
 			remove();
 			process.kill(process.pid, signal);
-		}, CLI_INTERRUPT_CLEANUP_MS);
+		}, gitMs("cliInterruptCleanup"));
 	};
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);
@@ -158,8 +158,8 @@ function isVersionRequest(name: string): boolean {
  * @returns Its shared spelling, or undefined.
  */
 function sharedSpelling(token: string): string | undefined {
-	for (const key of SHARED_OPTION_KEYS) {
-		const spelling = SHARED_OPTIONS[key].spellings[0];
+	for (const key of sharedOptionKeys()) {
+		const spelling = sharedOption(key).spellings[0];
 		if (token === spelling || token.startsWith(`${spelling}=`)) {
 			return spelling;
 		}
@@ -319,7 +319,7 @@ const STATED_FIELDS: Readonly<Record<SharedOptionKey, keyof StatedShared>> = {
  * @returns The keys with a value.
  */
 function statedKeys(stated: StatedShared): SharedOptionKey[] {
-	return SHARED_OPTION_KEYS.filter((key) => stated[STATED_FIELDS[key]] !== null);
+	return sharedOptionKeys().filter((key) => stated[STATED_FIELDS[key]] !== null);
 }
 
 /**

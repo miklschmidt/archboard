@@ -9,8 +9,8 @@
 // two lines closer than a lane without sharing one stroke.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	cornersOf,
@@ -28,7 +28,7 @@ import readingAModel from "#tests/runtime/support/fixtures/reading-a-model.json"
 const LABEL_ROUTE_CLEARANCE = 12;
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine" },
@@ -75,7 +75,7 @@ function portOf(box: Box, end: DrawnPoint): readonly [string, number] {
 /** How far from its face's corners a port stands to read as meeting the face, not the corner. */
 const FACE_INSET = 12;
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a port alone on a card face keeps clear of the corners (%s)",
 	async (layout) => {
 		const content = orderedFixture(archboard);
@@ -101,7 +101,7 @@ test.each(LayoutEngineSchema.options)(
 	},
 );
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a label keeps a label's clearance from every other line (%s)",
 	async (layout) => {
 		const content = orderedFixture(archboard);
@@ -151,7 +151,7 @@ function runsOf(points: readonly DrawnPoint[]) {
 test("no line runs a part-lane beside another", async () => {
 	const content = orderedFixture(readingAModel);
 	const drawn = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

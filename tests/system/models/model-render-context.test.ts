@@ -12,8 +12,8 @@ import {
 	releaseArchitectureClaim,
 } from "@archboard/model/store-write";
 import {
-	ArchitectureRenderResultSchema,
-	type ArchitectureRenderRequestSchema,
+	architectureRenderResultSchema,
+	type architectureRenderRequestSchema,
 	type ArchitectureModuleEdit,
 } from "@archboard/model/contract";
 import { readRenderRecipe } from "@archboard/renderer/recipe";
@@ -160,7 +160,7 @@ async function edit(
 	}
 }
 
-async function render(selectors: z.input<typeof ArchitectureRenderRequestSchema> = {}) {
+async function render(selectors: z.input<ReturnType<typeof architectureRenderRequestSchema>> = {}) {
 	const parameters = new URLSearchParams({ vault });
 	for (const [key, value] of Object.entries(selectors)) {
 		if (value === undefined) continue;
@@ -168,7 +168,7 @@ async function render(selectors: z.input<typeof ArchitectureRenderRequestSchema>
 			parameters.append(key, String(entry));
 	}
 	const response = await fetch(`${server!.base}/api/architecture/render?${parameters}`);
-	const result = ArchitectureRenderResultSchema.parse(await response.json());
+	const result = architectureRenderResultSchema().parse(await response.json());
 	if (!result.success) throw new Error(JSON.stringify(result));
 	expect(response.status).toBe(200);
 	return result;

@@ -7,7 +7,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-configuration-routes-"));
@@ -36,7 +36,7 @@ function writeModule(name: string, fields: Record<string, unknown>): void {
 
 test("the semantic check warns on a pass-through and unbound container and an unconnected root", async () => {
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({
@@ -64,7 +64,7 @@ test("the semantic check warns on a pass-through and unbound container and an un
 	const answer = await fetch(
 		`http://127.0.0.1:${address.port}/api/vault/check?${new URLSearchParams({ vault })}`,
 	);
-	const { diagnostics } = VaultCheckSchema.parse(await answer.json());
+	const { diagnostics } = vaultCheckSchema().parse(await answer.json());
 	expect(diagnostics.map(({ severity, code, subject }) => [severity, code, subject?.id])).toEqual([
 		["warning", "CONTAINER_PASS_THROUGH", "Shop#Box"],
 		["warning", "CONTAINER_UNBOUND", "Shop#Box"],

@@ -34,7 +34,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import { SUBTITLE_MS, VOICE_MS } from "@archboard/timing";
+import { subtitleMs, voiceMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot } from "#ui/workbench-client/orb/components/OrbStage.tsx";
 import { SubtitleWords } from "#ui/workbench-client/subtitles/components/VoiceSubtitles.tsx";
@@ -52,11 +52,11 @@ import { VOICE_WORDS, type CircleState } from "#ui/workbench-client/dock/rules/c
  * fast as they come back.
  */
 const BOX_STYLE: CSSProperties = {
-	"--voice-box-in-ms": `${VOICE_MS.boxIn}ms`,
-	"--voice-box-out-ms": `${VOICE_MS.boxOut}ms`,
-	"--voice-word-in-ms": `${VOICE_MS.wordIn}ms`,
-	"--subtitle-out-ms": `${SUBTITLE_MS.out}ms`,
-	"--subtitle-back-ms": `${SUBTITLE_MS.back}ms`,
+	"--voice-box-in-ms": `${voiceMs("boxIn")}ms`,
+	"--voice-box-out-ms": `${voiceMs("boxOut")}ms`,
+	"--voice-word-in-ms": `${voiceMs("wordIn")}ms`,
+	"--subtitle-out-ms": `${subtitleMs("out")}ms`,
+	"--subtitle-back-ms": `${subtitleMs("back")}ms`,
 };
 
 /**
@@ -96,7 +96,7 @@ interface VoiceBoxProps {
  * @returns The box, or null when it is not on the page.
  */
 function VoiceBox(props: VoiceBoxProps): JSX.Element | null {
-	const mounted = useVoiceBoxPresence(props.shown, props.reducedMotion ? 0 : VOICE_MS.boxOut);
+	const mounted = useVoiceBoxPresence(props.shown, props.reducedMotion ? 0 : voiceMs("boxOut"));
 	return mounted ? <Box {...props} /> : null;
 }
 

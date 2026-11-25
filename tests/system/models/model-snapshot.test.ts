@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { ModelSnapshotSchema } from "@archboard/model/contract";
+import { modelSnapshotSchema } from "@archboard/model/contract";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { structureDiagnostics } from "@archboard/model/vault-policy";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
@@ -85,7 +85,7 @@ test("a snapshot holds a draft, its comparison state, the vault check and the po
 	expect(bytes.equals(readFileSync(join(holderOf(vault), "second.json")))).toBeTrue();
 	expect(bytes.toString()).not.toContain(home);
 
-	const parsed = ModelSnapshotSchema.parse(JSON.parse(bytes.toString()));
+	const parsed = modelSnapshotSchema().parse(JSON.parse(bytes.toString()));
 	const version = Bun.spawnSync([join(repoRoot, "bin/archboard"), "--version"]);
 	expect(parsed.cliVersion).toBe(version.stdout.toString().trim());
 	expect(parsed.reading.selectedState).toMatchObject({ name: "Queued", lifecycle: "draft" });
@@ -117,7 +117,7 @@ test("a retained state keeps its icons when the current policy names different i
 			"retained.json",
 		);
 		expect(result.status, result.stderr).toBe(0);
-		const parsed = ModelSnapshotSchema.parse(
+		const parsed = modelSnapshotSchema().parse(
 			JSON.parse(readFileSync(join(holderOf(vault), "retained.json"), "utf8")),
 		);
 		expect(parsed.reading.policy.nodeKinds["service"]?.icon).toBe("RiAnchorLine");
@@ -151,7 +151,7 @@ test("a retained snapshot checks its exact checkpoint after the live state chang
 			"retained-check.json",
 		);
 		expect(result.status, result.stderr).toBe(0);
-		const parsed = ModelSnapshotSchema.parse(
+		const parsed = modelSnapshotSchema().parse(
 			JSON.parse(readFileSync(join(holderOf(vault), "retained-check.json"), "utf8")),
 		);
 		expect(parsed.reading.relationships.some((edge) => edge.id === "Shop#Dispatch")).toBeTrue();
@@ -164,7 +164,7 @@ test("a retained snapshot checks its exact checkpoint after the live state chang
 test("a state that compares nothing has no comparison reading, and a refused read writes no file", () => {
 	const current = snapshot("--out", "current.json");
 	expect(current.status, current.stderr).toBe(0);
-	const parsed = ModelSnapshotSchema.parse(
+	const parsed = modelSnapshotSchema().parse(
 		JSON.parse(readFileSync(join(holderOf(vault), "current.json"), "utf8")),
 	);
 	expect(parsed.reading.selectedState).toMatchObject({ lifecycle: "current" });

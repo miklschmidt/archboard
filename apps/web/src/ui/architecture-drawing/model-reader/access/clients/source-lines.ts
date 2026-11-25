@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { CodeFileSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { codeFileSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
@@ -46,7 +46,7 @@ function sourceLinesQuery(vault: string, place: EvidencePlace, checkedAt: string
 			});
 			if (response.status === 404) return null;
 			if (!response.ok) throw new Error(`The source lines could not be read (${response.status}).`);
-			const { source } = CodeFileSchema.parse(await response.json());
+			const { source } = codeFileSchema().parse(await response.json());
 			return source.status === "quoted" ? excerptOf(source.text, line) : null;
 		},
 		staleTime: Number.POSITIVE_INFINITY,

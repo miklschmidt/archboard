@@ -67,6 +67,14 @@ function lineInk(color: string | undefined): string {
 const NEUTRAL_PULSE = { breadth: PULSE_BREADTH, ink: PULSE_INK[lineColour(undefined)] } as const;
 
 /**
+ * A pulse on the neutral line, for a key beside the picture to draw the same.
+ * @returns Its core's breadth and its body's ink.
+ */
+function neutralPulse(): typeof NEUTRAL_PULSE {
+	return NEUTRAL_PULSE;
+}
+
+/**
  * How wide a page draws a line of one emphasis, in diagram units: for a key
  * that has to draw a line the way the picture does (TASK-383).
  * @param emphasis How loudly its author asked the line to speak.
@@ -117,7 +125,7 @@ function cornerWarning(box: {
 
 export {
 	HEAD_LENGTH,
-	NEUTRAL_PULSE,
+	neutralPulse,
 	OPEN_ARM,
 	cornerWarning,
 	lineInk,

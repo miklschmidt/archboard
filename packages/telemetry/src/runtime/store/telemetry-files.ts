@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { TELEMETRY_MS } from "@archboard/timing";
+import { telemetryMs } from "@archboard/timing";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { stateDir } from "@archboard/workspace/state-dir";
 import {
@@ -168,7 +168,7 @@ function claimOf(name: string): { original: string; at: number } | null {
 
 /**
  * Whether one name of a folder waits to be sent. A claim that is older than
- * `TELEMETRY_MS.staleClaim` goes back to the queue, for the next round.
+ * `telemetryMs("staleClaim")` goes back to the queue, for the next round.
  * @param folder The folder.
  * @param name The name.
  * @param now The time now, in milliseconds since the epoch.
@@ -182,7 +182,7 @@ function waiting(folder: string, name: string, now: number): Pending | null {
 	if (changedAt === undefined) return null;
 	const held = claimOf(name);
 	if (held === null) return { file, changedAt };
-	if (now - held.at > TELEMETRY_MS.staleClaim) release(file, path.join(folder, held.original));
+	if (now - held.at > telemetryMs("staleClaim")) release(file, path.join(folder, held.original));
 	return null;
 }
 

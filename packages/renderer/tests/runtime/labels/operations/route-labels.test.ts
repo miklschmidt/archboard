@@ -16,7 +16,7 @@ import {
 	distanceToFrame,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { detached, covering, overlaps, masking } from "#tests/runtime/support/drawn-labels.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
 const PAIRED: VariantContent = orderedFixture({
@@ -160,7 +160,7 @@ describe("a label belongs to one line", () => {
 	test("badges keep twelve units of whitespace from cards while remaining on their routes", async () => {
 		for (const content of [LABELLED_FORK, LIFECYCLE, PAIRED, CAMERA_FOCUS]) {
 			for (const theme of ["light", "dark"] as const) {
-				const drawn = await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme });
+				const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
 				const frames = new Set(content.nodes.map((node) => node.parent));
 				const cards = Object.entries(drawn.atlas.nodes).filter(([id]) => !frames.has(id));
 				const cramped: string[] = [];
@@ -212,7 +212,7 @@ describe("a label belongs to one line", () => {
 				});
 				for (const theme of ["light", "dark"] as const) {
 					const drawn = await renderArchitecture({
-						policy: DEFAULT_SEMANTIC_POLICY,
+						policy: defaultSemanticPolicy(),
 						content,
 						theme,
 					});
@@ -249,7 +249,7 @@ describe("a label belongs to one line", () => {
 			],
 		});
 		for (const theme of ["light", "dark"] as const) {
-			const drawn = await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme });
+			const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
 			expect(routeLabels(drawn.svg).size).toBe(4);
 			expect(detached(drawn)).toEqual([]);
 			expect(covering(drawn)).toEqual([]);
@@ -266,7 +266,7 @@ describe("a label belongs to one line", () => {
 	] as const) {
 		test(`every pill of ${what} is drawn on its own route`, async () => {
 			for (const theme of ["light", "dark"] as const) {
-				const drawn = await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme });
+				const drawn = await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme });
 				expect(routeLabels(drawn.svg).size).toBeGreaterThan(1);
 				expect(detached(drawn)).toEqual([]);
 			}
@@ -275,7 +275,7 @@ describe("a label belongs to one line", () => {
 		test(`no pill of ${what} covers another pill or a card`, async () => {
 			expect(
 				overlaps(
-					await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" }),
+					await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme: "light" }),
 					content,
 				),
 			).toEqual([]);
@@ -291,7 +291,7 @@ describe("a label belongs to one line", () => {
 			// neighbour's line names both of them as far as a reader can tell.
 			for (const theme of ["light", "dark"] as const) {
 				expect(
-					covering(await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme })),
+					covering(await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme })),
 				).toEqual([]);
 			}
 		});
@@ -302,7 +302,7 @@ describe("a label belongs to one line", () => {
 		for (const theme of ["light", "dark"] as const) {
 			expect(
 				masking(
-					await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: PAIRED, theme }),
+					await renderArchitecture({ policy: defaultSemanticPolicy(), content: PAIRED, theme }),
 				),
 			).toEqual([]);
 		}
@@ -324,7 +324,7 @@ test("parallel database badges keep their straight channels and measured separat
 		],
 	});
 	const drawn = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "dark",
 		// Track reserves straight parallel channels for these labels.

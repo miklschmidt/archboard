@@ -2,7 +2,7 @@
 //! and the surface. It keeps a box in focus and lets the rest fall away. A frame
 //! at rest never comes here, so a picture at rest is what Vello drew.
 
-use archboard_paint::canvas::Lens;
+use archboard_paint::Lens;
 use archboard_scene::geometry::Rect;
 use peniko::Color;
 use wgpu::util::{BufferInitDescriptor, DeviceExt as _};

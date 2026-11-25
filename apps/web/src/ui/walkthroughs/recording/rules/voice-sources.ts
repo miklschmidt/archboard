@@ -11,7 +11,7 @@ import type {
 } from "@archboard/workbench/voice";
 import {
 	type BrowserWorkbenchTransport,
-	VOICE_OUTPUT_SPEAKING_LEVEL,
+	isSpeakingLevel,
 } from "@archboard/codex-realtime-voice/controllers";
 
 import type { SpokenLine, VoiceStanding } from "#ui/walkthroughs/recording/rules/pacing.ts";
@@ -128,7 +128,7 @@ function readVoice(sources: RecordingSources): VoiceReading {
 	const { snapshot } = voice.transport.state();
 	return {
 		voice: voiceStanding(setup, voice.session.view()),
-		audible: voice.session.level() >= VOICE_OUTPUT_SPEAKING_LEVEL,
+		audible: isSpeakingLevel(voice.session.level()),
 		transcript: snapshot === null ? SILENT : snapshot.voice.transcript,
 	};
 }

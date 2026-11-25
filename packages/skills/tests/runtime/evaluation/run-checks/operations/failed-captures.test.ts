@@ -3,8 +3,7 @@ import { installation } from "@archboard/workspace/installation";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { z } from "zod";
-import type { ArchitectureRasterReceiptSchema } from "@archboard/renderer/rasterizer";
+import type { ArchitectureRasterReceipt } from "@archboard/renderer/rasterizer";
 import { executeRun, type RunJob } from "#runtime/evaluation/run-world/operations/author.ts";
 import { loadSuite } from "#runtime/evaluation/batch/schemas/suite.ts";
 import { type RunBundle } from "#runtime/evaluation/grading/operations/blind.ts";
@@ -30,7 +29,7 @@ const CAPTURE_RECEIPT = {
 		svgSha256: "ab".repeat(32),
 		motion: "paused-at-start",
 	},
-} satisfies Omit<z.infer<typeof ArchitectureRasterReceiptSchema>, "file">;
+} satisfies Omit<ArchitectureRasterReceipt, "file">;
 
 /** A job that cannot run a model, using a scenario with two declared captures. */
 function jobAt(root: string, signal = new AbortController().signal): RunJob {

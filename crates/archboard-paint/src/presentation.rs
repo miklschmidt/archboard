@@ -32,7 +32,7 @@ impl Default for Camera {
 
 /// How far each subject recedes behind what is lit, as an opacity from 0 to 1.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Recede {
+pub(crate) struct Recede {
     /// A subject the table does not name.
     pub rest: f64,
     /// A relationship's label the table does not name: it stays readable.
@@ -53,7 +53,7 @@ impl Default for Recede {
 
 /// How a picture is seen in one frame.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Presentation {
+pub(crate) struct Presentation {
     /// Where the picture lies.
     pub camera: Camera,
     /// How far the picture has stepped back for the next, from 0 to 1.
@@ -85,7 +85,7 @@ pub struct Presentation {
 
 impl Presentation {
     /// How far a flow's head is held down.
-    pub fn drop_of(&self, flow: &str) -> f64 {
+    pub(crate) fn drop_of(&self, flow: &str) -> f64 {
         self.heads.get(flow).copied().unwrap_or(0.0)
     }
 }

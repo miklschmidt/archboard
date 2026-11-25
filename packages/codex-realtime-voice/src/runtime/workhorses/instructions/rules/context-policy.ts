@@ -222,8 +222,17 @@ type OperationOutcome = Exclude<
 	"null"
 >;
 
+/**
+ * The reviewed policy of the additional context a host sends with an operation.
+ * @returns The frozen policy.
+ */
+function additionalContextPolicy(): AdditionalContextPolicy {
+	return ADDITIONAL_CONTEXT_POLICY;
+}
+
 export {
 	ADDITIONAL_CONTEXT_POLICY,
+	additionalContextPolicy,
 	type AdditionalContextPolicy,
 	type ThreadLinkReason,
 	type OperationOutcome,

@@ -17,7 +17,7 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { ArchboardAppNamespaceSpec } from "#runtime/thread-tools/protocol/manifest.ts";
+import type { ArchboardAppNamespaceSpec } from "#runtime/thread-tools/protocol/manifest-load.ts";
 import type { DynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
 import type { DynamicAuthorityToken } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import type { DynamicOperationTerminalDisposition } from "#runtime/dynamic-tools/rules/errors.ts";

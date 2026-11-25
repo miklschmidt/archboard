@@ -40,10 +40,10 @@
 
 import type { ChangeKind } from "@archboard/model/comparison";
 import type { z } from "zod";
-import { languageName, type RecordingNarrationSchema } from "@archboard/walkthrough/recording";
+import { languageName, type recordingNarrationSchema } from "@archboard/walkthrough/recording";
 
 /** What voice is told when it narrates a recording. */
-type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
+type RecordingNarration = z.infer<ReturnType<typeof recordingNarrationSchema>>;
 
 /** How much of a walkthrough's name a start carries, in characters. */
 const PRESENTATION_NAME_MAX_CHARS = 200;

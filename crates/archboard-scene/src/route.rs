@@ -1,7 +1,7 @@
 //! A route measured along its ink, and shortened: the part of a line a pulse
 //! rides.
 
-use crate::geometry::{Curve, Point, Segment, point_on_segment, segment_start};
+use crate::geometry::{Curve, Point, Segment, segment_start};
 use crate::js;
 
 /// How many chords measure a rounded piece.
@@ -20,6 +20,35 @@ pub fn segment_length(from: Point, segment: &Segment) -> f64 {
         previous = point;
     }
     length
+}
+
+/// The point a fraction of the way along one segment.
+pub(crate) fn point_on_segment(from: Point, segment: &Segment, t: f64) -> Point {
+    match segment {
+        Segment::Line { to } => Point {
+            x: from.x + (to.x - from.x) * t,
+            y: from.y + (to.y - from.y) * t,
+        },
+        Segment::Cubic { first, second, to } => {
+            let inverse = 1.0 - t;
+            let weights = [
+                crate::ecma::powi(inverse, 3),
+                3.0 * crate::ecma::powi(inverse, 2) * t,
+                3.0 * inverse * crate::ecma::powi(t, 2),
+                crate::ecma::powi(t, 3),
+            ];
+            let points = [from, *first, *second, *to];
+            let mut x = 0.0;
+            let mut y = 0.0;
+            for (point, weight) in points.iter().zip(weights) {
+                x += point.x * weight;
+            }
+            for (point, weight) in points.iter().zip(weights) {
+                y += point.y * weight;
+            }
+            Point { x, y }
+        }
+    }
 }
 
 /// The point a fraction of the way from one point to another.
@@ -48,7 +77,7 @@ fn segment_up_to(from: Point, segment: &Segment, t: f64) -> Segment {
 }
 
 /// The route with a length taken off its end, or none when that is all of it.
-pub fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
+pub(crate) fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
     let mut left = distance;
     for index in (0..curve.segments.len()).rev() {
         let from = segment_start(curve, index);
@@ -69,7 +98,7 @@ pub fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
 }
 
 /// How long a route is along its ink.
-pub fn route_length(curve: &Curve) -> f64 {
+pub(crate) fn route_length(curve: &Curve) -> f64 {
     curve
         .segments
         .iter()

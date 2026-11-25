@@ -3,7 +3,7 @@
 // those lines reached, with their part kinds and groups. Each list keeps one order, the policy's,
 // so hiding a kind or showing it again moves no row.
 
-import { LINE_MARKS } from "@archboard/renderer/picture";
+import { lineMarks, type LineMarkEntry } from "@archboard/renderer/picture";
 import type { Model, projectModel } from "@archboard/model/content";
 import type {
 	AppliedAppearance,
@@ -43,7 +43,7 @@ interface LegendLine extends LegendRow {
 }
 
 /** One mark that lines wear beside their kinds. */
-type LegendMark = (typeof LINE_MARKS)[number] & { readonly dimmed: boolean };
+type LegendMark = LineMarkEntry & { readonly dimmed: boolean };
 
 /** One group of the reading. */
 interface LegendGroup {
@@ -193,12 +193,12 @@ function wears(line: Connection["line"], mark: LegendMark["mark"]): boolean {
  * @returns One row for each.
  */
 function markRows(projection: Projection): readonly LegendMark[] {
-	return LINE_MARKS.filter(({ mark }) =>
-		projection.allConnections.some(({ line }) => wears(line, mark)),
-	).map((entry) => ({
-		...entry,
-		dimmed: !projection.connections.some(({ line }) => wears(line, entry.mark)),
-	}));
+	return lineMarks()
+		.filter(({ mark }) => projection.allConnections.some(({ line }) => wears(line, mark)))
+		.map((entry) => ({
+			...entry,
+			dimmed: !projection.connections.some(({ line }) => wears(line, entry.mark)),
+		}));
 }
 
 /**

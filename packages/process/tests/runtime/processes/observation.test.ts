@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import {
 	listProcessGroupObservations,
-	listProcessObservations,
 	readProcessObservation,
 } from "#runtime/processes/observation.ts";
 import { parseLinuxProcessStat } from "#runtime/processes/linux-stat.ts";
@@ -13,11 +12,10 @@ function linuxStat(state: string, parentPid = "11", pgid = "29"): string {
 }
 
 describe("process observation", () => {
-	test("reads a process, the census and an owned group through the native platform boundary", async () => {
+	test("reads a process and an owned group through the native platform boundary", async () => {
 		const current = readProcessObservation(process.pid);
 		expect(current).toMatchObject({ pid: process.pid, state: "live" });
 		expect(current?.startTime).toMatch(/^(?:darwin|linux):/);
-		expect(listProcessObservations().some((record) => record.pid === process.pid)).toBeTrue();
 		// The product observes only groups it started, never the one it was
 		// started in: on GitHub's macOS runner that group holds a process libproc
 		// will not describe (TASK-361).

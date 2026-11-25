@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import {
 	parseDynamicToolCallResponse,
-	type ParsedDynamicToolCallResponse,
-} from "@archboard/workbench/runtime";
+	type ToolEnvelope,
+} from "./support/codex-workbench-response.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -25,12 +25,9 @@ import { extendOutcomeFixture } from "./support/codex-workbench-outcomes.ts";
 
 type MutationScenario = "initial_not_delivered" | "initial_unknown" | "outer_unknown";
 
-function parsedResponse(
-	logPath: string,
-	id: string,
-): ParsedDynamicToolCallResponse<"create_thread"> {
+function parsedResponse(logPath: string, id: string): { envelope: ToolEnvelope } {
 	const response = reverseResponses(logPath, id)[0]?.frame?.result;
-	return parseDynamicToolCallResponse("create_thread", response);
+	return parseDynamicToolCallResponse(response);
 }
 
 describe.serial("composed Codex mutation outcomes", () => {

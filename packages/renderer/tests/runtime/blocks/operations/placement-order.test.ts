@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 import input from "#tests/runtime/support/fixtures/placement-order-graph.json";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
+import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
 import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const CONTENT = VariantContentSchema.parse(input);
 
 async function cardBoxes(content: VariantContent, layout?: LayoutEngineName) {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout,
@@ -19,7 +19,7 @@ async function cardBoxes(content: VariantContent, layout?: LayoutEngineName) {
 
 async function edgeBoxes(content: VariantContent, layout?: LayoutEngineName) {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout,
@@ -55,12 +55,12 @@ test("replacing every subject identity leaves card and relationship geometry in 
 		})),
 	};
 	const original = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CONTENT,
 		theme: "light",
 	});
 	const replacement = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: renamed,
 		theme: "light",
 	});
@@ -70,7 +70,7 @@ test("replacing every subject identity leaves card and relationship geometry in 
 		expect(replacement.atlas.edges[after]).toEqual(original.atlas.edges[before]);
 });
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"document array order does not place architecture cards (%s)",
 	async (layout) => {
 		const reordered = {
@@ -96,7 +96,7 @@ test("authored order determines sibling positions and relationship paint order",
 		],
 	};
 	const rendered = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -110,7 +110,7 @@ test("authored order determines sibling positions and relationship paint order",
 		),
 	};
 	const changed = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: swapped,
 		theme: "light",
 	});

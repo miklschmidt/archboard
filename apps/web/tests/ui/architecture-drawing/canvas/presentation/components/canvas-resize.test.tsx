@@ -1,11 +1,11 @@
 // What a pane does when the room it is drawn in changes size. A slide beside it
 // changes that size on every frame, and the camera fits to the room once it
-// stops changing, not on every frame of the slide (COLUMN_MS.pictureResizeSettle).
+// stops changing, not on every frame of the slide (columnMs("pictureResizeSettle")).
 
 import { act } from "@testing-library/react";
 import { afterEach, expect, test } from "bun:test";
 
-import { COLUMN_MS } from "@archboard/timing";
+import { columnMs } from "@archboard/timing";
 import { cameraNow, takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import {
 	drawing,
@@ -65,10 +65,10 @@ test("a pane whose room changes on every frame is fitted once, when the room sto
 		act(() => {
 			for (const tell of told) tell();
 		});
-		frames.run(COLUMN_MS.pictureResizeSettle / 4);
+		frames.run(columnMs("pictureResizeSettle") / 4);
 	};
 	for (const width of [760, 720, 680, 640, 600, 560, 520]) frame(width);
 	expect(cameraNow()).toEqual(fitted);
-	frames.run(COLUMN_MS.pictureResizeSettle * 3);
+	frames.run(columnMs("pictureResizeSettle") * 3);
 	expect(cameraNow().scale).toBeCloseTo(Math.min((520 - 48) / 400, (600 - 48) / 300), 6);
 });

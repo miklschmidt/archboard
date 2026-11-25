@@ -6,11 +6,13 @@ import type {
 	SessionThreadItemPageResult,
 	SessionThreadPageResult,
 	SessionThreadTurnPageResult,
-	SessionThreadForkResult,
-	SessionThreadStartResult,
-	SessionTurnResult,
+	SessionResponsePayloads,
 } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
+
+type SessionThreadForkResult = SessionResponsePayloads["thread/fork"];
+type SessionThreadStartResult = SessionResponsePayloads["thread/start"];
+type SessionTurnResult = SessionResponsePayloads["turn/start"];
 
 class FakeSession {
 	readonly calls: Array<{ readonly method: string; readonly params: unknown }> = [];

@@ -5,8 +5,7 @@
 
 use std::cell::OnceCell;
 
-use archboard_paint::canvas::{Canvas, Ink};
-use archboard_paint::parts::Keeper;
+use archboard_paint::{Canvas, Ink, Keeper};
 use kurbo::{Affine, BezPath};
 use peniko::{BlendMode, Color, Compose, Fill, Mix};
 use vello_gpu::{RenderSize, Resources, Scene, WebGlRenderer, WebGlTextureBindings};

@@ -2,7 +2,7 @@ import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.t
 import type { CodexWorkbenchDomain } from "#server/generation/protocol/domain.ts";
 import type { CodexEpochStore } from "#runtime/epoch/store/contract.ts";
 import {
-	CODEX_SESSION_CONTROL,
+	codexSessionControl,
 	type CodexSession,
 	type ControlledCodexSession,
 } from "@archboard/codex-app-server/session";
@@ -340,7 +340,7 @@ function createCodexWorkbenchGenerationLifecycle(
 			return;
 		}
 		state.hooks.onNotification(event);
-		components.session[CODEX_SESSION_CONTROL].onNotification(event);
+		codexSessionControl(components.session).onNotification(event);
 		components.sessions.onNotification(event);
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {

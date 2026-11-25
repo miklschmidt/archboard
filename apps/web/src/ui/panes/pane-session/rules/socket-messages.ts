@@ -9,8 +9,8 @@
 // a checkout was chosen somewhere.
 
 import {
-	PanePresentRequestSchema,
-	ArchitecturePaneReadingSchema,
+	panePresentRequestSchema,
+	architecturePaneReadingSchema,
 } from "@archboard/model/pane-context";
 import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type {
@@ -20,11 +20,11 @@ import type {
 } from "#ui/panes/pane-session/rules/session-types.ts";
 import type { z } from "zod";
 
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
 
 /** Canonical navigation resolved by the shared runtime before it reaches a pane. */
 interface PaneModelRequest {
-	readonly reading: z.infer<typeof ArchitecturePaneReadingSchema> & { model: string };
+	readonly reading: z.infer<ReturnType<typeof architecturePaneReadingSchema>> & { model: string };
 	readonly repository: string | null;
 }
 
@@ -88,7 +88,7 @@ function panePlaced(context: MessageContext, data: WebSocketMessage): void {
  */
 function paneModel(context: MessageContext, data: WebSocketMessage): void {
 	if (typeof data.model !== "string" || typeof data.vault !== "string") return;
-	const parsed = ArchitecturePaneReadingSchema.safeParse(data.reading);
+	const parsed = architecturePaneReadingSchema().safeParse(data.reading);
 	if (!parsed.success) return;
 	const repository = data.repository ?? null;
 	context.adoptModel(null, null, { vault: data.vault, repository });
@@ -157,7 +157,7 @@ function repositoriesChanged(context: MessageContext): void {
  * @param data The message.
  */
 function panePresent(context: MessageContext, data: WebSocketMessage): void {
-	const request = PanePresentRequestSchema.safeParse(data);
+	const request = panePresentRequestSchema().safeParse(data);
 	if (request.success) {
 		context.onPresentRequest?.(request.data);
 	}

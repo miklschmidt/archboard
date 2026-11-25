@@ -61,6 +61,7 @@ use entrance::middle_of_scene;
 use found::{Form, Found, Pairing, found, holds_subject, pair};
 use line::{LineCarry, reroutes};
 use open::ways;
+use phases::Transition;
 use plan::{Mover, Plan, Riding, Wiring};
 use resize::resumed;
 use ride::{Ride, mark_of};
@@ -68,13 +69,13 @@ use spark::{redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
 
 pub(crate) use departure::departing;
-pub use departure::{Heading, departure, visible_at};
+pub(crate) use departure::{Heading, departure, visible_at};
 pub(crate) use ease::phase;
-pub use entrance::Entrance;
-pub use handover::Handover;
+pub(crate) use entrance::Entrance;
+pub(crate) use handover::Handover;
+pub(crate) use phases::Phases;
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
-pub use phases::{Entry, Phases, Transition};
 
 /// Some items without what belongs to some subjects: their groups, and the
 /// shadows they cast.
@@ -116,7 +117,7 @@ pub(crate) fn frame_of(scene: &Scene, subject: &str) -> Option<Rect> {
 /// Preparing pairs the groups and refines the routes. A frame then clones what
 /// does not change and works out the rest.
 #[derive(Clone, Debug)]
-pub struct Between {
+pub(crate) struct Between {
     plan: Plan,
     /// The next scene's body as it stands, parked marks and all.
     landed: Vec<Item>,
@@ -416,7 +417,7 @@ impl Between {
     /// the page worked it out. The picture starts that far back and eases home
     /// with the cards, so at 0 it is `from` drawn translated by the negative of
     /// `shift`.
-    pub fn new(from: &Scene, to: &Scene, shift: (f64, f64), phases: &Phases) -> Between {
+    pub(crate) fn new(from: &Scene, to: &Scene, shift: (f64, f64), phases: &Phases) -> Between {
         let phases = phases.transition;
         let mut last = from.clone();
         rename::scene(&mut last);
@@ -530,7 +531,7 @@ impl Between {
     ///
     /// At its length it is the next scene's body. What the move parks, a line's
     /// ports, comes back on landing.
-    pub fn at(&self, progress: f64) -> Vec<Item> {
+    pub(crate) fn at(&self, progress: f64) -> Vec<Item> {
         if progress >= self.length {
             return self.landed.clone();
         }
@@ -557,7 +558,7 @@ impl Between {
     /// The in-between at a progress as a scene, and how far back of its place it
     /// stands. A picture that arrives during a move starts from it, so that it
     /// takes over from what the reader sees.
-    pub fn seen_at(&self, progress: f64, landed: &Scene) -> (Scene, (f64, f64)) {
+    pub(crate) fn seen_at(&self, progress: f64, landed: &Scene) -> (Scene, (f64, f64)) {
         if progress >= self.length {
             return (landed.clone(), (0.0, 0.0));
         }
@@ -579,13 +580,13 @@ impl Between {
 
     /// The masks of the lines that move, at a progress from 0 to 1. Each stands
     /// in for what the definitions hold under its name.
-    pub fn masks_at(&self, progress: f64) -> Vec<Mask> {
+    pub(crate) fn masks_at(&self, progress: f64) -> Vec<Mask> {
         self.plan.masks_at(progress)
     }
 
     /// The definitions the in-between refers to: the next scene's, and the last
     /// scene's under names that cannot collide with them.
-    pub fn definitions(&self) -> Vec<Definition> {
+    pub(crate) fn definitions(&self) -> Vec<Definition> {
         self.definitions.clone()
     }
 }

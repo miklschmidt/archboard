@@ -307,6 +307,31 @@ const CodexFileChangeApprovalDecisionSchema = z.enum([
 	"cancel",
 ] satisfies readonly CodexFileChangeApprovalDecision[]);
 
+/**
+ * The schemas of the closed Codex vocabularies that another package composes into its own
+ * schemas, each checked against the generated protocol here.
+ */
+const CODEX_FIELD_SCHEMAS = Object.freeze({
+	threadStatusType: CodexThreadStatusTypeSchema,
+	turnStatus: CodexTurnStatusSchema,
+	turnPlanStepStatus: CodexTurnPlanStepStatusSchema,
+	patchChangeKindType: CodexPatchChangeKindTypeSchema,
+	tokenUsageBreakdown: CodexTokenUsageBreakdownSchema,
+	fileChangeApprovalDecision: CodexFileChangeApprovalDecisionSchema,
+});
+type CodexFieldSchemas = typeof CODEX_FIELD_SCHEMAS;
+
+/**
+ * The schema of one closed Codex vocabulary, for a caller that composes it into its own schema.
+ * @param field - The vocabulary, such as `threadStatusType`.
+ * @returns Its schema.
+ */
+function codexFieldSchema<Field extends keyof CodexFieldSchemas>(
+	field: Field,
+): CodexFieldSchemas[Field] {
+	return CODEX_FIELD_SCHEMAS[field];
+}
+
 interface CodexResponseByMethod {
 	readonly initialize: CodexJsonWire<InitializeResponse>;
 	readonly "config/read": CodexJsonWire<ConfigReadResponse>;
@@ -462,14 +487,10 @@ export {
 	CODEX_CLIENT_REQUEST_METHODS,
 	CODEX_SERVER_REQUEST_METHODS,
 	CodexThreadStatusSchema,
-	CODEX_THREAD_STATUS_TYPES,
 	type CodexThreadStatusType,
-	CodexThreadStatusTypeSchema,
 	isCodexThreadStatusType,
 	CodexTurnStatusSchema,
-	CodexTurnPlanStepStatusSchema,
-	CodexPatchChangeKindTypeSchema,
-	CodexTokenUsageBreakdownSchema,
+	codexFieldSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,

@@ -59,7 +59,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-scene/src/paint/design.rs",
-        "symbol": "FLOW_KIND"
+        "symbol": "flow_kind"
       },
       "id": "vKEsyHFk#PLVZZKxC",
       "to": "vKEsyHFk#w44DwfpV"

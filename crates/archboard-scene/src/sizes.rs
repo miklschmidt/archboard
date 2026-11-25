@@ -1,0 +1,222 @@
+//! The sizes and faces the painter draws with and the measurer measures with:
+//! one sheet, private to the crate. Other crates read what they need through
+//! `paint::design`.
+
+use crate::drawing::{DiagramFont, FontFamily};
+
+/// How close two points must be to be one, and the least a turn may move.
+pub(crate) const EPSILON: f64 = 0.01;
+
+/// A card's name, and a container's or a flow's on its tab.
+pub(crate) const CARD_TITLE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
+/// What a card, a container or a flow is responsible for.
+pub(crate) const CARD_NOTE_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 400,
+};
+/// Where a card's code lives.
+pub(crate) const CARD_PATH_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Mono,
+    weight: 400,
+};
+/// What a connection carries: small, technical, and on a plate.
+pub(crate) const PILL_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 500,
+};
+
+/// The corner radius of a container's tray and of a flow's frame.
+pub(crate) const BAND_RADIUS: f64 = 10.0;
+/// The size of a measured part's name: a card's, and a container's or a flow's on its tab.
+pub(crate) const PART_TITLE_SIZE: f64 = 14.0;
+/// A parent name is slightly stronger within a normal card-sized header.
+pub(crate) const PARENT_TITLE_SIZE: f64 = 15.0;
+/// The parent icon keeps the same chip with a slightly larger glyph.
+pub(crate) const PARENT_ICON_SIZE: f64 = 20.0;
+/// The room one line of such a name takes.
+pub(crate) const PART_TITLE_LINE: f64 = 20.0;
+/// The size of a measured part's responsibility, set on the same card or tab.
+pub(crate) const PART_NOTE_SIZE: f64 = 11.0;
+/// The room one line of such a responsibility takes.
+pub(crate) const PART_NOTE_LINE: f64 = 17.0;
+/// The size of a measured part's code path. A reader at the far view's edge reads it at 9 px.
+pub(crate) const PART_PATH_SIZE: f64 = 10.5;
+/// The room a code path's line takes.
+pub(crate) const PART_PATH_LINE: f64 = 16.0;
+/// The room between a card's words and the code path at its foot.
+pub(crate) const PART_PATH_GAP: f64 = 6.0;
+/// How tall a capital stands, per unit of a part's name.
+pub(crate) const NAME_CAP: f64 = 0.707;
+/// How strong a line is on each ground.
+pub(crate) const LINE_STRENGTH_LIGHT: f64 = 1.0;
+/// The same share on the dark ground: four fifths, which keeps every colour's line above the floor for a mark (APCA Lc 30).
+pub(crate) const LINE_STRENGTH_DARK: f64 = 0.8;
+/// How round a card's corner is to the layout, which keeps a line's port clear of it.
+pub(crate) const CARD_RADIUS: f64 = 6.0;
+/// The corner radius of a slab: a card's face.
+pub(crate) const SLAB_RADIUS: f64 = 8.0;
+/// How tall a card's front edge shows.
+pub(crate) const CARD_THICKNESS: f64 = 4.0;
+/// How far the lit lip of a tray shows below its floor.
+pub(crate) const TRAY_LIP: f64 = 2.0;
+/// How tall a well shows its top wall.
+pub(crate) const TRAY_WALL: f64 = 6.0;
+/// How far a container's words stand in from the outer edge of its box.
+const HEADER_SLAB_INSET: f64 = 8.0;
+/// How tall a type chip's front edge shows.
+pub(crate) const CHIP_THICKNESS: f64 = 1.5;
+/// How tall a label plate's front edge shows.
+pub(crate) const PILL_THICKNESS: f64 = 2.0;
+/// The side of a type chip's square.
+pub(crate) const ICON_CHIP_SIZE: f64 = 24.0;
+/// The room between a sequence card's chip and its words.
+pub(crate) const ICON_CHIP_GAP: f64 = 10.0;
+/// The corner radius of a type chip.
+pub(crate) const ICON_CHIP_RADIUS: f64 = 5.0;
+/// The size of a sequence card's name before it is fitted to the room it has.
+pub(crate) const TITLE_SIZE: f64 = 13.0;
+/// The size of a note: a sequence card's responsibility and a step's note.
+pub(crate) const NOTE_SIZE: f64 = 9.5;
+/// How tall a message label's plate is for one line of words.
+pub(crate) const PILL_HEIGHT: f64 = 15.0;
+/// The size of the words on a label plate.
+pub(crate) const PILL_TEXT_SIZE: f64 = 9.0;
+/// The size of words in a flowchart's diamonds, loops and terminals.
+pub(crate) const SHAPE_TEXT_SIZE: f64 = 11.0;
+/// The room one line of a flowchart shape's words takes.
+pub(crate) const SHAPE_TEXT_LINE: f64 = 14.0;
+/// The letter of a flowchart's jump marker: Onest Bold, which reads at a glance.
+pub(crate) const JUMP_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 700,
+};
+/// The size of a jump marker's letter.
+pub(crate) const JUMP_TEXT_SIZE: f64 = 16.0;
+/// The corner radius of a label plate.
+pub(crate) const PILL_RADIUS: f64 = 4.0;
+
+/// The space around the final drawing.
+pub(crate) const DIAGRAM_MARGIN: f64 = 20.0;
+/// The extra space a planned picture's page adds around the drawing to hold its frame.
+pub(crate) const PLANNED_FRAME_MARGIN: f64 = 16.0;
+/// The distance from the page edge to a planned picture's dashed frame.
+pub(crate) const PLANNED_FRAME_INSET: f64 = 8.0;
+/// How tall a door stands, and how round its corners are.
+pub(crate) const DOOR_HEIGHT: f64 = 34.0;
+pub(crate) const DOOR_RADIUS: f64 = 8.0;
+/// The room inside a door, on either side of its words.
+pub(crate) const DOOR_PADDING: f64 = 10.0;
+/// A door's icon when the picture is seen near, and from far away.
+pub(crate) const DOOR_ICON: f64 = 18.0;
+pub(crate) const DOOR_FAR_ICON: f64 = 22.0;
+/// How far in from a door's right end its arrow stands.
+pub(crate) const DOOR_ARROW_INSET: f64 = 18.0;
+/// The room a door keeps past its name for its arrow.
+pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
+/// The room a control takes at the right end of a door or a frame's tab.
+pub(crate) const TOGGLE_ROOM: f64 = 32.0;
+
+/// How tall a frame's edge tab stands: the room its far name and path take on one line.
+pub(crate) const TAB_HEIGHT: f64 = 36.0;
+/// The room inside a frame's edge tab, on either side of its words.
+pub(crate) const TAB_PADDING: f64 = 12.0;
+/// A tab's chip when the picture is seen near, and from far away.
+pub(crate) const TAB_CHIP: f64 = 22.0;
+pub(crate) const TAB_FAR_CHIP: f64 = 26.0;
+/// The room between a tab's chip and its name.
+pub(crate) const TAB_ICON_GAP: f64 = 8.0;
+/// The room between a tab's name and its code path.
+pub(crate) const TAB_PATH_GAP: f64 = 14.0;
+/// The widest a tab's words are set from far away, past which a path keeps its tail.
+pub(crate) const TAB_MOST: f64 = 620.0;
+/// A tab's name and path from far away: 12 px and 9 px at the lowest scale a reading lands at.
+pub(crate) const TAB_FAR_NAME: f64 = 20.0;
+pub(crate) const TAB_FAR_PATH: f64 = 15.0;
+/// The largest name a tab holds from far away, and how far its baseline drops per unit of it.
+pub(crate) const TAB_FAR_MOST: f64 = 28.0;
+pub(crate) const TAB_FAR_DROP: f64 = 0.35;
+/// The room a frame keeps to the right of its tab: the tab's foot, then the frame's corner.
+pub(crate) const TAB_SHOULDER: f64 = 2.0 * BAND_RADIUS;
+
+/// The words on a group's tag, near: what its size, its room and its height scale from.
+pub(crate) const TAG_FONT: DiagramFont = PILL_FONT;
+pub(crate) const TAG_SIZE: f64 = 10.0;
+/// The room inside a tag, on either side of its words.
+pub(crate) const TAG_PADDING: f64 = 7.0;
+pub(crate) const TAG_HEIGHT: f64 = 17.0;
+pub(crate) const TAG_RADIUS: f64 = 5.0;
+/// The room between two tags in a row.
+pub(crate) const TAG_GAP: f64 = 4.0;
+/// The side of a group's mark on a far card, near: a tag's words would crowd its box.
+pub(crate) const FAR_TAG: f64 = 8.0;
+/// How far a tag stands from a card's top and right edges.
+pub(crate) const TAG_INSET: f64 = 12.0;
+/// The room a tag keeps from the end of a name beside it.
+pub(crate) const TAG_BESIDE: f64 = 8.0;
+
+/// How much larger everything a far view sets larger stands: a far card's words
+/// and every line with its arrowhead.
+pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
+/// How thick a line of normal weight is drawn.
+pub(crate) const LINE_WIDTH: f64 = 1.4;
+/// How thick a line of hero weight is drawn.
+pub(crate) const HERO_LINE_WIDTH: f64 = 2.2;
+/// How wide a double line's rails stand, side to side.
+pub(crate) const RAILS: f64 = 3.6;
+/// The gap a double line's rails leave down its middle.
+pub(crate) const RAIL_GAP: f64 = 1.2;
+/// The room between an architecture card's edge and its chip and words.
+pub(crate) const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
+/// The room between an architecture card's chip and its words.
+pub(crate) const ARCHITECTURE_ICON_GAP: f64 = 12.0;
+/// The room between a part's name and its responsibility under it.
+pub(crate) const ARCHITECTURE_NOTE_GAP: f64 = 2.0;
+/// The kind of a flowchart's frame, which holds a flow.
+pub(crate) const FLOW_KIND: &str = "flow";
+/// How tall a flow's heading stands in its tab.
+pub(crate) const FLOW_HEADING: f64 = PART_TITLE_LINE;
+/// How tall a flow's heading stands in its tab with its summary.
+pub(crate) const FLOW_HEADING_WITH_NOTE: f64 =
+    PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;
+/// How far a container's words stand in from the sides of its box.
+pub(crate) const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
+/// The room inside a relationship's label plate, on the left and the right of its words.
+pub(crate) const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;
+/// The room inside a relationship's label plate, above and below its words.
+pub(crate) const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
+
+/// The room inside a sequence card either side of its words.
+pub(crate) const CARD_PADDING_X: f64 = 13.0;
+/// The radius of a drill-down mark's ring.
+pub(crate) const DRILL_MARK_RADIUS: f64 = 6.5;
+/// What a part keeps clear beside its name for a drill-down mark.
+pub(crate) const DRILL_MARK_ROOM: f64 = 2.0 * DRILL_MARK_RADIUS + 8.0;
+/// Half the width of a sequence's activation bar, and how far it holds arrows
+/// off the lifeline.
+pub(crate) const ACTIVATION_HALF_WIDTH: f64 = 6.0;
+/// How far right a self-message reaches, how far it drops before turning
+/// back, and the radius of its two bends.
+pub(crate) const SELF_LOOP_REACH: f64 = 52.0;
+/// How far a self-message drops before it turns back.
+pub(crate) const SELF_LOOP_DROP: f64 = 8.0;
+/// The radius of the two bends of a self-message.
+pub(crate) const SELF_LOOP_CORNER: f64 = 8.0;
+/// The step from one line of a wrapped message label to the next.
+pub(crate) const MESSAGE_LINE_STEP: f64 = 12.0;
+/// How far a step's note holds its words in from its plate's edges.
+pub(crate) const STEP_NOTE_PADDING_X: f64 = 4.0;
+/// How far a step's note holds its words in from the top of its plate.
+pub(crate) const STEP_NOTE_PADDING_Y: f64 = 2.0;
+/// A decision's or loop's frame: the row its operator tab and words stand
+/// on, the row an alternative's label stands on, the room between its sides
+/// and the ink it holds, and the padding of the tab around its operator.
+pub(crate) const FRAME_HEAD_HEIGHT: f64 = 18.0;
+/// The height of the row an alternative's label stands on.
+pub(crate) const FRAME_GUARD_HEIGHT: f64 = 16.0;
+/// The room between a frame's sides and the ink it holds.
+pub(crate) const FRAME_PAD: f64 = 10.0;
+/// The padding of a frame's tab around its operator.
+pub(crate) const FRAME_TAB_PADDING: f64 = 6.0;

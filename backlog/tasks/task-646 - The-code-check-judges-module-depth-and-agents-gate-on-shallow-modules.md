@@ -1,10 +1,10 @@
 ---
 id: TASK-646
 title: The code check judges module depth, and agents gate on shallow modules
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-18T22:57:00Z'
-updated_date: '2026-11-18T22:57:00Z'
+updated_date: '2026-11-19T13:30:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -172,3 +172,15 @@ The browser shows the same data. In Measures, `What a module exposes` gets Model
 - This repository's own `timing` module is the first expected finding. Do not use this repository to choose defaults.
 - The decisions came from a long design interview, with reviews by two advisor agents. The proposal holds the architecture that they settled.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on feat/module-depth (PR #135) and refactor/module-depth-cleanup (PR #139), a gh stack that merges as one unit. Every subtask is done; this parent closes when the stack merges.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check judges module depth from the code and names its findings, with no score: EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH, EXPOSED_UNUSED (after a complete read), INTERFACE_UNDECLARED and the MODULE_SHALLOW roll-up, in TypeScript, Rust, Python, Go, C#, Swift, C, C++ and Objective-C, with counts for Terraform, Nix flakes and Helm. archboard check --fail-shallow-modules, or codeCheck.failShallowModules in the vault configuration, fails on a shallow module the branch touched, working tree included; an unresolvable base is BASE_UNRESOLVED. Measures shows Model and Code columns, the About page and right panel list code exports, and Fix with Codex sets up a missing language server. ADR 0082 records the decision; the proposal Module depth from the code is adopted as Current (LzXvT7U7). This repository obeys the rules (TASK-646.14: 860 warnings to 0, gate on). Delivered as the gh stack #135 and #139; all 13 CI checks pass on the stack head; reviewed in four parallel rounds and a 4-round sol-loop (gpt-6.2-sol), approved. Known limits: Go and C# members declared in another file than their type are not counted, Python class attributes are not judged, JavaScript, Vue and Svelte are scanned as text. Published change: codex-realtime-voice's ./server no longer exports resolveCodexExecutable.
+<!-- SECTION:FINAL_SUMMARY:END -->

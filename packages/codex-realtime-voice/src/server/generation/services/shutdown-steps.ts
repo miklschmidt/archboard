@@ -1,4 +1,4 @@
-import { CODEX_SESSION_CONTROL } from "@archboard/codex-app-server/session";
+import { codexSessionControl } from "@archboard/codex-app-server/session";
 import type {
 	CodexWorkbenchStopReason,
 	GenerationState,
@@ -55,7 +55,7 @@ function shutdownSteps(
 		 * Dispose the session.
 		 * @returns Resolves once it has.
 		 */
-		() => components.session[CODEX_SESSION_CONTROL].dispose(),
+		() => codexSessionControl(components.session).dispose(),
 		/**
 		 * Dispose every tab session's callbacks, spoken approval gate, context
 		 * delivery and coordinator tools.

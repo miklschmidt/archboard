@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
+import { parseDynamicToolCallResponse } from "./support/codex-workbench-response.ts";
 import { waitFor } from "../server-state/support/http.ts";
 import { processExists } from "../support/owned-server.ts";
 import {
@@ -109,7 +109,6 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 				}
 
 				const dynamic = parseDynamicToolCallResponse(
-					"create_thread",
 					reverseResponses(fixture.logPath, `${cause}-dynamic`)[0]?.frame?.result,
 				).envelope;
 				if (dynamic.tag !== "approval_required") {
@@ -121,7 +120,6 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 					summary: `Create thread: Do not execute the ${cause} effect.`,
 				});
 				const wait = parseDynamicToolCallResponse(
-					"wait_threads",
 					reverseResponses(fixture.logPath, `${cause}-wait`)[0]?.frame?.result,
 				).envelope;
 				expect(wait).toEqual({

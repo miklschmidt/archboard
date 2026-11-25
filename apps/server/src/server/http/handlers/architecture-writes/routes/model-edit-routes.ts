@@ -9,10 +9,10 @@ import {
 	takeBackArchitectureClaim,
 } from "@archboard/model/store-write";
 import {
-	ArchitectureModuleEditSchema,
-	ArchitectureClaimRequestSchema,
-	ArchitectureClaimReleaseSchema,
-	ArchitectureClaimTakeBackSchema,
+	architectureModuleEditSchema,
+	architectureClaimRequestSchema,
+	architectureClaimReleaseSchema,
+	architectureClaimTakeBackSchema,
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
@@ -75,18 +75,23 @@ function validQuery(req: Request): boolean {
  * @param app The server application.
  */
 function mountArchitectureEditRoutes(app: Express): void {
-	post(app, "/api/architecture/module", ArchitectureModuleEditSchema, editArchitectureModule);
-	post(app, "/api/architecture/claims", ArchitectureClaimRequestSchema, claimArchitectureSubjects);
+	post(app, "/api/architecture/module", architectureModuleEditSchema(), editArchitectureModule);
+	post(
+		app,
+		"/api/architecture/claims",
+		architectureClaimRequestSchema(),
+		claimArchitectureSubjects,
+	);
 	post(
 		app,
 		"/api/architecture/claims/release",
-		ArchitectureClaimReleaseSchema,
+		architectureClaimReleaseSchema(),
 		releaseArchitectureClaim,
 	);
 	post(
 		app,
 		"/api/architecture/claims/take-back",
-		ArchitectureClaimTakeBackSchema,
+		architectureClaimTakeBackSchema(),
 		takeBackArchitectureClaim,
 	);
 	post(app, "/api/architecture/recover", z.object({}).strict(), recoverArchitectureModel);

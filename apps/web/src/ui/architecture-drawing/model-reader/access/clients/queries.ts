@@ -1,13 +1,13 @@
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
-import { queryOptions, skipToken } from "@tanstack/react-query";
+import { queryOptions, skipToken, type QueryClient } from "@tanstack/react-query";
 import type { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureCheckpointRowsSchema,
-	ArchitectureClaimListSchema,
-	ModuleNavigationReadSchema,
+	architectureModelReadSchema,
+	architectureCheckpointRowsSchema,
+	architectureClaimListSchema,
+	moduleNavigationReadSchema,
 	type ArchitectureEvent,
-	ArchitectureRetainedModuleSchema,
+	architectureRetainedModuleSchema,
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
@@ -24,7 +24,7 @@ type StateSelection = {
 	readonly reference?: number;
 };
 
-type CheckpointRows = z.infer<typeof ArchitectureCheckpointRowsSchema>;
+type CheckpointRows = z.infer<ReturnType<typeof architectureCheckpointRowsSchema>>;
 type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
 
 /** What a repository row knows of a vault, as the feed last reported it. */
@@ -45,7 +45,7 @@ interface ModuleTarget {
 
 /** Where a removed module was last retained, or null when no reading holds it. */
 type RetainedModule = Extract<
-	z.output<typeof ArchitectureRetainedModuleSchema>,
+	z.output<ReturnType<typeof architectureRetainedModuleSchema>>,
 	{ success: true }
 >["retained"];
 
@@ -211,7 +211,7 @@ async function readModel(
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
-	const result = await readReply(url, ArchitectureModelReadSchema, signal);
+	const result = await readReply(url, architectureModelReadSchema(), signal);
 	if (!result.success) throw new ArchitectureReadError(result);
 	// A walkthrough plays the vault on disk, so a branch reading offers none.
 	return selection.ref == null ? result : { ...result, walkthroughs: [] };
@@ -315,7 +315,7 @@ function architectureModuleQuery(vault: string, target: ModuleTarget, digest: st
 			);
 			const result = await readReply(
 				`${inVault("/api/architecture/module", vault)}&${parameters}`,
-				ModuleNavigationReadSchema,
+				moduleNavigationReadSchema(),
 				context.signal,
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
@@ -341,7 +341,7 @@ function architectureCheckpointsQuery(vault: string) {
 		queryFn: (context) =>
 			readReply(
 				inVault("/api/architecture/checkpoints/rows", vault),
-				ArchitectureCheckpointRowsSchema,
+				architectureCheckpointRowsSchema(),
 				context.signal,
 			),
 		/**
@@ -372,7 +372,7 @@ function retainedModuleQuery(vault: string, module: string) {
 		 */
 		queryFn: async (context) => {
 			const url = `${inVault("/api/architecture/retained-module", vault)}&${new URLSearchParams({ module })}`;
-			const result = await readReply(url, ArchitectureRetainedModuleSchema, context.signal);
+			const result = await readReply(url, architectureRetainedModuleSchema(), context.signal);
 			if (!result.success) throw new ArchitectureReadError(result);
 			return result.retained;
 		},
@@ -397,7 +397,7 @@ function architectureClaimsQuery(vault: string) {
 		queryFn: (context) =>
 			readReply(
 				inVault("/api/architecture/claims", vault),
-				ArchitectureClaimListSchema,
+				architectureClaimListSchema(),
 				context.signal,
 			),
 		...followed,
@@ -405,10 +405,43 @@ function architectureClaimsQuery(vault: string) {
 	});
 }
 
+/**
+ * The cache key of a read of one vault that the readers of this module do not make, under the
+ * vault's prefix so that what invalidates the vault invalidates it.
+ * @param vault The explicit vault.
+ * @param rest What the read is, after the vault.
+ * @returns The query key.
+ */
+function vaultQueryKey<const Rest extends readonly unknown[]>(vault: string, ...rest: Rest) {
+	return [...architectureModelKeys.vault(vault), ...rest] as const;
+}
+
+/**
+ * Read every resource of one vault again.
+ * @param client The tab's query client.
+ * @param vault The explicit vault.
+ * @returns When the reads are invalidated.
+ */
+function invalidateVaultQueries(client: QueryClient, vault: string): Promise<void> {
+	return client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
+}
+
+/**
+ * Read every model resource of every vault again.
+ * @param client The tab's query client.
+ * @returns When the reads are invalidated.
+ */
+function invalidateModelQueries(client: QueryClient): Promise<void> {
+	return client.invalidateQueries({ queryKey: architectureModelKeys.all });
+}
+
 export {
 	readReply,
 	readModel,
 	architectureModelKeys,
+	invalidateModelQueries,
+	invalidateVaultQueries,
+	vaultQueryKey,
 	architectureModelQuery,
 	architectureModuleQuery,
 	architectureSummaryQuery,

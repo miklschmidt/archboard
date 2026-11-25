@@ -1,10 +1,12 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { projectModel } from "@archboard/model/content";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
+	arrivedOnModel,
+	movePaneVault,
 	paneFromRequest,
 	paneResponse,
 	semanticPaneContextFor,
@@ -14,8 +16,7 @@ import {
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
-import { arrivedOnModel, noBrowserBody } from "#server/panes/connections/routes/pane-routes.ts";
-import { movePaneVault } from "#server/panes/connections/state/pane-vaults.ts";
+import { noBrowserBody } from "#server/panes/connections/routes/pane-routes.ts";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import {
@@ -28,9 +29,9 @@ const RequestSchema = z.strictObject({
 	pane: z.string().optional(),
 	agent: z.boolean().optional(),
 	session: z.string().optional(),
-	reading: ArchitecturePaneReadingSchema,
+	reading: architecturePaneReadingSchema(),
 });
-type Reading = z.infer<typeof ArchitecturePaneReadingSchema>;
+type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
 type NavigationError = { code: string; error: string };
 /**
@@ -291,7 +292,7 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
 	if (chosen?.changed !== true) {
 		return undefined;
 	}
-	logger.info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
+	logger().info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
 	return { repository: shown.name, checkout: shown.root, replaced: chosen.replaced };
 }
 

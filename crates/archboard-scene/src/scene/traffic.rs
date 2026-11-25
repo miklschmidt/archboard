@@ -11,16 +11,79 @@ use crate::js;
 use crate::scene::colour::Colour;
 
 /// How long a pulse's hot front is, along its line.
-pub const PULSE_FRONT: f64 = 3.0;
+const PULSE_FRONT: f64 = 3.0;
 /// How long a pulse's head is, behind its front.
-pub const PULSE_HEAD: f64 = 12.0;
+const PULSE_HEAD: f64 = 12.0;
 /// How long a pulse's tail is at most, behind its head.
-pub const PULSE_TAIL: f64 = 56.0;
+const PULSE_TAIL: f64 = 56.0;
 /// How far a pulse's light reaches past the line it rides, either side.
-pub const PULSE_MASK_ROOM: f64 = 2.0;
-/// The longest a pulse is, its light's room included: what a clock leaves
-/// after its last pulse has left.
-pub const PULSE_LENGTH: f64 = PULSE_FRONT + PULSE_HEAD + PULSE_TAIL + PULSE_MASK_ROOM;
+const PULSE_MASK_ROOM: f64 = 2.0;
+/// The share of the room between pulses that a pulse fills.
+const PULSE_FILL: f64 = 0.8;
+
+/// The longest tail a pulse has, where nothing crowds it.
+pub const fn longest_tail() -> f64 {
+    PULSE_TAIL
+}
+
+/// How long a pulse's tail is where pulses are `room` apart: a train fills
+/// most of that room, and a tail never runs past its longest.
+pub fn pulse_tail(room: f64) -> f64 {
+    (room * PULSE_FILL - PULSE_HEAD - PULSE_FRONT).clamp(0.0, PULSE_TAIL)
+}
+
+/// How long a pulse is with a tail of some length: its front, its head and that tail.
+pub fn pulse_reach(tail: f64) -> f64 {
+    PULSE_FRONT + PULSE_HEAD + tail
+}
+
+/// How long a pulse with its longest tail is.
+pub fn pulse_span() -> f64 {
+    PULSE_FRONT + PULSE_HEAD + PULSE_TAIL
+}
+
+/// A length with the room a pulse's light takes past it added: how far the
+/// light of a line reaches, or what a clock leaves after a pulse has left.
+pub fn with_light_room(length: f64) -> f64 {
+    length + PULSE_MASK_ROOM
+}
+
+/// The stops of a pulse's body, behind its tail: where its head starts, its
+/// hot middle, its front, and the dark past its front. Each stop is how far
+/// behind the front it stands, whether it takes the pulse's hot colour (else
+/// its head colour), and how much light it lets through, from 0 to 1.
+pub fn body_stops(head_light: f64) -> [(f64, bool, f64); 4] {
+    [
+        (PULSE_FRONT + PULSE_HEAD, false, head_light),
+        (PULSE_FRONT + PULSE_HEAD * 0.45, true, 0.9),
+        (PULSE_FRONT, true, 1.0),
+        (0.0, true, 0.0),
+    ]
+}
+
+/// Where a steady train's bar starts on a piece that starts `along` its
+/// route, for a train `phase` along and pulses `period` apart.
+pub fn train_shift(phase: f64, along: f64, period: f64) -> f64 {
+    js::within(phase - along + PULSE_FRONT, period) - period
+}
+
+/// How far a message's bar has slid on a piece that starts `along` its
+/// route, at a moment of its turn.
+pub fn turn_slide(moment: f64, start: f64, speed: f64, along: f64) -> f64 {
+    (moment - start) * speed - along + PULSE_FRONT - pulse_span()
+}
+
+/// The moment of its turn a message's bar starts onto a piece that starts
+/// `along` its route: its whole pulse and a unit more short of the piece.
+pub fn turn_entry(start: f64, speed: f64, along: f64) -> f64 {
+    turn_moment(-pulse_span() - 1.0, start, speed, along)
+}
+
+/// The moment of its turn a message's bar has slid some way on a piece that
+/// starts `along` its route.
+pub fn turn_moment(slide: f64, start: f64, speed: f64, along: f64) -> f64 {
+    start + (slide + along - PULSE_FRONT + pulse_span()) / speed
+}
 
 /// How thick a pulse's core is on a line of one width.
 pub fn pulse_breadth(line_width: f64) -> f64 {

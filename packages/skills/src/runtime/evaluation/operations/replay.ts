@@ -8,14 +8,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
-import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
-import { SKILL_EVAL_MS } from "@archboard/timing";
-import {
-	SAMPLES_PER_FRAME,
-	TALK_SAMPLE_RATE,
-	framesOf,
-	type Talk,
-} from "@archboard/walkthrough/talk";
+import { diagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
+import { skillEvalMs } from "@archboard/timing";
+import { talkMsSamples, talkClock, framesOf, type Talk } from "@archboard/walkthrough/talk";
 import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
@@ -25,9 +20,9 @@ import {
 } from "#runtime/evaluation/run-checks/outcomes/rules/reading.ts";
 import type { TalkFixture } from "#runtime/evaluation/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/evaluation/batch/schemas/suite.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** A video the harness must look for before the checks run. */
 interface VideoRequest {
@@ -44,7 +39,7 @@ const ReceiptSchema = z.object({
 	file: z.string(),
 	bytes: z.int(),
 	frames: z.int(),
-	theme: DiagramThemeSchema,
+	theme: diagramThemeSchema(),
 });
 
 /** How many first bytes of a file say which container it is. */
@@ -97,7 +92,7 @@ function talkOfFixture(
 	if (walkthrough === undefined) {
 		throw new Error(`the fixture's talk: no walkthrough "${fixture.walkthrough}" to present`);
 	}
-	const step = (SKILL_EVAL_MS.talkStep / 1000) * TALK_SAMPLE_RATE;
+	const step = talkMsSamples(skillEvalMs("talkStep"));
 	const samples = step * walkthrough.beats.length;
 	const events: Talk["events"] = [
 		{ kind: "drawn", at: 0, version: document.version },
@@ -105,7 +100,7 @@ function talkOfFixture(
 			{ kind: "step", at: index * step, beat: index },
 			{
 				kind: "said",
-				at: index * step + SAMPLES_PER_FRAME,
+				at: index * step + talkClock("samplesPerFrame"),
 				itemId: beat.id,
 				text: beat.body,
 				final: true,

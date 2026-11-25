@@ -2,7 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("a comparison keeps an existing label on a straight run when a connection is added", async () => {
 	// Reduced from the Semantic renderer comparison: the added connection used
@@ -53,8 +53,8 @@ test("a comparison keeps an existing label on a straight run when a connection i
 		],
 	});
 	for (const drawing of [
-		await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: before, theme: "light" }),
-		await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" }),
+		await renderArchitecture({ policy: defaultSemanticPolicy(), content: before, theme: "light" }),
+		await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme: "light" }),
 	]) {
 		const labels = routeLabels(drawing.svg);
 		const label = labels.get("0s8raCUw")!,

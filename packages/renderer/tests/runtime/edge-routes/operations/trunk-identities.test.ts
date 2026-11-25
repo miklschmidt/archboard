@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { ambiguousTrunks } from "#tests/runtime/support/drawn-ink.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import fanout from "#tests/runtime/support/fixtures/mixed-kind-parent-fanout.json";
 
 // Reduced from Voice coordinator: Tab sessions reaches Coordinator tools and
@@ -26,7 +26,7 @@ test("a common source does not excuse shared ink with different relationship kin
 test("Blocks keeps different kinds distinct from a caller to two parent members", async () => {
 	const content = orderedFixture(fanout);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "blocks",
@@ -39,7 +39,7 @@ test("comparison context cannot merge the visible kinds of overview relationship
 		nodes: ["source", "one", "two"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: ["one", "two"].map((to) => ({ id: to, from: "source", to, kind: "call" })),
 	});
-	const request = { policy: DEFAULT_SEMANTIC_POLICY, content, layout: "blocks" as const };
+	const request = { policy: defaultSemanticPolicy(), content, layout: "blocks" as const };
 	await renderArchitecture(request);
 	const held = structuredClone(content);
 	held.edges[0]!.kind = "event";

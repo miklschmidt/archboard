@@ -15,7 +15,7 @@ const MOST_CHANGE: f64 = 2.5;
 
 /// What an entrance takes over from the picture that was there.
 #[derive(Clone, Copy, Debug)]
-pub struct Handover<'a> {
+pub(crate) struct Handover<'a> {
     /// The last picture.
     pub last: &'a Scene,
     /// How much of it still shows, from 0 to 1.

@@ -6,7 +6,9 @@
 use std::collections::BTreeSet;
 
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts};
-use archboard_scene::geometry::{EPSILON, Point, Rect};
+use archboard_scene::geometry::{Point, Rect};
+
+use crate::constants::EPSILON;
 
 use crate::ecma::{hypot, js_max, js_min, sign};
 

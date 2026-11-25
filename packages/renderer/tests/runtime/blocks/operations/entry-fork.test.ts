@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import clearance from "#tests/runtime/support/fixtures/top-port-header-clearance.json";
@@ -58,7 +58,7 @@ test.each([
 		});
 	const drawing = await renderArchitecture({
 		content,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		layout: "blocks",
 	});
@@ -71,7 +71,7 @@ test("settled top ports keep the header clear at the router clearance", async ()
 	const content = orderedFixture(clearance);
 	const drawing = await renderArchitecture({
 		content,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		layout: "blocks",
 	});

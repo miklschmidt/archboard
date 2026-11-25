@@ -6,7 +6,7 @@
 // each of those has a point past which waiting longer is a hang, not patience.
 
 import { durations } from "#shared/constants/durations.ts";
-import { CODEX_PROCESS_MS } from "#shared/constants/codex.ts";
+import { codexProcessMs } from "#shared/constants/codex.ts";
 
 /** The durations of one skill evaluation batch. */
 const SKILL_EVAL_MS = durations({
@@ -17,7 +17,7 @@ const SKILL_EVAL_MS = durations({
 	/** One /health probe; a listener that cannot answer in this time is treated as not up yet. */
 	healthRequest: 1000,
 	/** Let the server finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
-	serverShutdown: CODEX_PROCESS_MS.composedShutdown * 2,
+	serverShutdown: codexProcessMs("composedShutdown") * 2,
 	/** One archboard CLI call laying a fixture or reading an outcome; each is one HTTP round trip. */
 	cli: 60_000,
 	/** One git command fetching or checking out Flask; a first clone from the network is the slow case. */
@@ -36,4 +36,13 @@ const SKILL_EVAL_MS = durations({
 	codexTermGrace: 10_000,
 });
 
-export { SKILL_EVAL_MS };
+/**
+ * One duration of a skill evaluation.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function skillEvalMs(key: keyof typeof SKILL_EVAL_MS): number {
+	return SKILL_EVAL_MS[key];
+}
+
+export { skillEvalMs };

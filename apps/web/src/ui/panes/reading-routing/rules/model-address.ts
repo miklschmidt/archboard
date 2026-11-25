@@ -1,4 +1,4 @@
-import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 
@@ -9,7 +9,7 @@ import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
  */
 function modelReading(address: ModelAddress) {
 	const { id, subject, scope, checkpoint, against, ...reading } = address;
-	return ArchitecturePaneReadingSchema.parse({
+	return architecturePaneReadingSchema().parse({
 		...reading,
 		...comparisonIntent(against ?? null),
 		model: id,

@@ -15,7 +15,7 @@ import { z } from "zod";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import type { AnyCommandContract, PendingArtifact } from "#cli/contract/protocol/contract.ts";
 import { runCommand } from "#cli/contract/operations/runner.ts";
-import { PendingArtifactSchema, type AnsweredVault } from "#cli/contract/protocol/schemas.ts";
+import { pendingArtifactSchema, type AnsweredVault } from "#cli/contract/protocol/schemas.ts";
 
 const temporaryDirectories: string[] = [];
 
@@ -58,7 +58,7 @@ function proofContract(options: {
 							when: {},
 							mode: "file-receipt",
 							description: "file",
-							artifact: options.artifactSchema ?? PendingArtifactSchema,
+							artifact: options.artifactSchema ?? pendingArtifactSchema(),
 						}
 					: {
 							id: "json",

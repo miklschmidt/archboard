@@ -4,7 +4,7 @@ import { CodexEpochError } from "#runtime/epoch/store/contract.ts";
 import { type ThreadInjectItemsParams } from "#runtime/host/turn-input/rules/bodies.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { type ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	createHarness,
 	FEED_ID,
@@ -152,7 +152,7 @@ describe("codex thread context delivery", () => {
 
 	test("rejects a stale child and a prior epoch before revalidation", async () => {
 		const staleChildHarness = createHarness();
-		const otherAuthority = createIdentityAuthority();
+		const otherAuthority = createIdentityAuthorities().identity;
 		staleChildHarness.setExecution({
 			childId: otherAuthority.validator.childId,
 			epoch: otherAuthority.validator.epoch,

@@ -7,14 +7,14 @@ import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.j
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema, type DiagramBox } from "@archboard/model/render-reply";
+import { layoutEngineSchema, type DiagramBox } from "@archboard/model/render-reply";
 import {
 	corridorPoints,
 	routeCrosses,
 	routePoints,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({
@@ -74,7 +74,7 @@ function expectSquare(point: DrawnPoint, vector: DrawnPoint, box: DiagramBox): v
 
 test("every relationship of a crowded document leaves and arrives square to its named subject", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CROWDED,
 		theme: "light",
 	});
@@ -100,7 +100,7 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -122,12 +122,12 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // Reduced from Cloud platform-strangler: two relationship kinds put the hero
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"an incoming header arrow has a whole head and room for any bend before its endpoint (%s)",
 	async (layout) => {
 		const content = orderedFixture(frameApproach);
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,
@@ -184,7 +184,7 @@ test.each(LayoutEngineSchema.options)(
 test("an ordinary arrow reserves a full straight approach and bend beside neighboring cards", async () => {
 	const content = orderedFixture(sideApproach);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});

@@ -1,5 +1,6 @@
 //! Parse one measured hierarchy and dispatch without changing the Solver contract.
 
+use indexmap::IndexMap;
 use serde::Deserialize;
 
 use super::planned::{Routed, Split, Step};
@@ -7,13 +8,28 @@ use super::tree::Nesting;
 use crate::{Graphviz, graph::Node, json::J};
 
 /// The root option carrying the placed drawing.
-pub(crate) const BLOCKS_PLACED: &str = "archboard.blocks.placed";
+const BLOCKS_PLACED: &str = "archboard.blocks.placed";
 /// The root option selecting Blocks or one of Track's nesting policies.
-pub(crate) const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
+const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
 /// Whether this solve owns the final route coordinates.
-pub(crate) const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
+const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
 
-pub(crate) use super::legacy::insets_of;
+/// The root option that asks a solve for a drawing with group nesting fixed by membership:
+/// inline, or as Blocks.
+pub(crate) fn nesting_option(inline: bool) -> (&'static str, String) {
+    let nesting = if inline { "inline" } else { "blocks" };
+    (BLOCKS_NESTING, nesting.to_owned())
+}
+
+/// The drawing a solve's answer carries in its root options, and whether the solve owns its
+/// final route coordinates; none when it carries no drawing.
+pub(crate) fn told_drawing(options: &mut IndexMap<String, String>) -> Option<(String, bool)> {
+    let placed = options.swap_remove(BLOCKS_PLACED)?;
+    let planned = options
+        .get(BLOCKS_PLANNED)
+        .is_some_and(|value| value == "true");
+    Some((placed, planned))
+}
 
 /// A solve's answer: the hierarchy's root, as large as the drawing, carrying it in its options.
 fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> String {

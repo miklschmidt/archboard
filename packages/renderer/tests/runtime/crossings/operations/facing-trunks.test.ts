@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import fixture from "#tests/runtime/support/fixtures/facing-trunks.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test.each(["http", "data"])(
 	"Blocks keeps opposing traffic separate between facing ports (%s)",
@@ -12,7 +12,7 @@ test.each(["http", "data"])(
 		const content = orderedFixture(fixture);
 		content.edges.find((edge) => edge.id === "PRXBb3Zi")!.kind = kind;
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout: "blocks",

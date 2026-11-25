@@ -6,12 +6,12 @@ import {
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
 import {
@@ -34,7 +34,7 @@ interface Harness {
 }
 
 function harness(): Harness {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const linkedWireThreadId = "identity-linked";
 	const coordinatorWireThreadId = "identity-coordinator";
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
@@ -102,7 +102,7 @@ function notify(
 ): void {
 	h.adapter.onNotification({
 		correlation: { ...correlation, requestId: null },
-		notification: decodeServerNotification({ method, params }),
+		notification: serverNotification({ method, params }),
 	});
 }
 
@@ -166,7 +166,7 @@ describe("Codex realtime notification identity", () => {
 		sdp(h.coordinatorThreadId, "canonical-as-raw");
 		sdp("unknown-thread", "unissued");
 		sdp(h.linkedWireThreadId, "wrong-thread");
-		const foreign = createIdentityAuthority();
+		const foreign = createIdentityAuthorities().identity;
 		notify(
 			h,
 			"thread/realtime/sdp",

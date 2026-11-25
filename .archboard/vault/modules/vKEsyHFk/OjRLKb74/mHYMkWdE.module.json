@@ -3,11 +3,10 @@
   "name": "Engine selection",
   "kind": "module",
   "responsibility": "Lays one measured graph out the way its root options name",
-  "description": "Nothing outside this seam knows which nesting drew. Track fixes its nesting as inline or groups, and Blocks as blocks. The Graphviz engine that stood here beside them is gone (ADR 0040).",
+  "description": "Nothing outside this seam knows which nesting drew. A solve asks for its nesting and its answer carries the drawing, both in the root options. Track fixes its nesting as inline or groups, and Blocks as blocks. A Blocks graph that takes a dense placement is solved in parts (ADR 0078). The Graphviz engine that stood here beside them is gone (ADR 0040).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-layout/src/blocks/place.rs",
-    "symbol": "lay_out_picture"
+    "path": "crates/archboard-layout/src/blocks/place.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#mHYMkWdE",

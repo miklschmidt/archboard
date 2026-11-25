@@ -79,7 +79,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
-        "symbol": "LegacyMappingWriteSchema"
+        "symbol": "legacyMappingWriteSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#LF1VUIUY",
       "to": "vKEsyHFk/0T9enjhi#O3Pczt31"

@@ -1,9 +1,9 @@
 // Captured read and drawing providers for the retained-stage UI owners.
 
 import { z } from "zod";
-import { VaultCheckSchema } from "@archboard/model/policy";
-import { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
-import { SemanticRenderReplySchema } from "@archboard/model/render-reply";
+import { vaultCheckSchema } from "@archboard/model/policy";
+import { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import { semanticRenderReplySchema } from "@archboard/model/render-reply";
 import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
 import { takePicturesFrom } from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
 import {
@@ -221,7 +221,7 @@ async function capturedDrawing(request: SemanticRenderRequest) {
 	const parameters = new URLSearchParams(
 		Object.entries(fields).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]])),
 	);
-	const reply = SemanticRenderReplySchema.parse(await captured(`${RENDER_ROUTE}?${parameters}`));
+	const reply = semanticRenderReplySchema().parse(await captured(`${RENDER_ROUTE}?${parameters}`));
 	return "empty" in reply
 		? { ...reply, kind: "empty" as const }
 		: { ...reply, kind: "drawn" as const };
@@ -250,12 +250,12 @@ function supplyCapture(): void {
 		 * Read the policy captured by this fixture.
 		 * @returns The captured policy.
 		 */
-		vaultCheck: async () => VaultCheckSchema.parse(await captured(VAULT_ROUTE)),
+		vaultCheck: async () => vaultCheckSchema().parse(await captured(VAULT_ROUTE)),
 		/**
 		 * Read the fixture findings without a code pass.
 		 * @returns The findings supplied by this UI fixture.
 		 */
-		codeFindings: async () => RememberedFindingsSchema.parse(await captured(FINDINGS_ROUTE)),
+		codeFindings: async () => rememberedFindingsSchema().parse(await captured(FINDINGS_ROUTE)),
 	});
 	takePicturesFrom({ draw: capturedDrawing });
 }

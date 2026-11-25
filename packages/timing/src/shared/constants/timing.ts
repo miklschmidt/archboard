@@ -6,10 +6,11 @@
 // these should not have to discover by accident what else they halved.
 //
 // Each owner has one frozen group, such as `MODEL_LOCK_MS` or `CODEX_PROCESS_MS`,
-// in a file of its own beside this one. A caller imports its owner's group and
-// reads a key of it. A value with one owner and no siblings stays one named
-// constant. Where callers would repeat a computation from a group, the owner's
-// file holds it as one function, such as `codexRestartDelayMs`.
+// in a file of its own beside this one, and the group stays inside. A caller
+// asks the owner's function for one duration by its key, such as
+// `paneMs("report")`. Where callers would compute from a duration, the owner's
+// file holds that computation as one function, such as `codexRestartDelayMs`
+// or `codexApprovalExpiresAt`, and callers call it.
 //
 // This module is imported by the pane, the server, the CLI and the checks, so
 // it stays free of `process`, `node:` imports and anything a browser does not
@@ -18,46 +19,37 @@
 // environment to read.
 
 // ── The server and its processes ─────────────────────────────────────────
-export { MODEL_LOCK_MS, CLAIM_MS } from "#shared/constants/model-locks.ts";
-export { SERVER_LIFECYCLE_MS } from "#shared/constants/server-lifecycle.ts";
+export { modelLockMs, claimMs } from "#shared/constants/model-locks.ts";
+export { serverLifecycleMs } from "#shared/constants/server-lifecycle.ts";
+export { gitGroupCleanupDeadline, gitMs } from "#shared/constants/git.ts";
+export { processGroupPollMs } from "#shared/constants/process-groups.ts";
 export {
-	CLI_INTERRUPT_CLEANUP_MS,
-	GIT_MS,
-	PROCESS_GROUP_OBSERVATION_POLL_MS,
-} from "#shared/constants/git.ts";
-export {
-	CODEX_APPROVAL_MS,
-	CODEX_PROCESS_MS,
-	CODEX_REALTIME_MS,
-	CODEX_SESSION_MS,
-	TAB_SESSION_GRACE_MS,
+	codexApprovalExpiresAt,
+	codexApprovalMs,
+	codexContextFreshUntil,
+	codexProcessMs,
+	codexRealtimeMs,
 	codexRestartDelayMs,
+	codexSessionMs,
 } from "#shared/constants/codex.ts";
-export {
-	HEADLESS_CHROMIUM_CALL_MS,
-	SEMANTIC_RASTER_CLEANUP_MS,
-	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
-	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "#shared/constants/raster.ts";
-export { CHECK_MS } from "#shared/constants/checks.ts";
-export { LOCALITY_DEFAULT_PERIOD_MS } from "#shared/constants/history-lens.ts";
+export { rasterMs } from "#shared/constants/raster.ts";
+export { checkMs } from "#shared/constants/checks.ts";
+export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
 export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
-export { RECORDER_MS, RECORDING_MS } from "#shared/constants/walkthrough-recording.ts";
-export { REPLAY_MS } from "#shared/constants/walkthrough-replay.ts";
-export { SKILL_EVAL_MS } from "#shared/constants/skill-eval.ts";
-export { TELEMETRY_MS } from "#shared/constants/telemetry.ts";
+export {
+	recorderMs,
+	recorderPageReadyDeadline,
+	recorderPageReadySeconds,
+	recordingMs,
+} from "#shared/constants/walkthrough-recording.ts";
+export { replayMs } from "#shared/constants/walkthrough-replay.ts";
+export { skillEvalMs } from "#shared/constants/skill-eval.ts";
+export { telemetryMs } from "#shared/constants/telemetry.ts";
 
 // ── The browser ──────────────────────────────────────────────────────────
-export { PANE_MS } from "#shared/constants/pane.ts";
-export { MODEL_CACHE_MS, SHELL_CLOCK_MS } from "#shared/constants/shell.ts";
-export { COLUMN_MS, SIDEBAR_MS } from "#shared/constants/column-motion.ts";
-export { EXPLORING_MS } from "#shared/constants/exploring.ts";
-export {
-	FAR_VIEW_SWAP_MS,
-	FLOW_CYCLE_CAP_MS,
-	PICTURE_ENTRY_PHASES,
-	PICTURE_MS,
-	PICTURE_TRANSITION_PHASES,
-	PRESENTATION_MS,
-} from "#shared/constants/diagram-motion.ts";
-export { SUBTITLE_MS, VOICE_MS } from "#shared/constants/voice-motion.ts";
+export { paneMs } from "#shared/constants/pane.ts";
+export { modelCacheMs, shellClockMs } from "#shared/constants/shell.ts";
+export { columnMs, columnSlideSettledMs, sidebarMs } from "#shared/constants/column-motion.ts";
+export { exploringMs, reachHopDelayMs } from "#shared/constants/exploring.ts";
+export { painterPhasesJson, pictureMs, presentationMs } from "#shared/constants/diagram-motion.ts";
+export { subtitleMs, voiceMs } from "#shared/constants/voice-motion.ts";

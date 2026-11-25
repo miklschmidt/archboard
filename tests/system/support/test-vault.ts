@@ -6,7 +6,7 @@
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, sep } from "node:path";
 
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 
 /**
  * Make the vault of a directory.
@@ -14,7 +14,7 @@ import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
  * @returns The vault, `<holder>/.archboard/vault`.
  */
 function vaultIn(holder: string): string {
-	const vault = join(holder, VAULT_DIRECTORY);
+	const vault = join(holder, vaultDirectory());
 	mkdirSync(vault, { recursive: true });
 	return vault;
 }
@@ -26,9 +26,9 @@ function vaultIn(holder: string): string {
  * @throws {Error} When the vault is not in that layout, so no command could find it.
  */
 function holderOf(vault: string): string {
-	if (!vault.endsWith(`${sep}${VAULT_DIRECTORY}`)) {
+	if (!vault.endsWith(`${sep}${vaultDirectory()}`)) {
 		throw new Error(
-			`${vault} is not in the <dir>/${VAULT_DIRECTORY} layout, so no command finds it. Make it with vaultIn(<dir>).`,
+			`${vault} is not in the <dir>/${vaultDirectory()} layout, so no command finds it. Make it with vaultIn(<dir>).`,
 		);
 	}
 	return dirname(dirname(vault));

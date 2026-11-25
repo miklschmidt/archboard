@@ -11,13 +11,13 @@ import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
 import { messagesOf } from "@archboard/model/flow";
 import type { SemanticNode } from "@archboard/model/content";
-import type { EvidenceKindSchema } from "@archboard/model/policy";
+import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 import type { CodeFinding } from "#shared/protocol/code-check.ts";
 import type { describeSubject } from "@archboard/model/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
+type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 
 /** Where a claim sits: the document, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<CodeFinding, "file" | "model" | "variant" | "path"> & {

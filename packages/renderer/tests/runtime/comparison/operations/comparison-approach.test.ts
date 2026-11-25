@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routeCrosses, routePoints } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * One card with words on it.
@@ -57,7 +57,7 @@ const proposal = orderedFixture({
 
 test("relationships added to a new card do not run through the cards the proposal removed", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: proposal,
 		standing: {
 			appstack: "removed",

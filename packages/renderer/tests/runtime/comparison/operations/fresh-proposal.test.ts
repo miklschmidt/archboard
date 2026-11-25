@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture, renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
 
@@ -51,13 +51,13 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		document,
 		// Every nested part, which the overview would close.
 		{ variant: "draft", view: "Everything", theme: "light" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!proposal.ok || !("svg" in proposal.reply)) throw new Error("Expected a drawn proposal");
 	const fresh = await renderArchitecture({
 		content: document.variants[1]!.content,
 		theme: "light",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 	});
 	// The proposal's pins may move the drawing in from the page's edge; its
 	// arrangement is the fresh one's.

@@ -21,7 +21,6 @@ use std::collections::HashMap;
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
-use archboard_scene::measure;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
@@ -30,18 +29,18 @@ use crate::sequence::card::{
     Card, card_content_width, card_height, card_notes, card_text_width, mark_room, title_room,
 };
 use crate::sequence::design::{
-    ARCHITECTURE_CARD_PADDING, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
+    ARCHITECTURE_CARD_PADDING, CARD_TITLE_FONT, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
     CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN, FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP,
     FLOW_HEADING, FLOW_HEADING_WITH_NOTE, ICON_MIN_CARD_WIDTH, LIFELINE_GAP, NEST_INSET,
-    TAB_PADDING, TAB_SHOULDER, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
+    TAB_PADDING, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
 };
 use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
 use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
-use archboard_scene::paint::design::CARD_TITLE_FONT;
+use archboard_scene::paint::design::tab_width;
 
-use archboard_scene::measure::fitted_size;
+use archboard_scene::fitted_size;
 
 /// Which alternative of each decision that holds a message it runs on, by
 /// decision id. Two messages on different alternatives of one decision never
@@ -284,9 +283,9 @@ fn measure_columns(
     let painted = notes
         .iter()
         .flat_map(|(_, runs)| runs.iter().map(|run| run.width));
-    let names = nodes
-        .iter()
-        .map(|node| measure::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(node));
+    let names = nodes.iter().map(|node| {
+        archboard_scene::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(node)
+    });
     let insets = preferred - card_text_width(preferred);
     let width = js::max([
         preferred,
@@ -454,13 +453,13 @@ fn layout_flow<'a>(
         header: Rect {
             x: x + TAB_PADDING,
             y: header_top,
-            width: width - TAB_SHOULDER - TAB_PADDING * 2.0,
+            width: tab_width(width) - TAB_PADDING * 2.0,
             height: header_height,
         },
         tab: Rect {
             x,
             y: top,
-            width: width - TAB_SHOULDER,
+            width: tab_width(width),
             height: tab_foot - top,
         },
         lifeline_bottom,

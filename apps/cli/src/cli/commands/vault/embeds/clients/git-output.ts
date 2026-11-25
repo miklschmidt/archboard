@@ -2,7 +2,7 @@
 // checkout tracks or what its history holds. Git reads the repository of the
 // directory it runs in, never one that the environment names.
 
-import { GIT_MS } from "@archboard/timing";
+import { gitMs } from "@archboard/timing";
 import { gitEnvironment } from "#cli/commands/vault/embeds/clients/git-environment.ts";
 
 /**
@@ -25,7 +25,7 @@ async function gitOutput(
 		stderr: "ignore",
 		// A reading must not take the index lock that `git status` refreshes.
 		env: gitEnvironment({ GIT_OPTIONAL_LOCKS: "0" }),
-		signal: AbortSignal.any([signal, AbortSignal.timeout(GIT_MS.command)]),
+		signal: AbortSignal.any([signal, AbortSignal.timeout(gitMs("command"))]),
 	});
 	const [stdout, exitCode] = await Promise.all([
 		new Response(child.stdout).arrayBuffer(),

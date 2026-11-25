@@ -2,8 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-	ArchitectureModuleEditSchema,
-	ArchitectureCheckpointRetainSchema,
+	architectureModuleEditSchema,
+	architectureCheckpointRetainSchema,
 } from "@archboard/model/contract";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import {
@@ -25,7 +25,7 @@ test("one public edit authors narrative readings without changing module bytes a
 	const intent = await structureIntent(vault, ["Shop"]);
 	const result = await editArchitectureModule(
 		vault,
-		ArchitectureModuleEditSchema.parse({
+		architectureModuleEditSchema().parse({
 			...intent,
 			changes: [
 				{
@@ -78,7 +78,7 @@ test("narrative edits keep beat identity, reject stale writes, and retire remove
 	const creation = await structureIntent(vault, ["Shop"]);
 	const created = await editArchitectureModule(
 		vault,
-		ArchitectureModuleEditSchema.parse({
+		architectureModuleEditSchema().parse({
 			...creation,
 			changes: [
 				{
@@ -105,7 +105,7 @@ test("narrative edits keep beat identity, reject stale writes, and retire remove
 		walk.id,
 		...walk.beats.map((beat) => beat.id),
 	]);
-	const request = ArchitectureModuleEditSchema.parse({
+	const request = architectureModuleEditSchema().parse({
 		...intent,
 		changes: [
 			{
@@ -305,12 +305,14 @@ test("exact narrative targets retain their history and unavailable targets never
 		expectedRevision: read.revision.digest,
 		dependencies: [],
 	};
-	const retained = ArchitectureCheckpointRetainSchema.parse(
+	const retained = architectureCheckpointRetainSchema().parse(
 		await retainArchitectureCheckpoint(vault, retention),
 	);
 	expect(retained.success).toBe(true);
 	expect(
-		ArchitectureCheckpointRetainSchema.parse(await retainArchitectureCheckpoint(vault, retention)),
+		architectureCheckpointRetainSchema().parse(
+			await retainArchitectureCheckpoint(vault, retention),
+		),
 	).toEqual(retained);
 	const walk = read.walkthroughs[0]!;
 	const { file, ...definition } = walk;

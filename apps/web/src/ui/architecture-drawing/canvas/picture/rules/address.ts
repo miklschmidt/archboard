@@ -25,10 +25,10 @@
 // had to keep away from; TASK-181 left one kind, so the marker went with it.
 
 import type { OfferedView } from "@archboard/model/render-reply";
-import type { RenderedVariantSchema } from "@archboard/model/render-reply";
+import type { renderedVariantSchema } from "@archboard/model/render-reply";
 import type { z } from "zod";
 
-type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
+type RenderedVariant = z.infer<ReturnType<typeof renderedVariantSchema>>;
 /** How a variant is spelled onto a model key. */
 const VARIANT_MARK = "@";
 

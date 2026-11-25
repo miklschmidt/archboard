@@ -5,10 +5,10 @@
 //! them takes as many lines of its responsibility as it holds.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
-use crate::js::{self, js_max, js_min};
+use crate::js::{js_max, js_min};
 use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
-use crate::paint::design::{
+use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, CARD_NOTE_FONT, CARD_THICKNESS,
     DRILL_MARK_ROOM, FAR_SCALE, FAR_TAG, ICON_CHIP_SIZE, PART_NOTE_SIZE, PART_PATH_SIZE,
     PART_TITLE_SIZE, TAG_BESIDE, TAG_GAP,
@@ -35,7 +35,7 @@ const NAME_LINES: usize = 2;
 
 /// A card as its far view reads it.
 #[derive(Clone, Copy, Debug)]
-pub struct FarCard<'a> {
+pub(crate) struct FarCard<'a> {
     /// Its name.
     pub name: &'a str,
     /// Where its code lives.
@@ -58,7 +58,7 @@ pub struct FarCard<'a> {
 
 /// A card's far words at one scale, placed from the top left of its box.
 #[derive(Clone, Debug)]
-pub struct FarWords {
+pub(crate) struct FarWords {
     /// The words, the first line of the name first.
     pub runs: Vec<TextRun>,
     /// Where the row of group marks ends on the right and its middle, at this scale.
@@ -75,7 +75,7 @@ struct Piece<'a> {
 /// The pieces of a text: its words, a hyphenated one broken after each hyphen.
 fn pieces(text: &str) -> Vec<Piece<'_>> {
     let mut all = Vec::new();
-    for word in js::split_spaces(text)
+    for word in crate::ecma::split_spaces(text)
         .into_iter()
         .filter(|word| !word.is_empty())
     {
@@ -334,7 +334,7 @@ fn foot_path(card: &FarCard<'_>, sizes: Sizes, middle: f64) -> Vec<TextRun> {
 
 /// A card's far words at one scale, or none where they do not fit its box. As on
 /// a near card the name stands beside the chip and the path at the foot.
-pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
+pub(crate) fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
     let sizes = Sizes::of(card, scale);
     let stack = stacked(card, sizes)?;
     let name_top = card.chip_top + stack.lead;
@@ -387,7 +387,7 @@ fn largest(card: &FarCard<'_>) -> f64 {
 
 /// The scale a picture sets every far card at: the far scale, or less where a
 /// box of the picture does not hold its words.
-pub fn far_scale_for(cards: &[FarCard<'_>]) -> f64 {
+pub(crate) fn far_scale_for(cards: &[FarCard<'_>]) -> f64 {
     cards.iter().map(largest).fold(FAR_SCALE, js_min)
 }
 

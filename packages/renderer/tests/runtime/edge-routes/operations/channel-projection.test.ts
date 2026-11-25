@@ -4,13 +4,13 @@ import fixture from "#tests/runtime/support/fixtures/channel-projection.json";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import type { ChangeKind } from "@archboard/model/comparison";
 import { corridorPoints, routeLabels, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 // Six real cards retain the incoming/outgoing channel conflict and the
 // diagonal relationship whose reserved label used to add a return loop.
 test("label waypoints and distinct channels share clear direct approaches", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(fixture.content),
 		standing: fixture.standing as Record<string, ChangeKind>,
 		theme: "dark",

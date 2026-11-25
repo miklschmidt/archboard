@@ -11,7 +11,7 @@ import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/
 type CurrentReading = Extract<ArchitectureModelRead, { success: true }>;
 type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;
 
-interface FeedState {
+interface ArchitectureFeed {
 	connection: "connecting" | "live" | "unavailable";
 	failure: Extract<ArchitectureModelRead, { success: false }> | null;
 }
@@ -59,7 +59,7 @@ function createFeed(
 	socket: ReturnType<typeof createFeedSocket>,
 ) {
 	const listeners = new Set<() => void>();
-	let state: FeedState = { connection: "connecting", failure: null };
+	let state: ArchitectureFeed = { connection: "connecting", failure: null };
 	let stopFollowing: (() => void) | null = null;
 	let generation = 0;
 	let claimsGeneration = 0;
@@ -72,7 +72,7 @@ function createFeed(
 	 * Publish transport state, without copying any model content.
 	 * @param next The new state.
 	 */
-	function publish(next: FeedState): void {
+	function publish(next: ArchitectureFeed): void {
 		state = next;
 		for (const listener of listeners) listener();
 	}
@@ -205,7 +205,7 @@ function createFeed(
 		 * Read the stable availability snapshot.
 		 * @returns The last transport state.
 		 */
-		getSnapshot: (): FeedState => state,
+		getSnapshot: (): ArchitectureFeed => state,
 	};
 }
 
@@ -303,10 +303,10 @@ async function resumeInterruptedHistory(
  * @param event The shared current-reading event.
  * @returns Its refusal, if any.
  */
-function failureOf(event: ModelEvent): FeedState["failure"] {
+function failureOf(event: ModelEvent): ArchitectureFeed["failure"] {
 	if (event.type === "architecture_status") return event.reading;
 	if (event.type === "architecture_snapshot" && !event.reading.success) return event.reading;
 	return null;
 }
 
-export { architectureFeed, type FeedState as ArchitectureFeed };
+export { architectureFeed, type ArchitectureFeed };

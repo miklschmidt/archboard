@@ -3,7 +3,7 @@ import { expect } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { processGroupPollMs } from "@archboard/timing";
 
 const MICROTASK_HOPS = 16;
 const FREEZE_POLLS = 4;
@@ -201,7 +201,7 @@ async function driveManual<T>(
 		if (options.yieldToProcessEvents) {
 			// A real process needs real time to act on a signal: every driven poll
 			// gives it the product's own poll interval, not one event-loop turn.
-			await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
+			await Bun.sleep(processGroupPollMs());
 		}
 	}
 	return promise;
@@ -210,9 +210,7 @@ async function driveManual<T>(
 /** KILL waits for the TERM grace, then for the freeze's few polls and no longer. */
 function expectKillAfterGrace(killedAtMs: number, graceMs: number): void {
 	expect(killedAtMs).toBeGreaterThanOrEqual(graceMs);
-	expect(killedAtMs).toBeLessThanOrEqual(
-		graceMs + FREEZE_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
-	);
+	expect(killedAtMs).toBeLessThanOrEqual(graceMs + FREEZE_POLLS * processGroupPollMs());
 }
 
 export { type ManualScheduler, manualScheduler, fakeLifecycle, driveManual, expectKillAfterGrace };

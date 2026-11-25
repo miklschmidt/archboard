@@ -2,8 +2,6 @@ import { describe, expect, jest, test } from "bun:test";
 
 import { CodexTransportRequestError } from "#runtime/transport/clients/transport-errors.ts";
 import {
-	HUMAN_APPROVAL_METHODS,
-	SESSION_SERVER_REQUEST_METHODS,
 	type DynamicDispatcherRegistration,
 	type HumanApprovalMethod,
 	type TransportServerNotification,
@@ -13,7 +11,7 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "#runtime/schemas/authored-schemas.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import {
 	captureRejection,
 	createHarness,
@@ -216,7 +214,8 @@ describe("Codex app-server transport", () => {
 				},
 			};
 
-			for (const [index, method] of HUMAN_APPROVAL_METHODS.entries()) {
+			const humanMethods = Object.keys(humanParams) as HumanApprovalMethod[];
+			for (const [index, method] of humanMethods.entries()) {
 				sendJson(child, { id: `human-${index}`, method, params: humanParams[method] });
 				await flushStreams();
 				const request = requests.at(-1);
@@ -241,7 +240,7 @@ describe("Codex app-server transport", () => {
 									: { result: { decision: "accept" } };
 				await transport.respond(request, "codex-approvals", response);
 			}
-			expect(requests).toHaveLength(HUMAN_APPROVAL_METHODS.length);
+			expect(requests).toHaveLength(humanMethods.length);
 
 			const dynamicRoutes = [
 				{ namespace: "archboard_app", owner: "codex-dynamic-tools", manifestHash: "app-manifest" },
@@ -317,13 +316,8 @@ describe("Codex app-server transport", () => {
 				await transport.respond(request, "codex-session", { error });
 			}
 
-			const output = frames(child).slice(HUMAN_APPROVAL_METHODS.length);
+			const output = frames(child).slice(humanMethods.length);
 			expect(output.every((frame) => !Object.hasOwn(frame, "jsonrpc"))).toBeTrue();
-			expect(SESSION_SERVER_REQUEST_METHODS).toEqual([
-				"currentTime/read",
-				"account/chatgptAuthTokens/refresh",
-				"attestation/generate",
-			]);
 		} finally {
 			await close();
 		}
@@ -337,7 +331,7 @@ describe("Codex app-server transport", () => {
 			fakeTimers = true;
 			const timedOut = transport.request("turn/steer", {});
 			const timedOutId = frameAt(child, 0)["id"];
-			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
+			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
 			expect(await captureRejection(timedOut)).toMatchObject({
 				reason: "timeout",
 				outcome: "outcome_unknown",
@@ -367,7 +361,7 @@ describe("Codex app-server transport", () => {
 
 			await flushStreams();
 			const idempotent = transport.request("turn/steer", {}, { idempotent: true });
-			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
+			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
 			let idempotentError: unknown;
 			try {
 				await idempotent;

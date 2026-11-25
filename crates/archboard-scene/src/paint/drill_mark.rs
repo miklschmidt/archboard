@@ -6,16 +6,12 @@ use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, concat, grouped, shape};
 use crate::request::DrillDirection;
 use crate::scene::{Colour, Geometry, Group, PathStep, Purpose, Role, Shape, Stroke, Transform};
+use crate::sizes::DRILL_MARK_RADIUS;
 
-/// The ring's radius.
-const DRILL_MARK_RADIUS: f64 = 6.5;
 /// The ring's stroke.
 const RING_STROKE: f64 = 1.2;
 /// How far the mark's centre stands in from a part's top edge and its right edge.
 const DRILL_MARK_INSET: f64 = 16.0;
-
-/// What a part keeps clear beside its name for the mark.
-pub const DRILL_MARK_ROOM: f64 = 2.0 * DRILL_MARK_RADIUS + 8.0;
 
 /// A move of the arrow to a point.
 const fn go(x: f64, y: f64) -> PathStep {

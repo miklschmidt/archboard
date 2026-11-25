@@ -9,9 +9,9 @@
 //! identity.
 
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Emphasis};
-use archboard_scene::geometry::{Curve, EPSILON, Point, Segment, segment_start};
+use archboard_scene::geometry::{Curve, Point, Segment, segment_start};
 
-use crate::constants::APPROACH_STRAIGHT;
+use crate::constants::{APPROACH_STRAIGHT, EPSILON};
 use crate::ecma::{js_max, js_min, min, sign};
 pub(super) use crate::geometry::Axis;
 

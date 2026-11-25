@@ -54,7 +54,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "clients"
+        "symbol": "admittedClientCount"
       },
       "id": "vKEsyHFk/HBlhIeSD#wzL4gP8d",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"

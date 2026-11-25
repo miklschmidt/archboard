@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
+import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -22,7 +22,7 @@ import {
 } from "#tests/runtime/support/sequence-fixture.ts";
 import { colourIn, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * One architecture, as its own contract reads it.
@@ -101,7 +101,7 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  */
 function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
 	return renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: PROPOSAL,
 		standing,
 		layout,
@@ -136,14 +136,14 @@ describe("a picture nobody stated a standing for", () => {
 		});
 		const plain = arrangementOf(
 			await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: shared,
 				layout: "track",
 			}),
 		);
 		const compared = arrangementOf(
 			await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: shared,
 				layout: "track",
 				standing: STANDING,
@@ -286,7 +286,7 @@ describe("a stated standing on an architecture", () => {
 		expect(withoutColour(words)).not.toBe(withoutColour(unmarked));
 	});
 
-	test.each(LayoutEngineSchema.options)(
+	test.each(layoutEngineSchema().options)(
 		"one picture draws its standings in each theme's own ink (%s)",
 		async (layout) => {
 			const rendered = await drawn(STANDING, layout);

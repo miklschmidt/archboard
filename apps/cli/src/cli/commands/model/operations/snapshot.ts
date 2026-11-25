@@ -1,15 +1,15 @@
 import { relative } from "node:path";
 import { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ModelSnapshotSchema,
+	architectureModelReadSchema,
+	modelSnapshotSchema,
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
 import {
 	modelReadContract,
@@ -109,7 +109,7 @@ async function readStates({ flow, ...selection }: z.output<typeof SelectionSchem
  * @param snapshot The snapshot in it.
  * @returns The receipt.
  */
-function receiptOf(file: string, snapshot: z.output<typeof ModelSnapshotSchema>) {
+function receiptOf(file: string, snapshot: z.output<ReturnType<typeof modelSnapshotSchema>>) {
 	return {
 		success: true as const,
 		file,
@@ -149,11 +149,11 @@ const modelSnapshotContract = defineCommand({
 		z.strictObject({
 			success: z.literal(true),
 			file: z.string(),
-			format: ModelSnapshotSchema.shape.format,
+			format: modelSnapshotSchema().shape.format,
 			revision: z.string(),
 			comparisonRevision: z.string().nullable(),
 		}),
-		ArchitectureModelReadSchema.options[1],
+		architectureModelReadSchema().options[1],
 	]),
 	output: {
 		cases: [
@@ -161,7 +161,7 @@ const modelSnapshotContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The written snapshot's receipt or structured diagnostics",
 			},
 		],
@@ -173,7 +173,7 @@ const modelSnapshotContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailableOutcome],
 	relationships: [
 		{
@@ -205,7 +205,7 @@ const modelSnapshotContract = defineCommand({
 		const check = await checkSemanticVaultOnServer(context.signal, checkTarget?.id);
 		// Loaded here, not with the command table: the icon set is large and only this command reads it.
 		const { policyIconPaths } = await import("@archboard/renderer/bun");
-		const snapshot = ModelSnapshotSchema.parse({
+		const snapshot = modelSnapshotSchema().parse({
 			format: 1,
 			cliVersion: packageVersion(),
 			...states,

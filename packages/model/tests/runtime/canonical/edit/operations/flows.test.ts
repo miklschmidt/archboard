@@ -3,7 +3,7 @@ import {
 	allBehaviorSubjects,
 } from "#tests/runtime/canonical/edit/operations/flow-fixture.ts";
 import {
-	ArchitectureModuleEditSchema,
+	architectureModuleEditSchema,
 	type ArchitectureModuleEdit,
 } from "@archboard/model/contract";
 import { afterEach, expect, test } from "bun:test";
@@ -505,13 +505,13 @@ test("a write that leaves a flow without a summary is refused, and a write besid
 		steps: [{ from: "Shop#Gateway", to: "Shop#Gateway", kind: "self", label: "Tick" }],
 	};
 	expect(
-		ArchitectureModuleEditSchema.safeParse({
+		architectureModuleEditSchema().safeParse({
 			...refused,
 			changes: [{ type: "add-flow", collection: "Behavior", flow: added }],
 		}).error?.issues[0]?.message,
 	).toStartWith("changes.0.flow.summary:");
 	expect(
-		ArchitectureModuleEditSchema.safeParse({
+		architectureModuleEditSchema().safeParse({
 			...refused,
 			changes: [{ type: "edit-flow", subject: "Shop#Other", clear: ["summary"] }],
 		}).success,

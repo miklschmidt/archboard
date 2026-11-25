@@ -6,9 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { DiagramGrammarSchema } from "@archboard/model/views";
-import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
-import { DiagramThemeSchema } from "@archboard/model/render-reply";
+import { diagramGrammarSchema } from "@archboard/model/views";
+import { variantLifecycleSchema } from "@archboard/model/legacy-board";
+import { diagramThemeSchema } from "@archboard/model/render-reply";
 import {
 	FixtureSchema,
 	HomePathSchema,
@@ -122,7 +122,7 @@ const OutcomeCheckSchema = z
 		kind: z.string().optional(),
 		/** edge-between: the ends match the named node or any node contained in it. */
 		includeContained: z.boolean().optional(),
-		lifecycle: VariantLifecycleSchema.optional(),
+		lifecycle: variantLifecycleSchema().optional(),
 		/** Subjects of every kind: nodes, relationships, flows and walkthroughs together. */
 		removed: z.number().optional(),
 		addedAtLeast: z.number().optional(),
@@ -131,7 +131,7 @@ const OutcomeCheckSchema = z
 		addedNodesAtLeast: z.number().optional(),
 		withReason: z.boolean().optional(),
 		view: z.string().optional(),
-		grammar: DiagramGrammarSchema.optional(),
+		grammar: diagramGrammarSchema().optional(),
 		edgesSelected: z.number().optional(),
 		nodesSelectedAtLeast: z.number().optional(),
 		groups: Names.optional(),
@@ -173,7 +173,7 @@ const OutcomeCheckSchema = z
 		/** video-rendered: the kept talk it is rendered from. */
 		talk: HomePathSchema.optional(),
 		/** video-rendered: the palette asked for. */
-		theme: DiagramThemeSchema.optional(),
+		theme: diagramThemeSchema().optional(),
 	})
 	.strict();
 type OutcomeCheck = z.infer<typeof OutcomeCheckSchema>;
@@ -193,7 +193,7 @@ const CaptureDeclarationSchema = z
 		board: z.string().min(1),
 		variant: z.string().min(1).optional(),
 		view: z.string().min(1).optional(),
-		grammar: DiagramGrammarSchema.optional(),
+		grammar: diagramGrammarSchema().optional(),
 	})
 	.strict();
 type CaptureDeclaration = z.infer<typeof CaptureDeclarationSchema>;

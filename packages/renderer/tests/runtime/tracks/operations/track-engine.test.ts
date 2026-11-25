@@ -13,7 +13,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	corridorPoints,
 	routeEnds,
@@ -65,7 +65,7 @@ function doublesBack(points: readonly DrawnPoint[]): boolean {
 
 test("a fan wider than the page wraps its targets into rows", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: fan,
 		theme: "light",
 		layout: "track",
@@ -77,7 +77,7 @@ test("a fan wider than the page wraps its targets into rows", async () => {
 
 test("a line to its label runs without a hook", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: fan,
 		theme: "light",
 		layout: "track",
@@ -99,7 +99,7 @@ test("a long chain folds into columns whose first cards stand on one line", asyn
 		})),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: chain,
 		theme: "light",
 		layout: "track",
@@ -133,7 +133,7 @@ test.each(["track", "blocks"] as const)(
 			edges: [],
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: portfolio,
 			theme: "light",
 			layout,
@@ -157,7 +157,7 @@ test.each(["track", "blocks"] as const)(
 test("a line into a wide container stays between its ends and its label", async () => {
 	const pool = orderedFixture(containerDetour);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: pool,
 		theme: "light",
 		layout: "track",
@@ -191,7 +191,7 @@ test("a tall document of containers folds into columns that each hold a containe
 		]),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: tall,
 		theme: "light",
 		layout: "track",
@@ -225,7 +225,7 @@ test("containers side by side keep an inset between their borders", async () => 
 		edges: sides.map((side) => ({ id: side, from: `${side}a`, to: `${side}b`, kind: "call" })),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -243,7 +243,7 @@ test("containers side by side keep an inset between their borders", async () => 
 test("a wrapped rank stands each lowered card under one of its row above", async () => {
 	const content = orderedFixture(sunkWrap);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -291,7 +291,7 @@ test("two joined cards stacked on one centre take one width", async () => {
 		edges: [{ id: "e", from: "a", to: "b", kind: "call", label: "requests" }],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -323,7 +323,7 @@ test("a wrap into three rows or more keeps its columns", async () => {
 		]),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -365,7 +365,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -385,7 +385,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 // this group's name stays short enough for the two rows to fit the pane.
 test("a fan never steps down three rows where two would do", async () => {
 	const content = orderedFixture(variantReconciliation);
-	const policy = SemanticPolicySchema.parse({
+	const policy = semanticPolicySchema().parse({
 		levels: ["service"],
 		nodeKinds: { function: { name: "Function", icon: "RiCodeLine" } },
 		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },

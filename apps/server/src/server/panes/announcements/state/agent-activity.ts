@@ -4,7 +4,7 @@
 import { watchArchitectureModel } from "@archboard/model/store-read";
 import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
-import { CLAIM_MS } from "@archboard/timing";
+import { claimMs } from "@archboard/timing";
 
 type AgentActivity = AgentActivityMessage["activity"][number];
 
@@ -66,7 +66,7 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 	 * @param entry The idle entry.
 	 */
 	function linger(vault: string, entry: Entry): void {
-		entry.linger = setTimeout(() => forget(vault), CLAIM_MS.activityLinger);
+		entry.linger = setTimeout(() => forget(vault), claimMs("activityLinger"));
 		entry.linger.unref();
 	}
 	/**

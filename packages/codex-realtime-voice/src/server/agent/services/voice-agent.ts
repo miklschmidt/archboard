@@ -1,4 +1,5 @@
 import type { Server } from "node:http";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createWorkbenchThreadProfile } from "#runtime/host/rules/instructions.ts";
 import type { WorkbenchDynamicTools } from "#runtime/host/protocol/instructions.ts";
 import type { VoiceAgentIdentity } from "#runtime/host/protocol/identity.ts";
@@ -56,11 +57,14 @@ export interface VoiceAgentOptions {
 		readonly ownerDirectory?: string;
 	};
 	/**
-	 * How to run Codex: the verified executable path, extra environment, PATH prefixes, secrets
-	 * to redact from diagnostics, and an optional callback that receives the process group. Read
-	 * once, when the agent is created.
+	 * How to run Codex: which executable, extra environment, PATH prefixes, secrets to redact from
+	 * diagnostics, and an optional callback that receives the process group. Read once, when the
+	 * agent is created. Without `executablePath`, the agent finds the installed `@openai/codex`
+	 * (under `installedIn`, or in the platform package of `releasedIn`) and proves it then, and
+	 * throws a `CodexExecutableError` when it cannot. Every start proves the executable again.
+	 * Default: the installed `@openai/codex`, anywhere Node resolution finds it.
 	 */
-	readonly codex: CreateCodexWorkbenchOptions["process"];
+	readonly codex?: VoiceAgentCodex;
 	/**
 	 * The checkouts a workhorse may work in: absolute paths, or a function that returns the
 	 * admitted path for a named checkout and null for a refused one.
@@ -82,6 +86,21 @@ export interface VoiceAgentOptions {
 	readonly onFatal: (error: unknown) => void;
 	/** Domain extensions; see {@link VoiceAgentExtensions}. */
 	readonly extensions?: VoiceAgentExtensions;
+}
+
+/** The Codex process inputs, with the executable optional and where to find it when left out. */
+type VoiceAgentCodex = Omit<CreateCodexWorkbenchOptions["process"], "executablePath"> &
+	NonNullable<Parameters<typeof resolveCodexExecutable>[0]>;
+
+/**
+ * The Codex process inputs of the workbench: a given executable as it is, since each start proves
+ * it, or else the installed one, found and proven now.
+ * @param codex The host's Codex inputs, if any.
+ * @returns The process inputs with an executable path.
+ */
+function codexProcess(codex: VoiceAgentCodex = {}): CreateCodexWorkbenchOptions["process"] {
+	const { executablePath, installedIn: _installedIn, releasedIn: _releasedIn, ...process } = codex;
+	return { ...process, executablePath: executablePath ?? resolveCodexExecutable(codex) };
 }
 
 type Workbench = ReturnType<typeof createCodexWorkbench>;
@@ -209,7 +228,7 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 				? {}
 				: { ownerDirectory: options.storage.ownerDirectory }),
 		},
-		process: options.codex,
+		process: codexProcess(options.codex),
 		host: {
 			instructions: threadProfiles(options, tools),
 			allowedCheckouts: options.checkouts,

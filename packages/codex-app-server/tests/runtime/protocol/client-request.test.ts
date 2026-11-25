@@ -2,11 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import * as authoredSchemas from "#runtime/schemas/authored-schemas.ts";
 import * as protocolDecoder from "#runtime/protocol/protocol-decoder.ts";
-import {
-	CLIENT_REQUEST_METHODS,
-	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
-	RESPONSE_METHODS,
-} from "#runtime/protocol/protocol-methods.ts";
+import { RESPONSE_METHODS, type ClientRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestParams,
@@ -20,6 +16,9 @@ import {
 	COMPLETE_CLIENT_REQUEST_FIXTURES,
 	LOGIN_ACCOUNT_FIXTURES,
 } from "#tests/runtime/support/client-request-fixtures.ts";
+
+/** The supported outbound methods, in the order of the one registry that decodes them. */
+const CLIENT_REQUEST_METHODS = Object.keys(CLIENT_REQUEST_PARAM_SCHEMAS) as ClientRequestMethod[];
 
 function captured(run: () => unknown): ProtocolDecodeError {
 	try {
@@ -40,10 +39,6 @@ describe("Codex generated client request params", () => {
 		> = true;
 		const accountLogoutParams: Exact<ClientRequestParams<"account/logout">, undefined> = true;
 
-		expect(CLIENT_REQUEST_METHODS_WITHOUT_PARAMS).toEqual([
-			"configRequirements/read",
-			"account/logout",
-		]);
 		expect(configRequirementsParams).toBeTrue();
 		expect(accountLogoutParams).toBeTrue();
 		expect(decodeClientRequestParams("configRequirements/read", undefined)).toBeUndefined();
@@ -54,11 +49,10 @@ describe("Codex generated client request params", () => {
 
 	test("owns every supported outbound method in one exact registry", () => {
 		expect(CLIENT_REQUEST_METHODS).toHaveLength(33);
-		expect(Object.keys(CLIENT_REQUEST_PARAM_SCHEMAS)).toEqual([...CLIENT_REQUEST_METHODS]);
-		expect([...CLIENT_REQUEST_METHODS]).toEqual(
+		expect(CLIENT_REQUEST_METHODS).toEqual(
 			RESPONSE_METHODS.filter((method) => method !== "currentTime/read"),
 		);
-		expect(Object.keys(COMPLETE_CLIENT_REQUEST_FIXTURES)).toEqual([...CLIENT_REQUEST_METHODS]);
+		expect(Object.keys(COMPLETE_CLIENT_REQUEST_FIXTURES)).toEqual(CLIENT_REQUEST_METHODS);
 	});
 
 	test("decodes a complete fixture for every supported outbound method", () => {

@@ -8,7 +8,7 @@ import type { CodexSession } from "@archboard/codex-app-server/session";
 import {
 	type CodexThreadLinkPort,
 	type ExecutableThreadLink,
-	type InspectOnlyThreadLink,
+	type ThreadLink,
 	type ThreadLinkBindingSnapshot,
 	type ThreadLinkCasToken,
 	type ThreadLinkClassification,
@@ -17,7 +17,7 @@ import {
 	type ThreadLinkStatus,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
@@ -152,7 +152,7 @@ function inspectOnlyLink(
 		: reason === "thread_status_not_loaded"
 			? "notLoaded"
 			: "idle",
-): InspectOnlyThreadLink {
+): Extract<ThreadLink, { readonly state: "inspect_only" }> {
 	return Object.freeze({
 		kind: "thread_link",
 		state: "inspect_only",
@@ -181,7 +181,7 @@ function unboundLink(): ThreadLinkSnapshot {
 	});
 }
 function createHarness(options: HarnessOptions = {}): Harness {
-	const authority = createIdentityAuthority();
+	const authority = createIdentityAuthorities().identity;
 	const childId = authority.validator.childId;
 	const epoch = authority.validator.epoch;
 	const threadId = authority.decoder.adoptThreadId("workhorse");

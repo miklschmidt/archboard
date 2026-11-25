@@ -12,7 +12,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import { z } from "zod";
 
-import { EXPLORING_MS, PICTURE_MS } from "@archboard/timing";
+import { exploringMs, pictureMs } from "@archboard/timing";
 import {
 	cameraNow,
 	takeFrames,
@@ -137,7 +137,7 @@ async function aboveOnScreen(setup: Setup = {}): Promise<FramesByHand> {
 	});
 	await settle();
 	await settle();
-	if (setup.arrived ?? true) frames.run(PICTURE_MS.entry + 64);
+	if (setup.arrived ?? true) frames.run(pictureMs("entry") + 64);
 	server.reply = { status: 200, body: { ...belowPicture(), ...setup.below } };
 	return frames;
 }
@@ -242,7 +242,7 @@ function expectSamePlace(actual: Screen, expected: Screen): void {
  * @param frames The frames in hand.
  */
 function flyOut(frames: FramesByHand): void {
-	frames.run(EXPLORING_MS.dive + 64);
+	frames.run(exploringMs("dive") + 64);
 }
 
 test("a card's model opens by flying into the card, and lands where the model stands", async () => {
@@ -254,7 +254,7 @@ test("a card's model opens by flying into the card, and lands where the model st
 		expect(insets()).toBe(1);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		const before = cameraNow();
-		frames.run(EXPLORING_MS.dive / 2);
+		frames.run(exploringMs("dive") / 2);
 		expect(cameraNow().scale).toBeGreaterThan(before.scale);
 		expect(model()).toBe("pipeline");
 
@@ -395,9 +395,9 @@ test("a flight between two models seen from far swaps no card's words for its na
 		expect(surface().classList.contains("is-far")).toBe(true);
 		const changes = watchFarView();
 		await openBelow();
-		frames.run(EXPLORING_MS.dive + 64);
+		frames.run(exploringMs("dive") + 64);
 		await settle();
-		frames.run(EXPLORING_MS.cameraRest + 64);
+		frames.run(exploringMs("cameraRest") + 64);
 		await settle();
 		expect(model()).toBe("engine");
 		expect(changes()).toEqual([]);
@@ -413,9 +413,9 @@ test("a model seen from far that opens from a model seen near swaps its cards on
 		expect(surface().classList.contains("is-far")).toBe(false);
 		const changes = watchFarView();
 		await openBelow();
-		frames.run(EXPLORING_MS.dive + 64);
+		frames.run(exploringMs("dive") + 64);
 		await settle();
-		frames.run(EXPLORING_MS.cameraRest + 64);
+		frames.run(exploringMs("cameraRest") + 64);
 		await settle();
 		expect(model()).toBe("engine");
 		// Then the cards swap their words for their names once, with the picture's own fade.
@@ -458,7 +458,7 @@ for (const input of INPUTS) {
 		try {
 			await openBelow();
 			expect(insets()).toBe(1);
-			frames.run(EXPLORING_MS.dive / 4);
+			frames.run(exploringMs("dive") / 4);
 			act(() => {
 				sendInput(input.type);
 			});
@@ -480,7 +480,7 @@ test("a model opens by flying only when it can be seen in time", async () => {
 		server.reply = "pending";
 		await openBelow();
 		expect(insets()).toBe(0);
-		frames.run(EXPLORING_MS.divePrefetch + 32);
+		frames.run(exploringMs("divePrefetch") + 32);
 		await settle();
 		expect(insets()).toBe(0);
 		expect(model()).toBe("pipeline");

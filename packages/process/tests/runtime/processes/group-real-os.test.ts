@@ -1,9 +1,8 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import {
-	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "#runtime/processes/codex-group.ts";
@@ -11,13 +10,13 @@ import { readProcessObservation } from "#runtime/processes/observation.ts";
 
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,
-	deadlineMs = CODEX_PROCESS_MS.composedShutdown,
+	deadlineMs = codexProcessMs("composedShutdown"),
 ): Promise<void> {
 	const deadline = Date.now() + deadlineMs;
 	const operations = createCodexProcessGroupOperations();
 	while (Date.now() < deadline) {
 		if (operations.inspect(identity) === "quiescent") return;
-		await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
+		await Bun.sleep(processGroupPollMs());
 	}
 	throw new Error(
 		`Process group ${identity.pgid} did not become quiescent before cleanup deadline.`,
@@ -36,7 +35,7 @@ async function waitForChildClose(child: ChildProcess): Promise<void> {
 			reject(
 				new Error(`Detached child ${String(child.pid)} did not close before cleanup deadline.`),
 			);
-		}, CODEX_PROCESS_MS.composedShutdown);
+		}, codexProcessMs("composedShutdown"));
 		child.once("close", onClose);
 	});
 }
@@ -63,11 +62,11 @@ test(
 				leaderStartTime: `${identity.leaderStartTime}:forged`,
 			};
 			expect(operations.inspect(forged)).toBe("reused");
-			expect(() => operations.signal(forged, "SIGKILL")).toThrow(CodexProcessGroupError);
+			expect(() => operations.signal(forged, "SIGKILL")).toThrow();
 			try {
 				operations.signal(forged, "SIGKILL");
 			} catch (error) {
-				expect(error).toMatchObject({ code: "reused" });
+				expect(error).toMatchObject({ name: "CodexProcessGroupError", code: "reused" });
 			}
 
 			const stillLive = readProcessObservation(identity.leaderPid);
@@ -109,5 +108,5 @@ test(
 			}
 		}
 	},
-	CODEX_PROCESS_MS.composedShutdown + PROCESS_GROUP_OBSERVATION_POLL_MS * 4,
+	codexProcessMs("composedShutdown") + processGroupPollMs() * 4,
 );

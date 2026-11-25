@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { importArchitectureModel } from "@archboard/model/store-write";
-import { ArchitectureImportRequestSchema } from "@archboard/model/contract";
+import { architectureImportRequestSchema } from "@archboard/model/contract";
 const vault = process.argv[2];
 const file = process.argv[3];
 if (vault === undefined || file === undefined) throw new Error("Fixture arguments are required.");
@@ -8,7 +8,7 @@ process.stdout.write(
 	JSON.stringify(
 		await importArchitectureModel(
 			vault,
-			ArchitectureImportRequestSchema.parse(JSON.parse(readFileSync(file, "utf8"))),
+			architectureImportRequestSchema().parse(JSON.parse(readFileSync(file, "utf8"))),
 		),
 	) + "\n",
 );

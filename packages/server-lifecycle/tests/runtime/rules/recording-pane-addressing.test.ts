@@ -1,10 +1,6 @@
 import { expect, test } from "bun:test";
-import {
-	buildPanesReport,
-	resolvePaneSpec,
-	soloPane,
-	type PaneRegistration,
-} from "#runtime/rules/panes.ts";
+import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
+import { resolvePane } from "#runtime/rules/panes-addressing.ts";
 import { parsePaneKey } from "@archboard/model/legacy-address";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
@@ -40,14 +36,14 @@ test("a recording page's pane is nobody's to address but by its client id, count
 	const recording = pane("record", { recording: true, primary: true, focused: true });
 	const user = pane("user");
 
-	expect(soloPane([recording])).toBeNull();
-	expect(soloPane([recording, user])).toBe(user);
+	expect(resolvePane([recording])).toBeNull();
+	expect(resolvePane([recording, user])).toBe(user);
 	for (const spec of ["A", "1", "primary", "focused"]) {
-		expect(() => resolvePaneSpec([recording], spec)).toThrow();
+		expect(() => resolvePane([recording], spec)).toThrow();
 	}
-	expect(resolvePaneSpec([recording, user], "A")).toBe(user);
-	expect(resolvePaneSpec([recording, user], "1")).toBe(user);
-	expect(resolvePaneSpec([recording, user], "record")).toBe(recording);
+	expect(resolvePane([recording, user], "A")).toBe(user);
+	expect(resolvePane([recording, user], "1")).toBe(user);
+	expect(resolvePane([recording, user], "record")).toBe(recording);
 
 	const report = buildPanesReport([recording, user], {
 		identity: (key) => parsePaneKey(key),

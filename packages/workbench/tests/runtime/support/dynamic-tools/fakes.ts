@@ -7,11 +7,10 @@ import type {
 	ThreadLinkTarget,
 	CodexWaitGraph,
 } from "#runtime/voice/protocol/extension.ts";
-import { emptyManifest } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
-	ResponseOwner,
 	TransportServerRequest,
+	CodexTransport,
 } from "@archboard/codex-app-server/transport";
 import {
 	type ChildEpoch,
@@ -45,6 +44,8 @@ import { FakeLifecycle } from "#tests/runtime/support/dynamic-tools/lifecycle-fa
 import { FakeSession } from "#tests/runtime/support/dynamic-tools/session-fake.ts";
 import { FakeOperationIds } from "#tests/runtime/support/dynamic-tools/operation-id-fake.ts";
 
+type ResponseOwner = Parameters<CodexTransport["respond"]>[1];
+
 export class FakeEpoch {
 	readonly stages: EpochStageInput[] = [];
 	readonly settlements: Array<{ readonly operationId: string; readonly outcome: string }> = [];
@@ -60,10 +61,11 @@ export class FakeEpoch {
 	constructor(private readonly authorities: AuthorityIds) {}
 
 	snapshot(): EpochSnapshot {
-		const manifest = emptyManifest();
 		return {
 			manifest: {
-				...manifest,
+				schema: 1,
+				records: [],
+				integrity: { algorithm: "sha256", digest: "fake-epoch-manifest" },
 				revision: this.revision,
 				activeEpoch: {
 					childId: this.authorities.identity.validator.childId,

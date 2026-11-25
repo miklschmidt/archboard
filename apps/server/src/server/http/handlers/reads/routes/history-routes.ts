@@ -1,13 +1,13 @@
 import { checkoutWork } from "#server/wiring/server-owners.ts";
 import type { Express } from "express";
 import { z } from "zod";
-import { ArchitectureHistoryRequestSchema } from "@archboard/code-intel/history";
+import { architectureHistoryRequestSchema } from "@archboard/code-intel/history";
 import { readArchitectureHistory } from "@archboard/code-intel/history-lens";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 
 /** Each history analysis, which a route of its own name answers. */
-const ANALYSES = ArchitectureHistoryRequestSchema.options.map(
+const ANALYSES = architectureHistoryRequestSchema().options.map(
 	(option) => option.shape.analysis.value,
 );
 
@@ -21,7 +21,7 @@ function mountArchitectureHistoryRoutes(app: Express): void {
 		const route = `/api/architecture/${analysis}`;
 		app.get(route, requireVault, async (req, res) => {
 			const query = Object.entries(req.query).filter(([key]) => key !== "vault");
-			const input = ArchitectureHistoryRequestSchema.safeParse({
+			const input = architectureHistoryRequestSchema().safeParse({
 				...Object.fromEntries(query),
 				analysis,
 			});

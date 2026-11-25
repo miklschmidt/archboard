@@ -1,7 +1,7 @@
 // How a picture stands in the light, as the painter reads it. The marks say
 // what is lit, and this says how strongly each part of the picture shows.
 
-import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
+import { exploringMs, presentationMs, reachHopDelayMs } from "@archboard/timing";
 
 /** How strongly the picture lights a poked part's connections. */
 type ProbeMode = "pick" | "hover";
@@ -39,7 +39,7 @@ function shineOf(hops: number): { opacity: number; delay: number } {
 	const grade = Math.min(hops, REACH.length + 1);
 	return grade < 2
 		? { opacity: 1, delay: 0 }
-		: { opacity: REACH[grade - 2] ?? 1, delay: EXPLORING_MS.reachHop * (grade - 1) };
+		: { opacity: REACH[grade - 2] ?? 1, delay: reachHopDelayMs(grade) };
 }
 
 /**
@@ -49,16 +49,16 @@ function shineOf(hops: number): { opacity: number; delay: number } {
  */
 function restOf(state: LightState): { rest: number; labels: number; duration: number } {
 	if (state.veiled && state.presenting) {
-		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: PRESENTATION_MS.step };
+		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: presentationMs("step") };
 	}
 	if (state.veiled) return { rest: QUIET_VEIL, labels: QUIET_VEIL, duration: 0 };
 	if (state.probing === null) {
-		return { rest: 1, labels: 1, duration: EXPLORING_MS.lightingFade };
+		return { rest: 1, labels: 1, duration: exploringMs("lightingFade") };
 	}
 	return {
 		rest: RECEDE[state.probing],
 		labels: QUIET_VEIL,
-		duration: EXPLORING_MS.lightingFade,
+		duration: exploringMs("lightingFade"),
 	};
 }
 

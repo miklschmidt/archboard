@@ -14,9 +14,9 @@ import {
 const ROOT = resolve(import.meta.dir, "../../..");
 const OWNERS = [
 	"packages/process/tests/runtime/processes/git-async.test.ts",
-	"tests/system/code-targets/settings-contract.test.ts",
-	"tests/system/code-targets/activation-contract.test.ts",
-	"tests/system/code-targets/opener-persistence.test.ts",
+	"packages/code-opener/tests/server/routes/settings-contract.test.ts",
+	"packages/code-opener/tests/server/routes/activation-contract.test.ts",
+	"packages/code-opener/tests/server/routes/opener-persistence.test.ts",
 ] as const;
 
 function groupExists(pgid: number): boolean {

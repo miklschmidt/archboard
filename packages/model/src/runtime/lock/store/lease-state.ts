@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import {
 	VAULT_STATE_DIR,
 	modelMemoryKey,
@@ -298,7 +298,7 @@ function sweepModelLocks(): void {
 		try {
 			processSweep.also?.(vault, model);
 		} catch (error) {
-			logger.warn(`Model lock sweep passenger failed for "${model}"; lock watch continues.`, {
+			logger().warn(`Model lock sweep passenger failed for "${model}"; lock watch continues.`, {
 				error,
 			});
 		}
@@ -329,7 +329,7 @@ function watchModelLocks(watched: WatchedModels | null): void {
 	}
 	const timer = setInterval(() => {
 		sweepModelLocks();
-	}, MODEL_LOCK_MS.watch);
+	}, modelLockMs("watch"));
 	// The poll must not be the reason a process stays alive.
 	timer.unref();
 	processWatcher.timer = timer;

@@ -1,6 +1,6 @@
 import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
+	isArchboardAppManifestHash,
+	isArchboardAppNamespace,
 } from "#runtime/thread-tools/protocol/manifest.ts";
 import {
 	CodexDynamicToolsError,
@@ -334,10 +334,10 @@ function assertWaitCall(call: unknown): void {
  * @returns Whether the namespace, tool and manifest hash all match.
  */
 function reviewedManifestCall(call: Readonly<Record<string, unknown>>): boolean {
-	if (call["namespace"] !== ARCHBOARD_APP_NAMESPACE.name || call["tool"] !== "wait_threads") {
+	if (!isArchboardAppNamespace(call["namespace"]) || call["tool"] !== "wait_threads") {
 		return false;
 	}
-	return call["manifestHash"] === ARCHBOARD_APP_MANIFEST_SHA256;
+	return isArchboardAppManifestHash(call["manifestHash"]);
 }
 
 export { assertWaitArguments, assertWaitCall, dynamicError, errorCode, validateEvent };

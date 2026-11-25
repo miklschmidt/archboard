@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import {
-	GeneralThreadToolNameSchema,
+	isGeneralThreadToolName,
 	type GeneralThreadToolName,
 } from "#runtime/thread-tools/protocol/manifest.ts";
 import {
@@ -120,17 +120,16 @@ export function parseToolArguments(
 	name: unknown,
 	value: unknown,
 ): ToolArguments[GeneralThreadToolName] {
-	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
-	if (!parsedName.success) {
+	if (!isGeneralThreadToolName(name)) {
 		throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
 	}
 	const json = JsonValueSchema.safeParse(value);
 	if (!json.success) {
-		invalid(`${parsedName.data} arguments`, json.error.issues);
+		invalid(`${name} arguments`, json.error.issues);
 	}
-	const parsed = TOOL_ARGUMENT_SCHEMAS[parsedName.data].safeParse(json.data);
+	const parsed = TOOL_ARGUMENT_SCHEMAS[name].safeParse(json.data);
 	if (!parsed.success) {
-		invalid(`${parsedName.data} arguments`, parsed.error.issues);
+		invalid(`${name} arguments`, parsed.error.issues);
 	}
 	return freezeDeep(parsed.data);
 }

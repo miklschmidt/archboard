@@ -6,9 +6,9 @@ import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-const policy = DEFAULT_SEMANTIC_POLICY;
+const policy = defaultSemanticPolicy();
 
 /**
  * One variant, as its own contract reads it.

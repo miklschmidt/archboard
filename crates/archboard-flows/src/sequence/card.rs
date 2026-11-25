@@ -4,14 +4,13 @@
 use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
-use archboard_scene::measure;
 
 use crate::content::Node;
 use crate::sequence::design::{
     CARD_HEIGHT, CARD_HEIGHT_WITH_NOTE, CARD_PADDING_X, DRILL_MARK_ROOM, ICON_CHIP_GAP,
     ICON_CHIP_SIZE, NOTE_SIZE, TEXT_LINE_HEIGHT, TITLE_SIZE,
 };
-use archboard_scene::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT};
+use crate::sequence::design::{CARD_NOTE_FONT, CARD_TITLE_FONT};
 
 /// One participant's heading.
 #[derive(Clone, Debug)]
@@ -51,7 +50,7 @@ pub(super) fn card_height(notes: &[TextRun]) -> f64 {
 /// Every line of a participant's responsibility, measured before any card or
 /// lifeline is placed: whole, never cut.
 pub(super) fn card_notes(node: &Node, width: f64) -> Vec<TextRun> {
-    measure::note_lines(
+    archboard_scene::note_lines(
         node.responsibility.as_deref().unwrap_or(""),
         card_text_width(width),
         NOTE_SIZE,
@@ -70,13 +69,16 @@ pub(super) fn card_content_width(node: &Node) -> f64 {
         .unwrap_or("")
         .split(['\r', '\n'])
         .fold(0.0, |width, line| {
-            js::js_max(width, measure::width(line, CARD_NOTE_FONT, NOTE_SIZE))
+            js::js_max(
+                width,
+                archboard_scene::width(line, CARD_NOTE_FONT, NOTE_SIZE),
+            )
         });
     CARD_PADDING_X * 2.0
         + ICON_CHIP_SIZE
         + ICON_CHIP_GAP
         + js::js_max(
-            measure::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(node),
+            archboard_scene::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(node),
             note_width,
         )
 }

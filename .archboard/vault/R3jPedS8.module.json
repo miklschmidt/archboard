@@ -32,7 +32,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/process/src/runtime/processes/group-cleanup.ts",
-        "symbol": "CODEX_PROCESS_MS"
+        "symbol": "codexProcessMs"
       },
       "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"

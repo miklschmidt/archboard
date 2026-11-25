@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
+import { fitMargin } from "@archboard/renderer/shell-geometry";
 import { cameraFor } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 
 const pane = { width: 1551, height: 960 };
@@ -26,7 +26,7 @@ test("a long flow lands on its first steps, centred, at a scale that reads", () 
 	const camera = cameraFor(pane, { kind: "flow", content });
 	expect(camera?.scale).toBe(0.6);
 	expect(camera?.x).toBeCloseTo((1551 - 800 * 0.6) / 2, 6);
-	expect(camera?.y).toBe(FIT_MARGIN);
+	expect(camera?.y).toBe(fitMargin());
 });
 
 test("a flow that reads whole lands whole", () => {

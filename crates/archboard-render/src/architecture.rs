@@ -10,11 +10,11 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
-use archboard_flows::content::{Step, every_step};
+use archboard_flows::{Step, every_step};
 use archboard_layout::{Engine, LineLook, Measured, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
-use archboard_scene::measure::{CardWords, measure_label, measure_node, narrow_label};
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
+use archboard_scene::{CardWords, measure_label, measure_node, narrow_label};
 
 use crate::appearance::{line_appearance, line_look, node_appearances, tags_of};
 use crate::entries::entry_points_of;

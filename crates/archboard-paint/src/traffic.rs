@@ -3,12 +3,12 @@
 //! mask in the shape of that piece lets it through. The SVG moves the bar with
 //! SMIL or Web Animations. Here the bar sits where a clock says.
 
+use archboard_scene::geometry::segment_length;
 use archboard_scene::geometry::{Curve, Point, Segment, round_coord, segment_start};
 use archboard_scene::js::within;
-use archboard_scene::route::segment_length;
 use archboard_scene::scene::traffic::{
-    PULSE_FRONT as FRONT, PULSE_HEAD as HEAD, PULSE_MASK_ROOM as MASK_ROOM, PULSE_TAIL as TAIL,
-    pulse_breadth,
+    body_stops, longest_tail, pulse_breadth, pulse_reach, pulse_span, pulse_tail, train_shift,
+    turn_entry, turn_moment, turn_slide, with_light_room,
 };
 use archboard_scene::scene::{Colour, Item, Motion, PulseLook, TrafficMark};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
@@ -23,8 +23,6 @@ use crate::path::segment_onto;
 const GLOW: [(f64, f64); 4] = [(6.0, 0.07), (3.4, 0.2), (1.3, 0.5), (0.0, 0.9)];
 /// A layer wider than this stops exactly at the ends of its piece.
 const HALO_OVER: f64 = 1.0;
-/// The share of the room between pulses that a pulse fills.
-const FILL: f64 = 0.8;
 /// How sharply a tail fades.
 const TAIL_CURVE: f64 = 2.3;
 /// How bright a tail is where it meets the head.
@@ -140,15 +138,10 @@ fn leg_path(leg: &Leg, overlapping: bool) -> BezPath {
 
 /// The box the light of a piece stays inside.
 fn box_of(leg: &Leg, core: f64) -> Rect {
-    let reach = f64::midpoint(core, GLOW[0].0) + MASK_ROOM;
+    let reach = with_light_room(f64::midpoint(core, GLOW[0].0));
     let path = leg_path(leg, false);
     let bounds = path.control_box();
     bounds.inflate(reach, reach)
-}
-
-/// How long a pulse's tail is where pulses are `room` apart.
-fn tail_for(room: f64) -> f64 {
-    (room * FILL - HEAD - FRONT).clamp(0.0, TAIL)
 }
 
 /// One stop of a pulse.
@@ -167,7 +160,7 @@ fn stop_of(palette: &Palette, span: f64, behind: f64, colour: &Colour, light: f6
 
 /// The stops of a pulse along one axis, its front at the far end.
 fn stops_of(palette: &Palette, look: &PulseLook, span: f64, tail: f64) -> Vec<ColorStop> {
-    let reach = FRONT + HEAD + tail;
+    let reach = pulse_reach(tail);
     let mut stops = Vec::new();
     if tail >= 1.0 {
         for step in 0..TAIL_STEPS {
@@ -181,10 +174,10 @@ fn stops_of(palette: &Palette, look: &PulseLook, span: f64, tail: f64) -> Vec<Co
             ));
         }
     }
-    stops.push(stop_of(palette, span, FRONT + HEAD, &look.head, TAIL_LIGHT));
-    stops.push(stop_of(palette, span, FRONT + HEAD * 0.45, &look.hot, 0.9));
-    stops.push(stop_of(palette, span, FRONT, &look.hot, 1.0));
-    stops.push(stop_of(palette, span, 0.0, &look.hot, 0.0));
+    for (behind, hot, light) in body_stops(TAIL_LIGHT) {
+        let colour = if hot { &look.hot } else { &look.head };
+        stops.push(stop_of(palette, span, behind, colour, light));
+    }
     stops
 }
 
@@ -242,12 +235,10 @@ fn draw_leg<C: Canvas>(
 
 /// A message's bar on a piece at a moment of its turn, or none while it is off the piece.
 fn slide_at(leg: &Leg, speed: f64, cycle: f64, start: f64, time: f64) -> Option<f64> {
-    let span = FRONT + HEAD + TAIL;
     let moment = within(time, cycle);
-    let moment_of = |slide: f64| start + (slide + leg.along - FRONT + span) / speed;
-    let from = moment_of(-span - 1.0).max(0.0);
-    let to = moment_of(leg.length + 1.0).min(cycle);
-    (moment >= from && moment <= to).then_some((moment - start) * speed - leg.along + FRONT - span)
+    let from = turn_entry(start, speed, leg.along).max(0.0);
+    let to = turn_moment(leg.length + 1.0, start, speed, leg.along).min(cycle);
+    (moment >= from && moment <= to).then_some(turn_slide(moment, start, speed, leg.along))
 }
 
 /// Whether any traffic runs among some items.
@@ -278,13 +269,13 @@ pub(crate) fn draw_traffic<C: Canvas>(
         } => {
             let period = round_coord(spacing);
             let gradient = gradient_of(
-                &stops_of(palette, &mark.look, period, tail_for(period)),
+                &stops_of(palette, &mark.look, period, pulse_tail(period)),
                 period,
                 true,
             );
             let moved = within(seconds * speed, period);
             for leg in &legs {
-                let shift = within(phase - leg.along + FRONT, period) - period;
+                let shift = train_shift(phase, leg.along, period);
                 let bar = Bar {
                     slide: shift + moved,
                     from: -period - 1.0,
@@ -298,8 +289,12 @@ pub(crate) fn draw_traffic<C: Canvas>(
             cycle,
             start,
         } => {
-            let span = FRONT + HEAD + TAIL;
-            let gradient = gradient_of(&stops_of(palette, &mark.look, span, TAIL), span, false);
+            let span = pulse_span();
+            let gradient = gradient_of(
+                &stops_of(palette, &mark.look, span, longest_tail()),
+                span,
+                false,
+            );
             for leg in &legs {
                 let Some(slide) = slide_at(leg, speed, cycle, start, seconds) else {
                     continue;

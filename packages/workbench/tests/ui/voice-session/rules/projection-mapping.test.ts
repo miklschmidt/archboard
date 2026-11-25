@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	INITIAL_REALTIME_STATE,
-	REALTIME_PHASES,
-	REALTIME_TRANSITIONS,
-} from "@archboard/codex-realtime-voice/realtime";
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import { projectVoiceSession } from "#ui/voice-session/rules/projection.ts";
 import {
@@ -27,7 +22,7 @@ import {
  * Every state the neutral realtime server contract declares, spelled out so the test
  * asserts nothing into the union.
  */
-const DECLARED_STATES: readonly RealtimeState[] = [
+const DECLARED_STATES = [
 	{ phase: "idle", reason: "created" },
 	{ phase: "idle", reason: "recovered" },
 	{ phase: "requesting_permission", reason: "start_requested" },
@@ -130,29 +125,7 @@ const DECLARED_STATES: readonly RealtimeState[] = [
 	{ phase: "terminal_error", reason: "fatal_error", message: "terminal_error for fatal_error" },
 	{ phase: "closed", reason: "stopped" },
 	{ phase: "closed", reason: "disposed" },
-];
-
-/**
- * Every state the transition table can actually reach: the initial one plus
- * every (destination, reason) pair it allows. The projection must map all of
- * them, so the table is the exhaustiveness source rather than a hand-kept list.
- * @returns The reachable states.
- */
-function reachableStates(): readonly RealtimeState[] {
-	const reachable = new Set<string>([
-		`${INITIAL_REALTIME_STATE.phase}:${INITIAL_REALTIME_STATE.reason}`,
-	]);
-	for (const from of REALTIME_PHASES) {
-		for (const to of REALTIME_PHASES) {
-			for (const reason of REALTIME_TRANSITIONS[from][to] ?? []) {
-				reachable.add(`${to}:${reason}`);
-			}
-		}
-	}
-	const states = DECLARED_STATES.filter((state) => reachable.has(`${state.phase}:${state.reason}`));
-	expect(states).toHaveLength(reachable.size);
-	return states;
-}
+] as const satisfies readonly RealtimeState[];
 
 /**
  * A projection input over the default sources.
@@ -213,12 +186,21 @@ function byPair(left: [string, string], right: [string, string]): number {
 	return byName(left[0], right[0]);
 }
 
-const REACHABLE = reachableStates();
+type StateKey<State extends RealtimeState> = State extends RealtimeState
+	? `${State["phase"]}:${State["reason"]}`
+	: never;
+
+/** Each realtime state that has no fixture in `DECLARED_STATES`. */
+type MissingState = Exclude<StateKey<RealtimeState>, StateKey<(typeof DECLARED_STATES)[number]>>;
+
+// A state without a fixture makes this a type error that names the state.
+const everyStateDeclared: [MissingState] extends [never] ? true : MissingState = true;
 
 describe("voice session status mapping", () => {
-	test("maps every reachable realtime state to a defined status and sentence", () => {
+	test("maps every declared realtime state to a defined status and sentence", () => {
+		expect(everyStateDeclared).toBe(true);
 		const seen = new Set<VoiceSessionStatus>();
-		for (const state of REACHABLE) {
+		for (const state of DECLARED_STATES) {
 			const view = project(state);
 			const where = `${state.phase}/${state.reason}`;
 			expect(VOICE_SESSION_STATUSES, where).toContain(view.status);
@@ -241,7 +223,7 @@ describe("voice session status mapping", () => {
 
 	test("gives every realtime error reason its own presentation failure code", () => {
 		const codes = new Map<string, string>();
-		for (const state of REACHABLE.filter(isError)) {
+		for (const state of DECLARED_STATES.filter(isError)) {
 			const view = project(state);
 			const failure = view.failure;
 			expect(view.status, state.reason).toBe("failed");
@@ -379,7 +361,7 @@ describe("voice session status mapping", () => {
 
 	test("never offers a retry control the projection has disabled", () => {
 		const cases: VoiceSessionProjectionInput[] = [
-			...REACHABLE.map((state) => input({ media: mediaSnapshot(state) })),
+			...DECLARED_STATES.map((state) => input({ media: mediaSnapshot(state) })),
 			input({ transportState: reconnectingState() }),
 			input({ mediaState: { state: "attaching" } }),
 			input({ replaced: true, binding: null }),

@@ -2,12 +2,12 @@
 //! with, its label and warning above all connections, and the shadow its label
 //! casts under every line.
 
-use crate::drawing::{Edge, Emphasis};
+use crate::drawing::Emphasis;
 use crate::geometry::{Point, label_anchor_of, round_coord};
+use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, route, shape};
 use crate::paint::cards::halo;
-use crate::paint::design::{PILL_RADIUS, RAILS};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -24,6 +24,7 @@ use crate::scene::{
     Colour, Definition, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId, PathStep, Purpose,
     Role, Shape, Stroke, SubjectKind,
 };
+use crate::sizes::{PILL_RADIUS, RAILS};
 
 /// Width added to a connection's unseen stroke, which takes the pointer. Its
 /// label wears the selection ring.

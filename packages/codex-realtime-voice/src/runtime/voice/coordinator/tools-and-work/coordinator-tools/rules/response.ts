@@ -1,60 +1,14 @@
+import { canonicalToolResult } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import {
-	DelegateToWorkhorseResultSchema,
-	InspectWorkhorseResultSchema,
-	ManageWorkhorseQueueResultSchema,
-	ResolveSpokenApprovalResultSchema,
-	SteerWorkhorseResultSchema,
-	StopWorkhorsesResultSchema,
-	parseCoordinatorToolResult,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
-import {
-	DynamicToolEnvelopeSchema,
-	DynamicToolOutcomeUnknownEnvelopeSchema,
-	DynamicToolResponseSchema,
-	UnknownDynamicToolResponseSchema,
-	ValidDynamicToolResponseSchema,
+	outcomeUnknownEnvelope,
+	toolResponseFor,
 	type DynamicToolRefusalReason,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 import { type CoordinatorToolName } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
-import type { DynamicToolOkEnvelopeSchema } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 import type {
-	CoordinatorToolValue,
 	CoordinatorToolValueFor,
 	DynamicToolResponse,
 } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
-import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
-import { z } from "zod";
-
-type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
-type DynamicToolValue = z.infer<typeof DynamicToolOkEnvelopeSchema>["value"];
-
-/**
- * The reviewed result shapes without their strictness: parsing through these keeps exactly the
- * declared fields, in declared order, and drops anything else a workhorse result carried.
- */
-const CANONICAL_RESULT_SCHEMAS = Object.freeze({
-	inspect_workhorse: z.object(InspectWorkhorseResultSchema.shape),
-	delegate_to_workhorse: z.object(DelegateToWorkhorseResultSchema.shape),
-	manage_workhorse_queue: z.object(ManageWorkhorseQueueResultSchema.shape),
-	steer_workhorse: z.object(SteerWorkhorseResultSchema.shape),
-	stop_workhorses: z.object(StopWorkhorsesResultSchema.shape),
-	resolve_spoken_approval: z.object(ResolveSpokenApprovalResultSchema.shape),
-} satisfies Readonly<Record<CoordinatorToolName, z.ZodObject>>);
-
-/**
- * Freeze a value and everything reachable from it so a response cannot change after it is built.
- * @param value - The value to freeze in place.
- * @returns The same value, frozen.
- */
-function freezeDeep<T>(value: T): T {
-	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
-		return value;
-	}
-	for (const child of Object.values(value)) {
-		freezeDeep(child);
-	}
-	return Object.freeze(value);
-}
 
 /**
  * Keep a diagnostic inside the envelope's bounds and never empty.
@@ -81,34 +35,6 @@ function requireOperationId(operationId: string | null | undefined): string {
 }
 
 /**
- * Reduce a tool result to the reviewed fields so the envelope carries nothing undeclared.
- * @param name - The tool the result belongs to.
- * @param value - The result as the port produced it.
- * @returns A fresh object holding only the declared fields.
- */
-function canonicalValue(name: CoordinatorToolName, value: CoordinatorToolValue): DynamicToolValue {
-	return CANONICAL_RESULT_SCHEMAS[name].parse(value);
-}
-
-/**
- * Wrap an envelope as the app-server's dynamic tool response text.
- * @param envelope - The envelope to serialize.
- * @param success - Whether the app-server should treat the call as succeeded.
- * @returns The frozen, schema-checked response.
- */
-function responseForEnvelope(envelope: DynamicToolEnvelope, success: boolean): DynamicToolResponse {
-	const text = JSON.stringify(DynamicToolEnvelopeSchema.parse(envelope));
-	const candidate = {
-		contentItems: [{ type: "inputText" as const, text }],
-		success,
-	};
-	const parsed = success
-		? ValidDynamicToolResponseSchema.parse(candidate)
-		: UnknownDynamicToolResponseSchema.parse(candidate);
-	return freezeDeep(parsed);
-}
-
-/**
  * Build the successful response for one tool, checked against that tool's reviewed result schema.
  * @param name - The tool that succeeded.
  * @param operationId - The wire form of the server-issued operation identity.
@@ -120,16 +46,7 @@ function okResponse<Name extends CoordinatorToolName>(
 	operationId: string,
 	value: CoordinatorToolValueFor<Name>,
 ): DynamicToolResponse {
-	const canonical = canonicalValue(name, value);
-	parseCoordinatorToolResult(name, canonical);
-	return responseForEnvelope(
-		{
-			tag: "ok",
-			operationId: requireOperationId(operationId),
-			value: canonical,
-		},
-		true,
-	);
+	return okPortResponse(name, operationId, value);
 }
 
 /**
@@ -146,14 +63,9 @@ function okPortResponse(
 	operationId: string,
 	value: unknown,
 ): DynamicToolResponse {
-	const canonical = CANONICAL_RESULT_SCHEMAS[name].parse(value);
-	parseCoordinatorToolResult(name, canonical);
-	return responseForEnvelope(
-		{
-			tag: "ok",
-			operationId: requireOperationId(operationId),
-			value: canonical,
-		},
+	const canonical = canonicalToolResult(name, value);
+	return toolResponseFor(
+		{ tag: "ok", operationId: requireOperationId(operationId), value: canonical },
 		true,
 	);
 }
@@ -171,7 +83,7 @@ function refusedResponse(
 	message: string,
 	outerFailure = false,
 ): DynamicToolResponse {
-	return responseForEnvelope(
+	return toolResponseFor(
 		{ tag: "refused", reason, message: boundedMessage(message) },
 		!outerFailure,
 	);
@@ -184,7 +96,7 @@ function refusedResponse(
  * @returns The frozen response.
  */
 function approvalRequiredResponse(operationId: string, summary: string): DynamicToolResponse {
-	return responseForEnvelope(
+	return toolResponseFor(
 		{
 			tag: "approval_required",
 			operationId: requireOperationId(operationId),
@@ -200,24 +112,7 @@ function approvalRequiredResponse(operationId: string, summary: string): Dynamic
  * @returns The frozen response.
  */
 function outcomeUnknownResponse(operationId: string): DynamicToolResponse {
-	const envelope = DynamicToolOutcomeUnknownEnvelopeSchema.parse({
-		tag: "outcome_unknown",
-		operationId: requireOperationId(operationId),
-		message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	});
-	return responseForEnvelope(envelope, true);
-}
-
-/**
- * Re-check a response against the response schemas and freeze it.
- * @param response - A response to verify.
- * @returns The frozen, schema-checked response.
- */
-function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
-	const parsed = response.success
-		? DynamicToolResponseSchema.parse(response)
-		: UnknownDynamicToolResponseSchema.parse(response);
-	return freezeDeep(parsed);
+	return toolResponseFor(outcomeUnknownEnvelope(requireOperationId(operationId)), true);
 }
 
 export {
@@ -226,5 +121,4 @@ export {
 	refusedResponse,
 	approvalRequiredResponse,
 	outcomeUnknownResponse,
-	parseResponseText,
 };

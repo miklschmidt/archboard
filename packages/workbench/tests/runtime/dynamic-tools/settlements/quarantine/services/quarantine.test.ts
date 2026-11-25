@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { type CodexDynamicTools } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { parseDynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
+import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	FakeApproval,

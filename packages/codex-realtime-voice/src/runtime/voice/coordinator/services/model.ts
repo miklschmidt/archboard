@@ -1,9 +1,6 @@
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
-import {
-	COORDINATOR_IDENTITY,
-	COORDINATOR_THREAD_CONFIG,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/contracts.ts";
+import { deepFreeze } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
 import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session";
 import {
 	CodexCoordinatorError,
@@ -12,8 +9,24 @@ import {
 	type CoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 
-const COORDINATOR_MODEL = COORDINATOR_IDENTITY.model;
-const COORDINATOR_EFFORT = COORDINATOR_IDENTITY.effort;
+/** The reviewed model and reasoning effort every coordinator turn carries. */
+const COORDINATOR_MODEL = "gpt-6-sol";
+const COORDINATOR_EFFORT = "low";
+
+/**
+ * The Codex configuration every coordinator thread starts with.
+ *
+ * `project_doc_max_bytes: 0` stops Codex loading the checkout's `AGENTS.md` into the coordinator.
+ * That file is written for an agent doing work in the repository: it tells every request to
+ * begin with project procedure. The coordinator is a voice front desk whose whole brief is the
+ * instructions the host gives it, and in a first narrative that procedure cost eight seconds of
+ * silence before it presented a step. The workhorse, which does
+ * work in the repository, still reads the file.
+ */
+const COORDINATOR_THREAD_CONFIG = deepFreeze({
+	features: { realtime_conversation: true },
+	project_doc_max_bytes: 0,
+} as const);
 const COORDINATOR_MODEL_PAGE_LIMIT = 100 as const;
 
 interface CoordinatorModelSelection {
@@ -225,9 +238,25 @@ function createCoordinatorSettingsUpdateParams(
 	} satisfies SessionParams<"thread/settings/update">;
 }
 
+/**
+ * The reviewed model every coordinator turn carries.
+ * @returns The model id.
+ */
+function reviewedCoordinatorModel(): typeof COORDINATOR_MODEL {
+	return COORDINATOR_MODEL;
+}
+
+/**
+ * The reviewed reasoning effort every coordinator turn carries.
+ * @returns The effort.
+ */
+function reviewedCoordinatorEffort(): typeof COORDINATOR_EFFORT {
+	return COORDINATOR_EFFORT;
+}
+
 export {
-	COORDINATOR_MODEL,
-	COORDINATOR_EFFORT,
+	reviewedCoordinatorModel,
+	reviewedCoordinatorEffort,
 	type CoordinatorModelSelection,
 	listCoordinatorModels,
 	selectCoordinatorModel,

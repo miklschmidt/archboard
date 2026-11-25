@@ -58,6 +58,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 26000,
+      "kind": "call",
+      "label": "which checkout holds the vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "gitCheckoutOfVault"
+      },
+      "to": "vKEsyHFk#IvTUZ8Hk",
+      "id": "vKEsyHFk#Zv6ZZwJP"
     }
   ]
 }

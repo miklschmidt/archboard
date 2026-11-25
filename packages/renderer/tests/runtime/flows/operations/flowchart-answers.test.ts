@@ -19,7 +19,7 @@ import {
 } from "#tests/runtime/support/drawn-flowchart.ts";
 import { corridorPoints, routesCross, routeLabels } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** How near a line's start may be to the outline it leaves. */
 const MEETING = 2.5;
@@ -237,7 +237,7 @@ const NESTED: VariantContent = orderedFixture({
  */
 async function answersOf(content: VariantContent, id: string) {
 	const { svg } = await renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		grammar: "flowchart",
 		theme: "light",
@@ -299,7 +299,7 @@ describe("a decision's answers leave it from separate points", () => {
 
 	test("the answers of a decision in a loop cross no line", async () => {
 		const { svg } = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: LOOPED,
 			grammar: "flowchart",
 			theme: "light",
@@ -316,7 +316,7 @@ describe("a decision's answers leave it from separate points", () => {
 
 	test("an answer from a side point stays beside its diamond down to its words", async () => {
 		const { svg } = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: NESTED,
 			grammar: "flowchart",
 			theme: "light",

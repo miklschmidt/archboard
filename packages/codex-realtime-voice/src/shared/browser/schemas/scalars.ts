@@ -22,6 +22,17 @@ import type {
 } from "@archboard/codex-app-server/identity";
 
 const JsonValueSchema = z.json();
+type JsonValue = z.infer<typeof JsonValueSchema>;
+
+/**
+ * Narrows an untrusted value to JSON.
+ * @param value - Any value.
+ * @returns The value, known to be JSON.
+ * @throws {ZodError} when the value holds anything JSON cannot carry.
+ */
+function parseJsonValue(value: unknown): JsonValue {
+	return JsonValueSchema.parse(value);
+}
 
 /**
  * A non-empty string bounded in both characters and UTF-8 bytes, without NUL,
@@ -180,6 +191,7 @@ function assertCurrentTarget(
 
 export {
 	JsonValueSchema,
+	parseJsonValue,
 	boundedText,
 	boundedWireText,
 	optionalNullableText,

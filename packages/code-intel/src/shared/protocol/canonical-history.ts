@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { LocalityAnswerSchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { SourceRefsAnswerSchema } from "#shared/protocol/source-refs.ts";
@@ -30,14 +30,16 @@ const ArchitectureSourceRefsRequestSchema = SelectionSchema.extend({
 const IdentitySchema = z.strictObject({
 	success: z.literal(true),
 	model: z.string(),
-	state: ArchitectureModelReadSchema.options[0].shape.selectedState,
-	revision: ArchitectureModelReadSchema.options[0].shape.revision,
+	state: architectureModelReadSchema().options[0].shape.selectedState,
+	revision: architectureModelReadSchema().options[0].shape.revision,
 	checkpoint: z.string().optional(),
 });
 /** The vault a footprint read: the vault on disk, or the vault at the head's ref and commit. */
 const FootprintVaultSchema = z.discriminatedUnion("at", [
 	z.strictObject({ at: z.literal("checkout") }),
-	ArchitectureModelReadSchema.options[0].shape.sourceRef.unwrap().extend({ at: z.literal("ref") }),
+	architectureModelReadSchema()
+		.options[0].shape.sourceRef.unwrap()
+		.extend({ at: z.literal("ref") }),
 ]);
 const FootprintIdentitySchema = z.strictObject({
 	...IdentitySchema.shape,
@@ -61,7 +63,7 @@ const ArchitectureHistoryResultSchema = z.union([
 		.omit({ model: true, version: true })
 		.extend(FootprintIdentitySchema.shape),
 	SourceRefsAnswerSchema.extend({ ...IdentitySchema.shape, analysis: z.literal("refs") }),
-	ArchitectureModelReadSchema.options[1],
+	architectureModelReadSchema().options[1],
 ]);
 export {
 	ArchitectureLocalityRequestSchema,
@@ -70,3 +72,19 @@ export {
 	ArchitectureHistoryRequestSchema,
 	ArchitectureHistoryResultSchema,
 };
+
+/**
+ * The schema `ArchitectureHistoryRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureHistoryRequestSchema(): typeof ArchitectureHistoryRequestSchema {
+	return ArchitectureHistoryRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureHistoryResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureHistoryResultSchema(): typeof ArchitectureHistoryResultSchema {
+	return ArchitectureHistoryResultSchema;
+}

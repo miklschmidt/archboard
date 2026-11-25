@@ -26,7 +26,7 @@ Read the ADR for the decision. Read this note before you change a painter, a mov
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Hit testing                              | `Targets` in `pick.rs`, under the rules of SVG `pointer-events`, in the order the painter draws. |
 | CSS classes for the light and the recede | `Presentation` and the fades of `Stage::set_light`.                                              |
-| CSS far view                             | `Stage::set_far`, a blend from 0 to 1 over `FAR_VIEW_SWAP_MS`.                                   |
+| CSS far view                             | `Stage::set_far`, a blend from 0 to 1 over `pictureMs("farViewSwap")`.                           |
 | `:hover` on a control                    | The stage's own `pointermove` listener and `setHoveredToggle`.                                   |
 | Search, copy and screen readers          | The SVG, which stays in the page under the canvas with its ink hidden.                           |
 | SMIL traffic                             | `TrafficClock` and `traffic.rs`, on the frame clock.                                             |
@@ -119,19 +119,19 @@ Both columns ran on the same copy of the vault with a load under 5. The painter 
 
 ### What the rounds changed
 
-| Round         | Change                                                                                       | What it gave                                                                                                       |
-| ------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Thin SVG      | A painted surface drops its glyphs and definitions.                                          | Toggle long tasks 1847 to 575 ms. Dive 1650 to 298 ms.                                                             |
-| Flight clock  | A flight starts with its first drawn frame.                                                  | A picture no longer jumps into the middle of its flight. Frames rose, so the slow count rose until the next round. |
-| Kept parts    | The GPU canvas keeps still items and each run of words.                                      | Toggle 95th percentile 25 to 16.6 ms.                                                                              |
-| Glide         | A camera glide tells the stage each frame.                                                   | The fit key, a toggle's camera and a walkthrough step no longer cut.                                               |
-| Definitions   | A flight knows what the next scene defines inside its body.                                  | Pills and arrowheads no longer pop in at landing.                                                                  |
-| Dashes        | A dashed path is cut into straight pieces first.                                             | Toggle 95th percentile 16.6 to 8.4 ms. kurbo measured each curve to one part in a million.                         |
-| First picture | The page asks for the GPU while it draws, and the ink waits up to `PICTURE_MS.painterGrace`. | A reload has its entrance, and the far view shows no fade from near words.                                         |
-| Time          | A frame takes the later of its stamp and the last change.                                    | A long task in a frame's turn no longer draws the old camera with the new picture.                                 |
-| Own light     | A leaving picture keeps its last look, and an entering one stands in its light at once.      | A walkthrough step no longer lifts the veil for its first 200 ms.                                                  |
-| Veil          | Traffic on an unlit line recedes twice, as it did through the line's mask.                   | A walkthrough step shows no pulses on what it is not about.                                                        |
-| CPU traffic   | Traffic on the CPU painter rests as long as its last frame took.                             | See below.                                                                                                         |
+| Round         | Change                                                                                         | What it gave                                                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Thin SVG      | A painted surface drops its glyphs and definitions.                                            | Toggle long tasks 1847 to 575 ms. Dive 1650 to 298 ms.                                                             |
+| Flight clock  | A flight starts with its first drawn frame.                                                    | A picture no longer jumps into the middle of its flight. Frames rose, so the slow count rose until the next round. |
+| Kept parts    | The GPU canvas keeps still items and each run of words.                                        | Toggle 95th percentile 25 to 16.6 ms.                                                                              |
+| Glide         | A camera glide tells the stage each frame.                                                     | The fit key, a toggle's camera and a walkthrough step no longer cut.                                               |
+| Definitions   | A flight knows what the next scene defines inside its body.                                    | Pills and arrowheads no longer pop in at landing.                                                                  |
+| Dashes        | A dashed path is cut into straight pieces first.                                               | Toggle 95th percentile 16.6 to 8.4 ms. kurbo measured each curve to one part in a million.                         |
+| First picture | The page asks for the GPU while it draws, and the ink waits up to `pictureMs("painterGrace")`. | A reload has its entrance, and the far view shows no fade from near words.                                         |
+| Time          | A frame takes the later of its stamp and the last change.                                      | A long task in a frame's turn no longer draws the old camera with the new picture.                                 |
+| Own light     | A leaving picture keeps its last look, and an entering one stands in its light at once.        | A walkthrough step no longer lifts the veil for its first 200 ms.                                                  |
+| Veil          | Traffic on an unlit line recedes twice, as it did through the line's mask.                     | A walkthrough step shows no pulses on what it is not about.                                                        |
+| CPU traffic   | Traffic on the CPU painter rests as long as its last frame took.                               | See below.                                                                                                         |
 
 ### What the first pass got wrong
 
@@ -206,7 +206,7 @@ These things stay after the pass, and each one has a reason:
 - A door that the reader did not rest on waits for layout, with the step back as its answer.
 - The words of a card fade out and return during a flight that turned around. The in-between holds no words that match the next picture.
 - When a flight starts, the pulses of a sequence stop. When it lands, they start again.
-- A flight takes 640 ms at any distance, inside the band that the note on `PICTURE_MS.transition` in `@archboard/timing` gives. This pass tested no longer flight.
+- A flight takes 640 ms at any distance, inside the band that the note on `pictureMs("transition")` in `@archboard/timing` gives. This pass tested no longer flight.
 - A first load starts about 150 ms later than on the old page, because the ink waits for the painter.
 - A receded line keeps its arrowhead.
 

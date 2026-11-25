@@ -357,3 +357,19 @@ export {
 	isVaultLayout,
 	vaultHolder,
 };
+
+/**
+ * The value `VAULT_DIRECTORY`, for callers that read it.
+ * @returns The value.
+ */
+export function vaultDirectory(): typeof VAULT_DIRECTORY {
+	return VAULT_DIRECTORY;
+}
+
+/**
+ * The value `VAULT_ORIGINS`, for callers that read it.
+ * @returns The value.
+ */
+export function vaultOrigins(): typeof VAULT_ORIGINS {
+	return VAULT_ORIGINS;
+}

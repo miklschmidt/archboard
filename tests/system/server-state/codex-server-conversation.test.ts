@@ -15,7 +15,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
+import { semanticPaneContextRoute } from "@archboard/model/pane-context";
 import { productionServer } from "./support/production-server.ts";
 
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -225,7 +225,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		const handle = (voice.result.value as Record<string, unknown>)["realtimeSessionHandle"];
 		const variant = model.selectedState!;
 		const selected = model.modules.find((module) => module.name === "Ledger")!.id;
-		const picked = await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+		const picked = await request(semanticPaneContextRoute(), {
 			method: "POST",
 			doing: false,
 			body: {

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import * as timing from "#shared/constants/timing.ts";
 
 const REVIEWED_GROUPS = {
-	CODEX_PROCESS_MS: {
+	codexProcessMs: {
 		restartBase: 1000,
 		restartMax: 30_000,
 		stdinEofGrace: 1000,
@@ -11,7 +11,7 @@ const REVIEWED_GROUPS = {
 		groupFreeze: 500,
 		composedShutdown: 10_000,
 	},
-	CODEX_SESSION_MS: {
+	codexSessionMs: {
 		explanationTurnStart: 15_000,
 		explanationText: 150,
 		requestSettlement: 30_000,
@@ -20,14 +20,15 @@ const REVIEWED_GROUPS = {
 		workTreeStopPoll: 250,
 		workTreeStopSettle: 5000,
 	},
-	CODEX_REALTIME_MS: {
+	codexRealtimeMs: {
 		start: 15_000,
 		stop: 3000,
 		recovery: 45_000,
 		contextFreshness: 30_000,
 		clientReconnect: 3000,
+		tabSessionGrace: 60_000,
 	},
-	CODEX_APPROVAL_MS: {
+	codexApprovalMs: {
 		browserCommandLease: 150_000,
 		expiry: 90_000,
 		spokenGate: 60_000,
@@ -35,21 +36,18 @@ const REVIEWED_GROUPS = {
 } as const;
 
 describe("Codex workbench timing policy", () => {
-	test("exports exactly the reviewed groups, frozen", () => {
-		const exportedGroups = Object.keys(timing)
-			.filter((name) => name.startsWith("CODEX_"))
-			.toSorted();
-		expect(exportedGroups).toEqual(Object.keys(REVIEWED_GROUPS).toSorted());
+	test("answers each reviewed duration", () => {
 		for (const [name, reviewed] of Object.entries(REVIEWED_GROUPS)) {
-			const group = timing[name as keyof typeof REVIEWED_GROUPS];
-			expect(group).toEqual(reviewed);
-			expect(Object.isFrozen(group)).toBe(true);
+			const read = timing[name as keyof typeof REVIEWED_GROUPS] as (key: string) => number;
+			for (const [key, ms] of Object.entries(reviewed)) expect(read(key)).toBe(ms);
 		}
 	});
 
 	test("keeps the authored timing relationships", () => {
-		const { CODEX_PROCESS_MS: process, CODEX_SESSION_MS: session } = timing;
-		const { CODEX_REALTIME_MS: realtime, CODEX_APPROVAL_MS: approval } = timing;
+		const process = REVIEWED_GROUPS.codexProcessMs;
+		const session = REVIEWED_GROUPS.codexSessionMs;
+		const realtime = REVIEWED_GROUPS.codexRealtimeMs;
+		const approval = REVIEWED_GROUPS.codexApprovalMs;
 		expect(process.restartBase).toBeLessThanOrEqual(process.restartMax);
 		expect(session.requestSettlement).toBeLessThanOrEqual(process.restartMax);
 		expect(session.requestSettlement).toBeLessThan(approval.browserCommandLease);
@@ -62,7 +60,8 @@ describe("Codex workbench timing policy", () => {
 		expect(approval.expiry).toBeLessThan(approval.browserCommandLease);
 		expect(approval.spokenGate).toBeLessThanOrEqual(approval.expiry);
 		expect(realtime.contextFreshness).toBeLessThan(realtime.recovery);
-		expect(timing.CODEX_REALTIME_MS.clientReconnect).toBeLessThan(timing.TAB_SESSION_GRACE_MS);
+		expect(realtime.clientReconnect).toBeLessThan(realtime.tabSessionGrace);
+		expect(realtime.tabSessionGrace).toBeLessThan(approval.expiry);
 		expect(realtime.stop).toBeLessThan(process.termGrace);
 		expect(process.stdinEofGrace).toBeGreaterThan(0);
 		expect(
@@ -71,7 +70,7 @@ describe("Codex workbench timing policy", () => {
 	});
 
 	test("doubles the restart delay per failed attempt up to the cap", () => {
-		const { restartBase, restartMax } = timing.CODEX_PROCESS_MS;
+		const { restartBase, restartMax } = REVIEWED_GROUPS.codexProcessMs;
 		expect(timing.codexRestartDelayMs(0)).toBe(restartBase);
 		expect(timing.codexRestartDelayMs(1)).toBe(2 * restartBase);
 		expect(timing.codexRestartDelayMs(2)).toBe(4 * restartBase);

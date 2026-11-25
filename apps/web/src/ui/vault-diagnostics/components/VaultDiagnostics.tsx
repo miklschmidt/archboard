@@ -7,10 +7,10 @@ import { DiagnosticList } from "#ui/vault-diagnostics/components/DiagnosticList.
 import { useVaultCheck } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
 import { useVaultRepair } from "#ui/vault-diagnostics/hooks/use-vault-repair.ts";
 import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** What the pane states itself, with its way on: the bell does not call it a fault as well. */
 const STATED_BY_THE_PANE = new Set(["MODEL_NOT_FOUND", "LEGACY_AUTHORITY"]);

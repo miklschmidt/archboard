@@ -1,8 +1,5 @@
 import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
-import {
-	type SessionThread,
-	CODEX_SESSION_THREAD_SOURCE,
-} from "@archboard/codex-app-server/session";
+import { type SessionThread, codexSessionThreadSource } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import { cloneAndFreeze } from "#runtime/workhorses/thread-link/rules/provenance.ts";
 import {
@@ -163,7 +160,7 @@ function provesOwnedThreadStart(
 		record?.operation.rpc === "thread/start" &&
 		record.status === "committed" &&
 		record.outcome === "delivered" &&
-		record.provenance.threadSource === CODEX_SESSION_THREAD_SOURCE
+		record.provenance.threadSource === codexSessionThreadSource()
 	);
 }
 
@@ -184,7 +181,7 @@ function matchesOwningRecord(
 ): boolean {
 	return (
 		thread.id === target.threadId &&
-		thread.source === CODEX_SESSION_THREAD_SOURCE &&
+		thread.source === codexSessionThreadSource() &&
 		thread.threadSource === threadSource &&
 		thread.cwd === record.provenance.workspaceRoot
 	);
@@ -245,7 +242,7 @@ function mayBeHiddenRoot(
 	return (
 		listed === undefined ||
 		(observedDirectInput(listed) === null &&
-			sourceOf(listed) === CODEX_SESSION_THREAD_SOURCE &&
+			sourceOf(listed) === codexSessionThreadSource() &&
 			isExecutableThreadLinkStatus(statusOf(listed)))
 	);
 }
@@ -395,17 +392,4 @@ function createCodexThreadLinkClassifier(
 	return Object.freeze({ classify });
 }
 
-/**
- * Classifies one target through a one-shot classifier.
- * @param options The session and the epoch source or store.
- * @param target The target.
- * @returns The classification.
- */
-async function classifyCodexThreadLink(
-	options: CodexThreadLinkClassifierOptions,
-	target: ThreadLinkTarget,
-): Promise<ThreadLinkClassification> {
-	return createCodexThreadLinkClassifier(options).classify(target);
-}
-
-export { createCodexThreadLinkClassifier, classifyCodexThreadLink };
+export { createCodexThreadLinkClassifier };

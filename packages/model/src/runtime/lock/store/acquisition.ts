@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/lock/store/claim-state.ts";
 import {
@@ -370,7 +370,7 @@ async function stealContested(
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
-	await sleep(MODEL_LOCK_MS.stealGuard);
+	await sleep(modelLockMs("stealGuard"));
 	const settled = readRecord(file);
 	if (settled?.token !== record.token) {
 		return { ok: false, record: liveRecord(settled) };
@@ -447,9 +447,9 @@ type WaitVerdict = "stop" | "retry" | "wait";
 function waitPlan(request: LockRequest): WaitPlan {
 	const startedAt = Date.now();
 	return {
-		leaseMs: request.leaseMs ?? MODEL_LOCK_MS.lease,
+		leaseMs: request.leaseMs ?? modelLockMs("lease"),
 		startedAt,
-		deadline: startedAt + (request.waitMs ?? MODEL_LOCK_MS.waitCap),
+		deadline: startedAt + (request.waitMs ?? modelLockMs("waitCap")),
 	};
 }
 
@@ -460,7 +460,7 @@ function waitPlan(request: LockRequest): WaitPlan {
  * @returns The interval in milliseconds.
  */
 function pollFor(deadline: number): number {
-	return Math.min(MODEL_LOCK_MS.poll, Math.max(1, deadline - Date.now()));
+	return Math.min(modelLockMs("poll"), Math.max(1, deadline - Date.now()));
 }
 
 /**

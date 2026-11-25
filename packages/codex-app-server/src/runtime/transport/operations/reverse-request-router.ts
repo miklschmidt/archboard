@@ -1,10 +1,11 @@
 import {
 	decodeServerRequest,
 	isSupportedServerRequestMethod,
+	parseServerRequestParams,
 	type DecodedServerRequest,
 	type ServerRequestPayloads,
 } from "#runtime/protocol/protocol-decoder.ts";
-import { JSON_RPC_ERROR_CODES, SERVER_REQUEST_SCHEMAS } from "#runtime/protocol/request-schemas.ts";
+import { jsonRpcErrorCode } from "#runtime/protocol/request-schemas.ts";
 import { type ServerRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 import type {
@@ -23,16 +24,12 @@ import type { ReverseRecord } from "#runtime/transport/clients/transport-interna
 import type { ReverseByteAccounting } from "#runtime/transport/operations/reverse-ledger.ts";
 import {
 	hasOwn,
-	isInList,
 	isWireId,
 	isDisabledCapabilityError,
 	wireKey,
 	type WireId,
 } from "#runtime/protocol/wire.ts";
-import {
-	HUMAN_APPROVAL_METHODS,
-	SESSION_SERVER_REQUEST_METHODS,
-} from "#runtime/transport/clients/transport-types.ts";
+import { plainResponseOwner } from "#runtime/transport/clients/transport-types.ts";
 import { cloneAndFreeze } from "#runtime/transport/operations/public-values.ts";
 
 const REVERSE_ERROR_MESSAGES = Object.freeze({
@@ -116,7 +113,7 @@ function refusal(
 const INVALID_PARAMS_REFUSAL = refusal(
 	"malformed-frame",
 	"The reverse request params were invalid",
-	JSON_RPC_ERROR_CODES.invalidParams,
+	jsonRpcErrorCode("invalidParams"),
 	REVERSE_ERROR_MESSAGES.invalidParams,
 );
 
@@ -133,17 +130,6 @@ const DUPLICATE_ID_REFUSAL: ReverseRefusal = Object.freeze({
  */
 function hasOnlyEnvelopeKeys(value: Record<string, unknown>): boolean {
 	return Object.keys(value).every((keyName) => ENVELOPE_KEYS.includes(keyName));
-}
-
-/**
- * The fixed owner of a reverse method that is published as decoded.
- * @param method The reverse method.
- * @returns The approvals owner for human approvals, the session owner for session methods.
- */
-function plainOwner(method: ServerRequestMethod): "codex-approvals" | "codex-session" | undefined {
-	if (isInList(HUMAN_APPROVAL_METHODS, method)) return "codex-approvals";
-	if (isInList(SESSION_SERVER_REQUEST_METHODS, method)) return "codex-session";
-	return undefined;
 }
 
 /**
@@ -182,14 +168,14 @@ function decodeDisabledCapabilityRequest(
 	method: ServerRequestMethod,
 	rawId: WireId,
 ): DecodedServerRequest | undefined {
-	const parsed = SERVER_REQUEST_SCHEMAS[method].safeParse(value["params"]);
-	if (!parsed.success) {
+	const parsed = parseServerRequestParams(method, value["params"]);
+	if (parsed === undefined) {
 		return undefined;
 	}
 	// The params were parsed by the schema registered for this same method, so the pair is
 	// correlated; TypeScript cannot relate an indexed schema's output back to its key.
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- params parsed by this method's own schema
-	return { id: rawId, method, params: parsed.data } as DecodedServerRequest;
+	return { id: rawId, method, params: parsed.params } as DecodedServerRequest;
 }
 
 /**
@@ -226,7 +212,7 @@ function admitMethod(value: Record<string, unknown>): ReverseAdmission | Reverse
 		return refusal(
 			"malformed-frame",
 			"A reverse request method is missing or invalid",
-			JSON_RPC_ERROR_CODES.invalidRequest,
+			jsonRpcErrorCode("invalidRequest"),
 			REVERSE_ERROR_MESSAGES.invalidRequest,
 		);
 	}
@@ -234,7 +220,7 @@ function admitMethod(value: Record<string, unknown>): ReverseAdmission | Reverse
 		return refusal(
 			"malformed-frame",
 			"A reverse request has invalid envelope fields",
-			JSON_RPC_ERROR_CODES.invalidRequest,
+			jsonRpcErrorCode("invalidRequest"),
 			REVERSE_ERROR_MESSAGES.invalidRequest,
 		);
 	}
@@ -242,7 +228,7 @@ function admitMethod(value: Record<string, unknown>): ReverseAdmission | Reverse
 		return refusal(
 			"unsupported-server-request",
 			"The reverse request method is not supported",
-			JSON_RPC_ERROR_CODES.methodNotFound,
+			jsonRpcErrorCode("methodNotFound"),
 			REVERSE_ERROR_MESSAGES.methodNotFound,
 		);
 	}
@@ -300,7 +286,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 			return refusal(
 				"malformed-frame",
 				"A reverse request has no params field",
-				JSON_RPC_ERROR_CODES.invalidParams,
+				jsonRpcErrorCode("invalidParams"),
 				REVERSE_ERROR_MESSAGES.invalidParams,
 			);
 		}
@@ -387,7 +373,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 				owner: "codex-session",
 			};
 		}
-		const owner = plainOwner(decoded.method);
+		const owner = plainResponseOwner(decoded.method);
 		if (owner === undefined) {
 			throw new CodexTransportUsageError("no response owner exists for the reverse method");
 		}
@@ -422,7 +408,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 			return refusal(
 				"unsupported-server-request",
 				"The reverse request has no registered dispatcher",
-				JSON_RPC_ERROR_CODES.methodNotFound,
+				jsonRpcErrorCode("methodNotFound"),
 				REVERSE_ERROR_MESSAGES.methodNotFound,
 			);
 		}
@@ -432,7 +418,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 		return refusal(
 			"correlation-mismatch",
 			"The reverse request identity is invalid",
-			JSON_RPC_ERROR_CODES.invalidParams,
+			jsonRpcErrorCode("invalidParams"),
 			REVERSE_ERROR_MESSAGES.invalidParams,
 		);
 	};
@@ -488,7 +474,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 			options.issueReverse("unsupported-server-request", REVERSE_ERROR_MESSAGES.unhandled, rawId);
 			options.protocolError(
 				rawId,
-				JSON_RPC_ERROR_CODES.internalError,
+				jsonRpcErrorCode("internalError"),
 				REVERSE_ERROR_MESSAGES.unhandled,
 			);
 		}

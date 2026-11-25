@@ -6,7 +6,8 @@ import type {
 } from "#ui/media/clients/media-state.ts";
 import type { RealtimeMediaSnapshot } from "#ui/realtime/clients/media-session.ts";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
-import { createVoiceClient, openVoiceClient } from "#ui/voice-client/clients/voice-client.ts";
+import { createVoiceClient } from "#ui/voice-client/clients/voice-client.ts";
+import { openVoiceClient } from "#ui/voice-client/clients/open-voice-client.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import {
 	FakeSocket,

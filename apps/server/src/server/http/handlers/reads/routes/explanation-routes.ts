@@ -2,19 +2,18 @@ import type { Express } from "express";
 import { z } from "zod";
 import { explainArchitecture } from "@archboard/workbench/server";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { ExplanationActionRequestSchema } from "@archboard/workbench/browser-contract";
+import { explanationActionRequestSchema } from "@archboard/workbench/browser-contract";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
-const InvokeBodySchema = ExplanationActionRequestSchema.options[1]
+const RequestSchema = explanationActionRequestSchema();
+const InvokeBodySchema = RequestSchema.options[1]
 	.omit({ type: true })
 	.extend({ vault: z.string().optional() });
-const ReadQuerySchema = ExplanationActionRequestSchema.options[0]
-	.omit({ type: true })
-	.extend({ vault: z.string() });
-const ActionBodySchema = ExplanationActionRequestSchema.options[2]
+const ReadQuerySchema = RequestSchema.options[0].omit({ type: true }).extend({ vault: z.string() });
+const ActionBodySchema = RequestSchema.options[2]
 	.omit({ type: true, actionId: true })
 	.extend({ vault: z.string().optional() });
-const ActionIdSchema = ExplanationActionRequestSchema.options[2].shape.actionId;
+const ActionIdSchema = RequestSchema.options[2].shape.actionId;
 
 /**
  * Translate explicit explanation requests through the existing local workbench.

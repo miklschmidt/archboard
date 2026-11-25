@@ -1,6 +1,6 @@
 import type { CodexWaitGraph } from "#runtime/voice/protocol/extension.ts";
 import type { DynamicWaitOwner } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createServerDynamicLifecycleOwner } from "#server/generation/services/operation-lifecycle.ts";
 
@@ -36,7 +36,7 @@ function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWaitOwner {
 		call: h.call,
 		namespace: "archboard_app",
 		tool: "wait_threads",
-		manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+		manifestHash: archboardAppBinding().manifestHash,
 		sortedTargetThreadIds: [h.identity.identity.decoder.adoptThreadId(target)],
 		operationId: null,
 	};

@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { z } from "zod";
 import type { Model } from "@archboard/model/content";
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { inVault } from "@archboard/server-requests";
 import {
 	architectureModelKeys,
@@ -11,7 +11,7 @@ import {
 
 /** A branch footprint as the route answers it, with the identity of the reading it read. */
 type BranchFootprintAnswer = Extract<
-	z.infer<typeof ArchitectureHistoryResultSchema>,
+	z.infer<ReturnType<typeof architectureHistoryResultSchema>>,
 	{ analysis: "footprint" }
 >;
 
@@ -59,7 +59,7 @@ function branchFootprintQuery(
 		queryFn: async (): Promise<BranchFootprintAnswer> => {
 			const result = await readReply(
 				`${inVault("/api/architecture/footprint", vault)}&${parameters}`,
-				ArchitectureHistoryResultSchema,
+				architectureHistoryResultSchema(),
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
 			if (result.analysis !== "footprint")
@@ -86,7 +86,7 @@ interface NamedRange {
 
 /** The branches of the repositories that a reading binds, as the route answers them. */
 type SourceRefsAnswer = Extract<
-	z.infer<typeof ArchitectureHistoryResultSchema>,
+	z.infer<ReturnType<typeof architectureHistoryResultSchema>>,
 	{ analysis: "refs" }
 >;
 
@@ -124,7 +124,7 @@ function sourceRefsQuery(
 		queryFn: async (): Promise<SourceRefsAnswer> => {
 			const result = await readReply(
 				`${inVault("/api/architecture/refs", vault)}&${parameters}`,
-				ArchitectureHistoryResultSchema,
+				architectureHistoryResultSchema(),
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
 			if (result.analysis !== "refs")
@@ -175,7 +175,7 @@ function mergeBaseQuery(
 		queryFn: async (): Promise<SourceRefsAnswer["range"]> => {
 			const result = await readReply(
 				`${inVault("/api/architecture/refs", vault)}&${parameters}`,
-				ArchitectureHistoryResultSchema,
+				architectureHistoryResultSchema(),
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
 			if (result.analysis !== "refs")
@@ -195,7 +195,6 @@ export {
 	mergeBaseQuery,
 	sourceRefsQuery,
 	type BranchFootprintAnswer,
-	type FootprintRange,
 	type NamedRange,
 	type SourceRefsAnswer,
 };

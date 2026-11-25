@@ -1,6 +1,8 @@
 //! A placed block's lines routed on tracks (TASK-349), and read back into the
 //! laid-out block: its boxes, bands, frames and regions, and its final size.
 
+use archboard_scene::paint::design::tab_width;
+
 use crate::ecma::{js_max, max, min};
 use crate::geometry::{Point, Rect};
 use crate::placed::PlacedBlock;
@@ -57,7 +59,7 @@ pub(super) fn routed(
         if let (Some(&item), Some(header)) = (scene.cards.get(&id), block.header.as_ref()) {
             let one = scene.item_mut(item);
             one.bx.x = block.lone.as_ref().map_or(0.0, super::lone::room_of) - insets.side;
-            one.bx.width = header.painted(placed.header).width - crate::constants::TAB_SHOULDER;
+            one.bx.width = tab_width(header.painted(placed.header).width);
             one.inset = Some(0.0);
             one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of);
         }

@@ -1,7 +1,6 @@
 // Observing the process table: a process, a process group and the owner a lock file records.
 export {
 	listProcessGroupObservations,
-	listProcessObservations,
 	ownerRecord,
 	readProcessObservation,
 	recordedOwnerIsGone,

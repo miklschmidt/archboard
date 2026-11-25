@@ -4,10 +4,11 @@
 use archboard_text::Paragraph;
 
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
-use crate::js::{self, js_max, js_min};
+use crate::js::{js_max, js_min};
 use crate::measure::far::far_name_width;
 use crate::measure::{keep_tail, paragraph, width};
-use crate::paint::design::{
+use crate::request::GroupTag;
+use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
     CARD_PATH_FONT, CARD_THICKNESS, CARD_TITLE_FONT, DOOR_ARROW_ROOM, DOOR_FAR_ICON, DOOR_HEIGHT,
     DOOR_ICON, DOOR_PADDING, DRILL_MARK_ROOM, ICON_CHIP_SIZE, NAME_CAP, PARENT_TITLE_SIZE,
@@ -16,7 +17,6 @@ use crate::paint::design::{
     TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
     TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
 };
-use crate::request::GroupTag;
 
 /// A face, a size, the room a line takes and what the line is.
 #[derive(Clone, Copy, Debug)]
@@ -197,7 +197,7 @@ const DOOR_NEAR: TabLine = TabLine {
 };
 
 /// A door's line as the picture draws it from far away.
-pub(crate) const DOOR_FAR: TabLine = TabLine {
+const DOOR_FAR: TabLine = TabLine {
     left: DOOR_PADDING + DOOR_FAR_ICON + TAB_ICON_GAP - 2.0,
     baseline: 24.0,
     name: TAB_FAR_NAME,
@@ -224,9 +224,14 @@ pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<Tex
     std::iter::once(title).chain(path).collect()
 }
 
+/// A door's name on its one line, as the picture draws it from far away.
+pub(crate) fn door_far_runs(name: &str) -> Vec<TextRun> {
+    tab_runs(DOOR_FAR, name, None)
+}
+
 /// A door: its name on one line, as wide as the name from far away, with its arrow.
 fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
-    let far = tab_runs(DOOR_FAR, words.name, None);
+    let far = door_far_runs(words.name);
     let end = far.last().map_or(0.0, |run| run.x + run.width);
     MeasuredNode {
         node,
@@ -296,7 +301,7 @@ fn path_parts(path: &str) -> (&str, &str) {
     if path.contains(" · ") {
         return (path, "");
     }
-    let end = js::trim_end(path).trim_end_matches('/').len();
+    let end = crate::ecma::trim_end(path).trim_end_matches('/').len();
     path[..end]
         .rfind('/')
         .map_or(("", path), |at| path.split_at(at + 1))

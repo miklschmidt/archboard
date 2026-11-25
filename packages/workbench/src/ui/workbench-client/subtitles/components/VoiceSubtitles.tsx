@@ -20,7 +20,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { subtitleMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { useMeasuredLines } from "#ui/workbench-client/subtitles/hooks/use-measured-lines.ts";
 import { useSubtitleFade } from "#ui/workbench-client/subtitles/hooks/use-subtitle-fade.ts";
@@ -31,10 +31,10 @@ import {
 
 /** The durations the stylesheet eases the words by (app.css, `voice-subtitles`). */
 const SUBTITLE_STYLE: CSSProperties = {
-	"--subtitle-word-ms": `${SUBTITLE_MS.word}ms`,
-	"--subtitle-swap-ms": `${SUBTITLE_MS.swap}ms`,
-	"--subtitle-out-ms": `${SUBTITLE_MS.out}ms`,
-	"--subtitle-back-ms": `${SUBTITLE_MS.back}ms`,
+	"--subtitle-word-ms": `${subtitleMs("word")}ms`,
+	"--subtitle-swap-ms": `${subtitleMs("swap")}ms`,
+	"--subtitle-out-ms": `${subtitleMs("out")}ms`,
+	"--subtitle-back-ms": `${subtitleMs("back")}ms`,
 };
 
 /** The glass a subtitle has when no voice box carries it. */

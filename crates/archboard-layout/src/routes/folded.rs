@@ -8,8 +8,10 @@ use std::collections::BTreeSet;
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{
-    EPSILON, Point, Rect, curve_through, inflate, same_rounded_curve, vertices_of,
+    Point, Rect, curve_through, inflate, same_rounded_curve, vertices_of,
 };
+
+use crate::constants::EPSILON;
 
 use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
 use crate::ecma::{js_max, js_min, sign};

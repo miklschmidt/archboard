@@ -8,18 +8,18 @@ import type {
 	CoordinatorThreadSettings,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { sameValue } from "#runtime/voice/coordinator/state/state.ts";
 import {
-	CODEX_SESSION_THREAD_SOURCE,
+	codexSessionThreadSource,
 	CodexSessionMutationError,
 } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 
-const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
+const COORDINATOR_THREAD_SOURCE = codexSessionThreadSource();
 
 /**
  * The thread a start response names, when the response is well-formed enough to carry one: a
@@ -66,7 +66,7 @@ function assertStartedResponse(
 ): void {
 	const mismatches = Object.entries({
 		"thread.id": response.thread.id.length === 0,
-		model: response.model !== COORDINATOR_MODEL,
+		model: response.model !== reviewedCoordinatorModel(),
 		modelProvider: response.modelProvider.length === 0,
 		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
 		serviceTier: serviceTier === "priority" && response.serviceTier !== "priority",
@@ -161,14 +161,14 @@ function modelSettingsMismatch(
 	if (settings.cwd !== started.cwd) {
 		return "Coordinator settings changed its working directory.";
 	}
-	if (settings.model !== COORDINATOR_MODEL) {
-		return `Coordinator settings did not confirm ${COORDINATOR_MODEL}.`;
+	if (settings.model !== reviewedCoordinatorModel()) {
+		return `Coordinator settings did not confirm ${reviewedCoordinatorModel()}.`;
 	}
 	if (settings.modelProvider !== started.modelProvider) {
 		return "Coordinator settings changed the provider selected at start.";
 	}
-	if (settings.effort !== COORDINATOR_EFFORT) {
-		return `Coordinator settings did not confirm ${COORDINATOR_EFFORT} effort.`;
+	if (settings.effort !== reviewedCoordinatorEffort()) {
+		return `Coordinator settings did not confirm ${reviewedCoordinatorEffort()} effort.`;
 	}
 	return tierMismatch(started, configured, settings);
 }

@@ -60,6 +60,23 @@ const RecordingNarrationSchema = z
 	.strict();
 
 /**
+ * The schema of what voice is told when it narrates a recording, for a message that carries it.
+ * @returns The schema.
+ */
+function recordingNarrationSchema(): typeof RecordingNarrationSchema {
+	return RecordingNarrationSchema;
+}
+
+/**
+ * The schema of the language a recording is asked to be narrated in, which falls back to the
+ * default when none is asked for.
+ * @returns The schema.
+ */
+function recordingLanguageInputSchema() {
+	return RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE);
+}
+
+/**
  * Where a recording stands.
  *
  * - `loading`: the page is still reaching a document it can present and an agent
@@ -192,13 +209,13 @@ function recordingAskedOf(search: string): {
 }
 
 export {
-	DEFAULT_RECORDING_LANGUAGE,
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_PAGE_GLOBAL,
 	RECORDING_SEARCH_PARAM,
 	RecordingContainerSchema,
-	RecordingNarrationSchema,
+	recordingLanguageInputSchema,
+	recordingNarrationSchema,
 	RecordingStateSchema,
 	publishRecordingPage,
 	recordingAskedOf,

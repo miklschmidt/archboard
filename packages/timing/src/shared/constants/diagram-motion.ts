@@ -266,11 +266,44 @@ const PRESENTATION_MS = durations({
  */
 const FAR_VIEW_SWAP_MS = 280;
 
-export {
-	FLOW_CYCLE_CAP_MS,
-	PICTURE_MS,
-	PICTURE_TRANSITION_PHASES,
-	PICTURE_ENTRY_PHASES,
-	PRESENTATION_MS,
-	FAR_VIEW_SWAP_MS,
-};
+/** The picture's durations with the two that stand on their own. */
+const PICTURE_LOOKUP = Object.freeze({
+	...PICTURE_MS,
+	farViewSwap: FAR_VIEW_SWAP_MS,
+	flowCycleCap: FLOW_CYCLE_CAP_MS,
+});
+
+/**
+ * One duration of a picture.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function pictureMs(key: keyof typeof PICTURE_LOOKUP): number {
+	return PICTURE_LOOKUP[key];
+}
+
+/**
+ * One duration of a presented walkthrough.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function presentationMs(key: keyof typeof PRESENTATION_MS): number {
+	return PRESENTATION_MS[key];
+}
+
+/**
+ * At which points of a move each of its parts happens, and how long the
+ * entrance, the exit and the shutter take, as a painter reads them.
+ * @returns The phases, as JSON.
+ */
+function painterPhasesJson(): string {
+	return JSON.stringify({
+		transition: PICTURE_TRANSITION_PHASES,
+		entry: PICTURE_ENTRY_PHASES,
+		enter: PICTURE_MS.entry,
+		exit: PICTURE_MS.exit,
+		shutter: PICTURE_MS.shutter,
+	});
+}
+
+export { pictureMs, presentationMs, painterPhasesJson };

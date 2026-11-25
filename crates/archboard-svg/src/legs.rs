@@ -1,9 +1,9 @@
 //! A route cut into the pieces a beam of light is drawn on: each a straight
 //! run or one bend, with a frame of its own to draw in.
 
+use archboard_scene::geometry::segment_length;
 use archboard_scene::geometry::{Curve, Point, Segment, round_coord, segment_start};
 use archboard_scene::js;
-use archboard_scene::route::segment_length;
 use archboard_scene::scene::PathStep;
 
 use crate::path::{Spelling, path_data};

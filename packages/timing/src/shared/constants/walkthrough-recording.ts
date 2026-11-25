@@ -164,4 +164,39 @@ const RECORDER_MS = durations({
 	encodeFinish: 120_000,
 });
 
-export { RECORDING_MS, RECORDER_MS };
+/**
+ * One duration of a recording.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function recordingMs(key: keyof typeof RECORDING_MS): number {
+	return RECORDING_MS[key];
+}
+
+/**
+ * One duration of the recorder.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function recorderMs(key: keyof typeof RECORDER_MS): number {
+	return RECORDER_MS[key];
+}
+
+/**
+ * When a page opened now stops being waited on to be ready to record.
+ * @param nowMs The current time, in milliseconds.
+ * @returns The deadline, in milliseconds on the same clock.
+ */
+function recorderPageReadyDeadline(nowMs: number): number {
+	return nowMs + RECORDER_MS.pageReady;
+}
+
+/**
+ * How long a page is waited on to be ready to record, as a person reads it.
+ * @returns The wait, in whole seconds.
+ */
+function recorderPageReadySeconds(): number {
+	return RECORDER_MS.pageReady / 1000;
+}
+
+export { recordingMs, recorderMs, recorderPageReadyDeadline, recorderPageReadySeconds };

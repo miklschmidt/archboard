@@ -3,13 +3,12 @@
 //! their head cards, then the messages crossing them, and last the words of
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
-use crate::geometry::{Rect, canvas_for, union};
+use crate::geometry::{Rect, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, group, grouped, lines, point, shape};
 use crate::paint::cards::paint_card;
 use crate::paint::colour::{Share, light_dark, mixed, tinted};
-use crate::paint::design::{ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
-use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
+use crate::paint::page::{PaintedPage, atlas_boxes, canvas_for, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::sequence_frames::{paint_fragment, paint_frame};
 use crate::paint::sequence_messages::{
@@ -28,6 +27,7 @@ use crate::request::{
 use crate::scene::{
     Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
+use crate::sizes::{ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;

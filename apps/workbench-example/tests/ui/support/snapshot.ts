@@ -1,9 +1,17 @@
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-} from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+
+/** The spoken-approval state of a snapshot with no spoken approval in flight. */
+const IDLE_SPOKEN_APPROVAL: BrowserSnapshot["spokenApproval"] = Object.freeze({
+	kind: "spoken_approval",
+	state: "idle",
+	approval: null,
+	gate: null,
+	capturedUserFinal: null,
+	settlement: null,
+	reason: null,
+});
 
 const authorities = createIdentityAuthorities();
 const model = createCodexBrowserModel(authorities);
@@ -83,7 +91,7 @@ function exampleSnapshot(running = false): BrowserSnapshot {
 			delivery: null,
 			reason: null,
 		},
-		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
+		spokenApproval: IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 	});

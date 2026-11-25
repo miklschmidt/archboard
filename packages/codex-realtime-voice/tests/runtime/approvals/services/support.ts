@@ -1,13 +1,14 @@
 import { expect } from "bun:test";
 
 import {
-	type ApprovalResponsePort,
 	type CodexApprovalBroker,
 	type CodexApprovalBrokerOptions,
 } from "#runtime/approvals/services/contract.ts";
+
+type ApprovalResponsePort = CodexApprovalBrokerOptions["transport"];
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
@@ -127,7 +128,7 @@ export function testBroker(
 	readonly port: FakeApprovalPort;
 	readonly broker: CodexApprovalBroker;
 } {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const port = new FakeApprovalPort(mode);
 	const broker = createCodexApprovalBroker({ ...input, identity, transport: port });
 	return { identity, port, broker };

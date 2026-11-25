@@ -45,7 +45,7 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 			)
 			.replace(
 				'import { appendFileSync, readFileSync } from "node:fs";',
-				`import { appendFileSync, readFileSync } from "node:fs";\nimport { listProcessObservations } from ${JSON.stringify(processObservationModule)};`,
+				`import { appendFileSync, readFileSync } from "node:fs";\nimport { listProcessGroupObservations } from ${JSON.stringify(processObservationModule)};`,
 			)
 			.replace(
 				'record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2), archboard });',
@@ -53,8 +53,8 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 const startupControl = JSON.parse(readFileSync(controlPath, "utf8")) as { priorGroup?: unknown };
 if (Number.isSafeInteger(startupControl.priorGroup)) {
 	const priorGroup = Number(startupControl.priorGroup);
-	const members = listProcessObservations()
-		.filter((observation) => observation.state !== "zombie" && observation.pgid === priorGroup)
+	const members = listProcessGroupObservations(priorGroup)
+		.filter((observation) => observation.state !== "zombie")
 		.map((observation) => observation.pid);
 	record({ kind: "prior_group_census_at_spawn", group: priorGroup, members });
 }`,

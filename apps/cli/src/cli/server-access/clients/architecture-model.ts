@@ -1,33 +1,33 @@
 import {
-	ArchitectureExportResultSchema,
-	ArchitectureImportRequestSchema,
-	ArchitectureInitializationRequestSchema,
-	ArchitectureMigrationRequestSchema,
+	architectureExportResultSchema,
+	architectureImportRequestSchema,
+	architectureInitializationRequestSchema,
+	architectureMigrationRequestSchema,
 } from "@archboard/model/contract";
 import {
-	ExplanationActionRequestSchema,
-	ExplanationActionResultSchema,
+	explanationActionResultSchema,
+	type ExplanationActionRequest,
 } from "@archboard/workbench/browser-contract";
 import type { z } from "zod";
 import type { readArchitectureModel } from "@archboard/model/store-read";
 import {
-	ArchitectureArchiveInitializationSchema,
-	ArchitectureModuleEditSchema,
-	ArchitectureModuleEditResultSchema,
-	ArchitectureRecoveryResultSchema,
-	ArchitectureClaimRequestSchema,
-	ArchitectureClaimResultSchema,
-	ArchitectureClaimListSchema,
-	ArchitectureClaimReleaseSchema,
-	ArchitectureModelReadSchema,
-	ArchitectureRenderRequestSchema,
-	ArchitectureRenderResultSchema,
-	ArchitecturePublicationSchema,
-	ArchitecturePublicationDestinationSchema,
-	ArchitecturePublicationRequestSchema,
-	ArchitectureCheckpointRetainSchema,
-	ArchitectureCheckpointListSchema,
-	type ArchitectureCheckpointRequestSchema,
+	architectureArchiveInitializationSchema,
+	architectureModuleEditSchema,
+	architectureModuleEditResultSchema,
+	architectureRecoveryResultSchema,
+	architectureClaimRequestSchema,
+	architectureClaimResultSchema,
+	architectureClaimListSchema,
+	architectureClaimReleaseSchema,
+	architectureModelReadSchema,
+	architectureRenderRequestSchema,
+	architectureRenderResultSchema,
+	architecturePublicationSchema,
+	architecturePublicationDestinationSchema,
+	architecturePublicationRequestSchema,
+	architectureCheckpointRetainSchema,
+	architectureCheckpointListSchema,
+	type architectureCheckpointRequestSchema,
 } from "@archboard/model/contract";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
@@ -75,7 +75,7 @@ function readArchitectureModelOnServer(
 			.filter(([, value]) => value !== undefined)
 			.flatMap(([key, value]) => [value].flat().map((entry) => [key, String(entry)])),
 	);
-	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
+	return architectureResult(architectureModelReadSchema(), `/api/architecture/model?${query}`);
 }
 
 /**
@@ -84,9 +84,9 @@ function readArchitectureModelOnServer(
  * @returns The retained checkpoint or structured refusal.
  */
 function retainArchitectureCheckpointOnServer(
-	input: z.infer<typeof ArchitectureCheckpointRequestSchema>,
+	input: z.infer<ReturnType<typeof architectureCheckpointRequestSchema>>,
 ) {
-	return architectureResult(ArchitectureCheckpointRetainSchema, "/api/architecture/checkpoints", {
+	return architectureResult(architectureCheckpointRetainSchema(), "/api/architecture/checkpoints", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
@@ -98,7 +98,7 @@ function retainArchitectureCheckpointOnServer(
  * @returns The retained metadata or structured refusal.
  */
 function listArchitectureCheckpointsOnServer() {
-	return architectureResult(ArchitectureCheckpointListSchema, "/api/architecture/checkpoints");
+	return architectureResult(architectureCheckpointListSchema(), "/api/architecture/checkpoints");
 }
 
 /**
@@ -106,9 +106,11 @@ function listArchitectureCheckpointsOnServer() {
  * @param input The complete caller input.
  * @returns The shared edit result or structured refusal.
  */
-function editArchitectureModuleOnServer(input: z.infer<typeof ArchitectureModuleEditSchema>) {
+function editArchitectureModuleOnServer(
+	input: z.infer<ReturnType<typeof architectureModuleEditSchema>>,
+) {
 	return architectureResult(
-		ArchitectureModuleEditResultSchema,
+		architectureModuleEditResultSchema(),
 		"/api/architecture/module",
 		jsonPost(input),
 	);
@@ -118,9 +120,11 @@ function editArchitectureModuleOnServer(input: z.infer<typeof ArchitectureModule
  * @param input The complete caller input.
  * @returns The shared claim result or structured refusal.
  */
-function claimArchitectureSubjectsOnServer(input: z.infer<typeof ArchitectureClaimRequestSchema>) {
+function claimArchitectureSubjectsOnServer(
+	input: z.infer<ReturnType<typeof architectureClaimRequestSchema>>,
+) {
 	return architectureResult(
-		ArchitectureClaimResultSchema,
+		architectureClaimResultSchema(),
 		"/api/architecture/claims",
 		jsonPost(input),
 	);
@@ -130,16 +134,18 @@ function claimArchitectureSubjectsOnServer(input: z.infer<typeof ArchitectureCla
  * @returns The shared claim list or refusal.
  */
 function readArchitectureClaimsOnServer() {
-	return architectureResult(ArchitectureClaimListSchema, "/api/architecture/claims");
+	return architectureResult(architectureClaimListSchema(), "/api/architecture/claims");
 }
 /**
  * Release a standing claim owned by the caller.
  * @param input The complete caller input.
  * @returns The remaining claims or a structured refusal.
  */
-function releaseArchitectureClaimOnServer(input: z.infer<typeof ArchitectureClaimReleaseSchema>) {
+function releaseArchitectureClaimOnServer(
+	input: z.infer<ReturnType<typeof architectureClaimReleaseSchema>>,
+) {
 	return architectureResult(
-		ArchitectureClaimListSchema,
+		architectureClaimListSchema(),
 		"/api/architecture/claims/release",
 		jsonPost(input),
 	);
@@ -150,7 +156,7 @@ function releaseArchitectureClaimOnServer(input: z.infer<typeof ArchitectureClai
  */
 function recoverArchitectureModelOnServer() {
 	return architectureResult(
-		ArchitectureRecoveryResultSchema,
+		architectureRecoveryResultSchema(),
 		"/api/architecture/recover",
 		jsonPost({}),
 	);
@@ -186,7 +192,7 @@ export {
  */
 function readArchitecturePublicationOnServer(checkpoint: string) {
 	return architectureResult(
-		ArchitecturePublicationSchema,
+		architecturePublicationSchema(),
 		`/api/architecture/publication?${new URLSearchParams({ checkpoint })}`,
 	);
 }
@@ -197,10 +203,10 @@ function readArchitecturePublicationOnServer(checkpoint: string) {
  * @returns The destination and retention limitation.
  */
 function configureArchitecturePublicationOnServer(
-	input: z.infer<typeof ArchitecturePublicationDestinationSchema>,
+	input: z.infer<ReturnType<typeof architecturePublicationDestinationSchema>>,
 ) {
 	return architectureResult(
-		ArchitecturePublicationSchema,
+		architecturePublicationSchema(),
 		"/api/architecture/publication/configure",
 		{
 			method: "POST",
@@ -216,10 +222,10 @@ function configureArchitecturePublicationOnServer(
  * @returns The shared publication outcome.
  */
 function publishArchitectureHistoryOnServer(
-	input: z.infer<typeof ArchitecturePublicationRequestSchema>,
+	input: z.infer<ReturnType<typeof architecturePublicationRequestSchema>>,
 ) {
 	return architectureResult(
-		ArchitecturePublicationSchema,
+		architecturePublicationSchema(),
 		"/api/architecture/publication/publish",
 		{
 			method: "POST",
@@ -235,13 +241,17 @@ function publishArchitectureHistoryOnServer(
  * @returns The shared recovery outcome.
  */
 function fetchArchitectureHistoryOnServer(
-	input: z.infer<typeof ArchitecturePublicationRequestSchema>,
+	input: z.infer<ReturnType<typeof architecturePublicationRequestSchema>>,
 ) {
-	return architectureResult(ArchitecturePublicationSchema, "/api/architecture/publication/fetch", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(input),
-	});
+	return architectureResult(
+		architecturePublicationSchema(),
+		"/api/architecture/publication/fetch",
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+	);
 }
 
 export {
@@ -257,7 +267,7 @@ export {
  */
 function initializeArchitectureArchiveOnServer() {
 	return architectureResult(
-		ArchitectureArchiveInitializationSchema,
+		architectureArchiveInitializationSchema(),
 		"/api/architecture/archive/init",
 		jsonPost({}),
 	);
@@ -271,7 +281,7 @@ export { initializeArchitectureArchiveOnServer };
  * @returns The SVG receipt or structured diagnostics.
  */
 function renderArchitectureFlowOnServer(
-	input: z.infer<typeof ArchitectureRenderRequestSchema>,
+	input: z.infer<ReturnType<typeof architectureRenderRequestSchema>>,
 	vault?: string,
 ) {
 	const query = new URLSearchParams(vault === undefined ? undefined : { vault });
@@ -279,7 +289,7 @@ function renderArchitectureFlowOnServer(
 		if (value === undefined) continue;
 		for (const entry of Array.isArray(value) ? value : [value]) query.append(key, entry);
 	}
-	return architectureResult(ArchitectureRenderResultSchema, `/api/architecture/render?${query}`);
+	return architectureResult(architectureRenderResultSchema(), `/api/architecture/render?${query}`);
 }
 export { renderArchitectureFlowOnServer };
 
@@ -288,24 +298,24 @@ export { renderArchitectureFlowOnServer };
  * @param input The shared action request.
  * @returns Its temporary answer or refusal.
  */
-function explainArchitectureOnServer(input: z.infer<typeof ExplanationActionRequestSchema>) {
+function explainArchitectureOnServer(input: ExplanationActionRequest) {
 	const { type, ...body } = input;
 	const base = "/api/architecture/explanations";
 	if (type === "invoke")
-		return architectureResult(ExplanationActionResultSchema, base, jsonPost(body));
+		return architectureResult(explanationActionResultSchema(), base, jsonPost(body));
 	if (input.type === "latest")
 		return architectureResult(
-			ExplanationActionResultSchema,
+			explanationActionResultSchema(),
 			`${base}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
 		);
 	const path = `${base}/${encodeURIComponent(input.actionId)}`;
 	return type === "read"
 		? architectureResult(
-				ExplanationActionResultSchema,
+				explanationActionResultSchema(),
 				`${path}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
 			)
 		: architectureResult(
-				ExplanationActionResultSchema,
+				explanationActionResultSchema(),
 				`${path}/${type}`,
 				jsonPost({ tabSessionId: input.tabSessionId }),
 			);
@@ -318,7 +328,7 @@ export { explainArchitectureOnServer };
  */
 function exportArchitectureModelOnServer() {
 	return architectureResult(
-		ArchitectureExportResultSchema,
+		architectureExportResultSchema(),
 		"/api/architecture/export",
 		jsonPost({}),
 	);
@@ -328,9 +338,11 @@ function exportArchitectureModelOnServer() {
  * @param input The complete installation request.
  * @returns The durable installation receipt or refusal.
  */
-function importArchitectureModelOnServer(input: z.infer<typeof ArchitectureImportRequestSchema>) {
+function importArchitectureModelOnServer(
+	input: z.infer<ReturnType<typeof architectureImportRequestSchema>>,
+) {
 	return architectureResult(
-		ArchitectureModuleEditResultSchema,
+		architectureModuleEditResultSchema(),
 		"/api/architecture/import",
 		jsonPost(input),
 	);
@@ -343,10 +355,10 @@ export { exportArchitectureModelOnServer, importArchitectureModelOnServer };
  * @returns The shared migration receipt or refusal.
  */
 function migrateArchitectureModelOnServer(
-	input: z.infer<typeof ArchitectureMigrationRequestSchema>,
+	input: z.infer<ReturnType<typeof architectureMigrationRequestSchema>>,
 ) {
 	return architectureResult(
-		ArchitectureModuleEditResultSchema,
+		architectureModuleEditResultSchema(),
 		"/api/architecture/migration/apply",
 		jsonPost(input),
 	);
@@ -359,10 +371,10 @@ export { migrateArchitectureModelOnServer };
  * @returns The durable installation receipt.
  */
 function initializeArchitectureModelOnServer(
-	input: z.infer<typeof ArchitectureInitializationRequestSchema>,
+	input: z.infer<ReturnType<typeof architectureInitializationRequestSchema>>,
 ) {
 	return architectureResult(
-		ArchitectureModuleEditResultSchema,
+		architectureModuleEditResultSchema(),
 		"/api/architecture/init",
 		jsonPost(input),
 	);

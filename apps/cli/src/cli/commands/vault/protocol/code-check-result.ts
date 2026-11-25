@@ -5,13 +5,13 @@
 // (TASK-646.08).
 
 import { z } from "zod";
-import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import { codeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 
 /** One module the pass measured, as the pass answers it. */
-const MeasuredSchema = CodeCheckAnswerSchema.shape.depth.unwrap().element;
+const MeasuredSchema = codeCheckAnswerSchema().shape.depth.unwrap().element;
 
 /** The code check's answer, each measured module without the names of its exports. */
-const CodeCheckResultSchema = CodeCheckAnswerSchema.extend({
+const CodeCheckResultSchema = codeCheckAnswerSchema().extend({
 	depth: z.array(MeasuredSchema.omit({ names: true })).optional(),
 });
 type CodeCheckResult = z.output<typeof CodeCheckResultSchema>;

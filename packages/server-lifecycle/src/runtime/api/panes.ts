@@ -1,8 +1,8 @@
 // The panes on screen: how a pane is addressed, ordered and reported, and what the server sends one.
 export {
 	addressablePanes,
-	MAX_PANES,
 	paneWords,
+	panesFull,
 	resolvePane,
 } from "#runtime/rules/panes-addressing.ts";
 export { panesInOrder } from "#runtime/rules/panes-layout.ts";

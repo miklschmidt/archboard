@@ -4,6 +4,8 @@
 //! header row stands shorter. A block takes the widest one its container has
 //! room for once it knows how wide that is.
 
+use archboard_scene::paint::design::tab_width;
+
 use crate::ecma::js_max;
 use crate::graph::{HEADER_STEPS, Node};
 
@@ -119,7 +121,7 @@ pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
 pub(crate) fn header_reach(block: &super::tree::Block, laid: &super::laid::Laid) -> (f64, f64) {
     let at = laid.boxes[super::tree::header_of(block).as_str()];
     let (low, high) = crate::track::channels::port_reach(&crate::geometry::Rect {
-        width: (at.width - crate::constants::TAB_SHOULDER).max(0.0),
+        width: tab_width(at.width).max(0.0),
         ..at
     });
     (

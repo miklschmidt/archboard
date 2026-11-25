@@ -2,7 +2,7 @@
 export { checkoutHead, inspectCheckout, repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
 export { gitCheckoutOfVault } from "#runtime/clients/git-sync.ts";
 export {
-	LanguageServersSchema,
+	languageServersSchema,
 	passServers,
 	readServers,
 	setServer,

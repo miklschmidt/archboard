@@ -6,9 +6,9 @@
 use crate::drawing::Toggle;
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, grouped, lines, shape};
-use crate::paint::design::TOGGLE_ROOM;
 use crate::paint::slab::{ghost_light, plate, slab_seat};
 use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke};
+use crate::sizes::TOGGLE_ROOM;
 
 /// How far the rule stands in from the top and the foot of what it parts.
 const RULE_INSET: f64 = 8.0;

@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
 	type ArchitectureModuleEdit,
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import {
 	claimArchitectureSubjects,
@@ -81,7 +81,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 	});
 	expect(createdCli.status, createdCli.stderr).toBe(0);
 	const { vault: _address, ...receipt } = JSON.parse(createdCli.stdout);
-	const created = ArchitectureModuleEditResultSchema.parse(receipt);
+	const created = architectureModuleEditResultSchema().parse(receipt);
 	if (!created.success) throw new Error(JSON.stringify(created));
 	const listedCli = runServerCli({
 		repoRoot,
@@ -96,7 +96,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 	const query = new URLSearchParams({ vault, state: "Queued" });
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const selected = ArchitectureModelReadSchema.parse(await response.json());
+	const selected = architectureModelReadSchema().parse(await response.json());
 	expect(selected).toMatchObject({
 		success: true,
 		selectedState: { name: "Queued", lifecycle: "draft" },
@@ -130,7 +130,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 		`${server.base}/api/architecture/proposals?${new URLSearchParams({ vault })}`,
 	);
 	expect(catalogue.status).toBe(200);
-	expect(ArchitectureModelReadSchema.parse(await catalogue.json())).toMatchObject({
+	expect(architectureModelReadSchema().parse(await catalogue.json())).toMatchObject({
 		success: true,
 		proposals: listed.proposals,
 	});
@@ -188,14 +188,14 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 	});
 	expect(edited.status, edited.stderr).toBe(0);
 	const { vault: _address, ...rawReceipt } = JSON.parse(edited.stdout);
-	expect(ArchitectureModuleEditResultSchema.parse(rawReceipt)).toMatchObject({
+	expect(architectureModuleEditResultSchema().parse(rawReceipt)).toMatchObject({
 		success: true,
 		reconciliation: true,
 	});
 	const query = new URLSearchParams({ vault, state: draft.id });
 	const read = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(read.status).toBe(200);
-	expect(ArchitectureModelReadSchema.parse(await read.json())).toMatchObject({
+	expect(architectureModelReadSchema().parse(await read.json())).toMatchObject({
 		success: true,
 		selectedState: {
 			id: draft.id,
@@ -247,7 +247,7 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 		}),
 	});
 	expect(settled.status).toBe(200);
-	expect(ArchitectureModuleEditResultSchema.parse(await settled.json())).toMatchObject({
+	expect(architectureModuleEditResultSchema().parse(await settled.json())).toMatchObject({
 		success: true,
 		reconciliation: false,
 	});
@@ -296,7 +296,7 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 		}),
 	});
 	expect(shelved.status).toBe(200);
-	expect(ArchitectureModuleEditResultSchema.parse(await shelved.json())).toMatchObject({
+	expect(architectureModuleEditResultSchema().parse(await shelved.json())).toMatchObject({
 		success: true,
 		selectedState: { id: child.id, lifecycle: "shelved" },
 	});
@@ -342,7 +342,7 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 	const adopted = runServerCli(cli);
 	expect(adopted.status, adopted.stderr).toBe(0);
 	const { vault: _vault, ...raw } = JSON.parse(adopted.stdout);
-	expect(ArchitectureModuleEditResultSchema.parse(raw)).toMatchObject({
+	expect(architectureModuleEditResultSchema().parse(raw)).toMatchObject({
 		success: true,
 		selectedState: { id: parent.id, lifecycle: "current" },
 		checkpoint: { lifecycle: { type: "adopt", previous: { state: { id: "Current" } } } },

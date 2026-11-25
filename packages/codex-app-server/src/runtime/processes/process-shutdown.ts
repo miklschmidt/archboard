@@ -1,4 +1,4 @@
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { codexProcessMs } from "@archboard/timing";
 import { ensureGroupCleanup } from "#runtime/processes/process-child.ts";
 import type {
 	CodexProcessError,
@@ -57,7 +57,7 @@ async function awaitStdinEof(
 	if (record === undefined || record.closedHandled) return;
 	await state.processGroupCleanup.waitForClosedOrAt(
 		record.closed,
-		Math.min(deadlineAtMs, state.dependencies.now() + CODEX_PROCESS_MS.stdinEofGrace),
+		Math.min(deadlineAtMs, state.dependencies.now() + codexProcessMs("stdinEofGrace")),
 	);
 }
 
@@ -156,7 +156,7 @@ async function runShutdown(state: ProcessOwnerState): Promise<CodexProcessSnapsh
 	state.stopping = true;
 	clearRestart(state);
 	if (state.state !== "stopped") setState(state, "stopping");
-	const deadlineAtMs = state.dependencies.now() + CODEX_PROCESS_MS.composedShutdown;
+	const deadlineAtMs = codexProcessMs("composedShutdown", state.dependencies.now());
 	rejectPendingStart(
 		state,
 		shutdownError(

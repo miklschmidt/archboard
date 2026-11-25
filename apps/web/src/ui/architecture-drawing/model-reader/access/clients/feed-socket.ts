@@ -1,9 +1,9 @@
 import {
-	ArchitectureFeedFrameSchema,
+	architectureFeedFrameSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 
 /** What one vault's feed hears from the socket. */
 interface FeedFollower {
@@ -18,7 +18,7 @@ interface FeedFollower {
  */
 function decodedFrame(data: unknown): ArchitectureFeedFrame | null {
 	try {
-		const frame = ArchitectureFeedFrameSchema.safeParse(JSON.parse(String(data)));
+		const frame = architectureFeedFrameSchema().safeParse(JSON.parse(String(data)));
 		return frame.success ? frame.data : null;
 	} catch {
 		return null;
@@ -67,7 +67,7 @@ function createFeedSocket() {
 		opening.addEventListener("close", () => {
 			socket = null;
 			for (const follower of followers.values()) follower.lost();
-			setTimeout(connect, PANE_MS.socketReconnect);
+			setTimeout(connect, paneMs("socketReconnect"));
 		});
 	}
 	return {

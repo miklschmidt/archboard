@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -32,7 +32,7 @@ test("a parent that a line enters draws when its children could fold into column
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		layout: "blocks",
 		theme: "light",

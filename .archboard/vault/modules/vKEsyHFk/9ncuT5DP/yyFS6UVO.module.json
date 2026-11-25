@@ -76,7 +76,7 @@
     {
       "order": 84000,
       "kind": "dependency",
-      "label": "its skill, the bin directory and the Codex scope",
+      "label": "its skill, the bin directory and where its Codex lies",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -106,19 +106,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",
       "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
-    },
-    {
-      "order": 101000,
-      "kind": "call",
-      "label": "the pinned Codex of the installation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "id": "vKEsyHFk#9MbNdh8e",
-      "to": "vKEsyHFk#06cbjPhn"
     }
   ]
 }

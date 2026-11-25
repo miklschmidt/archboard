@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { serverStatus } from "@archboard/server-lifecycle/server";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { ServerStateSchema } from "#cli/contract/protocol/schemas.ts";
+
+/** Whether the server runs, and where. */
+const ServerStateSchema = z.looseObject({
+	running: z.boolean(),
+	url: z.string(),
+});
 
 const tail = z.array(z.string()).default([]);
 

@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { exploringMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import {
 	panCamera,
@@ -106,7 +106,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 				if (current === null) {
 					return;
 				}
-				const dt = Math.min(EXPLORING_MS.cameraFrameLongest, Math.max(0, now - lastAt.current));
+				const dt = Math.min(exploringMs("cameraFrameLongest"), Math.max(0, now - lastAt.current));
 				lastAt.current = now;
 				const stepped = stepMotion(stage.read(), current, dt);
 				motion.current = stepped.motion;

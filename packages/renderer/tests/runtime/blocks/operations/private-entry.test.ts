@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -12,7 +12,7 @@ test("an exclusive caller enters a closed hierarchy without a full-height return
 	const content = orderedFixture(fixture);
 	const drawing = await renderArchitecture({
 		content,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		layout: "track",
 	});
@@ -46,7 +46,7 @@ test("a private caller preserves the entry row inside nested work", async () => 
 	});
 	const drawing = await renderArchitecture({
 		content,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		layout: "track",
 	});

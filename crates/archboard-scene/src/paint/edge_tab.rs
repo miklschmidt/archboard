@@ -3,17 +3,14 @@
 //! path. The frame's responsibility stays out of the picture and goes with the
 //! tab's group as the title of the picture's file.
 
-use crate::drawing::{Node, TextRun};
+use crate::drawing::TextRun;
 use crate::geometry::Rect;
 use crate::js;
 use crate::measure::{tab_far, tab_runs};
 use crate::paint::Ctx;
+use crate::paint::Node;
 use crate::paint::appearance::{tray_look, type_chip};
 use crate::paint::build::{Items, concat, grouped, lines};
-use crate::paint::design::{
-    BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
-    TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
-};
 use crate::paint::drill_mark::corner_drill_mark;
 use crate::paint::far_card::words_in;
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
@@ -24,6 +21,10 @@ use crate::paint::toggle::{quiet_rule, toggle_end};
 use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{Group, Role, SubjectKind};
+use crate::sizes::{
+    BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
+    TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
+};
 
 /// How much larger a drill mark stands in a tab seen from far away.
 const FAR_MARK: f64 = 1.2;
@@ -190,13 +191,13 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::{Views, paint_measured_frame};
-    use crate::drawing::Node;
     use crate::measure::{TAB_NEAR, tab_runs};
     use crate::paint::Ctx;
-    use crate::paint::design::{TAB_PADDING, TAB_SHOULDER};
+    use crate::paint::Node;
     use crate::paint::palette::Palette;
     use crate::request::{NodeAppearance, Standing};
     use crate::scene::{Item, Paint, Purpose, Shape};
+    use crate::sizes::{TAB_PADDING, TAB_SHOULDER};
 
     /// Shapes in a frame, without the scene's grouping and line breaks.
     fn shapes(items: &[Item]) -> Vec<&Shape> {

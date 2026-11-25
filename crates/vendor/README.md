@@ -118,7 +118,7 @@ build lands in the checkout.
 ## Updating
 
 Take the crates.io archives of the new version, replace each folder's files
-with theirs, and apply the six changes again. The `qsort` vectors must come
+with theirs, and apply the seven changes again. The `qsort` vectors must come
 from musl's `qsort.c`. Then render the corpus before and after
 (`bun scripts/render-corpus.ts`): every drawing must be unchanged, or each
 change must be one the update means to make.

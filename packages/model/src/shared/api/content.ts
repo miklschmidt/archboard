@@ -1,8 +1,8 @@
 // What a variant draws: nodes, edges, drill-downs, walkthroughs, and the reading of its groups.
 export { groupsUsed, inspectGroup, isMemberOf } from "#shared/inspect/rules/groups.ts";
 export {
-	DEFAULT_TRAFFIC_SPEED,
-	EdgeTrafficSchema,
+	defaultTrafficSpeed,
+	edgeTrafficSchema,
 	effectiveTraffic,
 	emptyContent,
 	VariantContentSchema,

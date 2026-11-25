@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::*;
 
 pub mod layout;
 pub mod render;
+mod solving;
 
 /// The hash of the core sources this build was made from, as
 /// `scripts/build-core.ts` recorded it. A host compares it with the sources in

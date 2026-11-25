@@ -1,20 +1,19 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
+import { archboardAppDynamicTools } from "#runtime/thread-tools/protocol/manifest.ts";
 import {
-	ARCHBOARD_APP_MANIFEST,
-	ARCHBOARD_APP_MANIFEST_BYTES,
-	ARCHBOARD_APP_TOOL_NAMES,
-	assertCanonicalArchboardAppManifest,
-	parseArchboardAppManifest,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+	GeneralThreadToolNameSchema,
+	parseManifestBytes,
+} from "#runtime/thread-tools/protocol/manifest-load.ts";
+import { parseToolResultEnvelope } from "#runtime/thread-tools/protocol/results.ts";
 import {
 	DynamicToolCallResponseSchema,
 	parseDynamicToolCallResponse,
-	parseToolResultEnvelope,
-} from "#runtime/thread-tools/protocol/results.ts";
+} from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { WAIT_THREADS_TIMEOUT_MAX_MS } from "#runtime/thread-tools/protocol/limits.ts";
 import { parseToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { codexApprovalMs } from "@archboard/timing";
 import {
 	APPROVAL_REQUIRED_ENVELOPE,
 	OUTCOME_UNKNOWN_ENVELOPE,
@@ -24,6 +23,14 @@ import {
 	dynamicResponse,
 	okEnvelope,
 } from "#tests/runtime/thread-tools/protocol/fixtures.ts";
+
+const ARCHBOARD_APP_MANIFEST_BYTES = readFileSync(
+	new URL(
+		"../../../../src/runtime/thread-tools/protocol/archboard-app-manifest.json",
+		import.meta.url,
+	),
+	"utf8",
+);
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {
@@ -60,9 +67,11 @@ describe("archboard_app manifest", () => {
 			'"deferLoading": true',
 		);
 		for (const candidate of [proseMutation, orderMutation, limitMutation, eagerMutation]) {
-			expectRejected(() => assertCanonicalArchboardAppManifest(candidate));
+			expectRejected(() => parseManifestBytes(Buffer.from(candidate, "utf8")));
 		}
-		expect(parseArchboardAppManifest(ARCHBOARD_APP_MANIFEST_BYTES)).toEqual(ARCHBOARD_APP_MANIFEST);
+		expect(archboardAppDynamicTools()).toEqual([
+			parseManifestBytes(Buffer.from(ARCHBOARD_APP_MANIFEST_BYTES, "utf8")).manifest,
+		]);
 	});
 });
 
@@ -142,7 +151,7 @@ describe("strict six-tool argument boundary", () => {
 
 	test("keeps wait timeout and target count at the reviewed boundaries", () => {
 		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBe(120_000);
-		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(CODEX_APPROVAL_MS.browserCommandLease);
+		expect(WAIT_THREADS_TIMEOUT_MAX_MS).toBeLessThan(codexApprovalMs("browserCommandLease"));
 		expect(parseToolArguments("wait_threads", { threadIds: ["t"], timeoutMs: 0 })).toBeTruthy();
 		expect(
 			parseToolArguments("wait_threads", {
@@ -160,7 +169,7 @@ describe("strict six-tool argument boundary", () => {
 
 describe("strict dynamic-tool result boundary", () => {
 	test("accepts the closed ok value for each invoked tool", () => {
-		for (const name of ARCHBOARD_APP_TOOL_NAMES) {
+		for (const name of GeneralThreadToolNameSchema.options) {
 			const response = parseDynamicToolCallResponse(name, dynamicResponse(okEnvelope(name)));
 			expect(response.success).toBe(true);
 			expect(response.envelope).toEqual({

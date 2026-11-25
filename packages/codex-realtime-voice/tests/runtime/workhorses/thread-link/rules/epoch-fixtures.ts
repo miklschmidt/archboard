@@ -9,7 +9,7 @@ import {
 } from "#runtime/epoch/store/contract.ts";
 import { type EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/identity";
 import { type ThreadLinkTarget } from "#runtime/workhorses/thread-link/rules/contract.ts";
@@ -37,7 +37,7 @@ export interface RealEpochOptions {
 }
 
 export function realEpochFixture(
-	authority: IdentityAuthority = createIdentityAuthority(),
+	authority: IdentityAuthority = createIdentityAuthorities().identity,
 	options: RealEpochOptions = {},
 ): RealEpochFixture {
 	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-thread-link-epoch-")));

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use crate::drawing::Traffic;
 use crate::geometry::{Point, Rect};
 use crate::js::{self, within};
-use crate::paint::design::CARD_RADIUS;
+use crate::sizes::CARD_RADIUS;
 
 /// The least distance between two pulses on a line.
 const MIN_SPACING: f64 = 36.0;

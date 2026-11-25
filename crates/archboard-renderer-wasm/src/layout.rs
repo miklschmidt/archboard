@@ -9,7 +9,7 @@
 use archboard_layout::{Solver, Unsolved};
 use wasm_bindgen::prelude::*;
 
-use crate::render::{AbortSignal, Solving};
+use crate::solving::{AbortSignal, Solving};
 
 #[wasm_bindgen(typescript_custom_section)]
 const PART_HOST: &str = r#"
@@ -39,15 +39,6 @@ impl Solver for PartHost {
     fn solve(&self, graph: String) -> Solving {
         Solving::asked(|signal| self.solve_on(graph, signal))
     }
-}
-
-/// What a value the host threw or refused with says.
-pub(crate) fn said(error: &JsValue, what: &str) -> String {
-    error
-        .dyn_ref::<js_sys::Error>()
-        .map(|error| String::from(error.message()))
-        .or_else(|| error.as_string())
-        .unwrap_or_else(|| format!("{what} failed without saying why"))
 }
 
 /// Lay a measured picture out one way (`archboard_layout::lay_out_picture`).

@@ -5,15 +5,7 @@ import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arriv
 // connects them.
 
 import { VaultDiagnostics } from "#ui/vault-diagnostics/components/VaultDiagnostics.tsx";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	type ContextType,
-	type JSX,
-	type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { livePanesOver } from "#ui/application/rules/live-panes.ts";
@@ -70,7 +62,7 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { RecordingStage } from "#ui/walkthroughs/recording/components/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
-import { AnswerFilesContext } from "@archboard/workbench/agent";
+import { AnswerFilesProvider, type OpenAnswerFile } from "@archboard/workbench/agent";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/application/components/AgentSurfaceSlots.tsx";
 import { NavigatorModeSwitch } from "#ui/application/components/NavigatorModeSwitch.tsx";
@@ -286,7 +278,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const { raise } = notices;
 	// A file an agent's answer names opens through the focused pane's vault, as the page's other
 	// requests do, so it opens only inside a checkout that vault reads.
-	const openAnswerFile = useCallback<NonNullable<ContextType<typeof AnswerFilesContext>>>(
+	const openAnswerFile = useCallback<OpenAnswerFile>(
 		(file): void =>
 			activateCodeTarget({
 				vault: livePanes.active.status.vault ?? start.first,
@@ -526,7 +518,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 					<OrbStageProvider>
 						{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
 						<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-							<AnswerFilesContext value={openAnswerFile}>
+							<AnswerFilesProvider open={openAnswerFile}>
 								<Tooltip.Provider>
 									<Shell
 										view={view}
@@ -543,7 +535,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 									/>
 									<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
 								</Tooltip.Provider>
-							</AnswerFilesContext>
+							</AnswerFilesProvider>
 						</VoiceSurfaceProvider>
 					</OrbStageProvider>
 				</LanguageServerFixContext>

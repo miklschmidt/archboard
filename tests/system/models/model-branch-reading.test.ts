@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { readArchitectureClaims } from "@archboard/model/store-read";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -51,17 +51,17 @@ test("HTTP reads the model at a source ref, refuses an unknown ref, and accepts 
 	const head = git("rev-parse", "HEAD");
 	const branch = await read({ ref: "HEAD" });
 	expect(branch.status).toBe(200);
-	expect(ArchitectureModelReadSchema.parse(await branch.json())).toMatchObject({
+	expect(architectureModelReadSchema().parse(await branch.json())).toMatchObject({
 		success: true,
 		sourceRef: { ref: "HEAD", commit: head },
 	});
 	// A complete commit id is a ref, so a reader can open the model at a merge base.
-	expect(ArchitectureModelReadSchema.parse(await (await read({ ref: head })).json())).toMatchObject(
-		{
-			success: true,
-			sourceRef: { ref: head, commit: head },
-		},
-	);
+	expect(
+		architectureModelReadSchema().parse(await (await read({ ref: head })).json()),
+	).toMatchObject({
+		success: true,
+		sourceRef: { ref: head, commit: head },
+	});
 	const unknown = await read({ ref: "no-such-branch" });
 	expect(unknown.status).toBe(404);
 	expect(await unknown.json()).toMatchObject({ success: false, code: "SOURCE_REF_NOT_FOUND" });

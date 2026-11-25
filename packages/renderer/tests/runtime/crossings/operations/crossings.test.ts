@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { bodyShift, roundBridges } from "#tests/runtime/support/drawn-routes.ts";
 
@@ -127,12 +127,12 @@ function follows(cutout: string, route: string): boolean {
 
 test("crossing clearances share the drawn curve and narrowly clear the ink beneath them", async () => {
 	const light = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CROSSED,
 		theme: "light",
 	});
 	const dark = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CROSSED,
 		theme: "dark",
 	});
@@ -197,7 +197,7 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	expect(
 		(
 			await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: CROSSED,
 				theme: "light",
 			})
@@ -218,7 +218,7 @@ test("fan-in and fan-out connections do not acquire false crossing bridges", asy
 			],
 		});
 		const drawn = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 		});
@@ -283,7 +283,7 @@ test("routes sharing a trunk draw its ink once: one line, one dash pattern, one 
 		edges: ["a", "b", "c"].map((from) => ({ id: `${from}t`, from, to: "t", kind: "event" })),
 	});
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -309,7 +309,7 @@ test("no line shows through a removed relationship's label", async () => {
 	});
 	for (const standing of [{}, { ab: "removed" as const }]) {
 		const drawn = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			standing,
@@ -343,9 +343,9 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 	 */
 	const streamHops = async (dash: "solid" | "dashed"): Promise<number> => {
 		const policy = {
-			...DEFAULT_SEMANTIC_POLICY,
+			...defaultSemanticPolicy(),
 			relationshipKinds: {
-				...DEFAULT_SEMANTIC_POLICY.relationshipKinds,
+				...defaultSemanticPolicy().relationshipKinds,
 				stream: { name: "Stream", dash, arrowhead: "open" as const },
 			},
 		};
@@ -386,7 +386,7 @@ test("traffic on a joined line runs on past the junction to its card", async () 
 		],
 	});
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

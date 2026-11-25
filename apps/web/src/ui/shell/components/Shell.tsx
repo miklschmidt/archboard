@@ -17,7 +17,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { AGENT_PANEL_WIDTH, CHROME_HEIGHT } from "@archboard/renderer/shell-geometry";
+import { shellLength } from "@archboard/renderer/shell-geometry";
 import type { NavigatorMode, ShellActions, ShellView } from "#ui/shell/rules/contracts.ts";
 import type { ColumnWidths } from "#ui/shell/clients/column-width.ts";
 import { BrandBar } from "#ui/shell/components/BrandBar.tsx";
@@ -34,7 +34,7 @@ import { PaneStages } from "#ui/shell/components/PaneStages.tsx";
  * takes its width from (ADR 0043), and a person can drag it to another.
  */
 const SHELL_STYLE: CSSProperties = {
-	"--shell-chrome-height": `${CHROME_HEIGHT}px`,
+	"--shell-chrome-height": `${shellLength("chrome")}px`,
 };
 
 /** The conversation's widths: at rest, and the narrowest and widest a drag gives it. */
@@ -42,7 +42,7 @@ const CONVERSATION_WIDTHS: ColumnWidths = {
 	key: "archboard.agent.panel.width",
 	min: 320,
 	max: 720,
-	initial: AGENT_PANEL_WIDTH,
+	initial: shellLength("agentPanel"),
 };
 
 /** The room the panes need beside the conversation. */

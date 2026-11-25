@@ -1,5 +1,5 @@
 import { useContext, useLayoutEffect, useRef } from "react";
-import { PRESENTATION_MS } from "@archboard/timing";
+import { presentationMs } from "@archboard/timing";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	ModelPaneContext,
@@ -48,7 +48,7 @@ function startFrom(handover: CameraHandover, model: string, camera: PictureCamer
 	if (left?.model !== model) return;
 	const { rest } = camera.view();
 	const handled = camera.handled();
-	if (camera.glide(left.camera, 0, handled)) camera.glide(rest, PRESENTATION_MS.step, handled);
+	if (camera.glide(left.camera, 0, handled)) camera.glide(rest, presentationMs("step"), handled);
 	else handover.give(left);
 }
 

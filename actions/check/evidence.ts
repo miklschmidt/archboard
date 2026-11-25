@@ -171,14 +171,4 @@ function findingFile(finding: Finding, locations: Locations): string | undefined
 	return found === undefined ? undefined : repositoryRelative(locations.repository, found);
 }
 
-export {
-	excerptOf,
-	excerptText,
-	evidenceDetails,
-	findingFile,
-	repositoryRelative,
-	type EvidenceDetail,
-	type Excerpt,
-	type Locations,
-	type SourceFiles,
-};
+export { excerptText, evidenceDetails, findingFile, type EvidenceDetail, type Locations };

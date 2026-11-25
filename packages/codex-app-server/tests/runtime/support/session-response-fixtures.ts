@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "#runtime/protocol/protocol-version.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
 import {
 	configFixture,
@@ -14,7 +14,7 @@ import {
 export function responseFor(method: ResponseMethod, fixture: SessionFixture): unknown {
 	if (method === "initialize") {
 		return {
-			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
+			userAgent: `Codex Desktop/${codexProtocolVersion()}`,
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",

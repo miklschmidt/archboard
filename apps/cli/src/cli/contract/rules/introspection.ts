@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { AnyCommandContract } from "#cli/contract/protocol/contract.ts";
 import { usageOf } from "#cli/contract/rules/commander.ts";
-import { AnsweredVaultSchema } from "#cli/contract/protocol/schemas.ts";
+import { answeredVaultSchema } from "#cli/contract/protocol/schemas.ts";
 
 interface RegistryContractEntry {
 	name: string;
@@ -97,7 +97,7 @@ function introspectAnswerFields() {
 	return {
 		vault: {
 			when: "Every JSON object answer of a command whose shared options include directory (-C), except one whose contract runsWithoutVault and that runs in a Git checkout that holds no vault",
-			schema: jsonSchema(AnsweredVaultSchema),
+			schema: jsonSchema(answeredVaultSchema()),
 		},
 	};
 }

@@ -9,7 +9,7 @@ import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const SEQUENCE: VariantContent = orderedFixture({
 	nodes: [
@@ -55,7 +55,7 @@ const STANDINGS = ["added", "removed", "changed", "unchanged"] as const;
  */
 async function drawnSequence(standing?: StatedStandings): Promise<RenderedDiagram> {
 	return await renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: SEQUENCE,
 		standing,
 		grammar: "sequence",

@@ -10,9 +10,6 @@ use crate::measure::{self, FarCard, FarWords, far_words, tag_end};
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
 use crate::paint::build::{Items, concat, lines, point};
-use crate::paint::design::{
-    CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE, TAB_FAR_NAME, TAB_PADDING,
-};
 use crate::paint::drill_mark::corner_drill_mark;
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
 use crate::paint::icons::ICON_SIZE;
@@ -22,6 +19,7 @@ use crate::paint::tag::{tag_marks, tag_row};
 use crate::paint::text_runs::paint_text_runs;
 use crate::request::{GroupTag, NodeAppearance, Standing};
 use crate::scene::SubjectKind;
+use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE, TAB_FAR_NAME, TAB_PADDING};
 
 /// How much larger a drill mark stands on a far card.
 const MARK_SCALE: f64 = 1.2;

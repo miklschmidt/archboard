@@ -3,7 +3,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { modelCacheMs } from "@archboard/timing";
 
 /**
  * A cache with this product's read defaults.
@@ -26,7 +26,7 @@ function createModelQueryClient(): QueryClient {
 			queries: {
 				retry: false,
 				refetchOnWindowFocus: false,
-				gcTime: MODEL_CACHE_MS.gc,
+				gcTime: modelCacheMs("gc"),
 			},
 		},
 	});

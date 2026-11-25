@@ -6,12 +6,13 @@ import {
 	CodexThreadLinkConflictError,
 	type ThreadLink,
 	type ThreadLinkCasToken,
+	type ThreadLinkEpochAuthority,
 	type ThreadLinkNonExecutableSnapshot,
 	type ThreadLinkSnapshot,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import { createCodexThreadLink } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
-import { createCodexThreadLinkBinding } from "#runtime/workhorses/thread-link/rules/binding.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createCodexThreadLinkBindingController } from "#runtime/workhorses/thread-link/rules/binding.ts";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	loadedPage,
 	session,
@@ -23,8 +24,25 @@ import {
 	type RealEpochFixture,
 } from "#tests/runtime/workhorses/thread-link/rules/epoch-fixtures.ts";
 
+/**
+ * A binding that can hold only what a public caller may store: no epoch is ever read, because it
+ * adopts no executable link.
+ * @returns The binding controller.
+ */
+function createCodexThreadLinkBinding() {
+	const epoch: ThreadLinkEpochAuthority = {
+		assertCurrent: () => {
+			throw new Error("a public caller adopts no executable link");
+		},
+		snapshot: () => {
+			throw new Error("a public caller adopts no executable link");
+		},
+	};
+	return createCodexThreadLinkBindingController({ epoch });
+}
+
 function executable(
-	authority: ReturnType<typeof createIdentityAuthority>,
+	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
 	rawThreadId = "thread-a",
 ): ThreadLink {
 	return {
@@ -42,7 +60,7 @@ function executable(
 }
 
 function inspectOnly(
-	authority: ReturnType<typeof createIdentityAuthority>,
+	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
 	rawThreadId = "thread-a",
 	reason: Exclude<ThreadLink["reason"], null> = "unknown_provenance",
 ): ThreadLink {
@@ -118,7 +136,7 @@ describe("codex thread-link bindings", () => {
 	});
 
 	test("rejects a fabricated executable link at the standalone factory", () => {
-		const authority = createIdentityAuthority();
+		const authority = createIdentityAuthorities().identity;
 		const bindings = createCodexThreadLinkBinding();
 		const fabricated = executable(authority);
 
@@ -137,7 +155,7 @@ describe("codex thread-link bindings", () => {
 	});
 
 	test("stores inspect-only links explicitly but cannot upgrade them by CAS", () => {
-		const authority = createIdentityAuthority();
+		const authority = createIdentityAuthorities().identity;
 		const bindings = createCodexThreadLinkBinding();
 		const inspected = bindings.compareAndSwap({
 			linkKey: "link-a",
@@ -214,7 +232,7 @@ describe("codex thread-link bindings", () => {
 
 	test("refuses an epoch that changes between classification passes", async () => {
 		await withFixture(async (fixture) => {
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			const row = thread(fixture.authority, "target");
 			let listPass = 0;
 			const port = createCodexThreadLink({
@@ -278,7 +296,7 @@ describe("codex thread-link bindings", () => {
 
 	test("owns its binding even when an unchecked store is attached to input options", async () => {
 		await withFixture(async (fixture) => {
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			const stale = executable(replacement);
 			let injectedCalls = 0;
 			const unchecked = {
@@ -321,7 +339,7 @@ describe("codex thread-link bindings", () => {
 
 	test("default classify-and-bind keeps a stale child inspect-only", async () => {
 		await withFixture(async (fixture) => {
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			const port = createCodexThreadLink({
 				threadSource: "example",
 				session: onePageSession(fixture),
@@ -339,7 +357,7 @@ describe("codex thread-link bindings", () => {
 
 	test("retains exact CAS identity and rejects stale responses", async () => {
 		await withFixture(async (fixture) => {
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			const port = createCodexThreadLink({
 				threadSource: "example",
 				session: onePageSession(fixture),
@@ -362,7 +380,7 @@ describe("codex thread-link bindings", () => {
 	});
 
 	test("copies and freezes source data when storing inspect-only links", () => {
-		const authority = createIdentityAuthority();
+		const authority = createIdentityAuthorities().identity;
 		const bindings = createCodexThreadLinkBinding();
 		const source = { custom: "integration" };
 		const link = { ...inspectOnly(authority), source } as ThreadLinkNonExecutableSnapshot;
@@ -374,7 +392,7 @@ describe("codex thread-link bindings", () => {
 	});
 
 	test("rejects malformed or executable-looking snapshots at the public binding boundary", () => {
-		const authority = createIdentityAuthority();
+		const authority = createIdentityAuthorities().identity;
 		const bindings = createCodexThreadLinkBinding();
 		const valid = executable(authority);
 		const cases: readonly unknown[] = [

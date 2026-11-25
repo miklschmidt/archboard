@@ -53,3 +53,27 @@ export {
 	DocumentReferenceSchema,
 	type DocumentReference,
 };
+
+/**
+ * The schema `CodeAnchorSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function codeAnchorSchema(): typeof CodeAnchorSchema {
+	return CodeAnchorSchema;
+}
+
+/**
+ * The schema `CodeBindingSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function codeBindingSchema(): typeof CodeBindingSchema {
+	return CodeBindingSchema;
+}
+
+/**
+ * The schema `DocumentReferenceSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function documentReferenceSchema(): typeof DocumentReferenceSchema {
+	return DocumentReferenceSchema;
+}

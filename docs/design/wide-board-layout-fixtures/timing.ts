@@ -12,15 +12,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
+import { defaultLayoutEngine } from "@archboard/model/render-reply";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const runs = Number(process.argv[2] ?? 5);
-console.log(`Layout: ${DEFAULT_LAYOUT_ENGINE}`);
+console.log(`Layout: ${defaultLayoutEngine()}`);
 
 const items: { name: string; content: unknown; policy: SemanticPolicy }[] = [];
 for (const file of fs
@@ -30,7 +30,7 @@ for (const file of fs
 	items.push({
 		name: file.replace(".content.json", ""),
 		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 	});
 }
 const { configuration: policy } = readVaultConfiguration(vault);
@@ -47,7 +47,7 @@ for (const file of fs
 
 // Warm the engine and the measurement caches once, on a document measured nowhere below.
 await renderArchitecture({
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	content: orderedFixture({
 		nodes: ["warm-a", "warm-b", "warm-c"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [

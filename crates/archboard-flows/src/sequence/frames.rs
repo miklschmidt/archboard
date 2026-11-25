@@ -15,20 +15,19 @@ use std::collections::HashMap;
 
 use archboard_scene::geometry::{Rect, covering, union};
 use archboard_scene::js;
-use archboard_scene::measure;
 use archboard_scene::request::FrameOperator;
 
+use crate::sequence::design::PILL_FONT;
 use crate::sequence::design::{
     ACTIVATION_HALF_WIDTH, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, NEST_INSET,
     PILL_TEXT_SIZE,
 };
 use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
 use crate::sequence::messages::drawn;
-use archboard_scene::paint::design::PILL_FONT;
 
 /// How wide some words of a frame are drawn.
 fn words_width(words: &str) -> f64 {
-    measure::width(words, PILL_FONT, PILL_TEXT_SIZE)
+    archboard_scene::width(words, PILL_FONT, PILL_TEXT_SIZE)
 }
 
 /// What one frame's tab and head row say: its operator, and the words beside it.

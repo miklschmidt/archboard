@@ -8,6 +8,8 @@ import {
 	RepoRegistryError,
 } from "@archboard/workspace/checkouts";
 import { CliUsageError, defineCommand, type Paint } from "#cli/contract/protocol/contract.ts";
+import { child, contract, type CommandRoute } from "#cli/routing/protocol/route.ts";
+import { repoLanguageServerContract } from "#cli/commands/repo/operations/language-server.ts";
 
 const tail = z.array(z.string()).default([]);
 
@@ -530,4 +532,30 @@ const repoForgetContract = defineCommand({
 	},
 });
 
-export { repoContract, repoListContract, repoAddContract, repoUseContract, repoForgetContract };
+/** The file that owns the handlers of every repo command but `repo language-server`. */
+const REPO_OWNER = "apps/cli/src/cli/commands/repo/operations/repo.ts";
+
+/**
+ * The `repo` command and its subcommands, as the command table routes them.
+ * @returns The route.
+ */
+function repoRoute(): CommandRoute {
+	return {
+		owner: contract(repoContract, REPO_OWNER),
+		children: {
+			list: child(contract(repoListContract, REPO_OWNER)),
+			add: child(contract(repoAddContract, REPO_OWNER)),
+			use: child(contract(repoUseContract, REPO_OWNER)),
+			forget: child(contract(repoForgetContract, REPO_OWNER)),
+			"language-server": child(
+				contract(
+					repoLanguageServerContract,
+					"apps/cli/src/cli/commands/repo/operations/language-server.ts",
+				),
+			),
+		},
+		bare: { kind: "default", child: "list", withLeadingOptions: true },
+	};
+}
+
+export { repoRoute };

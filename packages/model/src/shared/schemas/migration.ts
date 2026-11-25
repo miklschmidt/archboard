@@ -136,3 +136,19 @@ export {
 	type MigrationConflict,
 	type LegacyOccurrence,
 };
+
+/**
+ * The schema `LegacyInventoryReadSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function legacyInventoryReadSchema(): typeof LegacyInventoryReadSchema {
+	return LegacyInventoryReadSchema;
+}
+
+/**
+ * The schema `LegacyMappingWriteSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function legacyMappingWriteSchema(): typeof LegacyMappingWriteSchema {
+	return LegacyMappingWriteSchema;
+}

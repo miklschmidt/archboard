@@ -36,7 +36,7 @@ const PANE_MS = durations({
 	 * own edit for a network hiccup is the wall stopping for no reason they can
 	 * see. Only `contactLost` below puts the pane in view mode.
 	 *
-	 * It also pulls against TAB_SESSION_GRACE_MS: the pane socket names its tab
+	 * It also pulls against CODEX_REALTIME_MS.tabSessionGrace: the pane socket names its tab
 	 * session, so a reload plus these redials must fit inside that grace, or the
 	 * server ends the tab's Codex conversation before the pane is back.
 	 */
@@ -107,4 +107,13 @@ const PANE_MS = durations({
 	browserConnectPoll: 250,
 });
 
-export { PANE_MS };
+/**
+ * One duration of a pane.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function paneMs(key: keyof typeof PANE_MS): number {
+	return PANE_MS[key];
+}
+
+export { paneMs };

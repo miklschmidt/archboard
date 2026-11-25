@@ -2,7 +2,7 @@
 // keeps for a painter that starts late.
 
 import type { startPainter } from "@archboard/renderer/browser";
-import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
+import { painterPhasesJson, pictureMs } from "@archboard/timing";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import type { DiveWay } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-dive.ts";
 import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
@@ -69,15 +69,6 @@ function headingJson(heading: Departure | null): string {
 			: { way: heading.way, toward: heading.toward, side: heading.side ?? null },
 	);
 }
-
-/** At which points of a move each of its parts happens, as the painter reads them. */
-const PHASES = JSON.stringify({
-	transition: PICTURE_TRANSITION_PHASES,
-	entry: PICTURE_ENTRY_PHASES,
-	enter: PICTURE_MS.entry,
-	exit: PICTURE_MS.exit,
-	shutter: PICTURE_MS.shutter,
-});
 
 /**
  * The marks as the painter reads them.
@@ -157,8 +148,8 @@ export function briefPainter(
 	now: number,
 ): void {
 	const { camera, farLine, awaited, marks, light, painting, trafficShown, heads, warned } = held;
-	painter.setPhases(PHASES);
-	painter.setLongestStep(PICTURE_MS.longestStep);
+	painter.setPhases(painterPhasesJson());
+	painter.setLongestStep(pictureMs("longestStep"));
 	painter.setTheme(dark);
 	painter.setTrafficShown(trafficShown);
 	painter.setHeads(JSON.stringify(heads));

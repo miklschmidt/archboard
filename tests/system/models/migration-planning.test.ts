@@ -1,11 +1,11 @@
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
-import { LegacyInventoryReadSchema } from "@archboard/model/migration";
+import { architectureModelReadSchema } from "@archboard/model/contract";
+import { legacyInventoryReadSchema } from "@archboard/model/migration";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -37,7 +37,7 @@ function cli(args: string[], input?: unknown) {
 
 function result(stdout: string) {
 	const { vault: _vault, ...answer } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
-	return LegacyInventoryReadSchema.parse(answer);
+	return legacyInventoryReadSchema().parse(answer);
 }
 
 test("CLI planning and preview share explicit vaults and preserve structured stale refusals", async () => {
@@ -51,7 +51,7 @@ test("CLI planning and preview share explicit vaults and preserve structured sta
 	original.name = "Shop";
 	original.variants[0].content.nodes[0].responsibility = "Accepts requests";
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(join(vault, "Shop.semantic.json"), JSON.stringify(original));
 	const listed = cli(["model", "inventory", "--origin", "Shop"]);
 	expect(listed.status, listed.stderr).toBe(0);
@@ -73,7 +73,7 @@ test("CLI planning and preview share explicit vaults and preserve structured sta
 	const { vault: _previewVault, ...previewAnswer } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(preview.stdout));
-	const candidate = ArchitectureModelReadSchema.parse(previewAnswer);
+	const candidate = architectureModelReadSchema().parse(previewAnswer);
 	expect(candidate).toMatchObject({
 		success: true,
 		modules: [expect.objectContaining({ name: "API", responsibility: "Accepts requests" })],
@@ -87,7 +87,7 @@ test("CLI planning and preview share explicit vaults and preserve structured sta
 		`${server!.base}/api/architecture/model?${new URLSearchParams({ vault, preview: "Shop" })}`,
 	);
 	expect(http.status).toBe(200);
-	expect(ArchitectureModelReadSchema.parse(await http.json())).toEqual(candidate);
+	expect(architectureModelReadSchema().parse(await http.json())).toEqual(candidate);
 	const file = join(vault, inventory.boards[0]!.file);
 	writeFileSync(file, `${readFileSync(file, "utf8")}\n`);
 	const refusedPreview = cli(["model", "read", "--preview", "Shop"]);
@@ -108,7 +108,7 @@ test("CLI and HTTP retain original migration history and open its exact model co
 		mkdirSync(join(addressed, ".archboard"), { recursive: true });
 		writeFileSync(
 			join(addressed, ".archboard/config.yaml"),
-			Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY),
+			Bun.YAML.stringify(defaultSemanticPolicy()),
 		);
 		for (const args of [
 			["init", "--quiet"],
@@ -222,7 +222,7 @@ test("CLI and HTTP retain original migration history and open its exact model co
 			`${server!.base}/api/architecture/model?${new URLSearchParams(selectors)}`,
 		);
 		expect(response.status).toBe(200);
-		const reading = ArchitectureModelReadSchema.parse(await response.json());
+		const reading = architectureModelReadSchema().parse(await response.json());
 		const command = cli([
 			"model",
 			"read",

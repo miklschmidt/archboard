@@ -1,15 +1,16 @@
 //! Measured cards: the words at supplied baselines, near and far.
 
-use crate::drawing::{Node, TextRole, TextRun};
+use crate::drawing::{TextRole, TextRun};
 use crate::measure::tag_top;
 use crate::paint::Ctx;
+use crate::paint::Node;
 use crate::paint::build::Items;
 use crate::paint::cards::paint_slab_card;
-use crate::paint::design::ARCHITECTURE_CARD_PADDING;
 use crate::paint::far_card::{NearCard, Part, words_in};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_palette;
 use crate::scene::ClipId;
+use crate::sizes::ARCHITECTURE_CARD_PADDING;
 
 /// Where a measured name starts, from the top of its box: the chip stands level with it.
 pub(super) fn name_top(placed: &Node) -> f64 {

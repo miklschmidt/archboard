@@ -12,7 +12,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	TalkSchema,
 	framesOf,
@@ -98,7 +98,7 @@ function talk(over: Record<string, unknown> = {}): Record<string, unknown> {
 		events: EVENTS,
 		document: BOARD,
 		policy: {
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			configurationValid: true,
 			configurationFile: "config.yaml",
 			fingerprint: "f1",

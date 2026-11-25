@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/model/render-reply";
+import { defaultLayoutEngine, type LayoutEngineName } from "@archboard/model/render-reply";
 import { loadCore } from "#runtime/bun-renderer/services/core.ts";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 
 /** One reading that draws without a layout worker when read as a sequence. */
 function request(
 	grammar: "sequence" | "architecture" = "sequence",
-	layout: LayoutEngineName = DEFAULT_LAYOUT_ENGINE,
+	layout: LayoutEngineName = defaultLayoutEngine(),
 ): string {
 	return JSON.stringify({
 		grammar,

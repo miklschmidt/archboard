@@ -59,10 +59,10 @@ import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/
 import { messagesOf } from "@archboard/model/flow";
 import type { SemanticEdge } from "@archboard/model/content";
 import { describeSubject, type SemanticPolicy } from "@archboard/model/policy";
-import type { EvidenceKindSchema } from "@archboard/model/policy";
+import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
+type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 
 /** The evidence kinds that are a dependency at run time or at build time. */
 const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([

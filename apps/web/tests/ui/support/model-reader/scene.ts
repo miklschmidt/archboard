@@ -1,5 +1,5 @@
 import { projectModel, type Model } from "@archboard/model/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type {
 	SceneReading,
 	SceneRequest,
@@ -26,7 +26,7 @@ const SHOP: Model = {
 	},
 	selectedState: { id: "Current", name: "Implemented", lifecycle: "current" },
 	revision: { digest: "a".repeat(64), files: [] },
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	modules: MODULES.map(([id, parent], order) => ({
 		schemaVersion: 1,
 		id,

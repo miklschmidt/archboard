@@ -4,15 +4,13 @@ import { join } from "node:path";
 import { afterAll, beforeAll } from "bun:test";
 
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
-import {
-	createIdentityAuthorities,
-	restoreIdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	buildFixture,
 	prepareFixture,
 	type Fixture,
 } from "#tests/runtime/workhorses/workhorse-operations/operations/support.ts";
+import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
 
 interface FixtureGroup {
 	readonly create: (initialStatus?: "idle" | "active") => Fixture;

@@ -1,13 +1,13 @@
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureClaimResultSchema,
-	ArchitectureCheckpointRetainSchema,
+	architectureModelReadSchema,
+	architectureClaimResultSchema,
+	architectureCheckpointRetainSchema,
 } from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -108,15 +108,15 @@ test("canonical locality and branch footprint retain source analysis without a l
 	const unread = cli(["model", "footprint", "--base", "no-such-base"]);
 	expect(unread.status).toBe(2);
 	expect(unread.stderr).toContain("no-such-base");
-	const local = ArchitectureHistoryResultSchema.parse(answer(locality.stdout));
-	const branch = ArchitectureHistoryResultSchema.parse(answer(footprint.stdout));
+	const local = architectureHistoryResultSchema().parse(answer(locality.stdout));
+	const branch = architectureHistoryResultSchema().parse(answer(footprint.stdout));
 	if (!local.success || local.analysis !== "locality" || !branch.success || !("changed" in branch))
 		throw new Error(JSON.stringify({ local, branch }));
 	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
 	expect(branch.changed.map((part) => part.subject.id)).toContain("Shop#Gateway");
-	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const current = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!current.success) throw new Error(JSON.stringify(current));
-	const retained = ArchitectureCheckpointRetainSchema.parse(
+	const retained = architectureCheckpointRetainSchema().parse(
 		answer(
 			cli([
 				"model",
@@ -136,7 +136,7 @@ test("canonical locality and branch footprint retain source analysis without a l
 	for (const command of [["locality"], ["footprint", "--base", "HEAD~1"]]) {
 		const exact = cli(["model", ...command, "--against", retained.checkpoint.id]);
 		expect(exact.status, exact.stdout + exact.stderr).toBe(0);
-		expect(ArchitectureHistoryResultSchema.parse(answer(exact.stdout))).toMatchObject({
+		expect(architectureHistoryResultSchema().parse(answer(exact.stdout))).toMatchObject({
 			success: true,
 			model: "Shop",
 		});
@@ -151,7 +151,7 @@ test("canonical locality and branch footprint retain source analysis without a l
 	// The gate: the commit changed Gateway and its Handler, and the draft names only Gateway.
 	if (current.manifest.current === null) throw new Error("The model has no Current");
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claim = ArchitectureClaimResultSchema.parse(
+	const claim = architectureClaimResultSchema().parse(
 		answer(
 			cli(["model", "claim"], {
 				target,
@@ -162,7 +162,7 @@ test("canonical locality and branch footprint retain source analysis without a l
 		),
 	);
 	if (!claim.success) throw new Error(JSON.stringify(claim));
-	const retainedRead = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const retainedRead = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!retainedRead.success) throw new Error(JSON.stringify(retainedRead));
 	const proposed = cli(["model", "edit", "--doing", "proposing the gateway"], {
 		target,
@@ -222,10 +222,10 @@ test("canonical locality and branch footprint retain source analysis without a l
 }, 30_000);
 
 test("a directory module passes the gate only when the modules inside it bind each file it changed", () => {
-	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const current = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!current.success || current.manifest.current === null) throw new Error("No Current");
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claim = ArchitectureClaimResultSchema.parse(
+	const claim = architectureClaimResultSchema().parse(
 		answer(
 			cli(["model", "claim"], {
 				target,
@@ -236,7 +236,7 @@ test("a directory module passes the gate only when the modules inside it bind ea
 		),
 	);
 	if (!claim.success) throw new Error(JSON.stringify(claim));
-	const read = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const read = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!read.success) throw new Error(JSON.stringify(read));
 	const proposed = cli(["model", "edit", "--doing", "proposing the installation"], {
 		target,
@@ -359,10 +359,10 @@ test("a module the draft adds is preexisting when the branch adds none of its bo
 			"export function load() {\n\treturn 1;\n}\n\nexport function save() {\n\treturn 2;\n}\n",
 	});
 
-	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const current = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!current.success || current.manifest.current === null) throw new Error("No Current");
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claim = ArchitectureClaimResultSchema.parse(
+	const claim = architectureClaimResultSchema().parse(
 		answer(
 			cli(["model", "claim"], {
 				target,
@@ -373,7 +373,7 @@ test("a module the draft adds is preexisting when the branch adds none of its bo
 		),
 	);
 	if (!claim.success) throw new Error(JSON.stringify(claim));
-	const read = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	const read = architectureModelReadSchema().parse(answer(cli(["model", "read"]).stdout));
 	if (!read.success) throw new Error(JSON.stringify(read));
 	const proposed = cli(["model", "edit", "--doing", "adding modules"], {
 		target,

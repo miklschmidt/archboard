@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("a two-way line ends in the same head at each end, and a one-way line in one", async () => {
 	const authored = orderedFixture({
@@ -20,7 +20,7 @@ test("a two-way line ends in the same head at each end, and a one-way line in on
 	// A reading words a line two-way, and a document stores no such field.
 	const edges = authored.edges.map((edge) => ({ ...edge, twoWay: edge.id === "both" }));
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: { ...authored, edges },
 		theme: "light",
 	});

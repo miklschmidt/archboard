@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/model/store-write";
 import { writeInProcess } from "#tests/runtime/canonical/proposals/operations/fixture.ts";
@@ -30,7 +30,7 @@ test("interrupted proposal creation resumes one retained checkpoint and never in
 	const gateway = readFileSync(join(vault, "gateway.module.json"));
 	const { exitCode, output } = await writeInProcess(root, vault, request, "prepared");
 	expect(exitCode, output).toBe(86);
-	Date.now = () => now() + MODEL_LOCK_MS.lease;
+	Date.now = () => now() + modelLockMs("lease");
 	const blocked = readArchitectureModel(vault);
 	expect(blocked).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });
 	if (blocked.success || blocked.recovery === undefined) throw new Error(JSON.stringify(blocked));

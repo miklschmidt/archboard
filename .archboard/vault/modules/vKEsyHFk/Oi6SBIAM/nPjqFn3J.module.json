@@ -2,8 +2,7 @@
   "order": 22000,
   "name": "Pane vaults",
   "kind": "module",
-  "responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading, and broadcasts machine news to every tab",
-  "description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
+  "responsibility": "Broadcasts news about the machine rather than one vault, such as a repository's chosen checkout or a vault's account of agent work, to every admitted tab",
   "groups": [
     "panes"
   ],

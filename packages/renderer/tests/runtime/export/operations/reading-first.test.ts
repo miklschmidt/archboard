@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -15,7 +15,7 @@ import whatTheCliCanBeAsked from "#tests/runtime/support/fixtures/what-the-cli-c
 import workhorseNews from "#tests/runtime/support/fixtures/workhorse-news.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

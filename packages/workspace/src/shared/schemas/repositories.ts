@@ -52,3 +52,19 @@ export {
 	type RepositoryEntry,
 	type RepositoryState,
 };
+
+/**
+ * The schema `CheckoutChoiceSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function checkoutChoiceSchema(): typeof CheckoutChoiceSchema {
+	return CheckoutChoiceSchema;
+}
+
+/**
+ * The schema `RepositoryListingSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function repositoryListingSchema(): typeof RepositoryListingSchema {
+	return RepositoryListingSchema;
+}

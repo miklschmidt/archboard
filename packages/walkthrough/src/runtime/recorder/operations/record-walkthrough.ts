@@ -27,8 +27,8 @@ import { join } from "node:path";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import type { LegacyBoard } from "@archboard/model/legacy-board";
-import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
-import { RECORDER_MS } from "@archboard/timing";
+import { shellSize } from "@archboard/renderer/shell-geometry";
+import { recorderMs } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
@@ -37,7 +37,7 @@ import {
 	type RecordingState,
 } from "#shared/protocol/recording-page.ts";
 import {
-	TALK_SAMPLE_RATE,
+	talkSamplesMs,
 	TALK_VOICE_FILE,
 	talkFrom,
 	type Talk,
@@ -60,10 +60,10 @@ import {
 import { renderTalk } from "#runtime/recorder/operations/render-talk.ts";
 import { writeSilence } from "#runtime/recorder/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/recorder/store/talk-files.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** What to record, and where. */
 interface RecordingOptions {
@@ -232,7 +232,7 @@ function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 		saveBlob: async (expression, path, readTimeoutMs) => {
 			const remote = await page.evaluate(expression, {
 				returnByValue: false,
-				timeoutMs: RECORDER_MS.call,
+				timeoutMs: recorderMs("call"),
 			});
 			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
@@ -260,16 +260,20 @@ async function openRecordingPage(
 		await chromium.browser.call(
 			"Browser.grantPermissions",
 			{ origin: new URL(url).origin, permissions: ["audioCapture"] },
-			RECORDER_MS.call,
+			recorderMs("call"),
 		);
-		const window = await chromium.openWindow("about:blank", SHELL_VIEWPORT, RECORDER_MS.call);
+		const window = await chromium.openWindow(
+			"about:blank",
+			shellSize("viewport"),
+			recorderMs("call"),
+		);
 		const { page } = window;
 		await page.call(
 			"Emulation.setEmulatedMedia",
 			{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-			RECORDER_MS.call,
+			recorderMs("call"),
 		);
-		const navigation = await page.call("Page.navigate", { url }, RECORDER_MS.call);
+		const navigation = await page.call("Page.navigate", { url }, recorderMs("call"));
 		const refused = navigation["errorText"];
 		if (typeof refused === "string" && refused !== "") {
 			throw new Error(
@@ -446,7 +450,7 @@ async function keptTalk(
 	request.say(`Kept the talk in ${directory}.`);
 	const lost = talk.audio.reception?.concealedSamples ?? 0;
 	if (lost > 0) {
-		const ms = Math.round((lost * 1000) / TALK_SAMPLE_RATE);
+		const ms = Math.round(talkSamplesMs(lost));
 		request.say(
 			`The voice dropped out for ${ms} ms while it was recorded. Record again for a clean voice.`,
 		);

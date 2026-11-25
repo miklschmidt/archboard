@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import type { checkoutsReadFrom } from "@archboard/code-binding/resolution";
 import type { EmbedVault } from "#cli/commands/vault/protocol/embeds-answer.ts";
 import { fetchedVault } from "#cli/commands/vault/embeds/operations/fetched-vaults.ts";
@@ -48,7 +48,7 @@ async function remoteVault(repo: string, signal: AbortSignal): Promise<FoundVaul
 			fetchFailed === undefined
 				? `The default branch of ${repo}, at ${commit.slice(0, 9)},`
 				: `Fetching the vault of ${repo} failed (${fetchFailed}), and the newest cached commit, ${commit.slice(0, 9)},`;
-		return unavailable(`${read} holds no ${VAULT_DIRECTORY}, so the embed was not checked.`);
+		return unavailable(`${read} holds no ${vaultDirectory()}, so the embed was not checked.`);
 	}
 	const read: EmbedVault =
 		fetchFailed === undefined
@@ -83,7 +83,7 @@ async function vaultOf(
 	}
 	const checkout = checkouts.find((each) => each.repo === repo);
 	if (checkout === undefined) return remoteVault(repo, signal);
-	const vault = path.join(checkout.root, VAULT_DIRECTORY);
+	const vault = path.join(checkout.root, vaultDirectory());
 	if (!fs.existsSync(vault)) {
 		return unavailable(
 			`The chosen checkout of ${repo}, ${checkout.root}, holds no vault, so the embed was not checked.`,

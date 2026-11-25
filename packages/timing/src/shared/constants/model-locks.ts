@@ -173,4 +173,26 @@ const CLAIM_MS = durations({
 	activityLinger: 8000,
 });
 
-export { MODEL_LOCK_MS, CLAIM_MS };
+/**
+ * One duration of a model lock.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function modelLockMs(key: keyof typeof MODEL_LOCK_MS): number {
+	return MODEL_LOCK_MS[key];
+}
+
+/**
+ * One duration of a subject claim.
+ * @param key Which one.
+ * @param startedAtMs When the duration starts, if asking for a deadline.
+ * @returns A duration in milliseconds, or a deadline on the supplied clock.
+ */
+function claimMs(key: "default", startedAtMs: number): number;
+function claimMs(key: keyof typeof CLAIM_MS): number;
+function claimMs(key: keyof typeof CLAIM_MS, startedAtMs?: number): number {
+	const duration = CLAIM_MS[key];
+	return startedAtMs === undefined ? duration : startedAtMs + duration;
+}
+
+export { modelLockMs, claimMs };

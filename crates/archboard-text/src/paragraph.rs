@@ -21,7 +21,7 @@ use unicode_linebreak::linebreaks;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::faces::Face;
-use crate::shape::{hundredths, scaled, shape};
+use crate::shaping::{hundredths, scaled, shape};
 
 /// How much wider than the width a line may be and still fit.
 const FIT_TOLERANCE: f64 = 0.005;
@@ -139,7 +139,7 @@ impl Hard {
         let (from, to) = (self.bounds[start], self.bounds[end]);
         let next_tab = self.tabs.partition_point(|&at| at < from);
         if self.tabs.get(next_tab).is_some_and(|&at| at < to) {
-            return crate::shape::width(face, &self.words[from..to], size);
+            return crate::shaping::width(face, &self.words[from..to], size);
         }
         self.before[end] - self.before[start]
     }
@@ -312,7 +312,7 @@ impl Paragraph {
         self.walk(width, |hard, span| {
             let text = hard.words[hard.bounds[span.start]..hard.bounds[span.visible]].to_owned();
             lines.push(Line {
-                width: crate::shape::width(self.face, &text, self.size),
+                width: crate::shaping::width(self.face, &text, self.size),
                 text,
                 broken: span.broken,
             });

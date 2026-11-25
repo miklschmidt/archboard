@@ -2,12 +2,12 @@
 // of Fix with Codex in the Measures of the focused pane (TASK-646.09).
 
 import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { z } from "zod";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
-type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+type RememberedFindings = z.infer<ReturnType<typeof rememberedFindingsSchema>>;
 
 /** The server the setup brief names for Python, which Fix with Codex asks for. */
 const PYTHON_SERVER = "pyright-langserver";

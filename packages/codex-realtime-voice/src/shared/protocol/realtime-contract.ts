@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CANONICAL_ITEM_ID_MAX_LENGTH } from "@archboard/codex-app-server/identity";
+import { canonicalItemIdMaxLength } from "@archboard/codex-app-server/identity";
 
 const BrowserRealtimeIdentitySchemas = {
 	session: z.string().brand<"BrowserRealtimeSessionId">(),
@@ -8,7 +8,7 @@ const BrowserRealtimeIdentitySchemas = {
 	item: z
 		.string()
 		.min(1)
-		.max(CANONICAL_ITEM_ID_MAX_LENGTH)
+		.max(canonicalItemIdMaxLength())
 		.refine((value) => !value.includes("\0"))
 		.brand<"BrowserRealtimeItemId">(),
 };

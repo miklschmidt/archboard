@@ -2,9 +2,12 @@
 // answer learns what it found and what it could not read before opening the JSON.
 
 import type { z } from "zod";
-import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import type { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 
-type Answer = Extract<z.output<typeof ArchitectureHistoryResultSchema>, { success: true }>;
+type Answer = Extract<
+	z.output<ReturnType<typeof architectureHistoryResultSchema>>,
+	{ success: true }
+>;
 type Locality = Extract<Answer, { analysis: "locality" }>;
 type Footprint = Extract<Answer, { analysis: "footprint" }>;
 

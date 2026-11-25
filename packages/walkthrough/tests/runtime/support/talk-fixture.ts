@@ -1,7 +1,7 @@
 // A small talk that renders: a board of two parts and a walkthrough of two steps, told over three
 // seconds of voice. Private test support of the recorder's tests.
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { TalkSchema, type Talk } from "#shared/protocol/talk.ts";
 
 /** How many samples of voice the talk has: 3 s at 48 kHz, which is 90 frames. */
@@ -78,7 +78,7 @@ function fixtureTalk(): Talk {
 		],
 		document: BOARD,
 		policy: {
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			configurationValid: true,
 			configurationFile: "config.yaml",
 			fingerprint: "f1",

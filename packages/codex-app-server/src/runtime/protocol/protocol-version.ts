@@ -1,5 +1,12 @@
 const CODEX_PROTOCOL_VERSION = "0.166.0" as const;
-const CODEX_PROTOCOL_BINARY_VERSION = "codex-cli 0.166.0" as const;
+
+/**
+ * The Codex version that this protocol is built for, and that the package pins.
+ * @returns The version, such as 0.166.0.
+ */
+function codexProtocolVersion(): typeof CODEX_PROTOCOL_VERSION {
+	return CODEX_PROTOCOL_VERSION;
+}
 
 /**
  * Checks that a server user agent names the bound Codex version as a whole token, so
@@ -12,4 +19,4 @@ function isSupportedCodexUserAgent(userAgent: string): boolean {
 	return new RegExp(`(^|[^0-9.])${escapedVersion}($|[^0-9.])`, "u").test(userAgent);
 }
 
-export { CODEX_PROTOCOL_BINARY_VERSION, CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent };
+export { codexProtocolVersion, isSupportedCodexUserAgent };

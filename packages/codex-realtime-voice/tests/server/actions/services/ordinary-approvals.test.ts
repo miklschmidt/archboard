@@ -1,10 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
-import {
-	createIdentityAuthorities,
-	createIdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import {
 	type BrowserActionContext,
@@ -21,7 +18,7 @@ import {
 
 for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 	test(`ordinary approval actions preserve the broker ${outcome} outcome`, async () => {
-		const identity = createIdentityAuthority();
+		const identity = createIdentityAuthorities().identity;
 		const broker = createCodexApprovalBroker({
 			identity,
 			transport: {

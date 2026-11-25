@@ -1,36 +1,40 @@
 export {
-	forgetSemanticPaneContext,
 	forgetSemanticPaneContexts,
 	mountSemanticPaneContextRoutes,
 	semanticPaneContextFor,
 } from "#server/panes/services/context.ts";
-export { panePresentations } from "#server/panes/services/presentation.ts";
+export { forgetPanePresentations } from "#server/panes/services/presentation.ts";
+export { movePaneVault } from "#server/panes/services/pane-vaults.ts";
 export {
-	acceptedSockets,
+	admitSocket,
+	closeBrowserOwners,
+	registerSocket,
+	trackAcceptedSocket,
+} from "#server/panes/services/pane-sockets.ts";
+export type { RegisteredSocket } from "#server/panes/services/pane-sockets.ts";
+export {
+	admittedClientCount,
+	arrivedOnModel,
+	onScreenPanes,
+	paneFromRequest,
+	paneIsLive,
 	paneKeyForNewPane,
 	paneKeyOf,
-	paneKeysOnScreen,
-	clientIds,
-	clients,
-	codexSocketInstances,
-	currentSocketsByClient,
-	forgetDisplay,
-	latestSocketAcceptanceByClient,
-	notePaneClosed,
-	notePaneOpened,
 	paneKeyOfClient,
-	paneKeys,
-	paneFromRequest,
+	paneKeysOnScreen,
+	paneOf,
+	paneRegistrations,
 	paneResponse,
-	panes,
-	paneVaults,
-	pendingPaneCloses,
-	pendingPaneOpens,
+	paneVaultOf,
+	panesWithVaults,
 	primaryPane,
-	rejectPendingLayouts,
 	sendKeylessToPane,
+	sendToEveryClient,
 	sendToPane,
-	settleAfterLayout,
-	socketVaults,
 } from "#server/panes/services/registry.ts";
-export type { PendingPaneClose, PendingPaneOpen } from "#server/panes/services/registry.ts";
+export {
+	expectPaneClose,
+	expectPaneOpen,
+	registerPane,
+	settleAfterLayout,
+} from "#server/panes/services/pane-arrivals.ts";

@@ -1,8 +1,11 @@
 import type { BedrockSetupParams } from "#runtime/schemas/authored-schemas.ts";
+import type { z } from "zod";
+
 import type {
+	CLIENT_REQUEST_PARAM_SCHEMAS,
 	ClientRequestParams,
-	ClientRequestPayloads,
 } from "#runtime/protocol/client-request-schemas.ts";
+import type { ClientRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 
 const textInput: Extract<ClientRequestParams<"turn/start">["input"][number], { type: "text" }> = {
 	type: "text",
@@ -254,7 +257,9 @@ const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 	"thread/realtime/appendSpeech": { threadId: "thread-1", text: "hello" },
 	"thread/realtime/stop": { threadId: "thread-1" },
 	"thread/timeline/list": { threadId: "thread-1", cursor: "timeline-cursor", limit: 50 },
-} satisfies ClientRequestPayloads;
+} satisfies {
+	[Method in ClientRequestMethod]: z.infer<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;
+};
 
 const LOGIN_ACCOUNT_FIXTURES = [
 	{ type: "apiKey", apiKey: "api-key" },

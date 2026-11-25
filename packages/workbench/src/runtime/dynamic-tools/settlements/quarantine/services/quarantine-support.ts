@@ -1,9 +1,6 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@archboard/codex-app-server/contract";
+import { codexPendingReverseRequestLimit } from "@archboard/codex-app-server/contract";
 import { logicalToolCallKey, type JsonRpcRequestId } from "@archboard/codex-app-server/identity";
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { type DynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import {
@@ -20,7 +17,7 @@ import { validateDynamicCall } from "#runtime/dynamic-tools/rules/request-valida
 import { invalidDynamicResponse } from "#runtime/dynamic-tools/dispatch/operations/response.ts";
 
 /** The transport's pending reverse-request ceiling, which logical quarantine shares. */
-const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests;
+const DYNAMIC_QUARANTINE_WIRE_CAP = codexPendingReverseRequestLimit();
 
 interface Deferred<Value> {
 	readonly promise: Promise<Value>;
@@ -223,9 +220,8 @@ function mutationIdentity(
 		threadId: request.logicalCall.threadId,
 		turnId: request.logicalCall.turnId,
 		callId: request.logicalCall.callId,
-		namespace: ARCHBOARD_APP_NAMESPACE.name,
 		tool,
-		manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+		...archboardAppBinding(),
 	});
 }
 

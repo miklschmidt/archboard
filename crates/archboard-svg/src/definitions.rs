@@ -12,7 +12,7 @@ use archboard_scene::scene::{
     Mask, MaskId, Scene, Stop,
 };
 
-use crate::colour::{colour_id, css};
+use crate::css::{colour_id, css};
 use crate::path::{Spelling, path_data};
 use crate::shapes::write_shape;
 use crate::xml::{Attributes, close, content_id, empty, open};

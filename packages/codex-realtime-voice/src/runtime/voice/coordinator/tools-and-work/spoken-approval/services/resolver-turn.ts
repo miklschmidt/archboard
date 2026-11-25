@@ -2,7 +2,7 @@ import {
 	CodexApprovalError,
 	type ApprovalSettlement,
 } from "#runtime/approvals/services/contract.ts";
-import { ResolveSpokenApprovalInputSchema } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
+import { parseResolveSpokenApprovalInput } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { SpokenApprovalToolResult } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 import type { ActiveSlot } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
@@ -259,8 +259,8 @@ async function resolveSpokenApproval(
 	if (!context.isLive(slot)) {
 		return refusal("not_ready", "There is no pending spoken approval to resolve.");
 	}
-	const parsed = ResolveSpokenApprovalInputSchema.safeParse(request.params.arguments);
-	if (!parsed.success) {
+	const input = parseResolveSpokenApprovalInput(request.params.arguments);
+	if (input === null) {
 		context.enterFallback(slot, "ambiguous");
 		return refusal("invalid_call", "The resolver input must contain only accept or decline.");
 	}
@@ -272,7 +272,7 @@ async function resolveSpokenApproval(
 	if (waited !== null) {
 		return waited;
 	}
-	return handleResolver(context, slot, request, parsed.data.verdict);
+	return handleResolver(context, slot, request, input.verdict);
 }
 
 export { resolveSpokenApproval };

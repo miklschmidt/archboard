@@ -13,14 +13,14 @@ import { APCA, lightnessContrast, paintedIn } from "#tests/runtime/support/drawn
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/model/render-reply";
-import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/model/policy";
+import { paletteColorSchema, semanticPolicySchema } from "@archboard/model/policy";
 import { themeColor } from "#runtime/theme/store/source.ts";
 
-const COLOURS = PaletteColorSchema.options;
+const COLOURS = paletteColorSchema().options;
 const THEMES: DiagramTheme[] = ["light", "dark"];
 
 /** One card for each colour: in a group of that colour, of a kind of that colour, and a line of it to the next. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		COLOURS.map((color) => [color, { name: color, icon: "RiBox3Line", color }]),

@@ -1,7 +1,7 @@
 import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arrival.ts";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
-import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
+import type { panePresentRequestSchema } from "@archboard/model/pane-context";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 
@@ -16,9 +16,9 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	const { openRequested } = useModelLocation(paneId);
 	const generation = useRef(0);
 	const [arrival, setArrival] = useState(0);
-	const [driven, onPresentRequest] = useState<z.infer<typeof PanePresentRequestSchema> | null>(
-		null,
-	);
+	const [driven, onPresentRequest] = useState<z.infer<
+		ReturnType<typeof panePresentRequestSchema>
+	> | null>(null);
 	useEffect(
 		() => () => {
 			generation.current++;

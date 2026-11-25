@@ -7,7 +7,7 @@ import { interfaceContent } from "#shared/render/rules/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DiagramAtlas } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 // The scheduler is a hidden part that only calls out: nothing holds it below
 // the entry point but the interface, so without it Graphviz stands it on the
@@ -91,7 +91,7 @@ async function atlasOf(
 	const outcome = await renderLegacyBoard(
 		document,
 		{ ...choices, theme: "light", layout: "track" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!outcome.ok || !("atlas" in outcome.reply)) throw new Error("Expected a drawn picture");
 	return outcome.reply.atlas;
@@ -99,7 +99,7 @@ async function atlasOf(
 
 test("a container's entry point takes its first row and its hidden parts sit below it", async () => {
 	const { atlas } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(service),
 		theme: "light",
 		layout: "track",
@@ -124,7 +124,7 @@ test("the interface facts of the whole variant draw what the whole variant draws
 		edges: whole.edges.filter((edge) => inside(edge.from)),
 	};
 	const request = {
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

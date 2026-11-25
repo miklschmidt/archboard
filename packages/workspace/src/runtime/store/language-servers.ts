@@ -251,3 +251,11 @@ function passServers(): (root: string, language: ConfigurableLanguage) => Server
 }
 
 export { LanguageServersSchema, passServers, readServers, setServer };
+
+/**
+ * The schema `LanguageServersSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function languageServersSchema(): typeof LanguageServersSchema {
+	return LanguageServersSchema;
+}

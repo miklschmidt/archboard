@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 
-const CaptureSchema = ArchitectureModelReadSchema.options[0].shape.explanation.unwrap();
+const CaptureSchema = architectureModelReadSchema().options[0].shape.explanation.unwrap();
 const ExplanationActionRequestSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("latest"), tabSessionId: z.string().min(1) }),
 	z.strictObject({
@@ -47,8 +47,33 @@ const ExplanationActionResultSchema = z.discriminatedUnion("success", [
 			success: z.literal(false),
 			code: z.string(),
 			error: z.string(),
-			diagnostics: ArchitectureModelReadSchema.options[1].shape.diagnostics.optional(),
+			diagnostics: architectureModelReadSchema().options[1].shape.diagnostics.optional(),
 		})
 		.strict(),
 ]);
-export { ExplanationActionRequestSchema, ExplanationActionResultSchema };
+type ExplanationActionRequest = z.infer<typeof ExplanationActionRequestSchema>;
+type ExplanationActionResult = z.infer<typeof ExplanationActionResultSchema>;
+
+/**
+ * The schema of an explanation request, for a caller that parses what it receives or sends.
+ * @returns The request schema.
+ */
+function explanationActionRequestSchema(): typeof ExplanationActionRequestSchema {
+	return ExplanationActionRequestSchema;
+}
+
+/**
+ * The schema of an explanation result, for a caller that parses what it receives or sends.
+ * @returns The result schema.
+ */
+function explanationActionResultSchema(): typeof ExplanationActionResultSchema {
+	return ExplanationActionResultSchema;
+}
+
+export {
+	ExplanationActionRequestSchema,
+	ExplanationActionResultSchema,
+	explanationActionRequestSchema,
+	explanationActionResultSchema,
+};
+export type { ExplanationActionRequest, ExplanationActionResult };

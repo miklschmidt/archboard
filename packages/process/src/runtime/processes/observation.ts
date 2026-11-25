@@ -342,19 +342,6 @@ function readDarwinProcess(pid: number): ProcessObservation | undefined {
 }
 
 /**
- * Read every observable Darwin process, skipping protected system entries.
- * @returns The observable process census.
- */
-function listDarwinProcesses(): readonly ProcessObservation[] {
-	return withDarwinLibrary((library) => {
-		const { records } = readDarwinRecords(library, listDarwinPids(library));
-		// A full system census can contain protected processes whose libproc details are unavailable.
-		// Exact ownership decisions use listProcessGroupObservations, which refuses an unreadable member.
-		return Object.freeze(records);
-	});
-}
-
-/**
  * Read the available records for one native pid list.
  * @param library The opened libproc library.
  * @param pids The native pids to read.
@@ -430,16 +417,6 @@ function readProcessObservation(pid: number): ProcessObservation | undefined {
 	if (!positivePid(pid)) throw new Error(`Invalid process id ${JSON.stringify(pid)}.`);
 	if (process.platform === "linux") return readLinuxProcess(pid);
 	if (process.platform === "darwin") return readDarwinProcess(pid);
-	throw new Error(`Process observation is not supported on ${process.platform}.`);
-}
-
-/**
- * Observe the process table with exact kernel birth identities.
- * @returns Every observable process.
- */
-function listProcessObservations(): readonly ProcessObservation[] {
-	if (process.platform === "linux") return listLinuxProcesses();
-	if (process.platform === "darwin") return listDarwinProcesses();
 	throw new Error(`Process observation is not supported on ${process.platform}.`);
 }
 
@@ -523,7 +500,6 @@ export {
 	awaitFrozenGroup,
 	type ProcessObservation,
 	readProcessObservation,
-	listProcessObservations,
 	listProcessGroupObservations,
 	ownerRecord,
 	recordedOwnerIsGone,

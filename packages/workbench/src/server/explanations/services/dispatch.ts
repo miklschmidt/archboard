@@ -60,7 +60,7 @@ async function explainArchitecture(
 	try {
 		return await installed(vault, parsed.data);
 	} catch (error) {
-		logger.error("Cannot handle an explanation action:", error);
+		logger().error("Cannot handle an explanation action:", error);
 		return {
 			success: false,
 			code: "AGENT_UNAVAILABLE",

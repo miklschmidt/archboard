@@ -12,10 +12,10 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, expect, jest, test } from "bun:test";
 
-import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import type { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import type { z } from "zod";
 type LocalityAnswer = Extract<
-	z.infer<typeof ArchitectureHistoryResultSchema>,
+	z.infer<ReturnType<typeof architectureHistoryResultSchema>>,
 	{ success: true; analysis: "locality" }
 >;
 

@@ -1,0 +1,70 @@
+{
+  "order": 4100,
+  "name": "Pane socket lifecycle",
+  "kind": "module",
+  "responsibility": "Registers each accepted pane socket, hands its pane's authority to the newest socket, notes its tab, opens and closes its Codex browser, and retires it on close or at stop",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/panes/services/pane-sockets.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Zse70SS2",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "forget every socket and pane when the server stops",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "forgetDisplay"
+      },
+      "id": "vKEsyHFk#WHDmDolo",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "accept and close the pane's Codex browser",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "acceptCodexBrowser"
+      },
+      "id": "vKEsyHFk#Tr8wcPNp",
+      "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "release what waits on a closed pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "notePaneClosed"
+      },
+      "id": "vKEsyHFk#qwXl5RMO",
+      "to": "vKEsyHFk#r2iFMYJk"
+    },
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "note the pane's tab, and forget it on close",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "noteTabSession"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    }
+  ]
+}

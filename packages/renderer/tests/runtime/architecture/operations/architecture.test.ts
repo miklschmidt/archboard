@@ -13,9 +13,9 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/model/content";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-const policy = DEFAULT_SEMANTIC_POLICY;
+const policy = defaultSemanticPolicy();
 
 /**
  * One architecture, as its own contract reads it.

@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
 	previewFixture,
 	savePreviewPlan,
@@ -32,7 +32,7 @@ test("legacy historical readings keep their board coverage without current surro
 	writeFileSync(join(vault, "Shop.semantic.json"), JSON.stringify(board));
 	await savePreviewPlan(vault);
 	const before = readFileSync(join(vault, "Shop.semantic.json"));
-	const result = ArchitectureModelReadSchema.parse(
+	const result = architectureModelReadSchema().parse(
 		await readArchitectureModel(vault, undefined, undefined, {
 			preview: "Shop",
 			state: "Shop/System#Old",
@@ -95,7 +95,7 @@ test("migration retention saves unresolved original bytes and retries without ch
 	writeFileSync(join(vault, "Unresolved.semantic.json"), "{}");
 	const retried = await retainArchitectureCheckpoint(vault, request);
 	expect(retried).toEqual(saved);
-	const reading = ArchitectureModelReadSchema.parse(
+	const reading = architectureModelReadSchema().parse(
 		await readArchitectureModel(vault, undefined, undefined, {
 			preview: "Shop",
 			checkpoint: saved.checkpoint.id,

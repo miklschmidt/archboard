@@ -7,7 +7,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test("a flank label clears an unrelated corridor without bending away from its route", async () => {
 	// Reduced from the actual 25px label detour: the new parallel route's label
@@ -74,7 +74,7 @@ test("a flank label clears an unrelated corridor without bending away from its r
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -136,7 +136,7 @@ test("flank label allocation keeps an outer corridor clear of an adjacent card",
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -204,7 +204,7 @@ test("a skip keeps its label on its own run and clears every card", async () => 
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});

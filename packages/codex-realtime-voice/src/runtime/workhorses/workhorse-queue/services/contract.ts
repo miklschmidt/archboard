@@ -216,13 +216,10 @@ interface CodexWorkhorseQueue<OperationIdValue extends string> {
 }
 
 export {
-	WORKHORSE_QUEUE_OPERATIONS,
 	type WorkhorseQueueOperation,
 	type WorkhorseQueueMutation,
 	type WorkhorseQueueBinding,
-	type WorkhorseQueueIdentityPort,
 	type WorkhorseQueueOperationIdPort,
-	type WorkhorseQueueSessionPort,
 	type WorkhorseQueueOptions,
 	type QueueListResult,
 	type QueueEffectContext,

@@ -2,7 +2,7 @@
 // reconnected after an abnormal close, and identified by generation so a
 // listener on a superseded socket can tell it is stale.
 
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import {
 	createPaneRegistrationLatch,
 	type PaneRegistrationLatch,
@@ -146,7 +146,7 @@ function createPaneSocketConnector(
 			}
 			listener.closed(generation);
 			if (event.code !== 1000 && !closed) {
-				setTimeout(connect, PANE_MS.socketReconnect);
+				setTimeout(connect, paneMs("socketReconnect"));
 			}
 		});
 		socket.addEventListener("error", () => {

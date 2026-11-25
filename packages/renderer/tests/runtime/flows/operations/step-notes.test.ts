@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 // A step's note is the caveat a sequence carries on one message: the branch,
 // the loop's condition. A picture that leaves it out tells a reader less than
@@ -79,7 +79,7 @@ function paintedBox(markup: string): DiagramBox {
 test("a crossing step explanation stays clear of the receiver's activation bar", async () => {
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture({
 			nodes: [
 				{ id: "client", name: "Client", kind: "service" },
@@ -128,13 +128,13 @@ test("a crossing step explanation stays clear of the receiver's activation bar",
 test("a self step's note is drawn whole under its loop, and the next message makes room for it", async () => {
 	const plain = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: startup(),
 		theme: "light",
 	});
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: startup(NOTE),
 		theme: "light",
 	});

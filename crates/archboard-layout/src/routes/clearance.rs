@@ -2,8 +2,10 @@
 //! has the room its fixed bends and head need.
 
 use archboard_scene::geometry::{
-    Curve, EPSILON, Point, Rect, Segment, curve_bounds, segment_start, vertices_of,
+    Curve, Point, Rect, Segment, curve_bounds, segment_start, vertices_of,
 };
+
+use crate::constants::EPSILON;
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::ecma::{hypot, min};

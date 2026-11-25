@@ -7,7 +7,7 @@ import { frontendState, sourceState } from "@archboard/server-lifecycle/server-h
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { clients } from "@archboard/workbench/panes";
+import { admittedClientCount } from "@archboard/workbench/panes";
 
 /**
  * Serve the frontend's page.
@@ -18,7 +18,7 @@ function frontendRoute(_req: Request, res: Response): void {
 	const htmlFile = path.join(FRONTEND_DIRECTORY, "index.html");
 	res.sendFile(htmlFile, (err) => {
 		if (err) {
-			logger.error("Error serving frontend:", err);
+			logger().error("Error serving frontend:", err);
 			res.status(404).send('Frontend not found. Please run "bun run build" first.');
 		}
 	});
@@ -34,7 +34,7 @@ function healthRoute(_req: Request, res: Response): void {
 	res.json({
 		status: "healthy",
 		timestamp: new Date().toISOString(),
-		websocket_clients: clients.size,
+		websocket_clients: admittedClientCount(),
 		// Identity for `stop`: it must only ever signal a process that both
 		// identifies as this service AND self-reports its pid — never a pid
 		// from a stale pidfile or an unrelated app squatting on the port.
@@ -75,7 +75,7 @@ function syncStatusRoute(_req: Request, res: Response): void {
 			heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
 			heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024), // MB
 		},
-		websocketClients: clients.size,
+		websocketClients: admittedClientCount(),
 	});
 }
 
@@ -87,7 +87,7 @@ function syncStatusRoute(_req: Request, res: Response): void {
  * @param _next Unused; Express needs the arity to treat this as error middleware.
  */
 function unhandledErrorRoute(err: Error, req: Request, res: Response, _next: NextFunction): void {
-	logger.error("Unhandled error:", err);
+	logger().error("Unhandled error:", err);
 	// The route's pattern names the operation. Its path can hold a value that a person gave.
 	const pattern: unknown = req.route?.path;
 	recordError(err, {

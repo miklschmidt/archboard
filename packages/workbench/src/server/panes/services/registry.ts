@@ -6,7 +6,6 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the model file
@@ -83,6 +82,97 @@ function paneKeyOfClient(clientId: string): string | null {
 }
 
 /**
+ * Every pane that has reported itself, recordings included.
+ * @returns Their registrations.
+ */
+function paneRegistrations(): PaneRegistration[] {
+	return [...panes.values()];
+}
+
+/**
+ * The panes a request can address: the ones on screen, not a recording page.
+ * @returns Their registrations.
+ */
+function onScreenPanes(): PaneRegistration[] {
+	return addressablePanes(paneRegistrations());
+}
+
+/**
+ * What one pane last reported.
+ * @param clientId The pane's client id.
+ * @returns Its registration, or undefined when it has none.
+ */
+function paneOf(clientId: string): PaneRegistration | undefined {
+	return panes.get(clientId);
+}
+
+/**
+ * Whether a socket currently owns this pane's identity, which is what makes a report from it real.
+ * @param clientId The pane's client id.
+ * @returns True while a live socket presents the pane.
+ */
+function paneIsLive(clientId: string): boolean {
+	return currentSocketsByClient.has(clientId);
+}
+
+/**
+ * The vault the server last put a pane in.
+ * @param clientId The pane's client id.
+ * @returns The vault, or undefined for a pane the server has not placed.
+ */
+function paneVaultOf(clientId: string): string | undefined {
+	return paneVaults.get(clientId);
+}
+
+/**
+ * Every pane with the vault the server last put it in.
+ * @returns The client id and vault of each placed pane.
+ */
+function panesWithVaults(): Array<[clientId: string, vault: string]> {
+	return [...paneVaults];
+}
+
+/**
+ * How many sockets are admitted to broadcasts.
+ * @returns The count.
+ */
+function admittedClientCount(): number {
+	return clients.size;
+}
+
+/**
+ * Send one serialized message to every admitted socket of every vault, dropping a socket that
+ * cannot take it.
+ * @param data The JSON already serialized for the wire.
+ */
+function sendToEveryClient(data: string): void {
+	for (const client of clients) {
+		try {
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(data);
+			}
+		} catch {
+			logger().warn("Failed to send to client, removing");
+			clients.delete(client);
+		}
+	}
+}
+
+/**
+ * A pane is on a model, so record it as the model the server holds it on.
+ *
+ * Registration is the pane saying what it is showing, and a pane that has just
+ * arrived on a model may be arriving into one an agent already holds and is
+ * part way through. Recording it outright is how every arrival learns it; a
+ * broadcast only reaches whoever was already there.
+ * @param clientId The pane's client id.
+ * @param paneKey The model it is now showing.
+ */
+function arrivedOnModel(clientId: string, paneKey: string): void {
+	paneKeys.set(clientId, paneKey);
+}
+
+/**
  * What each pane holds, in reading order.
  * @returns One entry per pane with its place on screen and its model.
  */
@@ -122,7 +212,7 @@ function deliverToPane(clientId: string, data: string): boolean {
 			socket.send(data);
 			delivered = true;
 		} catch {
-			logger.warn("Failed to send to a pane, removing");
+			logger().warn("Failed to send to a pane, removing");
 			clients.delete(socket);
 		}
 	}
@@ -317,116 +407,6 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
 	return { pane: pane ? paneRef(pane) : null };
 }
 
-// ─── Pane layout acknowledgements ─────────────────────────────
-//
-// Layout lives in the shell, in the browser, and the server used to learn a
-// pane existed only when its socket registered. The layout routes ask the
-// browser to change its layout and then wait for the registry to agree. The
-// acknowledgement is the pane appearing in `panes` or its socket closing —
-// never a promise from the shell — because a registration is the only evidence
-// anywhere in this process that a pane exists.
-
-interface PendingPaneOpen {
-	resolve: (pane: PaneRegistration) => void;
-	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
-	/** The panes that already existed, so the new one can be told from them. */
-	known: Set<string>;
-}
-const pendingPaneOpens = new Set<PendingPaneOpen>();
-
-interface PendingPaneClose {
-	clientId: string;
-	resolve: () => void;
-	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
-}
-const pendingPaneCloses = new Set<PendingPaneClose>();
-
-/**
- * A pane has registered: settle every open request that was waiting for a
- * pane it did not already know. A recording page's is not a pane anybody asked for.
- * @param registration The pane that arrived.
- */
-function notePaneOpened(registration: PaneRegistration): void {
-	if (registration.recording === true) {
-		return;
-	}
-	for (const pending of pendingPaneOpens) {
-		if (pending.known.has(registration.clientId)) {
-			continue;
-		}
-		pendingPaneOpens.delete(pending);
-		clearTimeout(pending.timeout);
-		pending.resolve(registration);
-	}
-}
-
-/**
- * A pane's socket has closed: settle every close request waiting on it.
- * @param clientId The client id of the pane that went.
- */
-function notePaneClosed(clientId: string): void {
-	for (const pending of pendingPaneCloses) {
-		if (pending.clientId !== clientId) {
-			continue;
-		}
-		pendingPaneCloses.delete(pending);
-		clearTimeout(pending.timeout);
-		pending.resolve();
-	}
-}
-
-/**
- * Fail every layout request still waiting, because the server is stopping.
- */
-function rejectPendingLayouts(): void {
-	for (const pending of pendingPaneOpens) {
-		clearTimeout(pending.timeout);
-		pending.reject(new Error("The Archboard server stopped before the pane opened."));
-	}
-	for (const pending of pendingPaneCloses) {
-		clearTimeout(pending.timeout);
-		pending.reject(new Error("The Archboard server stopped before the pane closed."));
-	}
-	pendingPaneOpens.clear();
-	pendingPaneCloses.clear();
-}
-
-/**
- * Wait until the panes the layout change moved have reported themselves since
- * it was asked for.
- *
- * The answer to a layout change names where a pane ended up, and "left" and
- * "right" are read off the rectangles the panes report. So the report has to
- * be the one taken after the shell re-laid them out, not the one from before.
- *
- * Only the panes named are waited on: the ones the shell was asked to open
- * or close and the ones sharing the screen whose rectangle changes with them.
- * A pane that registers meanwhile, or one that has gone since, is not asked
- * and not waited for, and the wait ends the moment the last named pane has
- * re-reported (TASK-153). PANE_MS.settleCap is the bound, never the delay.
- * @param askedAt When the layout change was asked for, as an ISO timestamp.
- * @param moved The client ids whose rectangles the change affects.
- */
-async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Promise<void> {
-	const waitedOn = new Set(moved);
-	const deadline = Date.now() + PANE_MS.settleCap;
-	while (Date.now() < deadline) {
-		for (const clientId of waitedOn) {
-			const pane = panes.get(clientId);
-			if (!pane || pane.at > askedAt) {
-				waitedOn.delete(clientId);
-			}
-		}
-		if (waitedOn.size === 0) {
-			return;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling the registry: each check waits for the previous pause to elapse
-		await Bun.sleep(50);
-	}
-}
-
 /**
  * Forget every socket and pane this process was holding, because the server is
  * stopping and there is no screen any more.
@@ -447,9 +427,8 @@ function forgetDisplay(): void {
 
 export {
 	acceptedSockets,
-	paneKeyForNewPane,
-	paneKeyOf,
-	paneKeysOnScreen,
+	admittedClientCount,
+	arrivedOnModel,
 	browserLeaseLedger,
 	clientIds,
 	clients,
@@ -457,21 +436,24 @@ export {
 	currentSocketsByClient,
 	forgetDisplay,
 	latestSocketAcceptanceByClient,
-	notePaneClosed,
-	notePaneOpened,
+	onScreenPanes,
+	paneFromRequest,
+	paneIsLive,
+	paneKeyForNewPane,
+	paneKeyOf,
 	paneKeyOfClient,
 	paneKeys,
-	paneFromRequest,
-	paneVaults,
+	paneKeysOnScreen,
+	paneOf,
+	paneRegistrations,
 	paneResponse,
 	panes,
-	pendingPaneCloses,
-	pendingPaneOpens,
+	paneVaultOf,
+	paneVaults,
+	panesWithVaults,
 	primaryPane,
-	rejectPendingLayouts,
 	sendKeylessToPane,
+	sendToEveryClient,
 	sendToPane,
-	settleAfterLayout,
 	socketVaults,
 };
-export type { PendingPaneClose, PendingPaneOpen };

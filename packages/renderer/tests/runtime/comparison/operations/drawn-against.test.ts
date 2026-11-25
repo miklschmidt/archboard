@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { SemanticRenderReply } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 const API = { id: "api", name: "Intake API", kind: "service" };
@@ -73,7 +73,7 @@ function stack(built: boolean) {
  * @returns The outcome of the render.
  */
 function drawn(built: boolean, choices: { variant: string; against?: string }) {
-	return renderLegacyBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
+	return renderLegacyBoard(stack(built), { theme: "light", ...choices }, defaultSemanticPolicy());
 }
 
 /**

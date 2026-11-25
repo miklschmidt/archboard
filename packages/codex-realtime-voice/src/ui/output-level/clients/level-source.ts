@@ -7,6 +7,15 @@ import type { VoiceOutputMeter } from "#ui/output-level/clients/meter.ts";
 /** The RMS level at or above which the model counts as speaking. */
 const VOICE_OUTPUT_SPEAKING_LEVEL = 0.02;
 
+/**
+ * Whether a published level counts as the model speaking.
+ * @param level The RMS level, 0..1.
+ * @returns True at or above the speaking level.
+ */
+function isSpeakingLevel(level: number): boolean {
+	return level >= VOICE_OUTPUT_SPEAKING_LEVEL;
+}
+
 /** Frame scheduling, injectable so a test can step frames by hand. */
 interface VoiceOutputFrameScheduler {
 	readonly requestFrame: (callback: () => void) => number;
@@ -181,7 +190,7 @@ function createVoiceOutputLevelSource(frames: VoiceOutputFrameScheduler): VoiceO
 }
 
 export {
-	VOICE_OUTPUT_SPEAKING_LEVEL,
+	isSpeakingLevel,
 	browserFrameScheduler,
 	createVoiceOutputLevelSource,
 	type VoiceOutputFrameScheduler,

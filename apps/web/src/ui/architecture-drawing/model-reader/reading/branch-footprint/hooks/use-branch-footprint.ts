@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
-import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	branchFootprintQuery,
 	mergeBaseQuery,
@@ -65,7 +65,7 @@ function useBranchFootprint(
 				queryKey: mergeBaseQuery(vault, model, { base, head }).queryKey,
 			});
 		void client.invalidateQueries({
-			queryKey: [...architectureModelKeys.vault(vault), "footprint", model.manifest.id],
+			queryKey: vaultQueryKey(vault, "footprint", model.manifest.id),
 		});
 	}, [readRefs, readVault, client, vault, model, base, head]);
 	return { refs, footprint, base, head, read, against, refresh };

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { shellClockMs } from "@archboard/timing";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
 import type { HeldMessage } from "#ui/agent-setup/state/held.ts";
@@ -126,7 +126,7 @@ test("the newest running turn is the one the bar follows, with its plan step and
 });
 
 test("a turn that reports nothing for long enough reads as quiet", () => {
-	const now = 1_000 + SHELL_CLOCK_MS.quiet + 1;
+	const now = 1_000 + shellClockMs("quiet") + 1;
 	expect(
 		agentStatus(view({ turns: [turn("t1", "running")], lastProgressAtMs: 1_000 }), now).quiet,
 	).toBe(true);

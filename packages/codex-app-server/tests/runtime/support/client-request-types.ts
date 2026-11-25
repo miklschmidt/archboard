@@ -1,5 +1,7 @@
+import type { z } from "zod";
+
 import type {
-	ClientRequestInput,
+	CLIENT_REQUEST_PARAM_SCHEMAS,
 	ClientRequestParams,
 	CodexSessionRequestParams,
 } from "#runtime/protocol/client-request-schemas.ts";
@@ -115,14 +117,15 @@ const explicitUndefinedMetadataOutput: ClientRequestParams<"turn/start"> = {
 		invalid: undefined,
 	},
 };
-const explicitUndefinedMetadataInput: ClientRequestInput<"turn/start"> = {
-	threadId: "thread-1",
-	input: [],
-	responsesapiClientMetadata: {
-		// @ts-expect-error Accepted schema input also excludes explicit undefined values.
-		invalid: undefined,
-	},
-};
+const explicitUndefinedMetadataInput: z.input<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)["turn/start"]> =
+	{
+		threadId: "thread-1",
+		input: [],
+		responsesapiClientMetadata: {
+			// @ts-expect-error Accepted schema input also excludes explicit undefined values.
+			invalid: undefined,
+		},
+	};
 
 type _SteerFieldsAreComplete = Assert<
 	Equal<

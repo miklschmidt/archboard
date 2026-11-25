@@ -11,7 +11,7 @@ import {
 	type JSX,
 } from "react";
 
-import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
+import { exploringMs, presentationMs } from "@archboard/timing";
 import {
 	attachStage,
 	stageOf,
@@ -127,7 +127,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	const eases = cameraEases(gesture, reducedMotion, instant);
 	useLayoutEffect(() => {
 		if (surface !== null) {
-			stageOf(surface)?.setCamera(camera, eases ? EXPLORING_MS.cameraSettle : 0);
+			stageOf(surface)?.setCamera(camera, eases ? exploringMs("cameraSettle") : 0);
 		}
 	}, [surface, camera, eases]);
 	const style = useMemo<CSSProperties>(
@@ -135,9 +135,9 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			width,
 			height,
 			transform: cameraTransform(camera),
-			"--presentation-step-ms": `${PRESENTATION_MS.step}ms`,
-			"--lighting-ms": `${EXPLORING_MS.lightingFade}ms`,
-			"--reach-hop-ms": `${EXPLORING_MS.reachHop}ms`,
+			"--presentation-step-ms": `${presentationMs("step")}ms`,
+			"--lighting-ms": `${exploringMs("lightingFade")}ms`,
+			"--reach-hop-ms": `${exploringMs("reachHop")}ms`,
 		}),
 		[width, height, camera],
 	);

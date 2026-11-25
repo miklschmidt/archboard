@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mintId } from "@archboard/model/ids";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import type { SemanticNode } from "@archboard/model/content";
 /**
@@ -19,7 +19,7 @@ function seedCanonicalFixture(
 	],
 ) {
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({

@@ -4,7 +4,7 @@
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
-use archboard_scene::paint::design::DIAGRAM_MARGIN;
+use archboard_scene::paint::design::{diagram_margin, with_diagram_margins};
 
 /// A point moved.
 fn shifted(point: Point, by: Point) -> Point {
@@ -74,16 +74,16 @@ pub(crate) fn fitted_page(
         return drawing;
     };
     let by = Point {
-        x: DIAGRAM_MARGIN - drawn.x,
-        y: DIAGRAM_MARGIN - drawn.y,
+        x: diagram_margin() - drawn.x,
+        y: diagram_margin() - drawn.y,
     };
     let node = |node: DrawingNode<NodeFacts>| DrawingNode {
         bounds: moved(node.bounds, by),
         ..node
     };
     ArchitectureDrawing {
-        width: drawn.width + 2.0 * DIAGRAM_MARGIN,
-        height: drawn.height + 2.0 * DIAGRAM_MARGIN,
+        width: with_diagram_margins(drawn.width),
+        height: with_diagram_margins(drawn.height),
         cards: drawing.cards.into_iter().map(node).collect(),
         containers: drawing.containers.into_iter().map(node).collect(),
         edges: drawing

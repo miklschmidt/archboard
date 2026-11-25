@@ -2,8 +2,9 @@ import { expect, test } from "bun:test";
 
 import {
 	type ApprovalOwnerView,
+	type ApprovalRequest,
 	type CodexApprovalBrokerOptions,
-	type DeepReadonlyApprovalRequest,
+	type DeepReadonly,
 } from "#runtime/approvals/services/contract.ts";
 import {
 	closeBroker,
@@ -19,7 +20,7 @@ function compileDeepReadonlyOwnerContracts(
 	>[0],
 	view: ApprovalOwnerView,
 ): void {
-	const canonical: DeepReadonlyApprovalRequest = view.request;
+	const canonical: DeepReadonly<ApprovalRequest> = view.request;
 	void canonical;
 	if (bindingRequest.family === "command_execution") {
 		// @ts-expect-error Broker-owned generated decisions are deeply readonly.

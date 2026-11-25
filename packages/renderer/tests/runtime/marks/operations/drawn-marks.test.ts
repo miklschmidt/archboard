@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DrawnPicture } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { markCounts } from "#shared/render/rules/key-marks.ts";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { type LegacyRenderChoices } from "#shared/render/rules/legacy-board.ts";
@@ -107,7 +107,7 @@ async function drawn(
 	const outcome = await renderLegacyBoard(
 		DOCUMENT,
 		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;

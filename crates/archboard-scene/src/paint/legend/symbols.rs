@@ -6,8 +6,6 @@ use crate::drawing::Emphasis;
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
-use crate::paint::design::ICON_CHIP_SIZE;
-use crate::paint::design::RAILS;
 use crate::paint::edge_line::arrowhead;
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
@@ -20,6 +18,8 @@ use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
     Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,
 };
+use crate::sizes::ICON_CHIP_SIZE;
+use crate::sizes::RAILS;
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;

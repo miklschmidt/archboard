@@ -2,11 +2,11 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { modelContent, subjectsOf } from "@archboard/model/content";
-import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureClaimResultSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureClaimResultSchema,
+	architectureModuleEditResultSchema,
 	type ArchitectureModuleEdit,
 } from "@archboard/model/contract";
 
@@ -33,7 +33,7 @@ function modelResult(reply: unknown) {
  * @returns The successful public reading.
  */
 async function readModel(server: TakeServer, state: string | null = null) {
-	const model = ArchitectureModelReadSchema.parse(
+	const model = architectureModelReadSchema().parse(
 		modelResult(await server.cli(["model", "read", ...(state === null ? [] : ["--state", state])])),
 	);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -98,7 +98,7 @@ async function editModel(
 			],
 		}),
 	);
-	const claimed = ArchitectureClaimResultSchema.parse(
+	const claimed = architectureClaimResultSchema().parse(
 		modelResult(await server.cli(["model", "claim", "--input", claimInput])),
 	);
 	if (!claimed.success) throw new Error(JSON.stringify(claimed));
@@ -115,7 +115,7 @@ async function editModel(
 				...(proposal === undefined ? {} : { proposal }),
 			}),
 		);
-		const result = ArchitectureModuleEditResultSchema.parse(
+		const result = architectureModuleEditResultSchema().parse(
 			modelResult(await server.cli(["model", "edit", "--input", input, "--doing", intent.doing])),
 		);
 		if (!result.success) throw new Error(JSON.stringify(result));
@@ -150,7 +150,7 @@ async function showModel(
 	server: TakeServer,
 	take: string,
 	pane: string,
-	reading: z.input<typeof ArchitecturePaneReadingSchema>,
+	reading: z.input<ReturnType<typeof architecturePaneReadingSchema>>,
 ): Promise<void> {
 	const input = join(scratch("takes", take), `${crypto.randomUUID()}.reading.json`);
 	writeFileSync(input, JSON.stringify(reading));

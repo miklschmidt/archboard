@@ -1,8 +1,5 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
-import {
-	CODEX_PROTOCOL_VERSION,
-	type ServerNotificationPayloads,
-} from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { type ActiveEpoch } from "#runtime/epoch/store/manifest-contract.ts";
 import type {
 	CodexSessionMutationError,
@@ -20,12 +17,12 @@ import {
 	type CoordinatorThreadSettings,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/identity";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
@@ -35,8 +32,8 @@ const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 
 function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 	return {
-		id: COORDINATOR_MODEL,
-		model: COORDINATOR_MODEL,
+		id: reviewedCoordinatorModel(),
+		model: reviewedCoordinatorModel(),
 		upgrade: null,
 		upgradeInfo: null,
 		availabilityNux: null,
@@ -44,8 +41,10 @@ function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): Coordinato
 		description: "coordinator fixture",
 		modelSpecialty: null,
 		hidden: false,
-		supportedReasoningEfforts: [{ reasoningEffort: COORDINATOR_EFFORT, description: "fixture" }],
-		defaultReasoningEffort: COORDINATOR_EFFORT,
+		supportedReasoningEfforts: [
+			{ reasoningEffort: reviewedCoordinatorEffort(), description: "fixture" },
+		],
+		defaultReasoningEffort: reviewedCoordinatorEffort(),
 		inputModalities: ["text"],
 		supportsPersonality: false,
 		multiAgentVersion: null,
@@ -82,7 +81,7 @@ function startResponse(
 		status: { type: "idle" },
 		path: null,
 		cwd: WORKING_DIRECTORY,
-		cliVersion: CODEX_PROTOCOL_VERSION,
+		cliVersion: codexProtocolVersion(),
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "test-host",
@@ -99,7 +98,7 @@ function startResponse(
 	};
 	return {
 		thread,
-		model: COORDINATOR_MODEL,
+		model: reviewedCoordinatorModel(),
 		modelProvider: "openai",
 		serviceTier,
 		cwd: WORKING_DIRECTORY,
@@ -109,7 +108,7 @@ function startResponse(
 		approvalsReviewer: "user",
 		sandbox: { type: "dangerFullAccess" },
 		activePermissionProfile: { id: "example-default", extends: null },
-		reasoningEffort: COORDINATOR_EFFORT,
+		reasoningEffort: reviewedCoordinatorEffort(),
 		multiAgentMode: "explicitRequestOnly",
 		disabledPluginIds: [],
 	};
@@ -125,16 +124,16 @@ function settings(
 		approvalsReviewer: started.approvalsReviewer,
 		sandboxPolicy: started.sandbox,
 		activePermissionProfile: started.activePermissionProfile,
-		model: COORDINATOR_MODEL,
+		model: reviewedCoordinatorModel(),
 		modelProvider: started.modelProvider,
 		serviceTier: started.serviceTier,
-		effort: COORDINATOR_EFFORT,
+		effort: reviewedCoordinatorEffort(),
 		summary: "auto",
 		collaborationMode: {
 			mode: "default",
 			settings: {
-				model: COORDINATOR_MODEL,
-				reasoning_effort: COORDINATOR_EFFORT,
+				model: reviewedCoordinatorModel(),
+				reasoning_effort: reviewedCoordinatorEffort(),
 				developer_instructions: null,
 			},
 		},
@@ -307,7 +306,7 @@ class FakeSession implements CoordinatorSessionPort {
 		authority: IdentityAuthority = this.authority,
 	): void {
 		const rawThreadId = this.authority.decoder.serializeCodexIdentity(this.started.thread.id);
-		const notification: ServerNotificationPayloads["thread/settings/updated"] = {
+		const notification = {
 			threadId: rawThreadId,
 			threadSettings,
 		};
@@ -337,7 +336,7 @@ interface Fixture {
 }
 
 function fixture(options: FixtureOptions = {}): Fixture {
-	const authority = createIdentityAuthority();
+	const authority = createIdentityAuthorities().identity;
 	const modelValue = options.model ?? coordinatorModel();
 	const epoch = new FakeEpoch(
 		authority,

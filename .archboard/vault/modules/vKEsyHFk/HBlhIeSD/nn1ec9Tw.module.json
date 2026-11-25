@@ -78,7 +78,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
-        "symbol": "ArchitectureCheckpointRequestSchema"
+        "symbol": "architectureCheckpointRequestSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
       "to": "vKEsyHFk#8539szQJ"

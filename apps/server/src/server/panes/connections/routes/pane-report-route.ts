@@ -9,12 +9,17 @@ import { parsePaneKey } from "@archboard/model/legacy-address";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl, statedVault } from "@archboard/workbench/host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { paneKeyOf, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
+import {
+	paneKeyOf,
+	paneOf,
+	paneRegistrations,
+	semanticPaneContextFor,
+} from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
 
 /**
  * What one pane last said it was reading, when that is still about the model
@@ -33,7 +38,7 @@ function readingAboutPaneKey(clientId: string): SemanticPaneContext | null {
 	const context = semanticPaneContextFor(clientId);
 	if (context === null) return null;
 	if (context.architecture != null) return context;
-	const pane = panes.get(clientId);
+	const pane = paneOf(clientId);
 	const showing = pane === undefined ? null : paneKeyOf(pane);
 	return context.model?.key === showing ? context : null;
 }
@@ -48,7 +53,7 @@ function readingAboutPaneKey(clientId: string): SemanticPaneContext | null {
  * @param res Its response.
  */
 function getPanesRoute(req: Request, res: Response): void {
-	const report = buildPanesReport(Array.from(panes.values()), {
+	const report = buildPanesReport(paneRegistrations(), {
 		caller: statedVault(req),
 		whereabouts: placeOfVault,
 		/**

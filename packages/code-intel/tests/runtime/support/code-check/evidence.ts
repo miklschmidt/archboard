@@ -4,7 +4,7 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 /**
@@ -20,7 +20,7 @@ function evidence(vault: string, variant?: string, every = false) {
 	const drafts = new Set<string>();
 	const relationshipKinds =
 		readVaultConfiguration(vault).configuration.relationshipKinds ??
-		DEFAULT_SEMANTIC_POLICY.relationshipKinds;
+		defaultSemanticPolicy().relationshipKinds;
 	for (const file of readdirSync(vault).filter((name) => name.endsWith(".semantic.json"))) {
 		const parsed = LegacyBoardSchema.safeParse(JSON.parse(readFileSync(join(vault, file), "utf8")));
 		if (!parsed.success) {

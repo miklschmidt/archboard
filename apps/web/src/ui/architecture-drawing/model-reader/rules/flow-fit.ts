@@ -1,9 +1,4 @@
-import {
-	FIT_MARGIN,
-	REFERENCE_PANE,
-	fitScale,
-	type Size,
-} from "@archboard/renderer/shell-geometry";
+import { fitRoom, fitScale, shellSize, type Size } from "@archboard/renderer/shell-geometry";
 import type { DiagramGrammar } from "@archboard/model/views";
 
 /** The two readings of a flow. */
@@ -21,10 +16,7 @@ function fittingReading(
 	room: Size | null,
 	pictures: Readonly<Record<FlowGrammar, Size | null>>,
 ): FlowGrammar {
-	const space =
-		room === null
-			? REFERENCE_PANE
-			: { width: room.width - 2 * FIT_MARGIN, height: room.height - 2 * FIT_MARGIN };
+	const space = room === null ? shellSize("referencePane") : fitRoom(room);
 	/**
 	 * The scale a picture lands at whole, no larger than drawn.
 	 * @param picture The picture's size, if it was drawn.

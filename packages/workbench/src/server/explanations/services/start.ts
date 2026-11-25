@@ -6,7 +6,7 @@ import {
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { logger } from "@archboard/diagnostics/logger";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import type { CodexWorkbenchDomainScope } from "#runtime/voice/protocol/extension.ts";
 import type { Entry, Workhorse } from "#server/explanations/services/contract.ts";
 
@@ -125,7 +125,7 @@ async function awaitTurn(entry: Entry) {
 		entry.action.status = "queued";
 		const { promise, resolve } = Promise.withResolvers<void>();
 		entry.turnNamed = resolve;
-		const timer = setTimeout(resolve, CODEX_SESSION_MS.explanationTurnStart);
+		const timer = setTimeout(resolve, codexSessionMs("explanationTurnStart"));
 		await promise;
 		clearTimeout(timer);
 		delete entry.turnNamed;
@@ -150,7 +150,7 @@ function requireCorrelatedTurn(entry: Entry) {
  */
 function fail(entry: Entry, error: unknown) {
 	entry.action.status = entry.threadId === undefined ? "unavailable" : "failed";
-	logger.error("Cannot answer a captured explanation:", error);
+	logger().error("Cannot answer a captured explanation:", error);
 	entry.action.error = failureMessage(entry, error);
 	entry.action.retryable = !unknownOutcome(error) && entry.submission === undefined;
 	if (entry.action.retryable) releaseCapture(entry);

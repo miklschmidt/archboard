@@ -248,6 +248,5 @@ export {
 	type CodexProcessGroupInspection,
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
-	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
 };

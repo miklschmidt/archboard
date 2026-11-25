@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import {
@@ -111,7 +111,7 @@ function cli(args: string[]) {
 
 function answer(stdout: string) {
 	const { vault: _vault, ...value } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
-	return ArchitectureModelReadSchema.parse(value);
+	return architectureModelReadSchema().parse(value);
 }
 
 test("CLI and HTTP share explicit code resolution, foreign navigation and unavailable outcomes", async () => {
@@ -125,7 +125,7 @@ test("CLI and HTTP share explicit code resolution, foreign navigation and unavai
 	});
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const http = ArchitectureModelReadSchema.parse(await response.json());
+	const http = architectureModelReadSchema().parse(await response.json());
 	const read = cli(["model", "read", "Shop#Gateway", "--model", "Shop", "--references", "--code"]);
 	expect(read.status, read.stderr).toBe(0);
 	expect(answer(read.stdout)).toEqual(http);
@@ -206,7 +206,7 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 		});
 		expect(edited.status, edited.stderr).toBe(0);
 		const { vault: _address, ...raw } = JSON.parse(edited.stdout);
-		const created = ArchitectureModuleEditResultSchema.parse(raw);
+		const created = architectureModuleEditResultSchema().parse(raw);
 		if (!created.success) throw new Error(JSON.stringify(created));
 		const response = await fetch(`${server.base}/api/architecture/module`, {
 			method: "POST",
@@ -214,7 +214,7 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 			body: JSON.stringify({ ...request, doing, vault }),
 		});
 		expect(response.status).toBe(200);
-		expect(ArchitectureModuleEditResultSchema.parse(await response.json())).toEqual(created);
+		expect(architectureModuleEditResultSchema().parse(await response.json())).toEqual(created);
 		const retained = cli(["model", "read", "--checkpoint", created.checkpoint.id]);
 		expect(retained.status, retained.stderr).toBe(0);
 		expect(answer(retained.stdout)).toMatchObject({

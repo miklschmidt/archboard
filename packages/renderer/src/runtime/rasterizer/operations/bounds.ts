@@ -144,9 +144,17 @@ function boundsRefusal(bounds: RasterBounds): string | null {
 	);
 }
 
+/**
+ * The schema of a scale a caller may ask for, as a number or its text.
+ * @returns The schema.
+ */
+function rasterScaleSchema(): typeof RasterScaleSchema {
+	return RasterScaleSchema;
+}
+
 export {
 	RASTER_MAX_SIDE_PX,
-	RasterScaleSchema,
+	rasterScaleSchema,
 	bitmapSizeOf,
 	boundsRefusal,
 	regionOf,

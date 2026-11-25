@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { editArchitectureModule } from "@archboard/model/store-write";
-import { ArchitectureModuleEditSchema } from "@archboard/model/contract";
+import { architectureModuleEditSchema } from "@archboard/model/contract";
 import { fixture, disposeFixtures, git } from "#tests/runtime/canonical/edit/operations/fixture.ts";
 import {
 	request,
@@ -59,13 +59,13 @@ test("corrections require completed targets, immutable evidence and the exact pr
 		changes,
 	};
 	expect(
-		ArchitectureModuleEditSchema.safeParse({
+		architectureModuleEditSchema().safeParse({
 			...input,
 			correction: { ...input.correction, reason: " " },
 		}).success,
 	).toBe(false);
 	expect(
-		ArchitectureModuleEditSchema.safeParse({
+		architectureModuleEditSchema().safeParse({
 			...input,
 			correction: { ...input.correction, revisions: [] },
 		}).success,

@@ -19,14 +19,14 @@ mod labels;
 #[cfg(test)]
 pub(crate) use cards::TAB_NEAR;
 pub use cards::{CardWords, measure_node};
-pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top};
-pub use far::{FarCard, FarWords, far_scale_for, far_words};
+pub(crate) use cards::{door_far_runs, tab_far, tab_runs, tag_end, tag_top};
+pub(crate) use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
 pub use labels::{measure_label, message_lines, narrow_label, note_lines};
 
 /// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or
 /// 500. A weight the files do not hold is the regular face.
-pub fn face(font: DiagramFont) -> Face {
+pub(crate) fn face(font: DiagramFont) -> Face {
     match (font.family, font.weight) {
         (FontFamily::Sans, 500) => Face::SansMedium,
         (FontFamily::Sans, 700) => Face::SansBold,
@@ -42,12 +42,12 @@ pub fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
 }
 
 /// How wide one line of words is set, as the text crate gives it.
-pub(crate) fn set_width(text: &str, font: DiagramFont, size: f64) -> f64 {
+fn set_width(text: &str, font: DiagramFont, size: f64) -> f64 {
     archboard_text::width(face(font), text, size)
 }
 
 /// Words prepared to be broken into lines in a face at a size.
-pub fn paragraph(text: &str, font: DiagramFont, size: f64) -> Paragraph {
+fn paragraph(text: &str, font: DiagramFont, size: f64) -> Paragraph {
     Paragraph::new(face(font), size, text)
 }
 
@@ -58,7 +58,7 @@ const ELLIPSIS: &str = "…";
 ///
 /// Each character is measured on its own, which is very slightly wider than
 /// measuring the prefix, so a cut line never comes out over budget.
-pub fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> String {
+pub(crate) fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> String {
     if width(text, font, size) <= room {
         return text.to_owned();
     }
@@ -78,12 +78,12 @@ pub fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> String {
         return ELLIPSIS.to_owned();
     }
     let head: String = characters[..kept].iter().collect();
-    format!("{}{ELLIPSIS}", js::trim_end(&head))
+    format!("{}{ELLIPSIS}", crate::ecma::trim_end(&head))
 }
 
 /// A path, or as much of its tail as fits the room after an ellipsis. The tail
 /// says what the path names, so it is what stays, from a folder's start when one fits.
-pub fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
+fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
     if width(path, font, size) <= room {
         return path.to_owned();
     }

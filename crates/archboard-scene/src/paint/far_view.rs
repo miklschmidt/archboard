@@ -6,8 +6,8 @@
 use crate::geometry::round_coord;
 use crate::js;
 use crate::paint::build::{Items, grouped};
-use crate::paint::design::ICON_CHIP_SIZE;
 use crate::scene::{Group, Role, Transform};
+use crate::sizes::ICON_CHIP_SIZE;
 
 /// Where a chip stands: its top left corner and its side; or where a block of
 /// words starts: the left end of its first baseline and its first line's size.

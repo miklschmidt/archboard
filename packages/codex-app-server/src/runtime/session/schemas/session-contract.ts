@@ -295,9 +295,42 @@ const SupportedLoginAccountParamsSchema = codexIngressSchema<SupportedCodexLogin
 	]),
 );
 type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
+type CodexServerResponse = z.infer<typeof CodexServerResponseSchema>;
+
+/**
+ * Parses the response a caller sends back to one reverse request.
+ * @param value - The method and result the caller answers with.
+ * @returns The response, or undefined when it does not fit the method's response schema.
+ */
+function parseCodexServerResponse(value: unknown): CodexServerResponse | undefined {
+	const parsed = CodexServerResponseSchema.safeParse(value);
+	return parsed.success ? parsed.data : undefined;
+}
+
+/**
+ * Tells whether a value is a queued submission as Codex reports it.
+ * @param value - Any value, such as the submission a queue mutation answered with.
+ * @returns Whether it is a queued submission.
+ */
+function isQueuedSubmission(value: unknown): boolean {
+	return QueuedSubmissionSchema.safeParse(value).success;
+}
+
+/**
+ * Parses login params and refuses every login this client does not implement.
+ * @param value - The candidate login params.
+ * @returns The supported login params.
+ * @throws {z.ZodError} When the params are not a supported login.
+ */
+function parseSupportedLoginAccountParams(value: unknown): SupportedLoginAccountParams {
+	return SupportedLoginAccountParamsSchema.parse(value);
+}
 
 export {
 	CodexServerResponseSchema,
+	isQueuedSubmission,
+	parseCodexServerResponse,
+	parseSupportedLoginAccountParams,
 	QueuedSubmissionSchema,
 	SupportedLoginAccountParamsSchema,
 	ThreadQueueAddParamsSchema,

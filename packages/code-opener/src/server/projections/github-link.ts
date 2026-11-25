@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import { codeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
 import { GitHubHttpsUrlSchema, type GitHubHttpsUrl } from "#shared/schemas/code-target-open.ts";
 
 /**
@@ -97,7 +97,7 @@ function githubPlace(
  * @returns A validated GitHub URL, or undefined when the binding has none.
  */
 function githubUrlForBinding(binding: CodeBinding, line?: number): GitHubHttpsUrl | undefined {
-	const parsed = CodeBindingSchema.safeParse(binding);
+	const parsed = codeBindingSchema().safeParse(binding);
 	if (!parsed.success) {
 		return undefined;
 	}

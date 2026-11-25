@@ -2,7 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { themeColor } from "#runtime/theme/store/source.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -44,7 +44,7 @@ function namedTokens(svg: string): Set<string> {
 
 test("a page's picture is one picture for both themes, and names only the page's tokens", async () => {
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		standing: { edge: "added" },
 	});
@@ -62,7 +62,7 @@ test("a page's picture is one picture for both themes, and names only the page's
 test("a document that stands alone carries its theme's value of every token it names", async () => {
 	for (const theme of ["light", "dark"] as const) {
 		const { svg } = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme,
 			standing: { edge: "added" },
@@ -90,7 +90,7 @@ function body(svg: string): string {
 
 test("a document drawn auto carries both themes, and the reader's colour scheme chooses", async () => {
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "auto",
 		standing: { edge: "added" },
@@ -106,7 +106,7 @@ test("a document drawn auto carries both themes, and the reader's colour scheme 
 	}
 	// The drawing itself is the one the two grounds draw: only the root's declarations differ.
 	const { svg: lightSvg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		standing: { edge: "added" },

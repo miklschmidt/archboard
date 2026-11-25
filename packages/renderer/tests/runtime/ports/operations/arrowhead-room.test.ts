@@ -10,7 +10,7 @@
 
 import { expect, test } from "bun:test";
 
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -19,7 +19,7 @@ import reachTheWorkhorse from "#tests/runtime/support/fixtures/model-changes-rea
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import oneWriteLands from "#tests/runtime/support/fixtures/one-write-lands.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The straight run every line keeps before its head: archboard_layout::constants::APPROACH_STRAIGHT. */
 const APPROACH_STRAIGHT = 12;
@@ -78,12 +78,12 @@ function lastRun(d: string): { from: Point; to: Point; straight: boolean } {
 	return last;
 }
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"every arrowhead fits the straight run that every line keeps before its end (%s)",
 	async (layout) => {
 		for (const content of DOCUMENTS) {
 			const { svg } = await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content,
 				theme: "light",
 				layout,

@@ -4,8 +4,8 @@
 
 import type { z } from "zod";
 import {
-	RepositoryListingSchema,
-	type CheckoutChoiceSchema,
+	repositoryListingSchema,
+	type checkoutChoiceSchema,
 } from "@archboard/workspace/repositories";
 import { requestJson } from "@archboard/server-requests";
 
@@ -17,8 +17,8 @@ import { requestJson } from "@archboard/server-requests";
  */
 async function fetchRepositories(
 	signal?: AbortSignal,
-): Promise<z.infer<typeof RepositoryListingSchema>> {
-	const parsed = RepositoryListingSchema.safeParse(
+): Promise<z.infer<ReturnType<typeof repositoryListingSchema>>> {
+	const parsed = repositoryListingSchema().safeParse(
 		await requestJson<unknown>("/api/repositories", { signal }),
 	);
 	if (!parsed.success) {
@@ -32,7 +32,9 @@ async function fetchRepositories(
  * @param choice The repository and one of its known checkouts.
  * @returns When the server has chosen it.
  */
-async function chooseCheckout(choice: z.infer<typeof CheckoutChoiceSchema>): Promise<void> {
+async function chooseCheckout(
+	choice: z.infer<ReturnType<typeof checkoutChoiceSchema>>,
+): Promise<void> {
 	await requestJson("/api/repositories/chosen", { method: "PUT", payload: choice });
 }
 

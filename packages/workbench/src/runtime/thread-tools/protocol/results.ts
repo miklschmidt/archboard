@@ -1,12 +1,9 @@
 import { z } from "zod";
 
-import {
-	CodexThreadStatusTypeSchema,
-	CodexTurnStatusSchema,
-} from "@archboard/codex-app-server/contract";
+import { codexFieldSchema } from "@archboard/codex-app-server/contract";
 
 import {
-	GeneralThreadToolNameSchema,
+	isGeneralThreadToolName,
 	type GeneralThreadToolName,
 } from "#runtime/thread-tools/protocol/manifest.ts";
 import { parseStrictJson } from "#runtime/thread-tools/protocol/json.ts";
@@ -86,7 +83,7 @@ const ForkThreadValueSchema = z.union([
 const ListedThreadSchema = z.strictObject({
 	threadId: IdentitySchema,
 	title: nullableUtf8Text(512),
-	status: CodexThreadStatusTypeSchema,
+	status: codexFieldSchema("threadStatusType"),
 	source: z.enum(["cli", "vscode", "exec", "appServer"]),
 	epoch: z.enum(["current", "prior", "unknown"]),
 	ownership: z.enum(["created", "attached", "foreign"]),
@@ -101,7 +98,7 @@ const ListThreadsValueSchema = z.strictObject({
 
 const ReadTurnSchema = z.strictObject({
 	turnId: IdentitySchema,
-	status: CodexTurnStatusSchema,
+	status: codexFieldSchema("turnStatus"),
 	summary: boundedUtf8Text(512),
 	outputsIncluded: z.boolean(),
 	outputsTruncated: z.boolean(),
@@ -143,8 +140,6 @@ const RefusedEnvelopeSchema = z.strictObject({
 	]),
 	message: boundedUtf8Text(512),
 });
-
-const OUTER_FAILURE_REASONS = new Set(["invalid_call", "unsupported"]);
 
 const ApprovalRequiredEnvelopeSchema = z.strictObject({
 	tag: z.literal("approval_required"),
@@ -188,26 +183,15 @@ const TOOL_RESULT_ENVELOPE_SCHEMAS = Object.freeze({
 	wait_threads: z.union([okEnvelope(WaitThreadsValueSchema), ...SharedEnvelopeSchemas]),
 } as const satisfies Record<GeneralThreadToolName, z.ZodTypeAny>);
 
-const InputTextResultSchema = z.strictObject({
-	type: z.literal("inputText"),
-	text: boundedText(16_384),
-});
+/** What a tool call answers with: one text item holding the result envelope, and whether it succeeded. */
+export type DynamicToolCallResponse = {
+	contentItems: [{ type: "inputText"; text: string }];
+	success: boolean;
+};
 
-export const DynamicToolCallResponseSchema = z.strictObject({
-	contentItems: z.tuple([InputTextResultSchema]),
-	success: z.boolean(),
-});
-
-export type DynamicToolCallResponse = z.infer<typeof DynamicToolCallResponseSchema>;
 type ToolResultEnvelope<Name extends GeneralThreadToolName> = z.infer<
 	(typeof TOOL_RESULT_ENVELOPE_SCHEMAS)[Name]
 >;
-
-export interface ParsedDynamicToolCallResponse<Name extends GeneralThreadToolName> {
-	readonly contentItems: DynamicToolCallResponse["contentItems"];
-	readonly success: boolean;
-	readonly envelope: ToolResultEnvelope<Name>;
-}
 
 /**
  * Freeze a value and everything reachable from it, so a parsed envelope cannot be changed by
@@ -233,11 +217,10 @@ function freezeDeep<T>(value: T): T {
  * @throws {TypeError} When the name is not a reviewed tool.
  */
 function toolNameFor(name: unknown): GeneralThreadToolName {
-	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
-	if (!parsedName.success) {
+	if (!isGeneralThreadToolName(name)) {
 		throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
 	}
-	return parsedName.data;
+	return name;
 }
 
 /**
@@ -456,44 +439,4 @@ export function parseToolResultEnvelope(
 	}
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- schemaFor(toolName) is that tool's own envelope schema, so its parsed output is that tool's envelope by construction; the schema table is keyed by tool name and TypeScript cannot follow that through a ZodTypeAny lookup
 	return freezeDeep(parsed.data) as ToolResultEnvelope<GeneralThreadToolName>;
-}
-
-export function parseDynamicToolCallResponse<Name extends GeneralThreadToolName>(
-	name: Name,
-	response: unknown,
-): ParsedDynamicToolCallResponse<Name>;
-export function parseDynamicToolCallResponse(
-	name: unknown,
-	response: unknown,
-): ParsedDynamicToolCallResponse<GeneralThreadToolName>;
-/**
- * Parse a dynamic tool call response as this tool's result: the response envelope first, then the
- * single text item it carries, parsed as that tool's result envelope. This is the only way a
- * tool's result enters Archboard.
- * @param name - The tool that was called.
- * @param response - The raw dynamic tool call response.
- * @returns The content items, the success flag, and the parsed envelope.
- * @throws {TypeError} When the response or its envelope is not the reviewed shape.
- */
-export function parseDynamicToolCallResponse(
-	name: unknown,
-	response: unknown,
-): ParsedDynamicToolCallResponse<GeneralThreadToolName> {
-	const parsed = DynamicToolCallResponseSchema.safeParse(response);
-	if (!parsed.success) {
-		invalidResult(`${String(name)} dynamic tool response`, parsed.error.issues);
-	}
-	const envelope = parseToolResultEnvelope(name, parsed.data.contentItems[0].text);
-	if (!parsed.data.success) {
-		if (envelope.tag !== "refused" || !OUTER_FAILURE_REASONS.has(envelope.reason)) {
-			throw new TypeError(
-				`${String(name)} dynamic tool response must use a boundary-refusal envelope when success is false.`,
-			);
-		}
-	}
-	return freezeDeep({
-		contentItems: parsed.data.contentItems,
-		success: parsed.data.success,
-		envelope,
-	});
 }

@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/model/content";
 import {
-	DEFAULT_SEMANTIC_POLICY,
-	SemanticPolicySchema,
-	VaultDiagnosticSchema,
+	defaultSemanticPolicy,
+	semanticPolicySchema,
+	vaultDiagnosticSchema,
 	type SemanticPolicy,
 } from "@archboard/model/policy";
 import type { SemanticVariant } from "@archboard/model/legacy-board";
@@ -25,23 +25,23 @@ import type {
 	InspectionRequest,
 	RenderRequest,
 } from "#runtime/evaluation/run-checks/outcomes/rules/outcomes.ts";
-type Model = Extract<z.infer<typeof ArchitectureModelReadSchema>, { success: true }>;
-type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+type Model = Extract<z.infer<ReturnType<typeof architectureModelReadSchema>>, { success: true }>;
+type VaultDiagnostic = z.infer<ReturnType<typeof vaultDiagnosticSchema>>;
 /**
  * Merge authored fixture vocabulary with the shared defaults.
  * @param policy The optional vocabulary patch.
  * @returns The complete policy.
  */
 function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
-	return SemanticPolicySchema.parse({
-		...DEFAULT_SEMANTIC_POLICY,
+	return semanticPolicySchema().parse({
+		...defaultSemanticPolicy(),
 		...policy,
-		nodeKinds: { ...DEFAULT_SEMANTIC_POLICY.nodeKinds, ...policy?.nodeKinds },
+		nodeKinds: { ...defaultSemanticPolicy().nodeKinds, ...policy?.nodeKinds },
 		relationshipKinds: {
-			...DEFAULT_SEMANTIC_POLICY.relationshipKinds,
+			...defaultSemanticPolicy().relationshipKinds,
 			...policy?.relationshipKinds,
 		},
-		groups: { ...DEFAULT_SEMANTIC_POLICY.groups, ...policy?.groups },
+		groups: { ...defaultSemanticPolicy().groups, ...policy?.groups },
 	});
 }
 /**
@@ -72,7 +72,7 @@ function readConfigurationText(vault: string): string {
  * @returns The validated policy.
  */
 function readPolicy(vault: string): SemanticPolicy {
-	return SemanticPolicySchema.parse(Bun.YAML.parse(readConfigurationText(vault)));
+	return semanticPolicySchema().parse(Bun.YAML.parse(readConfigurationText(vault)));
 }
 /**
  * Read complete canonical meaning through the same CLI that the author uses.
@@ -81,7 +81,7 @@ function readPolicy(vault: string): SemanticPolicy {
  * @returns The coherent canonical reading.
  */
 async function readModel(cli: CliContext, state?: string): Promise<Model> {
-	const model = ArchitectureModelReadSchema.parse(
+	const model = architectureModelReadSchema().parse(
 		await archboardOk(cli, ["model", "read", ...(state === undefined ? [] : ["--state", state])]),
 	);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -140,7 +140,7 @@ async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument
 async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
 	const answer = await archboard(cli, ["check", "semantics"]);
 	return z
-		.object({ semantics: z.object({ diagnostics: z.array(VaultDiagnosticSchema) }) })
+		.object({ semantics: z.object({ diagnostics: z.array(vaultDiagnosticSchema()) }) })
 		.parse(answer.json).semantics.diagnostics;
 }
 /**

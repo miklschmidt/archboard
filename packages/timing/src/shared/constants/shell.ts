@@ -53,4 +53,22 @@ const MODEL_CACHE_MS = durations({
 	startListing: 2_000,
 });
 
-export { SHELL_CLOCK_MS, MODEL_CACHE_MS };
+/**
+ * One duration of the shell's clock.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function shellClockMs(key: keyof typeof SHELL_CLOCK_MS): number {
+	return SHELL_CLOCK_MS[key];
+}
+
+/**
+ * One duration of the model cache.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function modelCacheMs(key: keyof typeof MODEL_CACHE_MS): number {
+	return MODEL_CACHE_MS[key];
+}
+
+export { shellClockMs, modelCacheMs };

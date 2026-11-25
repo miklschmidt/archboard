@@ -6,8 +6,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { codeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { prepareEvidenceFixture, prepareEvidenceSource } from "./evidence-fixture.ts";
@@ -118,7 +118,7 @@ async function checkCode(server: TakeServer, terminal: Terminal, fixture: Fixtur
 	// The CLI leaves the names of each measured module's exports out of its answer, and only the
 	// findings are needed here.
 	const answer = z
-		.object({ code: CodeCheckAnswerSchema.pick({ findings: true }) })
+		.object({ code: codeCheckAnswerSchema().pick({ findings: true }) })
 		.parse(JSON.parse(checked.stdout)).code;
 	const finding = answer.findings.find((one) => one.code === "RELATIONSHIP_UNDRAWN");
 	const evidence = finding?.evidence?.find(
@@ -286,7 +286,7 @@ async function filmInterfaces(
  */
 async function reportPair(server: TakeServer, terminal: Terminal, fixture: Fixture): Promise<void> {
 	await terminal.command("archboard model locality");
-	const locality = ArchitectureHistoryResultSchema.options[0].parse(
+	const locality = architectureHistoryResultSchema().options[0].parse(
 		modelResult(await server.cli(["model", "locality"])),
 	);
 	const pair = locality.coupling.find(
@@ -321,7 +321,10 @@ async function reportFootprint(
 		`archboard model footprint --base ${fixture.base} --state "${fixture.proposals.narrow}"`,
 	);
 	const footprint = z
-		.union([ArchitectureHistoryResultSchema.options[1], ArchitectureHistoryResultSchema.options[2]])
+		.union([
+			architectureHistoryResultSchema().options[1],
+			architectureHistoryResultSchema().options[2],
+		])
 		.parse(modelResult(await server.cli(args)));
 	if (footprint.proposal === null) throw new Error("The example footprint has no proposal");
 	if (

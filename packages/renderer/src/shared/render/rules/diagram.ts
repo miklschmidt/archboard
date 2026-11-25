@@ -15,9 +15,9 @@
 // (`@archboard/timing`). So one host draws the same content, theme and policy
 // to the same bytes in any order.
 
-import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
-import { FAR_VIEW_SWAP_MS, FLOW_CYCLE_CAP_MS } from "@archboard/timing";
+import { defaultTrafficSpeed } from "@archboard/model/content";
+import { defaultLayoutEngine } from "@archboard/model/render-reply";
+import { pictureMs } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
 	SemanticRenderError,
@@ -36,9 +36,9 @@ const NOTHING_TO_DRAW = {
 
 /** The durations and speeds every picture is drawn with. */
 const CLOCK = {
-	farViewSwapMs: FAR_VIEW_SWAP_MS,
-	trafficSpeed: DEFAULT_TRAFFIC_SPEED,
-	cycleCapMs: FLOW_CYCLE_CAP_MS,
+	farViewSwapMs: pictureMs("farViewSwap"),
+	trafficSpeed: defaultTrafficSpeed(),
+	cycleCapMs: pictureMs("flowCycleCap"),
 };
 
 /**
@@ -79,7 +79,7 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 	const rendered = await host.core().render(
 		JSON.stringify({
 			...request,
-			layout: request.layout ?? DEFAULT_LAYOUT_ENGINE,
+			layout: request.layout ?? defaultLayoutEngine(),
 			clock: CLOCK,
 			themeColors: host.themeColors,
 		}),

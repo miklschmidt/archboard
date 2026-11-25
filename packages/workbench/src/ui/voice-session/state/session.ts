@@ -3,7 +3,7 @@
 // reads are constructed elsewhere and are never disposed here.
 
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
-import { JsonValueSchema } from "@archboard/codex-realtime-voice/schemas";
+import { parseJsonValue } from "@archboard/codex-realtime-voice/schemas";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,
@@ -223,7 +223,7 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 	 */
 	const startNew = async (presentation: VoiceNarration | null = null): Promise<void> => {
 		bindNewSession();
-		await realtime.start(presentation === null ? null : JsonValueSchema.parse(presentation));
+		await realtime.start(presentation === null ? null : parseJsonValue(presentation));
 	};
 
 	/**

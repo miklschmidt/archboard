@@ -6,10 +6,12 @@
 
 use std::collections::BTreeMap;
 
-use crate::drawing::{Edge, Emphasis};
-use crate::geometry::{Curve, EPSILON, Point, Segment, segment_start};
+use crate::drawing::Emphasis;
+use crate::geometry::{Curve, Point, Segment, segment_start};
 use crate::js;
+use crate::paint::Edge;
 use crate::paint::styles::HEAD_LENGTH;
+use crate::sizes::EPSILON;
 
 /// Two straight pieces closer than this across their axis draw as one line.
 const SHARED_INK: f64 = 2.0;

@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { subtitleMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import {
 	cuesOf,
@@ -81,7 +81,7 @@ function useVoiceSubtitles(
 
 	useEffect(() => {
 		const clock = frameClock();
-		const timer = clock.after(SUBTITLE_MS.linger, () => {
+		const timer = clock.after(subtitleMs("linger"), () => {
 			setLapsed(mark);
 		});
 		return (): void => {

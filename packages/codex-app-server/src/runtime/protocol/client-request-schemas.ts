@@ -420,11 +420,6 @@ type ClientRequestPayloads = {
 };
 type ClientRequestParams<Method extends ClientRequestMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestPayloads[Method];
-type ClientRequestInputPayloads = {
-	[Method in ClientRequestMethod]: z.input<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;
-};
-type ClientRequestInput<Method extends ClientRequestMethod> =
-	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestInputPayloads[Method];
 
 type PreserveNullish<Value, Identity> = Identity | Extract<Value, null | undefined>;
 type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" | "ancestorThreadId"
@@ -463,10 +458,4 @@ type CodexSessionRequestPayloads = {
 type CodexSessionRequestParams<Method extends ClientRequestMethod> =
 	CodexSessionRequestPayloads[Method];
 
-export {
-	CLIENT_REQUEST_PARAM_SCHEMAS,
-	type ClientRequestPayloads,
-	type ClientRequestParams,
-	type ClientRequestInput,
-	type CodexSessionRequestParams,
-};
+export { CLIENT_REQUEST_PARAM_SCHEMAS, type ClientRequestParams, type CodexSessionRequestParams };

@@ -5,8 +5,8 @@ use crate::drawing::{MeasuredLabel, TextRole, TextRun};
 use crate::js::js_max;
 use crate::measure::cards::{NOTE, Style, runs_for};
 use crate::measure::paragraph;
-use crate::paint::design::{ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, PILL_FONT};
 use crate::sequence_picture::WordLine;
+use crate::sizes::{ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, PILL_FONT};
 
 /// A relationship's words on its plate.
 const LABEL: Style = Style {

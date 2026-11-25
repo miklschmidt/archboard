@@ -8,7 +8,7 @@
 // a correct model either way. The SVG under the canvas keeps its words and its
 // marks for search, copy, screen readers and the viewer.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import { HeldInk } from "#ui/architecture-drawing/canvas/picture/clients/picture-ink.ts";
@@ -133,7 +133,7 @@ class PictureStage {
 	 */
 	carry(painting: string | undefined, shift: StageShift): void {
 		this.#take(painting, (painter, taken) => {
-			painter.carry(taken, shift.x, shift.y, PICTURE_MS.transition);
+			painter.carry(taken, shift.x, shift.y, pictureMs("transition"));
 		});
 	}
 
@@ -152,7 +152,7 @@ class PictureStage {
 		 * @param taken The picture's painting.
 		 */
 		const arrive: PictureHand = (painter, taken) => {
-			painter.enter(taken, headingJson(heading), PICTURE_MS.entry, x, y, frameClock().now());
+			painter.enter(taken, headingJson(heading), pictureMs("entry"), x, y, frameClock().now());
 		};
 		this.#take(painting, arrive);
 		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(arrive);
@@ -164,7 +164,7 @@ class PictureStage {
 	 * @param reducedMotion Whether the person asked for no motion; then it is simply gone.
 	 */
 	leave(heading: Departure, reducedMotion: boolean): void {
-		const ms = reducedMotion ? 0 : PICTURE_MS.exit;
+		const ms = reducedMotion ? 0 : pictureMs("exit");
 		this.#tell((painter) => {
 			painter.leave(headingJson(heading), ms, frameClock().now());
 		});
@@ -451,7 +451,7 @@ class PictureStage {
 		let retry = false;
 		if (failed.kind === "gpu") {
 			const now = frameClock().now();
-			retry = now - this.#gpuFailedAt > PICTURE_MS.gpuRetry;
+			retry = now - this.#gpuFailedAt > pictureMs("gpuRetry");
 			this.#gpuFailedAt = now;
 		}
 		void this.#start({ painter: failed.kind, reason, retry });

@@ -2,7 +2,7 @@
 // snapshots it moves through on the way from signed out to a conversation.
 
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "@archboard/codex-realtime-voice/schemas";
+import { IDLE_SPOKEN_APPROVAL } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
@@ -84,7 +84,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			delivery: null,
 			reason: "Voice is unavailable.",
 		},
-		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
+		spokenApproval: IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 		...overrides,

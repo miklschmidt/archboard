@@ -1,13 +1,13 @@
 // The semantic policy, its evidence, palette and levels, and the vault diagnostics that read it.
 export { drillDirection } from "#shared/rules/levels.ts";
 export {
-	DEFAULT_SEMANTIC_POLICY,
+	defaultSemanticPolicy,
 	describeSubject,
 	diagnosticLine,
-	EvidenceKindSchema,
-	PaletteColorSchema,
-	SemanticPolicySchema,
-	VaultCheckSchema,
-	VaultDiagnosticSchema,
+	evidenceKindSchema,
+	paletteColorSchema,
+	semanticPolicySchema,
+	vaultCheckSchema,
+	vaultDiagnosticSchema,
 } from "#shared/schemas/semantic-policy.ts";
 export type { SemanticPolicy } from "#shared/schemas/semantic-policy.ts";

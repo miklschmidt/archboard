@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { readLegacyInventory } from "@archboard/model/store-read";
 import { saveLegacyMappingPlan } from "@archboard/model/store-write";
 import type { LegacyMappingPlan } from "#shared/schemas/migration.ts";
@@ -14,7 +14,7 @@ function previewFixture() {
 	writeFileSync(
 		join(vault, ".archboard/config.yaml"),
 		Bun.YAML.stringify({
-			...DEFAULT_SEMANTIC_POLICY,
+			...defaultSemanticPolicy(),
 			groups: { product: { name: "Product", color: "blue" } },
 		}),
 	);

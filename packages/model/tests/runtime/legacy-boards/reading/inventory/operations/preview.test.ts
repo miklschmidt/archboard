@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readLegacyInventory, readArchitectureModel } from "@archboard/model/store-read";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
 	previewFixture,
 	savePreviewPlan,
@@ -18,7 +18,7 @@ test("preview composes implemented meaning through the public reader without rep
 	homes.push(home);
 	const inventory = await savePreviewPlan(vault);
 	const before = Bun.spawnSync(["git", "-C", home, "status", "--porcelain"]).stdout.toString();
-	const result = ArchitectureModelReadSchema.parse(
+	const result = architectureModelReadSchema().parse(
 		await readArchitectureModel(vault, undefined, undefined, { preview: "Shop" }),
 	);
 	if (!result.success) throw new Error(JSON.stringify(result));

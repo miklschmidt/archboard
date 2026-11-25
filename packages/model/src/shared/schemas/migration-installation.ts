@@ -38,3 +38,11 @@ export {
 	MigrationInstallationSchema,
 	InstalledMigrationSchema,
 };
+
+/**
+ * The schema `ArchitectureMigrationRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureMigrationRequestSchema(): typeof ArchitectureMigrationRequestSchema {
+	return ArchitectureMigrationRequestSchema;
+}

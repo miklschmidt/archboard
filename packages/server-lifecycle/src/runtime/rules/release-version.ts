@@ -51,4 +51,4 @@ function otherVersionWarning(
 	);
 }
 
-export { bothRelease, otherVersionWarning, type ServerInstallation };
+export { bothRelease, otherVersionWarning };

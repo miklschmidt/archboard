@@ -1,3 +1,4 @@
+import { createTestVoicePolicy } from "#tests/runtime/support/host.ts";
 import { expect, test } from "bun:test";
 import {
 	correlation,
@@ -18,12 +19,10 @@ test("a failed voice subscription releases context before a later start", async 
 				};
 			},
 		},
-		{
-			subscribe: () => {
-				if (failVoice) throw new Error("Voice source unavailable.");
-				return () => {};
-			},
-		},
+		createTestVoicePolicy(() => {
+			if (failVoice) throw new Error("Voice source unavailable.");
+			return () => {};
+		}),
 	);
 	try {
 		await expect(
@@ -53,12 +52,10 @@ test("throwing host cleanups release both subscriptions once and do not block vo
 				throw new Error("Context source cleanup failed.");
 			},
 		},
-		{
-			subscribe: () => () => {
-				voiceStops += 1;
-				throw new Error("Voice source cleanup failed.");
-			},
-		},
+		createTestVoicePolicy(() => () => {
+			voiceStops += 1;
+			throw new Error("Voice source cleanup failed.");
+		}),
 	);
 	try {
 		const start = await started(h);

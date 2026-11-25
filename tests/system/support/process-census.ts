@@ -1,4 +1,7 @@
-import { listProcessObservations, readProcessObservation } from "@archboard/process/observation";
+import {
+	listProcessGroupObservations,
+	readProcessObservation,
+} from "@archboard/process/observation";
 
 interface ProcessIdentity {
 	readonly pid: number;
@@ -25,9 +28,33 @@ function exactProcessExists(identity: Readonly<ProcessIdentity>): boolean {
 }
 
 function processGroupMembers(group: number): number[] {
-	return listProcessObservations()
-		.filter((observation) => observation.state !== "zombie" && observation.pgid === group)
+	return listProcessGroupObservations(group)
+		.filter((observation) => observation.state !== "zombie")
 		.map((observation) => observation.pid);
+}
+
+/**
+ * The live children of a process, as the process table lists them now.
+ * @param parentPid The parent.
+ * @returns Each child that is not a zombie, read with its kernel birth identity.
+ */
+function childProcesses(
+	parentPid: number,
+): NonNullable<ReturnType<typeof readProcessObservation>>[] {
+	const table = Bun.spawnSync(["ps", "-A", "-o", "pid=,ppid="], {
+		stdout: "pipe",
+		stderr: "ignore",
+	});
+	return table.stdout
+		.toString()
+		.trim()
+		.split("\n")
+		.map((line) => line.trim().split(/\s+/).map(Number))
+		.filter(([, parent]) => parent === parentPid)
+		.flatMap(([pid]) => {
+			const observation = pid === undefined ? undefined : readProcessObservation(pid);
+			return observation === undefined || observation.state === "zombie" ? [] : [observation];
+		});
 }
 
 function killExactGroup(identity: Readonly<ProcessIdentity>): void {
@@ -49,6 +76,7 @@ function killExactGroup(identity: Readonly<ProcessIdentity>): void {
 }
 
 export {
+	childProcesses,
 	exactProcessExists,
 	killExactGroup,
 	processGroupMembers,

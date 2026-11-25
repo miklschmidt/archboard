@@ -3,23 +3,18 @@ import type {
 	EpochOperationRecord,
 	ThreadLinkClassification,
 } from "#runtime/voice/protocol/extension.ts";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import type { ArchboardContext } from "#runtime/instructions/rules/context.ts";
 import type {
 	SessionThread,
-	SessionThreadForkResult,
 	SessionThreadItem,
 	SessionThreadItemPageResult,
-	SessionThreadStartResult,
 	SessionTurn,
-	SessionTurnResult,
+	SessionResponsePayloads,
 } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { IdentityAuthorities, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { type ToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
 import { contextFixture } from "#tests/runtime/support/dynamic-tools/context.ts";
 import type { DynamicAuthorityToken } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
@@ -65,7 +60,7 @@ export function thread(
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: CODEX_PROTOCOL_VERSION,
+		cliVersion: codexProtocolVersion(),
 		source: "appServer",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -250,7 +245,7 @@ function proofFor(
 			threadSource: "appServer",
 			workspaceRoot: CHECKOUT_ROOT,
 			instructionHash: "1".repeat(64),
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+			manifestHash: archboardAppBinding().manifestHash,
 			confirmedAtMs: 2,
 		},
 		reason: "fixture confirmed",
@@ -409,9 +404,9 @@ export function requestFor(
 		threadId: caller.threadId,
 		turnId: caller.turnId,
 		callId,
-		namespace: ARCHBOARD_APP_NAMESPACE.name,
+		namespace: archboardAppBinding().namespace,
 		tool,
-		manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+		manifestHash: archboardAppBinding().manifestHash,
 	});
 	const correlation = authorities.identity.decoder.createWireRequestCorrelation({ requestId });
 	return {
@@ -424,7 +419,7 @@ export function requestFor(
 			threadId: caller.wireThreadId,
 			turnId: caller.wireTurnId,
 			callId: `call-${callSuffix}`,
-			namespace: ARCHBOARD_APP_NAMESPACE.name,
+			namespace: archboardAppBinding().namespace,
 			tool,
 			arguments: z.json().parse(argumentsValue),
 		},
@@ -433,3 +428,7 @@ export function requestFor(
 	};
 }
 import { z } from "zod";
+
+type SessionThreadForkResult = SessionResponsePayloads["thread/fork"];
+type SessionThreadStartResult = SessionResponsePayloads["thread/start"];
+type SessionTurnResult = SessionResponsePayloads["turn/start"];

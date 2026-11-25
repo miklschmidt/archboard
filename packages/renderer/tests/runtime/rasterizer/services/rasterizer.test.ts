@@ -13,7 +13,7 @@ import {
 import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
@@ -102,7 +102,7 @@ function draw(
 	grammar: "architecture" | "sequence" = "architecture",
 ): Promise<RenderedDiagram> {
 	return renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		grammar,

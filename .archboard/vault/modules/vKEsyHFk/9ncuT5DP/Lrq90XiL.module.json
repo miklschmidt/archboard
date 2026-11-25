@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/voice-client.ts",
+        "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/open-voice-client.ts",
         "symbol": "socketUrl"
       },
       "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",

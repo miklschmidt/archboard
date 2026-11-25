@@ -104,4 +104,4 @@ function annotationsForAll(
 	return withinLimit(findings.flatMap((finding) => annotationsFor(finding, locations)));
 }
 
-export { annotationsFor, annotationsForAll };
+export { annotationsForAll };

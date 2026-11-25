@@ -7,10 +7,10 @@ import {
 	type RetainedListing,
 	fetchVaultCheck,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** Where models are read from. */
 interface RetainedReads {

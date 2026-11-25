@@ -8,14 +8,14 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 // also cut into native-scale tiles so no detail is lost to a viewer that
 // shrinks a big image.
 
-import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 
 import type { PageRegion } from "@archboard/renderer/rasterizer";
 import {
-	SemanticRasterReceiptSchema,
-	ArchitectureRasterReceiptSchema,
+	parseRasterReceipt,
+	type ArchitectureRasterReceipt,
+	type SemanticRasterReceipt as LegacyRasterReceipt,
 } from "@archboard/renderer/rasterizer";
 import {
 	archboard,
@@ -34,9 +34,7 @@ import type {
 } from "#runtime/evaluation/batch/schemas/suite.ts";
 
 /** What the rasterizer says about one capture. */
-type SemanticRasterReceipt =
-	| z.infer<typeof SemanticRasterReceiptSchema>
-	| z.infer<typeof ArchitectureRasterReceiptSchema>;
+type SemanticRasterReceipt = LegacyRasterReceipt | ArchitectureRasterReceipt;
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.
@@ -51,14 +49,9 @@ interface CaptureTile extends PageRegion {
 }
 
 /** What a capture is of: the saved content, exactly, and how it was shot. */
-type CaptureProvenance = Partial<
-	Pick<z.infer<typeof SemanticRasterReceiptSchema>, "version" | "variant" | "view">
-> &
-	Partial<Pick<z.infer<typeof ArchitectureRasterReceiptSchema>, "model" | "state" | "revision">> &
-	Pick<
-		z.infer<typeof ArchitectureRasterReceiptSchema>,
-		"theme" | "scale" | "width" | "height" | "diagram"
-	> & {
+type CaptureProvenance = Partial<Pick<LegacyRasterReceipt, "version" | "variant" | "view">> &
+	Partial<Pick<ArchitectureRasterReceipt, "model" | "state" | "revision">> &
+	Pick<ArchitectureRasterReceipt, "theme" | "scale" | "width" | "height" | "diagram"> & {
 		readonly svgSha256: SemanticRasterReceipt["source"]["svgSha256"];
 		readonly motion: SemanticRasterReceipt["source"]["motion"];
 	};
@@ -153,10 +146,8 @@ function parsedReceipt(answer: CliAnswer): ReadReceipt {
 		const last = answer.stderr.trim().split("\n").at(-1) ?? "";
 		return { failure: `rasterize failed (exit ${answer.exitCode ?? "none"}): ${last}` };
 	}
-	const parsed = z
-		.union([ArchitectureRasterReceiptSchema, SemanticRasterReceiptSchema])
-		.safeParse(answer.json);
-	return parsed.success ? { receipt: parsed.data } : { failure: "rasterize answered no receipt" };
+	const receipt = parseRasterReceipt(answer.json);
+	return receipt === undefined ? { failure: "rasterize answered no receipt" } : { receipt };
 }
 
 /**

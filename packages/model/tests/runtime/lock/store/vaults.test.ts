@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 
@@ -68,7 +68,7 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 				{ vault: vaultB, model: "Payments" },
 			],
 		});
-		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);
+		jest.advanceTimersByTime(modelLockMs("watch"));
 		expect(told).toEqual([
 			{ vault: vaultA, held: false },
 			{ vault: vaultB, held: true },

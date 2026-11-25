@@ -326,3 +326,83 @@ export {
 	type SemanticRenderReply,
 	wasDrawn,
 };
+
+/**
+ * The value `DEFAULT_LAYOUT_ENGINE`, for callers that read it.
+ * @returns The value.
+ */
+export function defaultLayoutEngine(): typeof DEFAULT_LAYOUT_ENGINE {
+	return DEFAULT_LAYOUT_ENGINE;
+}
+
+/**
+ * The schema `DiagramThemeSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function diagramThemeSchema(): typeof DiagramThemeSchema {
+	return DiagramThemeSchema;
+}
+
+/**
+ * The schema `LayoutEngineSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function layoutEngineSchema(): typeof LayoutEngineSchema {
+	return LayoutEngineSchema;
+}
+
+/**
+ * The schema `LegendLayoutSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function legendLayoutSchema(): typeof LegendLayoutSchema {
+	return LegendLayoutSchema;
+}
+
+/**
+ * The schema `OfferedViewSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function offeredViewSchema(): typeof OfferedViewSchema {
+	return OfferedViewSchema;
+}
+
+/**
+ * The value `PictureReceiptShape`, for callers that read it.
+ * @returns The value.
+ */
+export function pictureReceiptShape(): typeof PictureReceiptShape {
+	return PictureReceiptShape;
+}
+
+/**
+ * The schema `RenderedVariantSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function renderedVariantSchema(): typeof RenderedVariantSchema {
+	return RenderedVariantSchema;
+}
+
+/**
+ * The schema `SemanticRenderReplySchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function semanticRenderReplySchema(): typeof SemanticRenderReplySchema {
+	return SemanticRenderReplySchema;
+}
+
+/**
+ * The schema `StandaloneThemeSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function standaloneThemeSchema(): typeof StandaloneThemeSchema {
+	return StandaloneThemeSchema;
+}
+
+/**
+ * The schema `SubjectStandingSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function subjectStandingSchema(): typeof SubjectStandingSchema {
+	return SubjectStandingSchema;
+}

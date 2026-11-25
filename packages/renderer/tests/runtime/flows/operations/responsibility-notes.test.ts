@@ -5,7 +5,7 @@ import type { DiagramGrammar } from "@archboard/model/views";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, spanFits } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -68,7 +68,7 @@ function cardBox(rendered: RenderedDiagram, id: string): DiagramBox {
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(`${grammar} preserves explicit and wrapped responsibility lines within measured cards`, async () => {
 		const rendered = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			grammar,
 			content,
 			theme: "light",
@@ -116,7 +116,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 		const responsibility = "W".repeat(200);
 		const updatedApi = { ...content.nodes.find((node) => node.id === "api")!, responsibility };
 		const rendered = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			grammar,
 			theme: "light",
 			content: {
@@ -139,7 +139,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[])
 	test(`${grammar}, seen from far away, draws each card's name larger, with the start of what it is responsible for`, async () => {
 		const rendered = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			grammar,
 			content,
 			theme: "light",

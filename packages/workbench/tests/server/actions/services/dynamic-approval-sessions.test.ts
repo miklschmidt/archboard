@@ -3,7 +3,7 @@ import { createIdentityAuthorities } from "@archboard/codex-app-server/identity"
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import type { DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 
 test("a tab session's end settles its coordination approvals as unanswered and leaves another tab's", async () => {
@@ -43,7 +43,7 @@ test("a tab session's end settles its coordination approvals as unanswered and l
 				callId: identity.decoder.adoptDynamicToolCallId(`call-${thread}`),
 				namespace: "archboard_app",
 				tool: "create_thread",
-				manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+				manifestHash: archboardAppBinding().manifestHash,
 				operationId,
 			},
 			effect: {

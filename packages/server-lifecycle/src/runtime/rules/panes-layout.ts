@@ -6,7 +6,7 @@
 // error.
 
 import type { parsePaneKey } from "@archboard/model/legacy-address";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type LegacyIdentity = ReturnType<typeof parsePaneKey>;
@@ -114,7 +114,7 @@ interface PaneReport {
 	rect: Rect;
 	reading: PaneReading;
 	/** The model reading it last reported, or null when it has reported none. */
-	architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"] | null;
+	architecture: z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"] | null;
 	/** When this pane last told the server about itself. */
 	at: string;
 }

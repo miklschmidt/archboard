@@ -113,6 +113,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#FNRbx70t",
       "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
+      "order": 160000,
+      "kind": "dependency",
+      "label": "how long a claim lasts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "claimMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#icqdO00L"
     }
   ]
 }

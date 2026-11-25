@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { saveLegacyMappingPlan } from "@archboard/model/store-write";
 import { readLegacyInventory } from "@archboard/model/store-read";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -16,7 +16,7 @@ function fixture() {
 	homes.push(home);
 	const vault = join(home, ".archboard/vault");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	const content = {
 		nodes: [
 			{ id: "Api", name: "API", kind: "module", responsibility: "Accepts requests", order: 10 },

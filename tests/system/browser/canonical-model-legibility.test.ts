@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -92,7 +92,7 @@ test("a reader sees what is unsettled and what belongs together, painted on both
 		],
 	});
 	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
-	const policy = structuredClone(DEFAULT_SEMANTIC_POLICY);
+	const policy = structuredClone(defaultSemanticPolicy());
 	policy.nodeKinds["route"]!.color = "blue";
 	policy.nodeKinds["queue"]!.color = "green";
 	policy.nodeKinds["datastore"]!.color = "amber";

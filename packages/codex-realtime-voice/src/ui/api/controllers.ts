@@ -14,7 +14,7 @@ export {
 	type BrowserWorkbenchMediaOwner,
 } from "#ui/media/clients/media-state.ts";
 export {
-	VOICE_OUTPUT_SPEAKING_LEVEL,
+	isSpeakingLevel,
 	type VoiceOutputLevelSource,
 } from "#ui/output-level/clients/level-source.ts";
 export {

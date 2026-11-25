@@ -14,7 +14,7 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { exploringMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { tipTargetAt } from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";
@@ -135,10 +135,10 @@ function useRestingPart(atlas: SemanticAtlas): RestingPart {
 			}
 			over.current = ids;
 			if (ids.length === 0) {
-				restAfter(ids, EXPLORING_MS.lightingGrace);
+				restAfter(ids, exploringMs("lightingGrace"));
 				return;
 			}
-			restAfter(ids, settled.current ? 0 : EXPLORING_MS.lightingDwell);
+			restAfter(ids, settled.current ? 0 : exploringMs("lightingDwell"));
 		},
 		[restAfter],
 	);

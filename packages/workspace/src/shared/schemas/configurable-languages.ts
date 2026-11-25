@@ -22,3 +22,11 @@ const CONFIGURABLE_LANGUAGES = [
 type ConfigurableLanguage = (typeof CONFIGURABLE_LANGUAGES)[number];
 
 export { type ConfigurableLanguage, CONFIGURABLE_LANGUAGES };
+
+/**
+ * The value `CONFIGURABLE_LANGUAGES`, for callers that read it.
+ * @returns The value.
+ */
+export function configurableLanguages(): typeof CONFIGURABLE_LANGUAGES {
+	return CONFIGURABLE_LANGUAGES;
+}

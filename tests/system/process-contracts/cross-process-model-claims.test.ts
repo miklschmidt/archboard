@@ -3,9 +3,9 @@ import { execFileSync } from "node:child_process";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-	ArchitectureClaimResultSchema,
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureClaimResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
 	type ArchitectureClaim,
 } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
@@ -47,7 +47,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 	const requestSecond = createJsonRequester(second);
 	const pane = await openTestPane(first.base, requestFirst, "topology-pane", 0);
 	resources.defer(() => pane.close());
-	const reading = ArchitectureModelReadSchema.parse(
+	const reading = architectureModelReadSchema().parse(
 		(await requestFirst("/api/architecture/model")).body,
 	);
 	if (!reading.success) throw new Error(JSON.stringify(reading));
@@ -80,7 +80,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 			body: { target, writer, subjects: [subject], reason: "Exercise cross-process claims" },
 		});
 		expect(response.status).toBe(200);
-		const result = ArchitectureClaimResultSchema.parse(response.body);
+		const result = architectureClaimResultSchema().parse(response.body);
 		if (!result.success) throw new Error(JSON.stringify(result));
 		return result.claim;
 	};
@@ -128,7 +128,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 		body: { ...edit, operationId: "cross-process-released", claim: available.id },
 	});
 	expect(written.status).toBe(200);
-	const result = ArchitectureModuleEditResultSchema.parse(written.body);
+	const result = architectureModuleEditResultSchema().parse(written.body);
 	if (!result.success) throw new Error(JSON.stringify(result));
 	await requestFirst("/api/architecture/claims/release", {
 		method: "POST",

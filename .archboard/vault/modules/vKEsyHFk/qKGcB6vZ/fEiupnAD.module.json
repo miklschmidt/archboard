@@ -38,7 +38,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
-        "symbol": "ResolveSpokenApprovalInputSchema"
+        "symbol": "parseResolveSpokenApprovalInput"
       },
       "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
       "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"

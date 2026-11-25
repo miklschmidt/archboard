@@ -117,7 +117,6 @@ export {
 	type EpochManifestPayload,
 	type EpochOperationCorrelation,
 	type EpochOperationDescriptor,
-	type EpochOperationOutcome,
 	type EpochOperationRecord,
 	type EpochOperationStatus,
 	type EpochProvenance,

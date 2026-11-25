@@ -7,6 +7,8 @@
 //! (`archboard_scene::measure`). A flowchart is laid out by the track engine,
 //! as an architecture is (`archboard_layout::draw`).
 
-pub mod content;
+mod content;
 pub mod flowchart;
 pub mod sequence;
+
+pub use content::{Flow, Message, MessageKind, Step, every_step, messages_of};

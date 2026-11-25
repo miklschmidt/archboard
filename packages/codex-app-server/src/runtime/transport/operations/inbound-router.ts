@@ -3,7 +3,7 @@ import {
 	decodeResponseEnvelope,
 	decodeServerNotification,
 } from "#runtime/protocol/protocol-decoder.ts";
-import { JSON_RPC_ERROR_CODES } from "#runtime/protocol/request-schemas.ts";
+import { jsonRpcErrorCode } from "#runtime/protocol/request-schemas.ts";
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
 import {
 	CodexTransportUsageError,
@@ -34,7 +34,6 @@ import {
 	JsonFrameDecodeError,
 	boundedText,
 	hasOwn,
-	isInList,
 	isRecord,
 	isWireId,
 	parseJsonText,
@@ -42,7 +41,7 @@ import {
 	wireKey,
 	type WireId,
 } from "#runtime/protocol/wire.ts";
-import { DYNAMIC_DISPATCHER_OWNERS } from "#runtime/transport/clients/transport-types.ts";
+import { isDynamicDispatcherOwner } from "#runtime/transport/clients/transport-types.ts";
 import { cloneAndFreeze } from "#runtime/transport/operations/public-values.ts";
 
 const SHUTTING_DOWN_MESSAGE = "Codex transport is shutting down.";
@@ -153,11 +152,11 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	 */
 	const refuseForState = (rawId: WireId, state: OpenState): void => {
 		if (state === "closing") {
-			protocolError(rawId, JSON_RPC_ERROR_CODES.internalError, SHUTTING_DOWN_MESSAGE);
+			protocolError(rawId, jsonRpcErrorCode("internalError"), SHUTTING_DOWN_MESSAGE);
 		} else {
 			protocolError(
 				rawId,
-				JSON_RPC_ERROR_CODES.invalidRequest,
+				jsonRpcErrorCode("invalidRequest"),
 				REVERSE_ERROR_MESSAGES.invalidRequest,
 			);
 		}
@@ -356,7 +355,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 		}
 		const rawId = decoded["id"];
 		if (isWireId(rawId)) {
-			protocolError(rawId, JSON_RPC_ERROR_CODES.internalError, SHUTTING_DOWN_MESSAGE);
+			protocolError(rawId, jsonRpcErrorCode("internalError"), SHUTTING_DOWN_MESSAGE);
 			return;
 		}
 		options.emitIssue({
@@ -393,11 +392,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 			issueReverse("duplicate-server-request", "A reverse request id was already used", rawId);
 			return;
 		}
-		protocolError(
-			rawId,
-			JSON_RPC_ERROR_CODES.invalidRequest,
-			REVERSE_ERROR_MESSAGES.invalidRequest,
-		);
+		protocolError(rawId, jsonRpcErrorCode("invalidRequest"), REVERSE_ERROR_MESSAGES.invalidRequest);
 	};
 
 	/**
@@ -473,7 +468,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	 */
 	const registerDynamicDispatcher = (registration: DynamicDispatcherRegistration): void => {
 		const owner: string = registration.owner;
-		if (!isInList(DYNAMIC_DISPATCHER_OWNERS, owner)) {
+		if (!isDynamicDispatcherOwner(owner)) {
 			throw new CodexTransportUsageError("a dynamic dispatcher must use an approved dynamic owner");
 		}
 		boundedText(registration.namespace, "dynamic dispatcher namespace");

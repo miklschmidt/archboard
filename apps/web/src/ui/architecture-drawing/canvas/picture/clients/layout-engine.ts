@@ -7,8 +7,8 @@
 // reads as the default.
 
 import {
-	DEFAULT_LAYOUT_ENGINE,
-	LayoutEngineSchema,
+	defaultLayoutEngine,
+	layoutEngineSchema,
 	type LayoutEngineName,
 } from "@archboard/model/render-reply";
 
@@ -27,10 +27,12 @@ const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label
  */
 function remembered(): LayoutEngineName {
 	try {
-		const parsed = LayoutEngineSchema.safeParse(globalThis.localStorage.getItem(LAYOUT_ENGINE_KEY));
-		return parsed.success ? parsed.data : DEFAULT_LAYOUT_ENGINE;
+		const parsed = layoutEngineSchema().safeParse(
+			globalThis.localStorage.getItem(LAYOUT_ENGINE_KEY),
+		);
+		return parsed.success ? parsed.data : defaultLayoutEngine();
 	} catch {
-		return DEFAULT_LAYOUT_ENGINE;
+		return defaultLayoutEngine();
 	}
 }
 

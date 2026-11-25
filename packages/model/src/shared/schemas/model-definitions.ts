@@ -5,7 +5,7 @@ import { ModelDiagnosticSchema } from "#shared/schemas/model-diagnostic.ts";
 import { ProposalChangeSchema } from "#shared/schemas/model-changes.ts";
 import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { LegacyBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
-import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
+import { documentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
 import {
 	SemanticIdSchema,
@@ -40,7 +40,7 @@ const StateMetadataSchema = z
 		name: DisplayNameSchema,
 		formerNames: z.array(DisplayNameSchema).optional(),
 		summary: DescriptionSchema.optional(),
-		documents: z.array(DocumentReferenceSchema).optional(),
+		documents: z.array(documentReferenceSchema()).optional(),
 	})
 	.strict();
 
@@ -143,7 +143,7 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	id: QualifiedSubjectIdSchema,
 	parent: QualifiedSubjectIdSchema.optional(),
 	formerNames: z.array(DisplayNameSchema).optional(),
-	documents: z.array(DocumentReferenceSchema).optional(),
+	documents: z.array(documentReferenceSchema()).optional(),
 	references: z.array(ModelReferenceSchema).optional(),
 	outgoing: z.array(OwnedRelationshipSchema),
 });

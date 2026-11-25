@@ -13,7 +13,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
 import { type CodexEpochFileSystem } from "#runtime/epoch/store/storage.ts";
 import { type CodexEpochStore, type EpochStageInput } from "#runtime/epoch/store/contract.ts";
@@ -55,7 +55,7 @@ describe("codex epoch review remediations", () => {
 
 	test("refuses a fresh replacement operation that reuses a tombstoned thread", () => {
 		withState((state) => {
-			const first = createIdentityAuthority();
+			const first = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(input(first, "epoch-a", "epoch_start"));
 			const tombstonedThread = first.decoder.adoptThreadId("tombstoned-thread");
@@ -66,7 +66,7 @@ describe("codex epoch review remediations", () => {
 				threadId: tombstonedThread,
 			});
 
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			store.startEpoch(input(replacement, "epoch-b", "epoch_start", store.snapshot().cas));
 			const fresh = store.stageOperation(
 				input(replacement, "fresh-b", "link", store.snapshot().cas),
@@ -120,7 +120,7 @@ function makeStore(state: TestState, fileSystem?: CodexEpochFileSystem): CodexEp
 }
 
 function input(
-	authority: ReturnType<typeof createIdentityAuthority>,
+	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
 	operationId: string,
 	kind: string,
 	expected?: EpochStageInput["expected"],

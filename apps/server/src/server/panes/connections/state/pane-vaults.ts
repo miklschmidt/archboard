@@ -1,19 +1,7 @@
-// Which vault a pane is in, when that changes (ADR 0050). A pane is in one
-// vault at a time, and the server moves it: a show of another repository's
-// model, or a new chosen checkout of the repository it shows. News about the
-// machine rather than one vault goes to every tab.
+// News about the machine rather than one vault goes to every tab (ADR 0050).
 
-import { WebSocket } from "ws";
-import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import {
-	clientIds,
-	clients,
-	paneVaults,
-	panes,
-	socketVaults,
-	forgetSemanticPaneContext,
-} from "@archboard/workbench/panes";
+import { sendToEveryClient } from "@archboard/workbench/panes";
 
 /**
  * Broadcast something to every admitted client of every vault: news about the
@@ -22,45 +10,7 @@ import {
  * @param message The keyless message.
  */
 function broadcastEverywhere(message: WebSocketMessage): void {
-	const data = JSON.stringify(message);
-	clients.forEach((client) => {
-		try {
-			if (client.readyState === WebSocket.OPEN) {
-				client.send(data);
-			}
-		} catch {
-			logger.warn("Failed to send to client, removing");
-			clients.delete(client);
-		}
-	});
+	sendToEveryClient(JSON.stringify(message));
 }
 
-/**
- * Move a pane into another vault (ADR 0050). The server decides which vault a
- * pane is in, as it decides which model it holds: a show into another
- * repository moves it, and so does choosing another checkout of the repository
- * it shows. Its sockets carry the news of the new vault from now on, and its
- * registration says the new vault until the pane next reports. What it said it
- * was reading is of the vault it left, so it is forgotten. The conversation its tab's agent dock
- * shows stays as it is: only the person's own act in the browser changes that.
- * @param clientId The pane's client id.
- * @param vault The vault it moves into.
- */
-function movePaneVault(clientId: string, vault: string): void {
-	if (paneVaults.get(clientId) === vault) {
-		return;
-	}
-	paneVaults.set(clientId, vault);
-	clientIds.forEach((id, socket) => {
-		if (id === clientId) {
-			socketVaults.set(socket, vault);
-		}
-	});
-	const registration = panes.get(clientId);
-	if (registration !== undefined) {
-		panes.set(clientId, { ...registration, vault });
-	}
-	forgetSemanticPaneContext(clientId);
-}
-
-export { broadcastEverywhere, movePaneVault };
+export { broadcastEverywhere };

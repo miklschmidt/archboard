@@ -6,7 +6,7 @@ use serde::ser::{self, Impossible};
 
 /// Why a value has no word: it is not a variant without fields.
 #[derive(Debug)]
-pub struct NoWord;
+struct NoWord;
 
 impl std::fmt::Display for NoWord {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -145,7 +145,7 @@ impl ser::Serializer for Word {
 /// # Errors
 ///
 /// A value that is not a variant without fields.
-pub fn word_of<T: Serialize + ?Sized>(value: &T) -> Result<&'static str, NoWord> {
+fn word_of<T: Serialize + ?Sized>(value: &T) -> Result<&'static str, NoWord> {
     value.serialize(Word)
 }
 

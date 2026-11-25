@@ -2,7 +2,8 @@
 export { AgentDock } from "#ui/workbench-client/dock/components/AgentDock.tsx";
 export { AgentPanel } from "#ui/workbench-client/panel/components/AgentPanel.tsx";
 export { AgentAnswer } from "#ui/workbench-client/thread/components/AnswerText.tsx";
-export { AnswerFilesContext } from "#ui/workbench-client/thread/hooks/use-answer-files.ts";
+export { AnswerFilesProvider } from "#ui/workbench-client/thread/components/AnswerFilesProvider.tsx";
+export type { OpenAnswerFile } from "#ui/workbench-client/thread/hooks/use-answer-files.ts";
 export { useConversation } from "#ui/workbench-client/assistant-runtime/hooks/use-agent-runtime.ts";
 export { createAgentSetup } from "#ui/agent-setup/state/setup.ts";
 export type {

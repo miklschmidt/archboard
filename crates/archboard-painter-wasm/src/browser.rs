@@ -2,13 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use archboard_paint::clock::StageClock;
-use archboard_paint::cpu::CpuCanvas;
-use archboard_paint::flight::DiveWay;
-use archboard_paint::palette::Theme;
-use archboard_paint::parts::Keeper;
-use archboard_paint::presentation::{Camera, Light, Marks};
-use archboard_paint::stage::Stage;
+use archboard_paint::{Camera, CpuCanvas, DiveWay, Keeper, Light, Marks, Stage, StageClock, Theme};
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Painting;
 use serde::Deserialize;
@@ -169,7 +163,7 @@ impl Painter {
         reason = "a frame holds far fewer than 2^32 shapes"
     )]
     pub fn count_frame(&mut self, now: f64) -> Vec<u32> {
-        let mut count = archboard_paint::canvas::Count::default();
+        let mut count = archboard_paint::Count::default();
         let now = self.clock.at(now);
         self.stage.draw(&mut count, now);
         vec![

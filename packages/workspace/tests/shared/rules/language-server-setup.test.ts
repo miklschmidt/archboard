@@ -5,7 +5,7 @@
 
 import { expect, test } from "bun:test";
 import { languageServerSetup } from "#shared/api/language-server-setup.ts";
-import { CONFIGURABLE_LANGUAGES } from "#shared/api/languages.ts";
+import { configurableLanguages } from "#shared/api/languages.ts";
 
 const SERVERS = {
 	typescript: "typescript-language-server",
@@ -15,9 +15,9 @@ const SERVERS = {
 	c: "clangd",
 	rust: "rust-analyzer",
 	go: "gopls",
-} as const satisfies Record<(typeof CONFIGURABLE_LANGUAGES)[number], string>;
+} as const satisfies Record<ReturnType<typeof configurableLanguages>[number], string>;
 
-test.each([...CONFIGURABLE_LANGUAGES])(
+test.each([...configurableLanguages()])(
 	"a brief for %s names its server and how to install it",
 	(language) => {
 		const { brief } = languageServerSetup([language]);

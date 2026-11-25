@@ -54,6 +54,19 @@ const doingRefusal = {
 	description: "A model write did not declare what it was doing.",
 };
 
-const serverBrowserRefusals = [serverRefusal, browserRefusal] as const;
+/** The refusals that commands share, by what they refuse. */
+const SHARED_REFUSALS = { server: serverRefusal, browser: browserRefusal, doing: doingRefusal };
 
-export { serverRefusal, vaultRefusals, checkoutVaultRefusals, doingRefusal, serverBrowserRefusals };
+/**
+ * A refusal that commands share: the server is unreachable, no browser pane is open, or a model
+ * write did not declare what it was doing.
+ * @param kind Which one.
+ * @returns The refusal, as a command contract declares it.
+ */
+function refusal<Kind extends keyof typeof SHARED_REFUSALS>(
+	kind: Kind,
+): (typeof SHARED_REFUSALS)[Kind] {
+	return SHARED_REFUSALS[kind];
+}
+
+export { refusal, vaultRefusals, checkoutVaultRefusals };

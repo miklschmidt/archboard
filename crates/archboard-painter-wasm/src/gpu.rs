@@ -8,7 +8,7 @@ use std::mem;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use archboard_paint::canvas::{Canvas, Ink, Lens, PartKey};
+use archboard_paint::{Canvas, Ink, Lens, PartKey};
 use futures_channel::oneshot;
 use js_sys::Function;
 use kurbo::{Affine, BezPath, Rect, Shape as _};

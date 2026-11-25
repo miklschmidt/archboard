@@ -8,7 +8,7 @@ import {
 	type CoordinatorSnapshot,
 	type CoordinatorThreadLinkClassification,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
 import {
 	WORKING_DIRECTORY,
@@ -220,7 +220,7 @@ describe("coordinator candidate reuse and replacement", () => {
 		const fixtureValue = fixture();
 		const first = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(first);
-		const staleAuthority = createIdentityAuthority();
+		const staleAuthority = createIdentityAuthorities().identity;
 		const stalePersistence: CoordinatorPersistedState = {
 			...coordinatorPersistence,
 			childId: staleAuthority.validator.childId,

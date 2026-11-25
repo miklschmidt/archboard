@@ -20,7 +20,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
-        "symbol": "CodeBindingSchema"
+        "symbol": "codeBindingSchema"
       },
       "id": "vKEsyHFk#PatiT3PG",
       "to": "vKEsyHFk#NVlMWCWO"

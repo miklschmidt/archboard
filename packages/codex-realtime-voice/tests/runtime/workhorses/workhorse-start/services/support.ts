@@ -1,5 +1,5 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -208,7 +208,7 @@ function threadFixture(threadId: ThreadId): SessionThread {
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: CODEX_PROTOCOL_VERSION,
+		cliVersion: codexProtocolVersion(),
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "test-host",

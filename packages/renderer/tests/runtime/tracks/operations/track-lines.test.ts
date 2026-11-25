@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	corridorPoints,
 	routeLabels,
@@ -31,7 +31,7 @@ const APPROACH = 12;
 const TWO_BENDS = 16;
 
 /** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },
@@ -102,7 +102,7 @@ test.each([
 // above turned on the channel's first track, 8 px under that card.
 test("every line's arrowhead sits on a straight run, rising lines' too", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(risingLine),
 		theme: "light",
 		layout: "track",
@@ -132,7 +132,7 @@ test("labels crowding one band leave as many of their lines straight as fit", as
 		].map(([id, from, to, kind, label]) => ({ id, from, to, kind, label })),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: band,
 		theme: "light",
 		layout: "track",
@@ -148,7 +148,7 @@ test("labels crowding one band leave as many of their lines straight as fit", as
 // face, so each line ran sideways on the trunk's track and again below its label.
 test("a labelled line leaving through a trunk runs sideways on one level only", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(trunkFan),
 		theme: "light",
 		layout: "track",
@@ -168,7 +168,7 @@ test("a labelled line leaving through a trunk runs sideways on one level only", 
 // label down to its card.
 test("a labelled line steps sideways on one side of its label at most", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(throughLabel),
 		theme: "light",
 		layout: "track",
@@ -207,7 +207,7 @@ test("two labelled lines into one card enter it evenly", async () => {
 		})),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: fork,
 		theme: "light",
 		layout: "track",
@@ -299,7 +299,7 @@ function crossingsOf(svg: string): number {
 // Graphviz left them, so the sibling crossed it on its way to its label.
 test("a run of lanes takes the free column that crosses fewest other lines", async () => {
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: orderedFixture(laneOrder),
 		theme: "light",
 		layout: "track",
@@ -313,7 +313,7 @@ test("a run of lanes takes the free column that crosses fewest other lines", asy
 test("a line into a card and one out of it run through it on one column", async () => {
 	const content = orderedFixture(throughCard);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

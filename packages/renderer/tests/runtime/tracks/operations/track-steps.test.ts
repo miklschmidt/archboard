@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { bodyShift, corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
@@ -17,7 +17,7 @@ import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.
 import walkthroughStair from "#tests/runtime/support/fixtures/walkthrough-stair.json";
 
 /** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

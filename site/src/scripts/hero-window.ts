@@ -7,7 +7,7 @@
 // hold the page. Without script, with reduced motion, or where the painter does not start, the
 // renderer's SVG of the same picture stands whole.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
@@ -45,7 +45,7 @@ async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 			}),
 		]);
 		painter.setPhases(PHASES);
-		painter.setLongestStep(PICTURE_MS.longestStep);
+		painter.setLongestStep(pictureMs("longestStep"));
 		painter.setFarLine(0, 0);
 		return { painter, painting };
 	} catch (cause) {
@@ -159,7 +159,7 @@ export function mountHeroWindow(): void {
 		const ready = await painting;
 		signal.throwIfAborted();
 		if (!ready) return;
-		ready.painter.enter(ready.painting, "null", PICTURE_MS.entry, 0, 0, performance.now());
+		ready.painter.enter(ready.painting, "null", pictureMs("entry"), 0, 0, performance.now());
 		wake();
 	};
 

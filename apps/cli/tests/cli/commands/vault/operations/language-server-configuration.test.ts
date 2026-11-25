@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 
 /** A repository with no remote is named by its directory, here with a space. */
@@ -56,7 +56,7 @@ beforeAll(async () => {
 		JSON.stringify([{ repo: IDENTITY, root: checkout, source: "declared", addedAt: "2026-10-07" }]),
 	);
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	git(checkout, "init", "-q");
 	// `ledger.c` calls `audit_check` that `ledger.h` declares and `audit.c` defines: only a server can place the use.
 	const files = {

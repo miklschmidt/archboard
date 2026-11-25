@@ -16,7 +16,7 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { useSyncExternalStore, type JSX } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { subtitleMs } from "@archboard/timing";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { SubtitlesToggle } from "#ui/workbench-client/subtitles/components/SubtitlesToggle.tsx";
@@ -180,17 +180,17 @@ test("the subtitle fades out once the voice has been silent for the linger, and 
 		expect(onScreen()).toBe("Done.");
 		expect(showing()).toBe("true");
 		act(() => {
-			clock.advanceTo(SUBTITLE_MS.linger - 1);
+			clock.advanceTo(subtitleMs("linger") - 1);
 		});
 		expect(showing()).toBe("true");
 		// The linger has run out: the words stay while the paragraph fades, and go once it has.
 		act(() => {
-			clock.advanceTo(SUBTITLE_MS.linger);
+			clock.advanceTo(subtitleMs("linger"));
 		});
 		expect(showing()).toBe("false");
 		expect(onScreen()).toBe("Done.");
 		act(() => {
-			clock.advanceTo(SUBTITLE_MS.linger + SUBTITLE_MS.out);
+			clock.advanceTo(subtitleMs("linger") + subtitleMs("out"));
 		});
 		expect(onScreen()).toBeNull();
 	} finally {
@@ -246,7 +246,7 @@ test("a cue gives way to the next with its lines fading under it, and they are g
 		expect(onScreen()).toBe("family");
 		expect(fadingOut()).toBe(words.slice(0, -1).join(" "));
 		act(() => {
-			clock.advanceTo(SUBTITLE_MS.swap);
+			clock.advanceTo(subtitleMs("swap"));
 		});
 		expect(fadingOut()).toBeNull();
 	} finally {
@@ -265,7 +265,7 @@ test("words that had begun to fade out do not come back under the next ones", ()
 			<VoiceSubtitles transcript={transcriptOf("Done.")} enabled reducedMotion={false} />,
 		);
 		act(() => {
-			clock.advanceTo(SUBTITLE_MS.linger);
+			clock.advanceTo(subtitleMs("linger"));
 		});
 		// The paragraph is fading out, and its words are still there.
 		expect(showing()).toBe("false");

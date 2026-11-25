@@ -13,8 +13,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
-	ArchitectureExportResultSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureExportResultSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
@@ -76,7 +76,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 	});
 	expect(response.status).toBe(200);
 	expect(response.headers.get("cache-control")).toBe("no-store");
-	const exported = ArchitectureExportResultSchema.parse(await response.json());
+	const exported = architectureExportResultSchema().parse(await response.json());
 	if (!exported.success) throw new Error(JSON.stringify(exported));
 	const file = join(source.root, "portable.json");
 	const cli = runServerCli({
@@ -113,7 +113,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(imported.stdout));
 	expect(addressed).toMatchObject({ path: target.vault, origin: "working-directory" });
-	const parsed = ArchitectureModuleEditResultSchema.parse(receipt);
+	const parsed = architectureModuleEditResultSchema().parse(receipt);
 	expect(parsed.success).toBe(true);
 	await server.restart();
 	const retry = await fetch(`${server.base}/api/architecture/import`, {
@@ -122,7 +122,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 		body: JSON.stringify({ ...request, vault: target.vault }),
 	});
 	expect(retry.status).toBe(200);
-	expect(ArchitectureModuleEditResultSchema.parse(await retry.json())).toEqual(parsed);
+	expect(architectureModuleEditResultSchema().parse(await retry.json())).toEqual(parsed);
 	const stale = await fetch(`${server.base}/api/architecture/import`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -152,7 +152,7 @@ test("an accepted import remains visible as mutation work after its caller disco
 	if (server === undefined || source === undefined)
 		throw new Error("The portable server fixture is unavailable.");
 	const target = destination();
-	const exported = ArchitectureExportResultSchema.parse(
+	const exported = architectureExportResultSchema().parse(
 		await (
 			await fetch(`${server.base}/api/architecture/export`, {
 				method: "POST",

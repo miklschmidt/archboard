@@ -6,7 +6,7 @@
 // its top (Document persistence's "Durable write boundary").
 
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, semanticPolicySchema } from "@archboard/model/policy";
 import { type LayoutEngineName } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import type { StatedStandings } from "#shared/protocol/render-request.ts";
@@ -16,8 +16,8 @@ import formerNames from "#tests/runtime/support/fixtures/former-names.json";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout-proposal.json";
 
 /** The dogfood vault's vocabulary as far as the fixtures use it. */
-const policy = SemanticPolicySchema.parse({
-	...DEFAULT_SEMANTIC_POLICY,
+const policy = semanticPolicySchema().parse({
+	...defaultSemanticPolicy(),
 	groups: {
 		writes: { name: "Board writes", color: "orange" },
 		grading: { name: "Grading", color: "purple" },

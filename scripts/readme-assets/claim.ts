@@ -4,8 +4,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-	ArchitectureClaimResultSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureClaimResultSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 
 import {
@@ -95,7 +95,7 @@ async function claimSubject(server: TakeServer, terminal: Terminal) {
 		}),
 	);
 	await terminal.command("archboard model claim --input claim.json");
-	const claimed = ArchitectureClaimResultSchema.parse(
+	const claimed = architectureClaimResultSchema().parse(
 		modelResult(await server.cli(["model", "claim", "--input", claimFile])),
 	);
 	if (!claimed.success) throw new Error(JSON.stringify(claimed));
@@ -128,7 +128,7 @@ async function claimSubject(server: TakeServer, terminal: Terminal) {
  */
 async function editSubject(server: TakeServer, terminal: Terminal, page: Page, input: string) {
 	await terminal.command(`archboard model edit --input edit.json --doing "${REASON}"`);
-	const result = ArchitectureModuleEditResultSchema.parse(
+	const result = architectureModuleEditResultSchema().parse(
 		modelResult(await server.cli(["model", "edit", "--input", input, "--doing", REASON])),
 	);
 	if (!result.success) throw new Error(JSON.stringify(result));

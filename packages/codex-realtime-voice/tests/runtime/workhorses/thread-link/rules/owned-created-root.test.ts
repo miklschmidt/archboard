@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { classifyCodexThreadLink } from "#runtime/workhorses/thread-link/rules/classifier.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
+	classifyCodexThreadLink,
 	currentEpoch,
 	loadedPage,
 	thread,
@@ -17,7 +17,7 @@ async function withFixture<T>(
 	options: RealEpochOptions,
 	action: (fixture: RealEpochFixture) => Promise<T>,
 ): Promise<T> {
-	const fixture = realEpochFixture(createIdentityAuthority(), options);
+	const fixture = realEpochFixture(createIdentityAuthorities().identity, options);
 	try {
 		return await action(fixture);
 	} finally {
@@ -226,7 +226,9 @@ describe("owned roots with incomplete history metadata", () => {
 						},
 						{
 							...target,
-							...(mode === "stale" ? { epoch: createIdentityAuthority().validator.epoch } : {}),
+							...(mode === "stale"
+								? { epoch: createIdentityAuthorities().identity.validator.epoch }
+								: {}),
 						},
 					);
 					expect(result.link.state).toBe("inspect_only");

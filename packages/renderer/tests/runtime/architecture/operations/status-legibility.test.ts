@@ -16,7 +16,7 @@ import {
 	seenIn,
 } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -99,7 +99,7 @@ async function architecture(
 ): Promise<RenderedDiagram> {
 	return seenIn(
 		await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: CONTENT,
 			standing: STANDING,
 			unsettled,
@@ -116,7 +116,7 @@ async function architecture(
 async function sequence(unsettled: readonly string[] = []): Promise<RenderedDiagram> {
 	return seenIn(
 		await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: CONTENT,
 			standing: STANDING,
 			unsettled,
@@ -288,7 +288,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		// A plain document uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
 		const plain = seenIn(
-			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 		);
 		expect(line(subject(drawn, "edge", "moved")).ink).not.toBe(
 			line(subject(plain, "edge", "moved")).ink,
@@ -302,7 +302,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		const marked = line(subject(await architecture(), "edge", "same"));
 		const plain = line(
 			subject(
-				seenIn(await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT })),
+				seenIn(await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT })),
 				"edge",
 				"same",
 			),
@@ -313,7 +313,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 
 	test("the standing takes the colour and leaves the dash and the weight alone", async () => {
 		const plain = seenIn(
-			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 		);
 		const markedDrawing = await architecture();
 		for (const id of ["moved", "new", "gone", "same"]) {
@@ -370,7 +370,7 @@ describe("what nobody has decided is said in its own corner", () => {
 	test("an unlabelled return carries its warning on the route", async () => {
 		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
 		const drawn = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			unsettled: ["same"],
 		});

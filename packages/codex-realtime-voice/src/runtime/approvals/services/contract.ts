@@ -222,7 +222,7 @@ export type ApprovalRequest =
 	| ApplyPatchApprovalRequest
 	| ExecCommandApprovalRequest;
 
-export type DeepReadonlyApprovalRequest = DeepReadonly<ApprovalRequest>;
+type DeepReadonlyApprovalRequest = DeepReadonly<ApprovalRequest>;
 
 export interface ApprovalSnapshot {
 	readonly kind: "approval";
@@ -281,7 +281,7 @@ export interface ApprovalSettlement {
 	readonly reason: string;
 }
 
-export type SpokenEligibilityReason =
+type SpokenEligibilityReason =
 	| "eligible"
 	| "not_pending"
 	| "stale_ownership"
@@ -307,7 +307,7 @@ export interface SpokenEligibilityFacts {
 	readonly broaderGrant?: boolean;
 }
 
-export interface ApprovalResponsePort {
+interface ApprovalResponsePort {
 	readonly respond: (
 		request: TransportServerRequest,
 		owner: "codex-approvals",

@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
 import type { LegacyBoard } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 import { embedRecipeInPng } from "#runtime/recipe/operations/png-recipe.ts";
@@ -33,7 +33,7 @@ async function drawnSvg(
 	const outcome = await renderLegacyBoard(
 		document,
 		{ theme: "light", variant: "draft", view, legend: "vertical" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 		recipe ? { vault: { repo: "github.com/example/vault" } } : undefined,
 	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");

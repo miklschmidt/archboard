@@ -304,7 +304,3 @@ pub struct EdgeFacts {
 
 /// The architecture drawing as the painter reads it.
 pub type Painted = PaintedDrawing<NodeFacts, EdgeFacts>;
-/// One card or frame as the painter reads it.
-pub type Node = DrawingNode<NodeFacts>;
-/// One line as the painter reads it.
-pub type Edge = DrawingEdge<EdgeFacts>;

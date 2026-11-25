@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_VERSION } from "#runtime/protocol/protocol-version.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
 import { describe, expect, test } from "bun:test";
 
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
@@ -62,7 +62,7 @@ async function initializeTransportSession(fixture: TransportSessionFixture): Pro
 		fixture,
 		"initialize",
 		{
-			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
+			userAgent: `Codex Desktop/${codexProtocolVersion()}`,
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",

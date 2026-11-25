@@ -1,0 +1,44 @@
+{
+  "order": 4200,
+  "name": "Pane arrivals",
+  "kind": "module",
+  "responsibility": "Records what each pane reports, and lets a layout request wait, bounded by the layout timeout, until the browser's pane opens, closes or settles",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#r2iFMYJk",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "record what a pane reports",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "panes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#qtFUIpvR"
+    },
+    {
+      "order": 200,
+      "kind": "dependency",
+      "label": "how long a layout request waits",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "paneMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#N2puYRTF"
+    }
+  ]
+}

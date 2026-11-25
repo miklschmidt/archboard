@@ -12,7 +12,7 @@ import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
 } from "@archboard/codex-app-server/transport";
-import { CodexServerResponseSchema } from "@archboard/codex-app-server/session";
+import { parseCodexServerResponse } from "@archboard/codex-app-server/session";
 
 type RecordValue = Record<string, unknown>;
 
@@ -66,12 +66,12 @@ function parseApprovalResponse(value: unknown): ApprovalResponse {
 			"The approval response family is unsupported.",
 		);
 	}
-	const parsed = CodexServerResponseSchema.safeParse({ method, result });
-	if (!parsed.success || !("result" in parsed.data)) {
+	const parsed = parseCodexServerResponse({ method, result });
+	if (parsed === undefined || !("result" in parsed)) {
 		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
 	}
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the method was looked up from the response's own approvalKind, and the schema for that method has just accepted the result, so the pair is one member of the response union by construction; TypeScript cannot follow that through a keyed lookup
-	return { approvalKind, ...parsed.data.result } as ApprovalResponse;
+	return { approvalKind, ...parsed.result } as ApprovalResponse;
 }
 
 /**

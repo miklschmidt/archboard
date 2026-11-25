@@ -2,7 +2,7 @@
 
 import { act } from "@testing-library/react";
 
-import { SIDEBAR_MS } from "@archboard/timing";
+import { sidebarMs } from "@archboard/timing";
 
 /**
  * Let a sidebar that is leaving finish leaving: it stays drawn, out of reach,
@@ -11,7 +11,7 @@ import { SIDEBAR_MS } from "@archboard/timing";
  */
 async function sidebarSettled(): Promise<void> {
 	await act(async () => {
-		await new Promise<void>((resolve) => setTimeout(resolve, SIDEBAR_MS.dock + 60));
+		await new Promise<void>((resolve) => setTimeout(resolve, sidebarMs("dock") + 60));
 	});
 }
 

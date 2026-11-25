@@ -4,21 +4,21 @@
 // beside the wall has room, a line keeps a whole lane from it.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { bodyShift, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import frameWall from "#tests/runtime/support/fixtures/frame-wall.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The distance a line keeps off a frame wall where the passage has room, and the length of a run that is not a jog. */
 const LANE = 16;
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a line out of a frame to a card beside it keeps a lane from the frame's side walls (%s)",
 	async (layout) => {
 		const { svg } = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: orderedFixture(frameWall),
 			theme: "light",
 			layout,

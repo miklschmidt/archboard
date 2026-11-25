@@ -143,7 +143,7 @@ test(
 		);
 		const proposal = { id: created.target.state!, name: "Queued ingest" };
 		// The agent's activity row outlives its write by a product linger
-		// (CLAIM_MS.activityLinger). A restart drops it, so the shell matrix captures the
+		// (claimMs("activityLinger")). A restart drops it, so the shell matrix captures the
 		// idle navigator without waiting that linger out.
 		await server.restart();
 

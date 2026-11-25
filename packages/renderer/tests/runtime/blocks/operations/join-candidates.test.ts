@@ -6,7 +6,7 @@ import { installBunHost } from "#runtime/bun-renderer/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/render/rules/host.ts";
 import { endsOffCards } from "#tests/runtime/support/drawn-parents.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Source blocks of two cards each, every card's line joining on its way into
@@ -57,7 +57,7 @@ test.each([2, 3])("%i source blocks fan in with one solve", async (count) => {
 		const content = joining(sources, "deterministic join");
 		const drawing = await renderArchitecture({
 			content,
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			layout: "blocks",
 			theme: "light",
 		});

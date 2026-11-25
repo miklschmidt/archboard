@@ -4,7 +4,7 @@ import {
 	type WorkhorseCoordinatorCall,
 } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import {
-	DynamicToolRefusalReasonSchema,
+	refusalReasonOf,
 	type DynamicToolRefusalReason,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 import { type ManageWorkhorseQueueInput } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
@@ -108,8 +108,7 @@ function outcomeFromError(error: unknown): "not_delivered" | "outcome_unknown" |
  * @returns The refusal reason, or null when the code is not a reviewed reason.
  */
 function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
-	const code = DynamicToolRefusalReasonSchema.safeParse(errorField(error, "code"));
-	return code.success ? code.data : null;
+	return refusalReasonOf(errorField(error, "code"));
 }
 
 /**
