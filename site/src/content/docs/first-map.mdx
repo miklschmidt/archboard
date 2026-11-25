@@ -13,7 +13,7 @@ Coding agents lose their understanding of a codebase when a session ends. This g
 - A local clone of a repository your team owns.
 - Archboard installed (see [Install and set up](../install/)).
 - Codex or Claude Code on your `PATH` to read the codebase and write the model.
-- A Codex sign-in, required only for voice narration and video recording in step 4.
+- An Archboard Codex sign-in if you use the browser agent dock, narration, or video recording.
 - An engineer who knows the system and can verify the agent's output. The agent extracts structure from code, and the engineer validates boundaries and intent.
 
 | Step                                | Output                                            |
@@ -31,7 +31,7 @@ cd ~/Projects/payments-api
 archboard init
 ```
 
-`archboard init` installs the `archboard`, `archboard-pr`, `archboard-plan`, and `archboard-deepen` skills, creates the vault, and registers the checkout. It then launches your agent to configure language servers. Once the agent finishes, commit `.archboard`:
+`archboard init` sets up the `archboard`, `archboard-pr`, `archboard-plan`, and `archboard-deepen` skills. It creates a vault with an empty model and registers the checkout. In a terminal it asks whether to install the skills and which agent to launch for language-server setup. If an agent runs the command without a terminal, the output gives it the setup prompt. Once that setup is complete, commit `.archboard`.
 
 ```bash
 git add .archboard
@@ -49,10 +49,9 @@ to the code that implements it, mark systems outside our ownership as external, 
 the checks against the proposal. Give me the proposal ID so I can review the map.
 ```
 
-Run `archboard status` to print the local server URL. Open it, pick your repository, and select the draft in History. Open panes show what the agent is claiming and why. You can also open the draft at a specific module from the CLI:
+Run `archboard start` and open the URL it reports. Select your repository, then select the draft in History. To open the draft at a specific module in pane A, pass the proposal ID and the module's name or ID.
 
 ```bash
-archboard status
 archboard browser show --pane A --state "<proposal-id>" --module "<module>"
 ```
 
@@ -66,7 +65,7 @@ Review the initial model with an engineer who knows the codebase. Check three th
 
 </Steps>
 
-Check the proposal after each round. Findings identify affected subjects or artifacts and include supporting locations when available:
+After each round, run the checks against the draft. The semantics and code checks read the selected proposal. The embeds check uses the recipes stored in tracked Archboard images.
 
 ```bash
 archboard check --state "<proposal-id>"
@@ -97,7 +96,8 @@ A flow records a single request, background job, or event as an ordered sequence
 - A background job or failure path that pages on-call engineers.
 
 ```text title="Ask your agent" wrap
-Add a flow for what happens when a customer pays, from the first request to the receipt.
+Add a flow named "Pay for an order" for what happens when a customer pays, from the first
+request to the receipt. Summarize what the flow does and why it matters.
 Anchor each source-backed message to the repository, file, and symbol that shows it.
 Read the source again for retries, fixed counts, and calls that a module makes to itself.
 ```
@@ -113,9 +113,9 @@ archboard model render --flow "Pay for an order" --grammar sequence --out docs/a
 A walkthrough steps through a series of readings (beats), each with a title and narrative. For onboarding, start with two modules, add more on each beat until the full path is visible, stop at the main failure point, and finish with the key takeaway.
 
 ```text title="Ask your agent" wrap
-I am new here. Make an Archboard walkthrough of what happens when a customer pays, in five
-or six beats. Start with two modules and add a few at each beat. Stop at the place where it
-fails most often, and end on the one thing I must remember.
+I am new here. Make an Archboard walkthrough named "How a customer pays" in five or six beats.
+Start with two modules and add a few at each beat. Stop at the place where it fails most often.
+End on the one thing I must remember.
 ```
 
 Open the walkthrough in the browser and click **Narrate** to play Codex voice narration for each beat. To export a video, save a checkpoint first, then record from that checkpoint. Pass the `revision.digest` from `archboard model read` to `--expect-revision`, and pass the checkpoint ID returned by `model retain` to `model record`:
@@ -136,8 +136,8 @@ archboard check
 
 Classify each finding code into one of three categories:
 
-- **Fail CI.** Block pull requests whenever this finding appears. [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn) and [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) are common first choices.
-- **Report only.** Show the finding on pull requests without failing the job by adding it to the check Action's [`allow-codes`](../reference/actions/#check-allow-codes) input.
+- **Fail CI.** The check Action blocks on warnings and semantic diagnostics by default. Warnings such as [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) can block pull requests.
+- **Report only.** Findings at information level already appear without failing the job. To report a warning or semantic diagnostic without failing the job, add its code to the check Action's [`allow-codes`](../reference/actions/#check-allow-codes) input.
 - **Fix the model.** The finding caught a real mismatch in the model. Fix it now.
 
 Save these decisions in the pull request that adds the vault or in your team docs:
