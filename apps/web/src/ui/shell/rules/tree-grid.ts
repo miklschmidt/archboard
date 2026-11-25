@@ -44,13 +44,6 @@ const MARKER_WIDTH = 16;
 /** Between the marker column and the name. */
 const NAME_GAP = 6;
 
-/**
- * Where a marker's ink starts in its column: a 14px icon centred in the 16px column, less the
- * margin the icon set draws inside its own box. A name that stands in the marker column starts
- * here, so its words start where the ink of the marker above them does.
- */
-const MARKER_INK = 2;
-
 /** Between the name and the facts. */
 const FACTS_GAP = 8;
 
@@ -101,7 +94,6 @@ export {
 	FACTS_GAP,
 	FACTS_INSET,
 	FLAT_INSET,
-	MARKER_INK,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,

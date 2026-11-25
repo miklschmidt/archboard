@@ -29,7 +29,6 @@ import {
 	FACTS_INSET,
 	FLAT_INSET,
 	guideX,
-	MARKER_INK,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,
@@ -53,7 +52,6 @@ const TREE_STYLE: CSSProperties = { paddingInline: ROW_GUTTER };
 const DISCLOSURE_STYLE = { width: DISCLOSURE_WIDTH } as const;
 const MARKER_STYLE = { width: MARKER_WIDTH } as const;
 const NAME_STYLE = { marginLeft: NAME_GAP } as const;
-const IN_MARKER_STYLE = { marginLeft: MARKER_INK } as const;
 const FACTS_STYLE = { marginLeft: FACTS_GAP } as const;
 
 /** Keys that command rather than type: Space opens, `/` finds, and the rest move the reading. */
@@ -465,8 +463,6 @@ function TreeMarker(props: {
  * @param props.match Where the filter matched it, or null.
  * @param props.title The whole name, on hover, where it differs from the name shown.
  * @param props.className Classes for its type.
- * @param props.inMarker Whether the name stands in the marker column, on a leaf with no marker, so
- * its words start where the ink of its parent's marker starts.
  * @returns The name.
  */
 function TreeName(props: {
@@ -474,12 +470,11 @@ function TreeName(props: {
 	readonly match?: TextRange | null | undefined;
 	readonly title?: string | undefined;
 	readonly className?: string | undefined;
-	readonly inMarker?: boolean | undefined;
 }): JSX.Element {
 	const { text, match } = props;
 	return (
 		<span
-			style={props.inMarker === true ? IN_MARKER_STYLE : NAME_STYLE}
+			style={NAME_STYLE}
 			title={props.title ?? text}
 			className={cn("text-control min-w-0 flex-1 truncate font-normal", props.className)}
 		>
