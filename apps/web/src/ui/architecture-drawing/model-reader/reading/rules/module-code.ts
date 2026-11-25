@@ -1,6 +1,7 @@
 // What the last code pass says of each module of a reading, for the Code columns of Measures
-// (TASK-646.07, ADR 0082): its exports by kind, the logic behind them and its findings, or why the
-// pass did not judge it. A module the pass read only in part never looks clean.
+// (TASK-646.07, TASK-659, ADR 0082): its exports by kind, the names its callers learn with the
+// switchboards among them, the logic behind them and its findings, or why the pass did not judge
+// it. A module the pass read only in part never looks clean.
 
 import type { QueryStatus } from "@tanstack/react-query";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
@@ -29,6 +30,9 @@ type ModuleCode =
 	| {
 			readonly kind: "read";
 			readonly exports: Depth["exports"];
+			/** The names its callers learn, each switchboard once for each operation it picks. */
+			readonly width: number;
+			readonly switchboards: Depth["switchboards"];
 			readonly logic: number;
 			/** The findings of the pass on the module itself. */
 			readonly findings: number;
@@ -99,7 +103,8 @@ function skippedLanguage(skip: Skip): string | undefined {
 
 /**
  * What the pass did not read of a module it measured: languages no rule judges, and languages of
- * the module whose server gave no answer in its checkout.
+ * the module whose server gave no answer in its checkout, and unresolved switchboard keys
+ * that withheld the depth verdict.
  * @param depth The module.
  * @param skipped What the pass skipped.
  * @returns The words, one for each.
@@ -115,7 +120,14 @@ function partialOf(depth: Depth, skipped: readonly Skip[]): string[] {
 			: [];
 	});
 	const rules = depth.unjudged.map((language) => `no rule judges ${languageName(language)} yet`);
-	return [...rules, ...new Set(servers)];
+	const keys = skipped
+		.filter((skip) => skip.reason === "key-unclosed" && skip.subject?.id === depth.subject.id)
+		.map((skip) =>
+			skip.detail === undefined
+				? "shallow verdict withheld for an unresolved switchboard key"
+				: `shallow verdict withheld for unresolved switchboard keys (${skip.detail})`,
+		);
+	return [...rules, ...new Set(servers), ...keys];
 }
 
 /**
@@ -134,8 +146,16 @@ function measuredModule(depth: Depth, findings: number, skipped: readonly Skip[]
 			words: languages === "" ? "no export that a rule judges" : `no rule judges ${languages} yet`,
 		};
 	}
-	const { exports, logic } = depth;
-	return { kind: "read", exports, logic, findings, partial: partialOf(depth, skipped) };
+	const { exports, width, switchboards, logic } = depth;
+	return {
+		kind: "read",
+		exports,
+		width,
+		switchboards,
+		logic,
+		findings,
+		partial: partialOf(depth, skipped),
+	};
 }
 
 /**

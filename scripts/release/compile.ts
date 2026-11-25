@@ -3,7 +3,7 @@
 //   bin/archboard           the executable: the CLI, and with its internal first argument the server
 //   frontend/               the browser bundle that `bun run build` made
 //   core/                   the renderer glue and WebAssembly that the server loads
-//   skills/                 the archboard, archboard-pr and archboard-plan skills
+//   skills/                 the archboard, archboard-pr, archboard-plan and archboard-deepen skills
 //   archboard-release.json  the version, the commit, the core source hash and the Codex version
 //
 // The grammars of the code check, the reviewed texts of the workbench and the theme colours are
@@ -54,7 +54,7 @@ const ENTRIES = [
 ];
 
 /** The skills a release ships, under `skills/`. */
-const SKILLS = ["archboard", "archboard-pr", "archboard-plan"];
+const SKILLS = ["archboard", "archboard-pr", "archboard-plan", "archboard-deepen"];
 
 /** The glue of the core and its WebAssembly. */
 const CORE_GLUE = "archboard_renderer_wasm.js";

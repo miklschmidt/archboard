@@ -1,7 +1,8 @@
 // The lines `archboard check code` writes beside its JSON answer: each
 // finding as a diagnostic line with the evidence it rests on, what the code
 // check skipped, one line for each reason with a count, and how far each document
-// is behind its code, per document and per part (ADR 0045, ADR 0046).
+// is behind its code, per document and per part (ADR 0045, ADR 0046), and the
+// module-depth codes that the vault policy turns off (TASK-650).
 
 import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 import { diagnosticLine } from "@archboard/model/policy";
@@ -147,6 +148,21 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
 }
 
 /**
+ * One line naming the module-depth codes that a vault rule turns off (TASK-650), so a code with no
+ * finding never looks like one the code holds nowhere.
+ * @param answer The code check's answer.
+ * @returns The line, or none when no rule turns a code off.
+ */
+function offLines(answer: CodeCheckResult): string[] {
+	const off = new Set(
+		(answer.models ?? []).flatMap((model) =>
+			Object.entries(model.rules ?? {}).flatMap(([code, level]) => (level === "off" ? [code] : [])),
+		),
+	);
+	return off.size === 0 ? [] : [`code check: off by vault policy: ${[...off].join(", ")}`];
+}
+
+/**
  * Every line the code check writes beside its answer.
  * @param answer The code check's answer.
  * @returns The lines.
@@ -155,6 +171,7 @@ function codeCheckLines(answer: CodeCheckResult | undefined): string[] {
 	if (answer === undefined) return [];
 	return [
 		...answer.findings.flatMap(findingLines),
+		...offLines(answer),
 		...skippedLines(answer.skipped),
 		...answer.behind.flatMap(behindLines),
 	];

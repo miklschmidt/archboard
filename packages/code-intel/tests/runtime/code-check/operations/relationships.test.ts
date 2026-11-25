@@ -253,6 +253,9 @@ test("every finding of the relationship judgement, and nothing about a relations
 	const found = judged.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
+			// Each small bound module hides fewer than four pieces of logic behind each name (TASK-659).
+			"MODULE_SHALLOW pS warning",
+			"MODULE_SHALLOW pT warning",
 			"RELATIONSHIP_UNDRAWN pA warning",
 			"RELATIONSHIP_UNDRAWN pZ information",
 			"RELATIONSHIP_UNDRAWN pN warning",

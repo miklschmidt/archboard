@@ -199,6 +199,8 @@ test("a C++ class counts its public methods, but no constructor, destructor or o
 test("every module-depth rule reads the C grammar's facts: values, repeated math on a value and a getter, a pass-through and an unused function", () => {
 	expect(depthFindings(answer, "Timing").toSorted()).toEqual(
 		[
+			// Its names hide fewer than four pieces of logic each (TASK-659).
+			"(module) MODULE_SHALLOW warning",
 			"restart_base EXPOSED_VALUE_COMPUTED warning",
 			"jitter_ms EXPOSED_VALUE_COMPUTED warning",
 			"RESTART_MAX EXPOSED_VALUE warning",
@@ -208,13 +210,15 @@ test("every module-depth rule reads the C grammar's facts: values, repeated math
 	);
 	expect(depthFindings(answer, "Config")).toEqual([
 		"config_retries EXPOSED_VALUE warning",
-		"(module) MODULE_SHALLOW information",
+		"(module) MODULE_SHALLOW warning",
 	]);
 });
 
 test("the C++ grammar names a method that only passes its call on, and a constant callers read", () => {
 	expect(depthFindings(answer, "Store").toSorted()).toEqual(
 		[
+			// Its names hide fewer than four pieces of logic each (TASK-659).
+			"(module) MODULE_SHALLOW warning",
 			"shop::Store::save CODE_PASS_THROUGH information",
 			"shop::kLimit EXPOSED_VALUE warning",
 		].toSorted(),

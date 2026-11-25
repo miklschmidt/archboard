@@ -56,12 +56,23 @@ interface Definition {
 	/**
 	 * It declares a type and nothing a caller runs or reads: a TypeScript
 	 * interface, type alias or enum; a C or C++ struct, union or enum with no
-	 * function among its members, a typedef or an alias; a Swift protocol,
-	 * alias or enum with no method; an Objective-C protocol. The code check
+	 * function among its members, a typedef or an alias; a Swift protocol or
+	 * alias; an Objective-C protocol. The code check
 	 * counts it as an exported type and never judges it, so an exported union
 	 * or enum keeps the compiler's exhaustive checks (TASK-646.04, TASK-646.12).
 	 */
 	readonly type?: true;
+	/**
+	 * It declares a type that holds data, which may also have methods: a Rust
+	 * struct, enum or union, a Go named type other than an interface, a C#
+	 * struct or record, a Swift struct or enum, or a Python dataclass or enum.
+	 * Its methods may be in another file, as a Rust `impl`, a Go method and a
+	 * Swift extension can be, so module depth decides: with no public method
+	 * in its module it counts as a type, else as a class with its methods
+	 * (TASK-651). A C or C++ type is decided in its file, where a class
+	 * declares every member function (`type`).
+	 */
+	readonly data?: true;
 	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,
@@ -70,6 +81,19 @@ interface Definition {
 	 * (TASK-646.05, TASK-646.12).
 	 */
 	readonly passes?: string;
+	/**
+	 * It picks the operation it runs by a closed key its caller passes: a
+	 * switchboard (ADR 0082). TypeScript and Rust name it; module depth counts
+	 * one name for each operation it picks.
+	 */
+	readonly picks?: Switchboard;
+	/**
+	 * It is a type whose values are a closed set of keys: a TypeScript union of
+	 * literals or an enum, under `""`, and, for a union of object types, the
+	 * literals of each property every member fixes, under its name. A
+	 * switchboard whose key the file types by this name is closed by it.
+	 */
+	readonly closes?: Readonly<Record<string, readonly string[]>>;
 	/**
 	 * It holds the value of another name, as the file spells it: `DialogRoot`
 	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
@@ -109,6 +133,38 @@ interface Definition {
 	 * code there reads with what the declaration sets (TASK-367.23).
 	 */
 	readonly runs?: string;
+}
+
+/** One operation a switchboard picks: the keys that pick it, and the line its first arm starts. */
+interface PickedOperation {
+	readonly keys: readonly string[];
+	readonly line: number;
+}
+
+/**
+ * A callable that picks the operation it runs by a key its caller passes
+ * (ADR 0082): each operation is one name its callers learn.
+ */
+interface Switchboard {
+	/** The key as the code spells it from a parameter: `intent`, `input.analysis`, `options.register`. */
+	readonly key: string;
+	/**
+	 * The type that closes the key, as the file names it, where the file does
+	 * not close it itself: the key is closed only once module depth finds that
+	 * type and it `closes` the key.
+	 */
+	readonly type?: string;
+	/** The keys handled unconditionally by named arms, including arms that run no operation. */
+	readonly namedKeys?: readonly string[];
+	/** Operations regrouped without the catch-all, for a deferred key whose named arms exhaust it. */
+	readonly exhaustiveOperations?: readonly PickedOperation[];
+	/** Each operation, in the order the body first picks it. */
+	readonly operations: readonly PickedOperation[];
+	/**
+	 * The pieces of logic that exist only to pick: each test of the key, and
+	 * each call of an arm that only hands its arguments on.
+	 */
+	readonly logic: number;
 }
 
 /**
@@ -399,12 +455,14 @@ export type {
 	ModuleReading,
 	ParsedFacts,
 	ParseFacts,
+	PickedOperation,
 	ReadParsed,
 	ReadText,
 	Reference,
 	ReferenceThroughImport,
 	ReferenceVia,
 	ResolvedImport,
+	Switchboard,
 	SyntaxFacts,
 	Target,
 	Unparsed,

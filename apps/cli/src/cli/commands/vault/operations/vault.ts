@@ -19,11 +19,11 @@ import {
 } from "#cli/commands/vault/operations/check-help.ts";
 import { checkResult } from "#cli/commands/vault/operations/check-result.ts";
 import {
-	baseRefusal,
 	gateParameters,
 	askGate,
 	gateShallowModules,
 } from "#cli/commands/vault/rules/shallow-modules.ts";
+import { codeCheckRefusals } from "#cli/commands/vault/protocol/code-check-refusals.ts";
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
@@ -101,30 +101,6 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 
 /** The server is unreachable, as every command that needs it refuses. */
 const serverRefusal = refusal("server");
-
-const stateNotFoundRefusal = {
-	code: "STATE_NOT_FOUND",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"--state names no state of the model. Name one by its identity or exact name. `archboard model proposals` lists the drafts.",
-};
-
-const stateAmbiguousRefusal = {
-	code: "STATE_AMBIGUOUS",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"--state names several states of the model. Name one by its identity, which `archboard model proposals` lists.",
-};
-
-const planRefusal = {
-	code: "PLAN_REFUSED",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under `.terraform`, or a file that is not a plan JSON. The refusal names the plan and why.",
-};
 
 /**
  * Which server a language server timing is of: its program, and the
@@ -440,7 +416,7 @@ const checkAllContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
+	refusals: [serverRefusal, ...codeCheckRefusals],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	/**
 	 * Run every check.
@@ -535,7 +511,7 @@ const checkCodeContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
+	refusals: [serverRefusal, ...codeCheckRefusals],
 	relationships: [codeRoute],
 	/**
 	 * Run the code check.

@@ -200,6 +200,9 @@ test("anchors, binding symbols and the relationships between parts bound to C# f
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
+			// Each small bound module hides fewer than four pieces of logic behind each name (TASK-659).
+			"MODULE_SHALLOW pApi warning",
+			"MODULE_SHALLOW pCore warning",
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pGone warning",
 			// The API's project exposes its public controller, which no file outside it

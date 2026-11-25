@@ -141,11 +141,11 @@ holds files only. When it grows past about 12 files, split its behavior into sub
   not enough. When callers import pieces of a package and connect them, move that assembly into the
   package as one operation, change the callers to use it, and make the pieces private. Do not hide
   the same width in one large file or behind one object.
-- **Interface width has a recorded ceiling.** `tests/system/repository-policy/interface-width.test.ts`
-  counts the names that the code entries of each package's `exports` export. It fails when a package
-  exceeds its ceiling in `interface-width-ceilings.json` beside the test, and when that file does
-  not list exactly the packages that exist. When a package gets narrower, lower its ceiling. Never
-  raise a ceiling: design a deeper operation instead.
+- **Width is judged against depth, not capped.** The code check's `MODULE_SHALLOW` holds each
+  bound module to at least 4 pieces of logic behind each name its callers learn, at any width
+  (ADR 0082). A name moved to another module, or behind a key, is still a name its callers learn:
+  ask whether the product needs the name, whether one mechanism serves a class of jobs, or whether
+  the caller's job can disappear.
 - **An `api/` folder is the package's interface over private implementation.** A package that
   adopts it points the `exports` of an area only into that area's `api/`. An api file re-exports
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)

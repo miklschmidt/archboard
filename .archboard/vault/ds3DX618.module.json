@@ -3,7 +3,7 @@
   "name": "Module depth",
   "kind": "module",
   "responsibility": "Judges each bound module's exports from its code, and the math that callers repeat on them",
-  "description": "Code check hands it each module's exposure, the resolved outside uses, each language's coverage and the module that owns each caller, so it reads nothing twice. It counts exported functions, each public method, exported values and exported types, and the pieces of logic behind them, as evidence. It reports EXPOSED_VALUE for any exported non-function value that outside code reads, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH when outside callers also import the defining module, EXPOSED_VALUE_COMPUTED when two or more modules write the same math on one exported value, and MODULE_SHALLOW when every non-type export carries a per-name finding. MODULE_SHALLOW is information in the answer; the CLI decides when it fails.",
+  "description": "Code check hands it each module's exposure, the resolved outside uses, each language's coverage and the module that owns each caller, so it reads nothing twice. It counts exported functions, each public method, exported values and exported types, and the pieces of logic behind them, as evidence. Its width is the names callers learn: exports that are not types, with a switchboard, a callable that picks its operation by a closed key its caller passes, counted once for each operation it picks, its key closed through imported types. It reports EXPOSED_VALUE for any exported non-function value that outside code reads, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH when outside callers also import the defining module, EXPOSED_VALUE_COMPUTED when two or more modules write the same math on one exported value, and MODULE_SHALLOW when every non-type export carries a per-name finding or its W > 0 names hide fewer than 4W pieces of logic, at any width. MODULE_SHALLOW is a warning; a vault rule can lower it, and the CLI's gate fails it on touched modules.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/module-depth"
@@ -30,8 +30,8 @@
         "path": "packages/code-intel/src/runtime/module-depth/operations/depth-reading.ts",
         "symbol": "within"
       },
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
-      "id": "vKEsyHFk#3lLeTRtE"
+      "id": "vKEsyHFk#3lLeTRtE",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
     }
   ]
 }

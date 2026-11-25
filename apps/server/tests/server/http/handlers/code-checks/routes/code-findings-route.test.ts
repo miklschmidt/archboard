@@ -282,6 +282,8 @@ test("a canonical reading keeps each module's depth and what the pass skipped, a
 		exports: { functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
 		names: [{ name: "run", kind: "function" as const, path: `src/${id}/index.ts`, line: 1 }],
 		logic: 2,
+		width: 1,
+		switchboards: [],
 	});
 	const answer: CodeCheckAnswer = {
 		timings: [],
@@ -333,6 +335,8 @@ test("every canvas reads no export names, and the exports of one module are read
 			line: index + 1,
 		})),
 		logic: count,
+		width: count,
+		switchboards: [],
 	});
 	const answer: CodeCheckAnswer = {
 		timings: [],

@@ -26,7 +26,9 @@
 // declare the type.
 //
 // For module depth (TASK-646.10): a trait, a type alias and an associated
-// type declare a type and nothing a caller runs or reads. A `const` or
+// type declare a type and nothing a caller runs or reads. A struct, an enum
+// and a union hold data, and are types unless their module gives them a
+// public method (`Definition.data`, TASK-651). A `const` or
 // `static` of a function pointer's type can be called, so it is a function.
 // The members of an `impl` of a trait whose members the language's own
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
@@ -43,6 +45,7 @@ import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 import { passesTo } from "#runtime/code-facts/rust/operations/rust-depth.ts";
+import { switchboardOf } from "#runtime/code-facts/rust/operations/rust-switchboard.ts";
 
 /** Where the walk is: the names that qualify an item, and whether everything around it is open. */
 interface Scope {
@@ -52,6 +55,9 @@ interface Scope {
 
 /** The items that declare a type and nothing a caller runs or reads. */
 const TYPE_ITEMS = new Set(["trait_item", "type_item", "associated_type"]);
+
+/** The items that declare a type that holds data, and may have methods in an `impl` anywhere in their crate. */
+const DATA_ITEMS = new Set(["struct_item", "enum_item", "union_item"]);
 
 /**
  * The traits whose members the language's syntax calls: the end of a scope,
@@ -195,6 +201,21 @@ function typeName(type: Node | null): string | undefined {
 }
 
 /**
+ * The variant keys an enum declares, including variants that carry data.
+ * @param node The declaration.
+ * @returns The closure facts.
+ */
+function enumClosure(node: Node): Pick<Definition, "closes"> {
+	if (node.type !== "enum_item") return {};
+	const variants = node.childForFieldName("body")?.namedChildren ?? [];
+	const names = variants.flatMap((variant) => {
+		const name = variant.childForFieldName("name")?.text;
+		return name === undefined ? [] : [name];
+	});
+	return { closes: { "": names } };
+}
+
+/**
  * One definition.
  * @param node Its declaration.
  * @param symbol Its spelled name.
@@ -207,12 +228,16 @@ function definition(
 	shape: Pick<Definition, "kind" | "visibility" | "exposed">,
 ): Definition {
 	const passes = passesTo(node);
+	const picks = switchboardOf(node);
 	return {
 		symbol,
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
+		...(DATA_ITEMS.has(node.type) ? { data: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
+		...(picks === undefined ? {} : { picks }),
 		...hostCalled(node),
+		...enumClosure(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),

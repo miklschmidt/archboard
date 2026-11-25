@@ -165,6 +165,8 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
+			// Each small bound module hides fewer than four pieces of logic behind each name (TASK-659).
+			"MODULE_SHALLOW pMoney warning",
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pGone warning",
 			// The library exposes `audit`, `Entry` and three names of `money` that the shop does not use.
@@ -174,6 +176,8 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			// The money module has no parts, and its interface is read all the same.
 			...Array.from({ length: 3 }, () => "EXPOSED_UNUSED pMoney warning"),
 			"EXPOSED_VALUE pMoney warning",
+			// The ledger module exposes many names over little logic.
+			"MODULE_SHALLOW pLed warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			// The cart's relationship to the entry stands for these two calls into the ledger.
 			"RELATIONSHIP_UNDRAWN pLed information",

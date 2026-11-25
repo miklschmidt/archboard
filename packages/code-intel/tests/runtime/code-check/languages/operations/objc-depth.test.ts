@@ -109,6 +109,8 @@ test("the pieces of logic of an Objective-C module count its sends", () => {
 test("every module-depth rule reads the Objective-C grammar's facts: repeated math through MIN and a local, and a method that only sends its call on", () => {
 	expect(depthFindings(answer, "Timing").toSorted()).toEqual(
 		[
+			// Its names hide fewer than four pieces of logic each (TASK-659).
+			"(module) MODULE_SHALLOW warning",
 			"TMRestartBase EXPOSED_VALUE_COMPUTED warning",
 			"TMTimer::fire: CODE_PASS_THROUGH information",
 		].toSorted(),

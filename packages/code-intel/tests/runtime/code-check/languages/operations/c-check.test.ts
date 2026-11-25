@@ -220,6 +220,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
+			// Each small bound module hides fewer than four pieces of logic behind each name (TASK-659).
+			"MODULE_SHALLOW pK warning",
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pB warning",
 			"RELATIONSHIP_BACKWARDS e3 information",

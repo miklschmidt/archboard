@@ -139,6 +139,8 @@ function measured(): Reading {
 				unjudged: [],
 				exports: { functions: 1, classes: 1, methods: 1, values: 1, types: 1 },
 				logic: 4,
+				width: 4,
+				switchboards: [],
 			},
 		],
 	};

@@ -246,7 +246,7 @@ function findingsOn(name: string) {
 		.map((each) => [each.export, each.code, each.severity]);
 }
 
-test("a Rust module's exports are counted by kind: a struct and an enum are classes with their public methods and associated items, a trait and a type alias are types, and a function pointer is a function", () => {
+test("a Rust module's exports are counted by kind: a struct or an enum with a public method is a class with its methods and associated items, one with none is a type, a trait and a type alias are types, and a function pointer is a function", () => {
 	const ledger = depthOf("Ledger");
 	expect(ledger?.languages).toEqual(["rust"]);
 	expect(ledger?.unjudged).toEqual([]);
@@ -266,12 +266,13 @@ test("a Rust module's exports are counted by kind: a struct and an enum are clas
 		// A trait's method on the type that implements it; `drop`, which the language calls, is no export.
 		["Account.send", "method"],
 	]);
+	// `Durations` has no method: a type that holds data.
 	expect(depthOf("Timing")?.exports).toEqual({
 		functions: 1,
-		classes: 1,
+		classes: 0,
 		methods: 0,
 		values: 4,
-		types: 0,
+		types: 1,
 	});
 });
 

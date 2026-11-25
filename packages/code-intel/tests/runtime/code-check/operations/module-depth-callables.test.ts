@@ -21,6 +21,7 @@ import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import { languageServerOf } from "#runtime/language-servers/operations/server-command.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { rolledUpModules } from "#tests/runtime/support/code-check/depth-checkout.ts";
 
 const caller = { ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"] };
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "archboard-module-depth-callables-")));
@@ -176,17 +177,6 @@ function exposedValues(answer: CodeCheckAnswer) {
 		.map((each) => [each.subject?.name, each.export, each.severity]);
 }
 
-/**
- * The modules `MODULE_SHALLOW` names.
- * @param answer The answer.
- * @returns Their names.
- */
-function shallow(answer: CodeCheckAnswer) {
-	return answer.findings
-		.filter((each) => each.code === "MODULE_SHALLOW")
-		.map((each) => each.subject?.name);
-}
-
 test("a compound component made by Object.assign onto a function counts as a function without a language server, and a value a call makes is information there", async () => {
 	write(shop, {
 		".archboard/language-servers.json": JSON.stringify({
@@ -205,7 +195,7 @@ test("a compound component made by Object.assign onto a function counts as a fun
 			["Contract", "LIMITS", "warning"],
 		]);
 		// Nor does a module shallow on such a value alone.
-		expect(shallow(answer)).toEqual([]);
+		expect(rolledUpModules(answer)).toEqual([]);
 	} finally {
 		rmSync(join(shop, ".archboard", "language-servers.json"));
 	}
@@ -221,6 +211,6 @@ test.skipIf(!native)(
 			["Contract", "UserSchema", "warning"],
 			["Contract", "LIMITS", "warning"],
 		]);
-		expect(shallow(answer)).toEqual(["Contract"]);
+		expect(rolledUpModules(answer)).toEqual(["Contract"]);
 	},
 );

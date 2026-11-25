@@ -36,7 +36,7 @@ const clients: InstanceType<typeof QueryClient>[] = [];
 const REVISION = { digest: "a".repeat(64), files: [] };
 /** The columns of each table, as the dialog gives them. */
 const EXPOSES = ["entryPoints", "hiddenParts", "passThrough", "callers", "wholeModule"] as const;
-const CODE = ["codeExports", "codeValues", "codeLogic", "codeFindings"] as const;
+const CODE = ["codeExports", "codeWidth", "codeValues", "codeLogic", "codeFindings"] as const;
 const TOGETHER = ["together", "unjoined", "commits"] as const;
 /** A table of history, sorted by its commits. */
 const BY_COMMITS: Props["view"] = { measure: "commits", fewest: false, show: "all" };
@@ -466,6 +466,8 @@ function measured(
 		unjudged: languages.unjudged,
 		exports,
 		logic: exports.functions * 3,
+		width: exports.functions + exports.classes + exports.methods + exports.values,
+		switchboards: [],
 	};
 }
 

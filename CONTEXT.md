@@ -790,7 +790,7 @@ Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
 
 **Module depth**:
-What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
+What the code check measures of one bound module from its code: its exports by kind, its width, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
 The counts are evidence and never a score; only the findings are verdicts.
 _Avoid_: depth score, depth ratio, interface measures (those are what the model claims)
 
@@ -834,14 +834,26 @@ _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and how many only its own files import, naming the first five.
 _Avoid_: missing barrel, missing index
 
+**Module width**:
+The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included, with a switchboard counted once for each operation it picks. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. No width is too wide on its own: the shallow-module rule weighs it against the logic behind it.
+_Avoid_: export count, surface area, wide interface (no flat cap judges width since TASK-659)
+
+**Switchboard**:
+An exported function or public method that picks the operation it runs by a closed key its caller passes: literal overloads, a literal or boolean union, a property of a request that tells its kind, or a Rust enum parameter. Each arm that runs a different operation is a name its callers learn; an arm that only selects data, or runs the shared path plus checks, adds none. A keyed getter is no switchboard. For a counted switchboard, the logic total excludes its tests of the key and its bare forwarding calls.
+_Avoid_: dispatcher, router, multiplexer, verb parameter
+
 **Shallow module**:
-A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding, or whose W > 0 names have fewer than 4W pieces of logic behind them, at any width: `MODULE_SHALLOW`, a warning. Equality passes. A deep module hides much logic behind few names, and a name moved to another module, or behind a key, is still a name its callers learn. The measured ground needs a complete reading of judged languages and a closed key for each switchboard that could change it, and an `external` module gets no verdict.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
-What fails `archboard check` on a shallow module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`.
+What fails `archboard check` on an information `MODULE_SHALLOW` of a module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`. It is a warning without a rule, so the gate matters where a rule sets it to information: debt mode, where old modules stay information and touched ones fail.
 The CLI applies it to the answer, whose severities never depend on the caller.
 _Avoid_: depth gate, shallow check
+
+**Module-depth rule**:
+The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` beside the gate is an invalid configuration, and a rule for the retired width cap also makes the configuration invalid.
+_Avoid_: lint rule, suppression, allow list (that is the Action's `allow-codes`)
 
 **Touched module**:
 A module whose bound code, or a part's inside its module, the branch changed between the merge base with its base and the working tree.
