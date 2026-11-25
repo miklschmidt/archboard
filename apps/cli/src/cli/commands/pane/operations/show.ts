@@ -272,6 +272,11 @@ const browserShowContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "Show architecture");
 		const { pane, input: file, flowInput, noCompare, ...flags } = input;
+		if (file === "-" && flowInput === "-") {
+			throw new CliUsageError(
+				"--input - and --flow-input - both read standard input: pass one of them as a file.",
+			);
+		}
 		let reading =
 			file === undefined
 				? { ...flags, ...(noCompare === true ? { compare: false } : {}) }
