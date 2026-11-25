@@ -4,13 +4,13 @@
 
 use std::collections::BTreeMap;
 
+use archboard_scene::geometry::Curve;
+
 use super::super::BRIDGE_RADIUS;
-use super::super::clusters::at_on;
 use super::super::drawn_lines::fixed_of;
-use super::super::hops::{Bulge, crest_along};
 use super::cables::connected_hops;
-use super::{FULL_ROOM, LEAST_ROOM, Plan, Rise, Settling};
-use crate::ecma::{max, min};
+use super::{FULL_ROOM, LEAST_ROOM, Plan, Rise, Settling, by_key};
+use crate::ecma::{max, min, sort_by};
 
 impl Settling<'_> {
     /// Whether a cluster's crossers ride one route and are hopped as one ribbon.
@@ -31,7 +31,7 @@ impl Settling<'_> {
 
     /// Multi-strand crossing places of each cable: clusters on strands of one cable that share
     /// crossed clusters on perpendicular lines.
-    pub(super) fn cable_cluster_places(&self) -> Vec<Vec<usize>> {
+    fn cable_cluster_places(&self) -> Vec<Vec<usize>> {
         let mut by_crossing = BTreeMap::new();
         let mut links = vec![Vec::new(); self.clusters.all.len()];
         for cluster in 0..self.clusters.all.len() {
@@ -73,116 +73,98 @@ impl Settling<'_> {
         true
     }
 
-    /// Whole-cable ribbon plans: every strand of a cable crossing a place rises together under
-    /// parallel crests bulging the same way, tried after single-line plans and before single-strand
-    /// fallbacks.
-    pub(super) fn ribbon_plans(&self, cable_places: &[Vec<usize>]) -> Vec<Plan> {
-        let mut plans = Vec::new();
-        for place in cable_places {
-            if !self.ribbon_fits_apart(place) {
-                continue;
-            }
-            let rises: Vec<Rise> = place
-                .iter()
-                .map(|&cluster| self.whole_of(cluster))
-                .collect();
-            for (stage, room, bulge) in [
-                (2.1, FULL_ROOM, 1.0),
-                (2.2, FULL_ROOM, -1.0),
-                (2.3, LEAST_ROOM, 1.0),
-                (2.4, LEAST_ROOM, -1.0),
-            ] {
-                if !rises.iter().all(|rise| self.passable(rise, bulge)) {
-                    continue;
-                }
-                if let Some(mut plan) = self.plan_of(stage, room, rises.clone()) {
-                    plan.bulge = bulge;
-                    plan.ribbon = true;
-                    plans.push(plan);
-                }
-            }
-        }
-        plans
-    }
-
-    /// Settle remaining unsettled crossings of each cable place together as one ribbon where an
-    /// earlier plan settled part of the cluster (such as another cable beside a single line).
-    pub(super) fn settle_remaining_ribbons(&mut self, cable_places: &[Vec<usize>]) {
-        for place in cable_places {
-            self.settle_remaining_ribbon(place);
-        }
-    }
-
-    /// Settle the remaining unsettled crossings of one cable place together as one ribbon.
-    fn settle_remaining_ribbon(&mut self, place: &[usize]) {
-        if !self.ribbon_fits_apart(place) {
-            return;
-        }
-        let rises: Vec<Rise> = place
-            .iter()
-            .filter_map(|&cluster| {
-                let crossings: Vec<usize> = self
-                    .cluster(cluster)
-                    .crossings
-                    .iter()
-                    .copied()
-                    .filter(|&crossing| !self.settled[crossing])
-                    .collect();
-                (!crossings.is_empty()).then_some(Rise { cluster, crossings })
-            })
+    /// Try whole ribbons and ordinary plans before plans that settle only a
+    /// strand. Emphasis still orders plans within each group.
+    pub(super) fn settle_plans(&mut self) {
+        let cable_places: Vec<_> = self
+            .cable_cluster_places()
+            .into_iter()
+            .filter(|place| self.ribbon_fits_apart(place))
             .collect();
-        if rises.len() < 2 {
-            return;
+        let mut in_ribbon = vec![false; self.clusters.all.len()];
+        for &cluster in cable_places.iter().flatten() {
+            in_ribbon[cluster] = true;
         }
-        for (room, bulge) in [
-            (FULL_ROOM, 1.0),
-            (FULL_ROOM, -1.0),
-            (LEAST_ROOM, 1.0),
-            (LEAST_ROOM, -1.0),
-        ] {
-            if self.try_remaining_ribbon(&rises, room, bulge) {
-                break;
-            }
+        let (fallback, mut plans): (Vec<_>, Vec<_>) = (0..self.clusters.all.len())
+            .flat_map(|cluster| self.plans_of(cluster, in_ribbon[cluster]))
+            .partition(|plan| plan.rises.iter().any(|rise| in_ribbon[rise.cluster]));
+        plans.extend(self.ribbon_plans(&cable_places, false));
+        self.attempt_plans(plans);
+        let remaining = self.ribbon_plans(&cable_places, true);
+        self.attempt_plans(remaining);
+        self.attempt_plans(fallback);
+    }
+
+    /// Try the plans in their shared priority order.
+    fn attempt_plans(&mut self, mut plans: Vec<Plan>) {
+        sort_by(&mut plans, by_key);
+        for plan in &plans {
+            self.attempt(plan);
         }
     }
 
-    /// Try standing a remaining-crossings ribbon plan at one room and bulge. True when it stood.
-    fn try_remaining_ribbon(&mut self, rises: &[Rise], room: f64, bulge: Bulge) -> bool {
-        if !rises.iter().all(|rise| self.passable(rise, bulge))
-            || self.spans_settled(rises, room, bulge)
+    /// Plans for every cable place, or just the places partially settled
+    /// by earlier plans. Each ribbon bulges the same way along all its rises.
+    fn ribbon_plans(&self, cable_places: &[Vec<usize>], partial: bool) -> Vec<Plan> {
+        cable_places
+            .iter()
+            .filter_map(|place| self.ribbon_rises(place, partial))
+            .flat_map(|rises| self.plans_for_ribbon(&rises))
+            .collect()
+    }
+
+    /// The rises of the whole ribbon, or the rises still open after part of
+    /// the place has settled, provided at least two strands can still rise.
+    fn ribbon_rises(&self, place: &[usize], partial: bool) -> Option<Vec<Rise>> {
+        let mut rises: Vec<_> = place
+            .iter()
+            .map(|&cluster| self.whole_of(cluster))
+            .collect();
+        if !partial {
+            return Some(rises);
+        }
+        if !rises
+            .iter()
+            .flat_map(|rise| &rise.crossings)
+            .any(|&index| self.settled[index])
         {
-            return false;
+            return None;
         }
-        let Some(mut plan) = self.plan_of(0.0, room, rises.to_vec()) else {
-            return false;
-        };
-        plan.bulge = bulge;
-        plan.ribbon = true;
-        let before = self.stood.len();
-        self.attempt(&plan);
-        self.stood.len() > before
+        for rise in &mut rises {
+            rise.crossings.retain(|&crossing| !self.settled[crossing]);
+        }
+        rises.retain(|rise| !rise.crossings.is_empty());
+        (rises.len() >= 2).then_some(rises)
     }
 
-    /// Whether any rise's crest would span a crossing of its cluster that is not in the rise.
-    fn spans_settled(&self, rises: &[Rise], room: f64, bulge: Bulge) -> bool {
-        let runs = &self.scene.runs;
-        rises.iter().any(|rise| {
-            let cluster = self.cluster(rise.cluster);
-            let run = &runs[cluster.run];
-            let places: Vec<f64> = rise
-                .crossings
-                .iter()
-                .map(|&crossing| at_on(run, &self.crossings[crossing]))
-                .collect();
-            let Some(curve) = crest_along(runs, run, &places, room, bulge) else {
-                return true;
-            };
-            let feet = [curve.from, curve.end()].map(|point| run.axis.of(point));
-            let (low, high) = (min(feet), max(feet));
-            cluster.crossings.iter().any(|crossing| {
-                let at = run.axis.of(self.crossings[*crossing].point);
-                at > low && at < high && !rise.crossings.contains(crossing)
-            })
+    /// The room and bulge choices for the same set of rises.
+    fn plans_for_ribbon(&self, rises: &[Rise]) -> Vec<Plan> {
+        [
+            (2.1, FULL_ROOM, 1.0),
+            (2.2, FULL_ROOM, -1.0),
+            (2.3, LEAST_ROOM, 1.0),
+            (2.4, LEAST_ROOM, -1.0),
+        ]
+        .into_iter()
+        .filter(|&(_, _, bulge)| rises.iter().all(|rise| self.passable(rise, bulge)))
+        .filter_map(|(stage, room, bulge)| {
+            let mut plan = self.plan_of(stage, room, rises.to_vec())?;
+            plan.bulge = bulge;
+            plan.ribbon = true;
+            Some(plan)
+        })
+        .collect()
+    }
+
+    /// Whether a crest stays clear of the other crossings on its cluster.
+    pub(super) fn crest_covers_only(&self, rise: &Rise, curve: &Curve) -> bool {
+        let cluster = self.cluster(rise.cluster);
+        let axis = self.scene.runs[cluster.run].axis;
+        let feet = [curve.from, curve.end()].map(|point| axis.of(point));
+        let (low, high) = (min(feet), max(feet));
+        cluster.crossings.iter().all(|crossing| {
+            let at = axis.of(self.crossings[*crossing].point);
+            at <= low || at >= high || rise.crossings.contains(crossing)
         })
     }
 }

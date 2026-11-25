@@ -27,7 +27,7 @@ use archboard_scene::geometry::Curve;
 use archboard_scene::request::Dash;
 
 use crate::constants::BEND_RADIUS;
-use crate::ecma::{js_min, max, min, round, sign, sorted_by};
+use crate::ecma::{js_min, max, min, round, sign};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
 use super::crowding::{crowded, mark_crowding, near_own_head};
@@ -122,10 +122,8 @@ impl Settling<'_> {
         self.clusters.of[crossing][1 - self.cluster(cluster).side]
     }
 
-    /// Whether a rise may be tried: its crossings are unsettled, and, rising
-    /// over part of a cluster, its line would be the upper one at the rest of
-    /// it, so it is never above at one crossing of a cluster and beneath at
-    /// the next.
+    /// Whether a rise's crossings are unsettled and its line is preferred
+    /// at the other crossings of the cluster that still need a hop.
     fn open(&self, rise: &Rise) -> bool {
         let cluster = self.cluster(rise.cluster);
         cluster.crossings.iter().all(|&crossing| {
@@ -158,6 +156,9 @@ impl Settling<'_> {
             .map(|&crossing| at_on(run, &self.crossings[crossing]))
             .collect();
         let curve = crest_along(runs, run, &places, room, bulge)?;
+        if !siblings.is_empty() && !self.crest_covers_only(rise, &curve) {
+            return None;
+        }
         let mut beneath: Vec<_> = rise
             .crossings
             .iter()
@@ -455,23 +456,11 @@ impl Settling<'_> {
         self.cuts.push(bridge);
     }
 
-    /// Settle every crossing: the cluster plans in their order, then any
-    /// remaining cable ribbons, then a hop over each crossing they left, then
-    /// a hop with less room over each crossing still left, and last a plain
-    /// crossing where no hop fits at all.
+    /// Settle every crossing: cluster and ribbon plans, then a hop over each
+    /// crossing they left with less and less room, and last a plain crossing
+    /// where no hop fits at all.
     fn settle(&mut self) {
-        let cable_places = self.cable_cluster_places();
-        let mut plans: Vec<Plan> = (0..self.clusters.all.len())
-            .flat_map(|cluster| {
-                let in_ribbon = cable_places.iter().any(|place| place.contains(&cluster));
-                self.plans_of(cluster, in_ribbon)
-            })
-            .collect();
-        plans.extend(self.ribbon_plans(&cable_places));
-        for plan in sorted_by(&plans, by_key) {
-            self.attempt(&plan);
-        }
-        self.settle_remaining_ribbons(&cable_places);
+        self.settle_plans();
         for crossing in 0..self.crossings.len() {
             if !self.settled[crossing] {
                 self.hop_alone(crossing);
