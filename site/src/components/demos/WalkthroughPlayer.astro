@@ -16,7 +16,7 @@ const first = walkthrough.beats[0];
 
 <div class="player table" data-walkthrough={JSON.stringify(walkthrough.beats)}>
 	<div class="stage" data-grammar="architecture">
-		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Checkout API opened, drawn by Archboard: ${drawings.checkout.label}`}>
+		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Inside Checkout API, rendered by Archboard: ${drawings.checkout.label}`}>
 			<Fragment set:html={picture} />
 		</figure>
 		<img
@@ -25,7 +25,7 @@ const first = walkthrough.beats[0];
 			src={sequence.url}
 			width={sequence.width}
 			height={sequence.height}
-			alt="Sequence diagram of placing an order: Place order reserves the items, then charges the card, then saves the order and sends the receipt."
+			alt="Sequence diagram for placing an order: Place order reserves stock, charges the card, saves the order, and sends the receipt."
 			loading="lazy"
 			decoding="async"
 		/>

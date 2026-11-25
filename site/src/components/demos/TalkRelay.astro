@@ -8,8 +8,8 @@ import { talkScript, type Thread } from "../../lib/talk-script";
 
 const lines = talkScript.map((line, order) => ({ ...line, order }));
 const threads: { id: Thread; name: string; gloss: string }[] = [
-	{ id: "coordinator", name: "Coordinator", gloss: "A fast Codex thread. It reads the architecture and decides what the voice says." },
-	{ id: "workhorse", name: "Workhorse", gloss: "A full Codex thread in the shop's checkout. It reads the code and does the work." },
+	{ id: "coordinator", name: "Coordinator", gloss: "Fast Codex thread that queries the model and feeds answers to the voice." },
+	{ id: "workhorse", name: "Workhorse", gloss: "Full Codex session in the repo checkout that reads source code and edits the model." },
 ];
 ---
 
@@ -19,7 +19,7 @@ const threads: { id: Thread; name: string; gloss: string }[] = [
 			<canvas class="orb" data-orb aria-hidden="true"></canvas>
 			<div>
 				<p class="name">Codex voice <span class="state" data-voice-state>Listening</span></p>
-				<p class="gloss">Listens and speaks in real time, and hands the work to the coordinator.</p>
+				<p class="gloss">Real-time speech interface; passes architecture questions and edits to the coordinator.</p>
 			</div>
 		</div>
 		<ol class="transcript">

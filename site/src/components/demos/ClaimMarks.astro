@@ -57,16 +57,16 @@ const rows = [
 	<div class="side">
 		<div class="term">
 			<p class="t"><span class="ps">$</span> archboard model claim --input claim.json</p>
-			<p class="t out">Claimed Checkout API and Place order for codex: rewording Checkout API</p>
+			<p class="t out">Claimed Checkout API and Place order for codex: updating Checkout API</p>
 			<p class="t" data-after><span class="ps">$</span> archboard model release --input release.json</p>
 			<p class="t out" data-after>Claims  none</p>
 		</div>
 		<button type="button" class="release" data-release>
-			<span data-release-label>Release the claim</span>
+			<span data-release-label>Release claim</span>
 		</button>
 	</div>
 </div>
-<p class="caption example-caption">Example claim. Release it as the agent does, and the marks leave.</p>
+<p class="caption example-caption">Example claim. Release it to watch the status markers clear.</p>
 
 <style>
 	.claimed {
@@ -326,7 +326,7 @@ const rows = [
 		button.addEventListener("click", () => {
 			released = !released;
 			root.classList.toggle("is-released", released);
-			label.textContent = released ? "Reset the example" : "Release the claim";
+			label.textContent = released ? "Reset demo" : "Release claim";
 			status.textContent = released ? "Claim released. No active claims." : claimed;
 		});
 	}
