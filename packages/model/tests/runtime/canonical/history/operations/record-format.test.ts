@@ -73,16 +73,14 @@ test("a damaged record says it is damaged and how to recover, without the schema
 });
 
 test("the record format is raised whenever the record schema changes", () => {
-	// Ignore JSON Schema `description` prose annotations so wording improvements
-	// never require bumping the wire format; structural fields named `description`
-	// hold schema objects rather than strings and stay hashed.
-	const shape = createHash("sha256")
-		.update(
-			JSON.stringify(z.toJSONSchema(ArchiveRecordSchema), (key, value) =>
-				key === "description" && typeof value === "string" ? undefined : value,
-			),
-		)
-		.digest("hex");
+	// Remove prose only from schema nodes. Fields named `description` and
+	// their values in defaults and literals still contribute to the hash.
+	const schema = z.toJSONSchema(ArchiveRecordSchema, {
+		override: ({ jsonSchema }) => {
+			delete jsonSchema.description;
+		},
+	});
+	const shape = createHash("sha256").update(JSON.stringify(schema)).digest("hex");
 	// A failure here means the history record changed. Raise RECORD_FORMAT, so an
 	// older Archboard reading a new record says it needs an update, then pin both.
 	expect({ format: RECORD_FORMAT, shape }).toEqual({
