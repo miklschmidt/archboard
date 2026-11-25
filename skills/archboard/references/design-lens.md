@@ -87,10 +87,11 @@ Investigate a missing dependency or one decision spread across two modules.
 
 A footprint compares branch changes with modeled subjects.
 `model footprint --base <ref>` reads from the merge base to HEAD.
-`--head <ref>` selects another end. Without `--state`, the footprint reads the current state, and the result is `changed`.
-If the head adopted that current state, because its current state differs from the merge base's, the footprint reads it as a proposal against the merge base's current state. A proposal that a branch drafts and adopts before it merges stays the plan of that branch.
-If you pass `--head` and the vault's repository resolves it, the command reads the vault as that ref holds it. Use `--state` to select a proposal from that ref.
-Without `--head`, the command reads the vault on disk. Use `--model-at checkout` with `--head` to read a local proposal while comparing against that source ref.
+`--head <ref>` selects another end. Without a state or checkpoint selector, the footprint reads Current.
+If the reading and merge base have different current states, the footprint treats the selected Current as a proposal against the merge base's Current. A proposal that a branch drafts and adopts before it merges stays the plan of that branch. With no proposal or adopted plan, the result lists `changed` modules.
+Use `--checkpoint` to select an exact retained reading, including when you pass `--head`.
+For a live reading, if you pass `--head` and the vault's repository resolves it, the command reads the vault as that ref holds it. Use `--state` to select a proposal from that ref.
+The live reading uses the vault on disk when you omit `--head`, the vault's repository cannot resolve it, or you pass `--model-at checkout`.
 `vaultRead` names the vault that the command read: `{"at":"checkout"}`, or `{"at":"ref"}` with the ref and its commit.
 With a proposal, it reports:
 

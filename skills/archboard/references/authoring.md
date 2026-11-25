@@ -239,8 +239,8 @@ Connect every root to another root, or move it into the module that uses it.
 Start each relationship at the calling part and end it at the deepest modeled part that owns the receiving code.
 Containers need entry-point parts for their connections.
 Nesting already shows containment.
-`RELATIONSHIP_ON_CONTAINER` fails semantic inspection when either endpoint is a container.
-When one endpoint contains the other, the check reports `CONTAINER_LINE_TO_OWN_PART` as a warning.
+When one endpoint contains the other, semantic inspection reports `CONTAINER_LINE_TO_OWN_PART` as a warning.
+For other relationships with a container at either end, it reports `RELATIONSHIP_ON_CONTAINER` as an error.
 
 Before repairing any reported shape, read the source.
 To repair an endpoint, read its source anchor.

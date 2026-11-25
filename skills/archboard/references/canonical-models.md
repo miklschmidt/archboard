@@ -226,7 +226,7 @@ A draft uses its own binding. A missing state never opens current code.
 Historical code uses retained source associations and refuses changed files or a different revision.
 An uncommitted association stores no source bytes. Recover them separately.
 
-A module reference names another model, state, and subject explicitly.
+A module reference names a model, state, and subject explicitly. It can point within the same model or to another model.
 The subject can be a module, relationship, collection, flow, or step.
 Assign `references` through `edit-module.set` or remove the list through `edit-module.clear:["references"]`.
 Omission preserves it:
