@@ -47,7 +47,10 @@ function seedReading(vault: string): void {
 	const policyPath = join(vault, ".archboard/config.yaml");
 	writeFileSync(
 		policyPath,
-		`${readFileSync(policyPath, "utf8")
+		`lenses:\n  fulfilment: { name: ExternalDependencyOnFulfilmentAndEveryOtherConfiguredDownstreamService, hide: [] }\n${readFileSync(
+			policyPath,
+			"utf8",
+		)
 			.replace(
 				"relationshipKinds:\n",
 				"  external: { name: External, icon: RiExternalLinkLine, color: pink }\nrelationshipKinds:\n",
@@ -320,12 +323,28 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.getAttribute('data-lens-id'))`,
 		),
 		"every lens is listed in the select popover, in the policy's order",
-	).toEqual(["main", "effects", "sync-compute", "network", "reads", "dependencies", "all"]);
+	).toEqual([
+		"main",
+		"effects",
+		"sync-compute",
+		"network",
+		"reads",
+		"dependencies",
+		"all",
+		"fulfilment",
+	]);
 	expect(
 		await browser.eval<boolean>(
-			`[...document.querySelectorAll('[data-lens-id]')].every((item) => (item.querySelector('[data-slot="select-description"]')?.textContent?.trim().length ?? 0) > 0)`,
+			`[...document.querySelectorAll('[data-lens-id]:not([data-lens-id="fulfilment"])')].every((item) => (item.querySelector('[data-slot="select-description"]')?.textContent?.trim().length ?? 0) > 0)`,
 		),
 		"every built-in lens shows its question under its name",
+	).toBe(true);
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const item = document.querySelector('[data-lens-id="fulfilment"]');
+			return item.scrollWidth <= item.clientWidth;
+		})()`),
+		"the long name of a lens without a question fits inside the option",
 	).toBe(true);
 	await browser.run(["press", "Escape"]);
 	await pollUntil(
