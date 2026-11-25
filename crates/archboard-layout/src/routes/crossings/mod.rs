@@ -27,13 +27,13 @@ use archboard_scene::geometry::Curve;
 use archboard_scene::request::Dash;
 
 use crate::constants::BEND_RADIUS;
-use crate::ecma::{js_min, max, min, round, sign, sorted_by};
+use crate::ecma::{js_min, max, min, round, sign};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
-use super::crowding::{crowded, near_own_head};
+use super::crowding::{crowded, mark_crowding, near_own_head};
 use super::drawn_lines::{
-    DrawnCrossing, Edges, Line, drawn_crossings, join_near, piece_of, straight_runs, straightness,
-    weight,
+    DrawnCrossing, Edges, Line, Run, drawn_crossings, join_near, piece_of, straight_runs,
+    straightness, weight,
 };
 use super::folded::unfold_crossings;
 use super::hops::{
@@ -43,6 +43,7 @@ use super::{BRIDGE_RADIUS, LineLook};
 
 mod cables;
 mod forced;
+mod ribbons;
 
 /// The straight line a rising line keeps past each foot: a bend's room, so a
 /// bend a few points past a hop never draws one squiggle with it.
@@ -70,12 +71,16 @@ pub(super) struct Rise {
 
 /// Rises that stand together or not at all.
 #[derive(Clone, Debug)]
-struct Plan {
-    rises: Vec<Rise>,
+pub(super) struct Plan {
+    pub(super) rises: Vec<Rise>,
     /// The straight line each rising line keeps past its feet.
-    room: f64,
+    pub(super) room: f64,
+    /// Which way the plan's hops bulge.
+    pub(super) bulge: Bulge,
+    /// Whether the rises are sibling strands of one cable rising together as one ribbon.
+    pub(super) ribbon: bool,
     /// Where it comes in the order plans are tried, lower first.
-    key: [f64; 4],
+    pub(super) key: [f64; 4],
 }
 
 /// Everything settling the crossings reads and records.
@@ -117,10 +122,8 @@ impl Settling<'_> {
         self.clusters.of[crossing][1 - self.cluster(cluster).side]
     }
 
-    /// Whether a rise may be tried: its crossings are unsettled, and, rising
-    /// over part of a cluster, its line would be the upper one at the rest of
-    /// it, so it is never above at one crossing of a cluster and beneath at
-    /// the next.
+    /// Whether a rise's crossings are unsettled and its line is preferred
+    /// at the other crossings of the cluster that still need a hop.
     fn open(&self, rise: &Rise) -> bool {
         let cluster = self.cluster(rise.cluster);
         cluster.crossings.iter().all(|&crossing| {
@@ -134,7 +137,14 @@ impl Settling<'_> {
 
     /// The crest a rise draws, when it may stand now beside the crests
     /// standing with it.
-    fn crest_of(&self, rise: &Rise, room: f64, pending: &[Hop]) -> Option<Curve> {
+    fn crest_of(
+        &self,
+        rise: &Rise,
+        room: f64,
+        bulge: Bulge,
+        siblings: &[&Run],
+        pending: &[Hop],
+    ) -> Option<Curve> {
         if !self.open(rise) {
             return None;
         }
@@ -145,22 +155,41 @@ impl Settling<'_> {
             .iter()
             .map(|&crossing| at_on(run, &self.crossings[crossing]))
             .collect();
-        let curve = crest_along(runs, run, &places, room, 1.0)?;
-        let beneath: Vec<_> = rise
+        let curve = crest_along(runs, run, &places, room, bulge)?;
+        if !siblings.is_empty() && !self.crest_covers_only(rise, &curve) {
+            return None;
+        }
+        let mut beneath: Vec<_> = rise
             .crossings
             .iter()
             .map(|&crossing| &runs[self.sides(rise.cluster, crossing).1.drawer])
             .collect();
-        (!(crowded(&self.scene, run, &beneath, &curve, pending)
+        beneath.extend(siblings.iter().copied());
+        let mark_blocked = !siblings.is_empty() && mark_crowding(&self.scene, run, &curve) <= 1.0;
+        (!(mark_blocked
+            || crowded(&self.scene, run, &beneath, &curve, pending)
             || near_own_head(&self.scene, run, &curve)))
         .then_some(curve)
     }
 
     /// Stand every rise of a plan, or do nothing.
-    fn attempt(&mut self, plan: &Plan) {
+    pub(super) fn attempt(&mut self, plan: &Plan) {
+        let siblings: Vec<&Run> = if plan.ribbon {
+            plan.rises
+                .iter()
+                .map(|rise| &self.scene.runs[self.cluster(rise.cluster).run])
+                .collect()
+        } else {
+            Vec::new()
+        };
         let mut crests: Vec<Hop> = Vec::new();
         for rise in &plan.rises {
-            let Some(curve) = self.crest_of(rise, plan.room, &crests) else {
+            let pending = if plan.ribbon {
+                &[][..]
+            } else {
+                crests.as_slice()
+            };
+            let Some(curve) = self.crest_of(rise, plan.room, plan.bulge, &siblings, pending) else {
                 return;
             };
             let axis = self.scene.runs[self.cluster(rise.cluster).run].axis;
@@ -265,7 +294,7 @@ impl Settling<'_> {
     /// equals, then those whose rising lines are lighter; within each, by
     /// stage; then the roomier; then the later-painted. Nothing where a line
     /// in it may not stand over the one beneath it.
-    fn plan_of(&self, stage: f64, room: f64, rises: Vec<Rise>) -> Option<Plan> {
+    pub(super) fn plan_of(&self, stage: f64, room: f64, rises: Vec<Rise>) -> Option<Plan> {
         let mut leads = Vec::new();
         for rise in &rises {
             for &crossing in &rise.crossings {
@@ -284,20 +313,26 @@ impl Settling<'_> {
         ));
         // Round the room so a hair of floating noise never outranks paint order.
         let key = [-sign(weight), stage, -round(roomy / STRAIGHTER), -painted];
-        Some(Plan { rises, room, key })
+        Some(Plan {
+            rises,
+            room,
+            bulge: 1.0,
+            ribbon: false,
+            key,
+        })
     }
 
     /// Whether the lines beneath a rise pass beneath it at every crossing of it.
-    fn passable(&self, rise: &Rise) -> bool {
+    pub(super) fn passable(&self, rise: &Rise, bulge: Bulge) -> bool {
         let runs = &self.scene.runs;
         rise.crossings.iter().all(|&crossing| {
             let beneath = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            passage_beneath(runs, beneath, self.crossings[crossing].point, 1.0).is_clear()
+            passage_beneath(runs, beneath, self.crossings[crossing].point, bulge).is_clear()
         })
     }
 
     /// The whole of a cluster rising.
-    fn whole_of(&self, cluster: usize) -> Rise {
+    pub(super) fn whole_of(&self, cluster: usize) -> Rise {
         Rise {
             cluster,
             crossings: self.cluster(cluster).crossings.clone(),
@@ -320,57 +355,59 @@ impl Settling<'_> {
         self.plan_of(0.0, FULL_ROOM, rises)
     }
 
-    /// Whether a cluster's crossers ride one route and are hopped as one ribbon.
-    fn ribbon(&self, cluster: usize) -> bool {
-        let mut lines = (self.cluster(cluster).crossings.iter()).map(|&crossing| {
-            let crosser = self.sides(cluster, crossing).1;
-            &self.edges()[self.scene.runs[crosser.drawer].edge_index]
-                .edge
-                .id
-        });
-        let Some(first) = lines.next() else {
-            return false;
-        };
-        let leader = self.riders.get(first).unwrap_or(first);
-        lines.clone().any(|id| id != first)
-            && lines.all(|id| self.riders.get(id).unwrap_or(id) == leader)
-    }
-
     /// The plans one cluster offers, by stage: its crossers hopping it one
     /// each with a bend's room, or, for a lone crossing no other line crosses
     /// among others, its line hopping it; then its line rising over all of it
     /// with a bend's room, and then with less; last, its line rising over any
-    /// single crossing of it with less room. A lone crossing another line
-    /// crosses among others waits for that line's cluster to be settled.
-    fn plans_of(&self, cluster: usize) -> Vec<Plan> {
+    /// single crossing of it with less room. A cluster in a multi-strand cable
+    /// place defers its single-strand plans until after whole-ribbon plans.
+    fn plans_of(&self, cluster: usize, in_ribbon: bool) -> Vec<Plan> {
         let crossings = &self.cluster(cluster).crossings;
         let several = crossings.len() > 1;
-        let alone = !several
-            && self
-                .cluster(self.other_cluster(cluster, crossings[0]))
-                .crossings
-                .len()
-                == 1;
         let mut plans = Vec::new();
-        if several && !self.ribbon(cluster) {
-            plans.extend(self.one_each(cluster));
-        }
-        if alone {
-            plans.extend(self.plan_of(0.0, FULL_ROOM, vec![self.whole_of(cluster)]));
+        if !in_ribbon {
+            plans.extend(self.first_stage_of(cluster, several));
         }
         if several {
-            plans.extend(self.plan_of(1.0, FULL_ROOM, vec![self.whole_of(cluster)]));
-            plans.extend(self.plan_of(2.0, LEAST_ROOM, vec![self.whole_of(cluster)]));
+            let (full, least) = if in_ribbon { (2.6, 2.7) } else { (1.0, 2.0) };
+            plans.extend(self.plan_of(full, FULL_ROOM, vec![self.whole_of(cluster)]));
+            plans.extend(self.plan_of(least, LEAST_ROOM, vec![self.whole_of(cluster)]));
         }
-        for &crossing in crossings {
-            let single = Rise {
-                cluster,
-                crossings: vec![crossing],
-            };
-            plans.extend(self.plan_of(3.0, LEAST_ROOM, vec![single]));
-        }
-        plans.retain(|plan| plan.rises.iter().all(|rise| self.passable(rise)));
+        plans.extend(crossings.iter().filter_map(|&crossing| {
+            self.plan_of(
+                3.0,
+                LEAST_ROOM,
+                vec![Rise {
+                    cluster,
+                    crossings: vec![crossing],
+                }],
+            )
+        }));
+        plans.retain(|plan| {
+            plan.rises
+                .iter()
+                .all(|rise| self.passable(rise, plan.bulge))
+        });
         plans
+    }
+
+    /// Stage 0 plan for a cluster outside a multi-strand cable place: crossers hopping it one
+    /// each, or a lone crossing's line rising over it.
+    fn first_stage_of(&self, cluster: usize, several: bool) -> Option<Plan> {
+        let crossings = &self.cluster(cluster).crossings;
+        if several {
+            return (!self.ribbon(cluster))
+                .then(|| self.one_each(cluster))
+                .flatten();
+        }
+        let alone = self
+            .cluster(self.other_cluster(cluster, crossings[0]))
+            .crossings
+            .len()
+            == 1;
+        alone
+            .then(|| self.plan_of(0.0, FULL_ROOM, vec![self.whole_of(cluster)]))
+            .flatten()
     }
 
     /// The lines that may rise over a crossing alone, by their clusters, the
@@ -385,47 +422,6 @@ impl Settling<'_> {
             (false, true) => vec![first, second],
             (false, false) => vec![second, first],
         }
-    }
-
-    /// Hop a crossing no plan settled: each line that may rise over it alone,
-    /// in order, with the least room; bulging the usual way first, then, where
-    /// only the other side is clear of a bend, the other way. True when a hop
-    /// stands.
-    fn hop_alone(&mut self, crossing: usize) -> bool {
-        let order = self.risers(crossing);
-        [1.0, -1.0].into_iter().any(|bulge| {
-            order
-                .iter()
-                .any(|&cluster| self.rise_alone(cluster, crossing, bulge))
-        })
-    }
-
-    /// Stand one line's hop over a single crossing, where the line has the
-    /// least room a hop needs, the line beneath runs straight under it, and
-    /// nothing crowds it. True when it stands.
-    fn rise_alone(&mut self, cluster: usize, crossing: usize, bulge: Bulge) -> bool {
-        let runs = &self.scene.runs;
-        let run = &runs[self.cluster(cluster).run];
-        let beneath = &runs[self.sides(cluster, crossing).1.drawer];
-        let point = self.crossings[crossing].point;
-        if !passage_beneath(runs, beneath, point, bulge).is_clear() {
-            return false;
-        }
-        let place = at_on(run, &self.crossings[crossing]);
-        let Some(curve) = crest_along(runs, run, &[place], LEAST_ROOM, bulge) else {
-            return false;
-        };
-        if crowded(&self.scene, run, &[beneath], &curve, &[])
-            || near_own_head(&self.scene, run, &curve)
-        {
-            return false;
-        }
-        let rise = Rise {
-            cluster,
-            crossings: vec![crossing],
-        };
-        self.stand(&rise, curve);
-        true
     }
 
     /// Settle a crossing that no hop stands over, where neither line has the
@@ -460,16 +456,11 @@ impl Settling<'_> {
         self.cuts.push(bridge);
     }
 
-    /// Settle every crossing: the cluster plans in their order, then a hop
-    /// over each crossing they left, then a hop with less room over each crossing
-    /// still left, and last a plain crossing where no hop fits at all.
+    /// Settle every crossing: cluster and ribbon plans, then a hop over each
+    /// crossing they left with less and less room, and last a plain crossing
+    /// where no hop fits at all.
     fn settle(&mut self) {
-        let plans: Vec<Plan> = (0..self.clusters.all.len())
-            .flat_map(|cluster| self.plans_of(cluster))
-            .collect();
-        for plan in sorted_by(&plans, by_key) {
-            self.attempt(&plan);
-        }
+        self.settle_plans();
         for crossing in 0..self.crossings.len() {
             if !self.settled[crossing] {
                 self.hop_alone(crossing);

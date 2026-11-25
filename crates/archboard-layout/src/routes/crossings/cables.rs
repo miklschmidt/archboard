@@ -12,11 +12,11 @@ use super::super::hops::{
     Bulge, Hop, crest_along, flipped, look_of, overlaps, overlaps_arrowhead, passage_beneath,
 };
 use super::{FULL_ROOM, LEAST_ROOM, Rise, Settling};
-use crate::ecma::{max, min, sign};
+use crate::ecma::{min, sign};
 
 impl Settling<'_> {
     /// The cable to which a cluster's line belongs, by the cable's leading line.
-    fn cable_of(&self, cluster: usize) -> Option<&str> {
+    pub(super) fn cable_of(&self, cluster: usize) -> Option<&str> {
         let run = &self.scene.runs[self.cluster(cluster).run];
         let id = &self.edges()[run.edge_index].edge.id;
         self.riders
@@ -261,14 +261,7 @@ impl Settling<'_> {
             .into_iter()
             .filter_map(|room| crest_along(runs, run, &places, room, bulge))
             .find(|curve| {
-                let feet = [curve.from, curve.end()].map(|point| run.axis.of(point));
-                let low = min(feet);
-                let high = max(feet);
-                let spans_other = cluster.crossings.iter().any(|crossing| {
-                    let at = run.axis.of(self.crossings[*crossing].point);
-                    at > low && at < high && !rise.crossings.contains(crossing)
-                });
-                !spans_other
+                self.crest_covers_only(rise, curve)
                     && !crowded(&self.scene, run, &beneath, curve, pending)
                     && !near_own_head(&self.scene, run, curve)
                     && mark_crowding(&self.scene, run, curve) > 1.0
@@ -320,16 +313,17 @@ impl Settling<'_> {
             beneath.push(under);
         }
         beneath.extend(siblings.iter().map(|&sibling| &runs[sibling]));
-        Some(min([
-            approach,
-            crowding(&self.scene, run, &beneath, curve, &[]),
-            own_head_crowding(&self.scene, run, curve),
-        ]))
+        let crowd = crowding(&self.scene, run, &beneath, curve, &[]);
+        let head = own_head_crowding(&self.scene, run, curve);
+        if crowd < 0.0 || head < 0.0 {
+            return None;
+        }
+        Some(min([approach, crowd, head]))
     }
 }
 
 /// The groups of standing hops linked by the crossed lines they share.
-fn connected_hops(links: &[Vec<usize>]) -> Vec<Vec<usize>> {
+pub(super) fn connected_hops(links: &[Vec<usize>]) -> Vec<Vec<usize>> {
     let mut places = Vec::new();
     let mut seen = vec![false; links.len()];
     for index in 0..links.len() {

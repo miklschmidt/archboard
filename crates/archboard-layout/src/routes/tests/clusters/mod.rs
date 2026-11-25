@@ -1,6 +1,8 @@
 //! Crossings along one line close enough for their hops to touch: who rises
 //! over them, and under how many arcs.
 
+mod ribbons;
+
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, bridge_crossings};
 use super::{
     Arrowhead, BTreeMap, Dash, DrawingBridge, Emphasis, LineLook, across, across_from, bridged,
