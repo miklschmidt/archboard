@@ -30,22 +30,21 @@ const headings = commands.map((command) => ({
 	<p>
 		{
 			isRelease ? (
-				<>Every command below comes from the CLI's own contract in release <code>{docsVersion}</code>.</>
+				<>Command definitions below are generated from release <code>{docsVersion}</code> of the CLI.</>
 			) : (
 				<>
-					Every command below comes from the CLI's own contract on the main branch, so a release on npm
-					can lack an option that it lists.
+					Command definitions below are generated from the <code>main</code> branch, so an npm
+					release may omit newly added options.
 				</>
 			)
 		}{" "}
-		Run <code>archboard help &lt;command&gt;</code> for the same words at your
-		terminal.
+		Run <code>archboard help &lt;command&gt;</code> for the same documentation in your terminal.
 	</p>
 	<table class="index">
 		<thead>
 			<tr>
 				<th scope="col">Command</th>
-				<th scope="col">What it does</th>
+				<th scope="col">Description</th>
 			</tr>
 		</thead>
 		<tbody>

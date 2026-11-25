@@ -16,31 +16,35 @@ export type TalkLine =
 	| { kind: "relay"; thread: Thread; from: string; text: string };
 
 export const talkScript: TalkLine[] = [
-	{ kind: "said", who: "you", text: "Why does checkout keep the shopper waiting?" },
+	{ kind: "said", who: "you", text: "Why is checkout taking so long to respond?" },
 	{
 		kind: "relay",
 		thread: "coordinator",
-		from: "From the voice",
-		text: "Why does checkout keep the shopper waiting?",
+		from: "From voice",
+		text: "Why is checkout taking so long to respond?",
 	},
 	{ kind: "command", thread: "coordinator", text: "archboard model read -C ~/shop" },
 	{
 		kind: "reply",
 		thread: "coordinator",
-		text: "Place an order: reserve the items, charge the card, save the order, send the receipt",
+		text: "Place an order: reserve stock, charge card, save order, send receipt",
 	},
 	{
 		kind: "said",
 		who: "voice",
-		text: "Checkout does four things before it answers. It reserves the items, charges the card, saves the order and sends the receipt.",
+		text: "Checkout blocks on four calls in sequence: reserving stock, charging the card, saving the order, and waiting on the receipt email.",
 	},
-	{ kind: "said", who: "you", text: "Draft a version that answers once the payment starts." },
-	{ kind: "said", who: "voice", text: "I am asking the workhorse to draft it." },
+	{
+		kind: "said",
+		who: "you",
+		text: "Draft a proposal that returns once payment starts and queues the rest.",
+	},
+	{ kind: "said", who: "voice", text: "Handing that to the workhorse to draft." },
 	{
 		kind: "relay",
 		thread: "coordinator",
-		from: "To the workhorse",
-		text: "Draft a proposal: checkout answers once the payment starts, and a worker does the rest.",
+		from: "To workhorse",
+		text: "Draft a proposal: return from checkout once payment starts, and move stock reservation and receipts to a worker.",
 	},
 	{ kind: "command", thread: "workhorse", text: 'rg -n "payments.charge" services/checkout' },
 	{
@@ -59,7 +63,7 @@ export const talkScript: TalkLine[] = [
 		thread: "workhorse",
 		text: 'archboard model edit --input queued.json --doing "drafting queued fulfilment"',
 	},
-	{ kind: "reply", thread: "workhorse", text: "Proposal Queued fulfilment, at one new revision" },
+	{ kind: "reply", thread: "workhorse", text: "Saved proposal Queued fulfilment" },
 	{
 		kind: "command",
 		thread: "workhorse",
@@ -70,8 +74,8 @@ export const talkScript: TalkLine[] = [
 	{
 		kind: "relay",
 		thread: "coordinator",
-		from: "From the workhorse",
-		text: "Queued fulfilment is drafted.",
+		from: "From workhorse",
+		text: "Queued fulfilment is ready.",
 	},
 	{
 		kind: "command",
@@ -81,6 +85,6 @@ export const talkScript: TalkLine[] = [
 	{
 		kind: "said",
 		who: "voice",
-		text: "Queued fulfilment is on screen. Checkout answers once the payment starts, and a new fulfilment worker reserves the stock and sends the receipt.",
+		text: "Queued fulfilment is up. Checkout now returns as soon as payment starts, and a fulfilment worker handles stock reservation and the receipt.",
 	},
 ];

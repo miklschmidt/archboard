@@ -4,39 +4,39 @@
 // each row becomes a block.
 const rows: { job: string; others: string; archboard: string }[] = [
 	{
-		job: "Planning a change before your agent writes it",
-		others: "Plan mode in your agent, or a design doc. The plan is prose, and nothing holds the code to it.",
-		archboard: "Your agent drafts the change as a proposal on the map of what exists, or two options side by side. You choose before any code exists, and the footprint shows whether the branch stayed inside the plan.",
+		job: "Planning a change before coding",
+		others: "Agent plan mode or a design doc. The plan stays prose with no link to the eventual diff.",
+		archboard: "Your agent drafts a structured proposal against the current model, or two options side by side. You pick the design up front, and the branch footprint flags work outside the proposal.",
 	},
 	{
 		job: "Reviewing a change",
-		others: "Read the diff, or an agent's summary of the pull request.",
-		archboard: "Review the plan, not only the diff. The proposal draws the change against current architecture, and adopting it records the reason and keeps the old architecture as an exact checkpoint.",
+		others: "Read the raw file diff or an agent-generated PR summary.",
+		archboard: "Inspect the structural diff alongside the code diff. Proposals overlay changes on the live model, and adopting one logs the rationale while retaining the previous state as a checkpoint.",
 	},
 	{
-		job: "Checking the map against the code",
-		others: "Read the code yourself, or ask an agent to look again.",
-		archboard: "The code check finds broken bindings, relationships drawn backwards and calls the model leaves out, and says which it resolved and which it matched only by name.",
+		job: "Verifying the model against code",
+		others: "Audit source files manually or ask an agent to re-read them.",
+		archboard: "archboard check code flags broken bindings, reversed relationships, and unmodeled calls between bound modules, distinguishing resolved symbols from name-only matches.",
 	},
 	{
-		job: "A first look at an unfamiliar repository",
-		others: "Ask your agent, or open DeepWiki or GitDiagram, and start over next session.",
-		archboard: "Your agent writes the map into the repository once, and every later session starts from it.",
+		job: "Onboarding to an unfamiliar repo",
+		others: "Prompt an agent or generate a one-off view in DeepWiki or GitDiagram, then rebuild context next session.",
+		archboard: "Your agent commits the model into .archboard/vault once, and every future session starts from that checked-in architecture.",
 	},
 	{
-		job: "Finding your way in the editor",
-		others: "Windsurf Codemaps, or a code graph such as GitNexus, maps calls and files where you work.",
-		archboard: "The model holds responsibilities: services, stores and the routes between them, each bound to its file or symbol.",
+		job: "Navigating a codebase",
+		others: "Windsurf Codemaps or call-graph tools like GitNexus map files and call sites inside the editor.",
+		archboard: "Models architectural responsibilities (services, data stores, and boundaries), with each module bound directly to its file or symbol.",
 	},
 	{
-		job: "Diagrams for docs and pull requests",
-		others: "Mermaid or D2 in Markdown, redrawn by hand when the system moves.",
-		archboard: "Every drawing comes from the one model, and tracked embeds never go stale: one command redraws every drawing a change touched.",
+		job: "Diagrams for docs and PRs",
+		others: "Mermaid or D2 snippets in Markdown, updated manually after refactors.",
+		archboard: "Every diagram renders from the shared model. Tracked embeds carry render recipes, so archboard check embeds detects stale images and regenerates them.",
 	},
 	{
-		job: "A shared architecture practice",
-		others: "IcePanel, Structurizr, LikeC4 or CodeViz, in a tool of their own.",
-		archboard: "The model is files in your repository, written by your agent through the CLI, with proposals, reasons and checkpoints. It runs locally.",
+		job: "Shared team architecture",
+		others: "IcePanel, Structurizr, LikeC4, or CodeViz, maintained in a separate platform or DSL.",
+		archboard: "Plain JSON files in your repo, authored via CLI by your coding agent, with versioned proposals and local Git checkpoints.",
 	},
 ];
 ---
@@ -44,10 +44,10 @@ const rows: { job: string; others: string; archboard: string }[] = [
 <div class="compare table" data-reveal>
 	<div class="scroll">
 		<table>
-			<caption class="sr-only">Where Archboard fits, job by job, next to what people use today</caption>
+			<caption class="sr-only">Where Archboard fits compared with existing tools</caption>
 			<thead>
 				<tr>
-					<th scope="col" class="row-head">The job</th>
+					<th scope="col" class="row-head">Job</th>
 					<th scope="col">What people use today</th>
 					<th scope="col" class="ours">With Archboard</th>
 				</tr>
@@ -66,7 +66,7 @@ const rows: { job: string; others: string; archboard: string }[] = [
 		</table>
 	</div>
 	<p class="caption foot">
-		Other tools as their public pages describe them in November 2026.
+		Tool descriptions reflect public vendor documentation as of November 2026.
 	</p>
 </div>
 

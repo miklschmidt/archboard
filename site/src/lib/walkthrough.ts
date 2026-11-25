@@ -15,28 +15,28 @@ export const walkthrough = {
 		{
 			title: "The shopper waits for everything",
 			narrative:
-				"When a shopper presses Pay, Storefront sends POST /orders to Place order and waits for its answer. Place order loads and prices the basket, then makes four calls one after another and waits for each: Inventory service reserves the items, Payment provider charges the card, Orders DB saves the paid order, and Email provider takes the receipt. Only when the last of them answers does Place order confirm the order, so the shopper waits through all four calls in turn.",
+				"When a shopper hits Pay, Storefront sends POST /orders to Place order and blocks until it returns. Place order loads and prices the basket, then runs four synchronous calls in a row: reserve stock with Inventory service, charge the card with Payment provider, write the paid order to Orders DB, and send the receipt through Email provider. The confirmation page stays blocked until the last call finishes.",
 			grammar: "architecture",
 			selection: ["Shop/MKhTEYqf#kZjjfq1m", "Shop/MKhTEYqf#LrbGsGwG"],
 		},
 		{
 			title: "Stock is held while the card is charged",
 			narrative:
-				"Place order reserves the items with Inventory service first, and charges the card only after the reservation answers. So the items are already set aside while Payment provider works on the charge: no other order can reserve them, and other shoppers no longer see them as available. However slow the payment is, the items stay held, unless Timeout guard cancels the order 10 seconds after it started and gives them back.",
+				"Place order reserves stock with Inventory service before calling Payment provider. While the card charge is in flight, those items are already taken off the shelf so no other shopper can buy them. If the payment stalls, inventory stays locked until Timeout guard hits 10 seconds and cancels the order.",
 			grammar: "sequence",
 			selection: [],
 		},
 		{
-			title: "A slow email makes a slow checkout",
+			title: "Receipt email blocks checkout",
 			narrative:
-				"After the card is charged and the paid order is saved, Place order sends the receipt to Email provider and waits until it is accepted. The email client tries up to 3 times, all inside the shopper's request, and the confirmation page waits for it. So a slow or failing Email provider slows every checkout, at a point where the payment and the order are already done.",
+				"Even after the card is charged and the order is written to Orders DB, Place order sends the receipt to Email provider and waits for an acknowledgment. The client retries up to 3 times inside the checkout request, so any slowdown or outage in Email provider stalls the confirmation page after the order is already paid.",
 			grammar: "architecture",
 			selection: ["Shop/MKhTEYqf#lXgq75bO", "Shop/MKhTEYqf#mOCWkDAa"],
 		},
 		{
-			title: "After 10 seconds, the order is undone",
+			title: "At 10 seconds, the order rolls back",
 			narrative:
-				"Place order starts Timeout guard for every order. If the order is still running after 10 seconds, the guard cancels it: it calls Release route to give the stock back, refunds a charge that went through, and the shopper sees an error page. That includes an order that is already paid and saved and is only waiting for the receipt email.",
+				"Place order starts Timeout guard on every request. If checkout has not finished after 10 seconds, the guard aborts it: it calls Release route to return the stock, refunds the card if the charge succeeded, and shows the shopper an error page. That includes orders that are already paid and saved, waiting only on the receipt email.",
 			grammar: "architecture",
 			selection: ["Shop/MKhTEYqf#VONp3yKV", "Shop/MKhTEYqf#C2JNdx5s", "Shop/MKhTEYqf#dkNRueI0"],
 		},

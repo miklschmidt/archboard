@@ -16,7 +16,7 @@ const first = walkthrough.beats[0];
 
 <div class="player table" data-walkthrough={JSON.stringify(walkthrough.beats)}>
 	<div class="stage" data-grammar="architecture">
-		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Checkout API opened, drawn by Archboard: ${drawings.checkout.label}`}>
+		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Inside Checkout API, rendered by Archboard: ${drawings.checkout.label}`}>
 			<Fragment set:html={picture} />
 		</figure>
 		<img
@@ -25,7 +25,7 @@ const first = walkthrough.beats[0];
 			src={sequence.url}
 			width={sequence.width}
 			height={sequence.height}
-			alt="Sequence diagram of placing an order: Place order reserves the items, then charges the card, then saves the order and sends the receipt."
+			alt="Sequence diagram for placing an order: Place order reserves stock, charges the card, saves the order, and sends the receipt."
 			loading="lazy"
 			decoding="async"
 		/>
@@ -133,13 +133,18 @@ const first = walkthrough.beats[0];
 		scale: 0.97;
 		pointer-events: none;
 	}
-	.architecture :global(g[data-semantic-kind]) {
+	.architecture :global(g[data-semantic-kind]),
+	.architecture :global([data-members]),
+	.architecture :global(g[data-traffic]) {
 		transition: opacity 420ms var(--ease-out);
+	}
+	.architecture :global(g[data-semantic-kind]) {
 		cursor: default;
 	}
 	.architecture:global(.is-focused) :global(g[data-semantic-kind]:not(.is-lit)),
-	.architecture:global(.is-focused) :global(g.ab-shadow),
-	.architecture:global(.is-focused) :global(g[data-traffic]) {
+	.architecture:global(.is-focused) :global(g.ab-shadow:not(.is-lit)),
+	.architecture:global(.is-focused) :global([data-members]:not(.is-lit)),
+	.architecture:global(.is-focused) :global(g[data-traffic]:not(.is-lit)) {
 		opacity: 0.28;
 	}
 	/* The voice box: a capsule low over the picture while the voice narrates, the orb in its
@@ -534,11 +539,19 @@ const first = walkthrough.beats[0];
 			for (const view of stage.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(beat.grammar)));
 			for (const lit of figure.querySelectorAll(".is-lit, .is-selected")) lit.classList.remove("is-lit", "is-selected");
 			figure.classList.toggle("is-focused", beat.selection.length > 0);
+			const standing = new Set(beat.selection);
 			for (const id of beat.selection) {
 				for (const part of figure.querySelectorAll(`[data-semantic-id="${id}"]`)) {
 					part.classList.add("is-lit");
 					if (!part.hasAttribute("data-semantic-part")) part.classList.add("is-selected");
 				}
+			}
+			for (const traffic of figure.querySelectorAll("[data-traffic]")) {
+				if (standing.has(traffic.getAttribute("data-traffic") ?? "")) traffic.classList.add("is-lit");
+			}
+			for (const mark of figure.querySelectorAll("[data-members]")) {
+				const members = mark.getAttribute("data-members")?.split(/\s+/u) ?? [];
+				if (members.some((id) => standing.has(id))) mark.classList.add("is-lit");
 			}
 		};
 

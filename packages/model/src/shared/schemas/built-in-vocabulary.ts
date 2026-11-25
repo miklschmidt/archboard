@@ -65,7 +65,11 @@ const IN_PROCESS = ["sync", "async"] as const;
  * Show all means one thing in every vault.
  */
 const ALL_LENS_ID = "all";
-const ALL_LENS: Lens = { name: "All relationships", hide: [] };
+const ALL_LENS: Lens = {
+	name: "All relationships",
+	question: "Every relationship in this scope",
+	hide: [],
+};
 const NETWORK_LENS: Lens = {
 	name: "Network",
 	question: "How does traffic flow between processes?",
@@ -78,6 +82,7 @@ const READS_LENS: Lens = {
 };
 const DEPENDENCIES_LENS: Lens = {
 	name: "Declared dependencies",
+	question: "What depends on what without a run-time call?",
 	show: [{ kind: EFFECTLESS_KIND }],
 };
 /**
@@ -90,6 +95,7 @@ const DEPENDENCIES_LENS: Lens = {
 const BUILT_IN_LENSES: Record<string, Lens> = {
 	main: {
 		name: "Main lines",
+		question: "Mutations and traffic between processes",
 		hide: [
 			{ kind: EFFECTLESS_KIND },
 			...IN_PROCESS.flatMap((kind) => [
@@ -138,6 +144,7 @@ const CALL_ERA_RELATIONSHIP_KINDS: Record<string, RelationshipLook> = {
 const CALL_ERA_LENSES: Record<string, Lens> = {
 	main: {
 		name: "Main lines",
+		question: "Mutations and traffic between processes",
 		hide: [
 			{ kind: EFFECTLESS_KIND },
 			{ kind: RETIRED_CALL, effect: "query" },
