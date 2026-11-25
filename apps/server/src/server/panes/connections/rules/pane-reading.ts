@@ -242,7 +242,7 @@ function resolveSubjectRef(
 /**
  * Let a qualified id that the reading does not hold go through as it was given. A reader's own
  * address reaches the pane, which says what the reading lacks, and an agent hears of a missing
- * scope or focus from the structural refusal of the show.
+ * scope, focus or expanded module from the structural refusal of the show.
  * @param resolve One selector resolver.
  * @returns The resolver that passes unknown qualified ids through.
  */
