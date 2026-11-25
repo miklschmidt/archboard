@@ -73,18 +73,26 @@ function sameArc(one: DrawnArc, other: DrawnArc): boolean {
 }
 
 /**
- * How two arcs crowd each other. Each copy can meet a crosswise arc.
+ * The crosswise arcs that actually overlap, including shifted trunk copies.
  * @param copies The first arc with the rest of its trunk.
  * @param crossed The other arc with the rest of its trunk.
+ * @returns One overlapping pair, if any.
+ */
+function crosswiseOverlap(copies: ArcCopies, crossed: ArcCopies): [DrawnArc, DrawnArc] | undefined {
+	for (const arc of copies) {
+		const other = crossed.find((copy) => gapOf(arc.box, copy.box) < -STRAIGHT);
+		if (other !== undefined) return [arc, other];
+	}
+	return undefined;
+}
+
+/**
+ * How two parallel arcs crowd each other.
+ * @param one An arc.
+ * @param other Another arc on the same axis.
  * @returns The kind of crowding, when there is any.
  */
-function crowdingBetween(copies: ArcCopies, crossed: ArcCopies): string | undefined {
-	const [one] = copies;
-	const [other] = crossed;
-	if (one.axis !== other.axis) {
-		const overlap = copies.some((a) => crossed.some((b) => gapOf(a.box, b.box) < -STRAIGHT));
-		return overlap ? "overlapping crosswise" : undefined;
-	}
+function parallelCrowding(one: DrawnArc, other: DrawnArc): string | undefined {
 	if (gapOf(one.box, other.box) >= ARC_SPACE) return undefined;
 	const apart = other.line - one.line;
 	if (Math.abs(apart) <= SHARED_INK) return "side by side";
@@ -103,9 +111,17 @@ function arcCrowding(drawn: readonly DrawnArc[], marks: readonly Box[]): string[
 	const found: string[] = [];
 	for (const [index, copies] of arcs.entries())
 		for (const crossed of arcs.slice(index + 1)) {
-			const crowding = crowdingBetween(copies, crossed);
 			const [one] = copies;
 			const [other] = crossed;
+			if (one.axis !== other.axis) {
+				const overlap = crosswiseOverlap(copies, crossed);
+				if (overlap !== undefined) {
+					const [a, b] = overlap;
+					found.push(`${a.id} and ${b.id} overlapping crosswise at ${cornerOf(a.box)}`);
+				}
+				continue;
+			}
+			const crowding = parallelCrowding(one, other);
 			if (crowding !== undefined)
 				found.push(`${one.id} and ${other.id} ${crowding} at ${cornerOf(one.box)}`);
 		}

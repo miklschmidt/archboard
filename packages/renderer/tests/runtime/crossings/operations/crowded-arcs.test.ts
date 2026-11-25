@@ -39,7 +39,11 @@ test("a crosswise overlap with a shifted trunk copy counts once in either paint 
 		.replaceAll(",46.134", ",47.134")
 		.replaceAll(",43", ",44");
 	for (const trunk of [HOP + copy, copy + HOP]) {
-		expect(crowdedArcs({ svg: trunk + verticalHop(50.5) })).toHaveLength(1);
+		const findings = crowdedArcs({ svg: trunk + verticalHop(50.5) });
+		expect(findings).toHaveLength(1);
+		expect(findings[0]).toMatch(/\bcopy\b/u);
+		expect(findings[0]).toMatch(/\bvertical\b/u);
+		expect(findings[0]).toContain("43.0,44.0");
 	}
 	expect(crowdedArcs({ svg: HOP + copy + verticalHop(49) })).toHaveLength(1);
 });
