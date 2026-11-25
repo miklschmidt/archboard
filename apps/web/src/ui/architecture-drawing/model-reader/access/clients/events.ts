@@ -4,6 +4,7 @@ import { createFeedSocket } from "#ui/architecture-drawing/model-reader/access/c
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
+	isBusy,
 	type ModelSummary,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
@@ -102,25 +103,27 @@ function createFeed(
 		return stopFollowing !== null && accepted === generation;
 	}
 	/**
-	 * Whether a snapshot names another revision than this tab holds or is reading now.
+	 * Whether a snapshot reports newer or newly readable architecture.
 	 * @param digest The snapshot's revision.
-	 * @returns True when a cached reading is older than the snapshot.
+	 * @param error The error from the settled current read.
+	 * @returns True when the current reading should be refreshed.
 	 */
-	async function movedPast(digest: string): Promise<boolean> {
-		const reading = client.getQueryCache().find({ queryKey: currentKey, exact: true });
-		await reading?.promise?.catch(() => undefined);
+	function movedPast(digest: string, error: Error | null | undefined): boolean {
+		if (error instanceof ArchitectureReadError && isBusy(error.failure)) return true;
 		const held = client.getQueryData<CurrentReading>(currentKey)?.revision.digest;
 		const known = heard ?? held;
 		return known !== undefined && known !== digest;
 	}
 	/**
-	 * Whether an event can change what this tab holds. A snapshot only reports a revision.
+	 * Whether an event can change what this tab holds.
 	 * @param event The ordered model event.
 	 * @returns True when readings need a fresh read.
 	 */
 	async function changesReadings(event: ModelEvent): Promise<boolean> {
 		if (event.type !== "architecture_snapshot" || !event.reading.success) return true;
-		return movedPast(event.reading.digest);
+		const reading = client.getQueryCache().find({ queryKey: currentKey, exact: true });
+		await reading?.promise?.catch(() => undefined);
+		return movedPast(event.reading.digest, reading?.state.error);
 	}
 	/**
 	 * Request a coherent read of everything this change can reach.
@@ -173,6 +176,12 @@ function createFeed(
 			return;
 		}
 		if (event.type === "architecture_snapshot") void receiveClaims(event.claims).catch(unavailable);
+		// A busy model is a write that is landing, and its completion is news of its own. What
+		// this tab holds stays as it is until then, and a read that meets the write waits for it.
+		if (landing(event)) {
+			publish({ ...state, connection: "live" });
+			return;
+		}
 		publish({ connection: "live", failure: failureOf(event) });
 		void receiveModel(event).catch(unavailable);
 		if (event.type === "architecture_changed" && event.reason === "completed") {
@@ -296,6 +305,16 @@ async function resumeInterruptedHistory(
 	};
 	await client.cancelQueries(filter);
 	await client.invalidateQueries(filter);
+}
+
+/**
+ * Whether an event says only that a write holds the model while it lands.
+ * @param event The shared current-reading event.
+ * @returns Whether the model is busy with a write.
+ */
+function landing(event: ModelEvent): boolean {
+	const failure = failureOf(event);
+	return failure !== null && isBusy(failure);
 }
 
 /**

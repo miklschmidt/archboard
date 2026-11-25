@@ -50,6 +50,14 @@ const BUSY: Extract<Summary, { success: false }> = {
 	error: "The current architecture is unavailable during installation.",
 	diagnostics: [{ code: "MODEL_BUSY", file: ".", message: "Busy.", recovery: "Retry." }],
 };
+const PENDING: Extract<Summary, { success: false }> = {
+	success: false,
+	code: "RECOVERY_REQUIRED",
+	error: "A durable architecture transaction is pending.",
+	diagnostics: [
+		{ code: "RECOVERY_REQUIRED", file: ".", message: "Pending.", recovery: "Run model recover." },
+	],
+};
 const LEGACY: Extract<Summary, { success: false }> = {
 	success: false,
 	code: "LEGACY_AUTHORITY",
@@ -190,7 +198,10 @@ test("each readable repository takes its model or migration requirement from the
 	});
 	await waitFor(() => expect(result.current.repositories[0]?.model?.name).toBe("Renamed shop"));
 	await hear({ type: "architecture_status", vault: SHOP, reading: BUSY });
-	await waitFor(() => expect(result.current.repositories[0]?.error).toBe(BUSY.error));
+	await act(() => Bun.sleep(20));
+	expect(result.current.repositories[0]?.error).toBeNull();
+	await hear({ type: "architecture_status", vault: SHOP, reading: PENDING });
+	await waitFor(() => expect(result.current.repositories[0]?.error).toBe(PENDING.error));
 	expect(result.current.repositories[0]?.model?.name).toBe("Renamed shop");
 	expect(read).toEqual([]);
 });

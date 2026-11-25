@@ -11,6 +11,7 @@ import {
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
+import { modelCacheMs, modelLockMs } from "@archboard/timing";
 
 type StateSelection = {
 	readonly [Field in "ref" | "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:
@@ -60,6 +61,37 @@ class ArchitectureReadError extends Error {
 		this.name = "ArchitectureReadError";
 	}
 }
+
+/**
+ * Whether a refusal says only that a write holds the model at this moment, which its own
+ * completion ends.
+ * @param failure The refusal.
+ * @param failure.code Why the server refused.
+ * @returns Whether the model is busy with a write.
+ */
+function isBusy(failure: { readonly code: string }): boolean {
+	return failure.code === "MODEL_BUSY";
+}
+
+/** How often a busy read reads again: for as long as an agent waits for a model. */
+const BUSY_RETRIES = Math.ceil(modelLockMs("waitCap") / modelCacheMs("busyRetry"));
+
+/**
+ * A read that meets a write reads again until the write lands, so the reader keeps its picture
+ * and then shows the written model, with no failure between. Any other refusal is a fact and
+ * fails at once, and so does a model that stays busy past the wait.
+ */
+const busyRetry = {
+	/**
+	 * Read again only while the model is busy, and only for as long as the wait.
+	 * @param failures The failed reads before this one.
+	 * @param error The last failure.
+	 * @returns Whether to read again.
+	 */
+	retry: (failures: number, error: Error): boolean =>
+		error instanceof ArchitectureReadError && isBusy(error.failure) && failures < BUSY_RETRIES,
+	retryDelay: modelCacheMs("busyRetry"),
+} as const;
 
 /** A followed resource stays fresh until its feed or a person marks it stale. */
 const followed = { staleTime: Number.POSITIVE_INFINITY } as const;
@@ -243,7 +275,7 @@ function architectureModelQuery(
 		 */
 		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
 		...(followsFeed(checkpoint, selection) ? followed : shownFresh),
-		retry: false,
+		...busyRetry,
 	});
 }
 
@@ -275,7 +307,7 @@ function architectureRecordQuery(vault: string) {
 		queryFn: (context) => readModel(vault, null, context.signal, {}),
 		staleTime: 0,
 		refetchOnMount: "always",
-		retry: false,
+		...busyRetry,
 	});
 }
 
@@ -321,7 +353,7 @@ function architectureModuleQuery(vault: string, target: ModuleTarget, digest: st
 			if (!result.success) throw new ArchitectureReadError(result);
 			return result;
 		},
-		retry: false,
+		...busyRetry,
 	});
 }
 
@@ -377,7 +409,7 @@ function retainedModuleQuery(vault: string, module: string) {
 			return result.retained;
 		},
 		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...busyRetry,
 	});
 }
 
@@ -450,6 +482,8 @@ export {
 	architectureClaimsQuery,
 	retainedModuleQuery,
 	ArchitectureReadError,
+	busyRetry,
+	isBusy,
 	type CheckpointRows,
 	type ModelSummary,
 	type RetainedModule,

@@ -5,6 +5,7 @@ import { inVault } from "@archboard/server-requests";
 import {
 	architectureModelKeys,
 	ArchitectureReadError,
+	busyRetry,
 	readReply,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -62,7 +63,7 @@ function modelHistoryQuery(
 			return result;
 		},
 		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...busyRetry,
 		retryOnMount: false,
 		refetchOnReconnect: false,
 		refetchOnWindowFocus: false,

@@ -424,6 +424,13 @@ test("Code shows the focused pane's addressed file again after a mode or focus c
 	await focus("B");
 	await showsFile("B", "notes.ts");
 
+	// Code slid the column open, and the handle moves with it until the column arrives. The panes'
+	// files can show before then, so the handle is measured only once nothing moves it.
+	await browser.run([
+		"wait",
+		"--fn",
+		`!document.querySelector('[data-sliding]') && document.getElementById('code-view').getAnimations().length === 0`,
+	]);
 	const handle = '[role="separator"][aria-label="Code view width"]';
 	const { x, y } = await browser.eval<{ x: number; y: number }>(`(() => {
 		const box = document.querySelector('${handle}').getBoundingClientRect();

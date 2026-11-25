@@ -51,6 +51,14 @@ const MODEL_CACHE_MS = durations({
 	 * it expects the row soon after the command ends. Only that page asks, and the read is small.
 	 */
 	startListing: 2_000,
+	/**
+	 * How long a read that met a write waits before it reads again. A write holds the model for
+	 * the moment it lands, about 20 ms, and a read in that moment is refused as busy. The reader
+	 * keeps its picture and asks again, up to MODEL_LOCK_MS.waitCap in all, as an agent that
+	 * waits for a model does. A quarter second is soon enough that the written model follows the
+	 * write at once, and few enough reads that a model held past the cap costs about twenty.
+	 */
+	busyRetry: 250,
 });
 
 /**
