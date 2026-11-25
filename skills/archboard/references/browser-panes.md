@@ -4,20 +4,21 @@ Use this reference only when steering a live browser pane with `browser show` or
 
 ## Navigate a local agent pane
 
-`browser show [model] --pane <pane>` opens a model in an existing pane.
-If no browser is connected, it opens the canvas in the default browser and waits for its pane.
-On a machine with no display, it refuses with `BROWSER_REQUIRED`. Give the user the address in the refusal.
+`browser show [model] --pane <pane>` opens a model in the named pane. Omit `--pane` when exactly one pane shows the addressed vault.
+If no pane is connected, it opens the canvas in the default browser and waits for a pane. With no `--pane`, it uses the new pane.
+If the command cannot open a browser or no pane connects in time, it refuses with `BROWSER_REQUIRED`. Give the user the address in the refusal.
 The optional model must match the vault's identity or exact name.
-Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--grammar`, and `--flow` for its reading.
+Use `--module`, `--scope`, `--focus`, `--expand`, `--lens`, `--hide-kind`, `--grammar`, and `--flow` for its reading.
 Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for selection.
+Use `--against` to name an explicit comparison state or checkpoint.
 `--walkthrough <id> --beat <index>` requests a narrative at a zero-based beat.
-`--input <file>` supplies complete reading JSON.
+`--input <file>` replaces the reading flags with JSON and keeps `--pane` as the destination. Use `hideEffects` in that JSON to hide effects.
 
 POST `/api/panes/show`, also `/api/browser/show`, accepts `{vault,pane,agent,session,reading}`.
 `reading` uses the same selectors, plus optional `model` and `beat`.
 The server resolves it before changing the pane or chosen checkout.
 The `pane_model` message carries `{model,reading,revision,vault,repository}`.
-The result carries `{success,model,reading,revision,repository,checkout,paneId}` and pane address fields.
+The result carries `{success,model,reading,revision,repository,checkout,paneId}` and `pane` with the resolved pane address.
 
 `browser panes` reports `panes[].architecture` and `tabSessionId` for explanation and narrative guards.
 Navigation can choose a checkout but cannot activate the tab's conversation.
@@ -27,8 +28,8 @@ For narratives, read [canonical walkthroughs](canonical-walkthroughs.md).
 
 An explanation capture fixes the reading that the agent answers.
 It keeps subjects, complete revision, state or checkpoint, and reading intent together.
-Reading intent includes scope, focus, relationship filters, group visibility, grammar, and optional flow.
-`reading.groups` accepts exact visible group IDs, or `true` and `false` for all and none.
+Reading intent includes scope, focus, expanded modules, lens, relationship kinds, grammar, and optional flow.
+`reading.relationshipKinds` lists the kinds left after the pane's explicit kind filters. Keep the lens separately in `reading.lens`.
 A compared capture also keeps its actual base and separate revision. Navigation cannot retarget it.
 
 Before answering a screen question, run `browser panes`.
@@ -38,10 +39,9 @@ Use the reported `architecture.vault`, even after foreign navigation.
 Keep `reading.referenceSubject` separate from temporary pointer selection.
 Do not infer architecture from `paneKey`.
 
-For a comparison, copy `model.comparison.revision.digest` into `request.expectedComparisonRevision`.
-Omit it only when the observed model has no comparison.
-Keep it with target and narrative-source revisions from that same reading.
-A changed, missing, or newly appeared comparison returns `MODEL_CHANGED` before invocation.
+For a new action, copy `architecture.selection` to the top-level `selection` and copy the observed model ID, `reading`, subjects, and `expectedRevision` into `request`.
+When the pane reports `expectedComparisonRevision` or `expectedSourceRevision`, copy them into `request` too. In a model read, these digests are `comparison.revision.digest` and `playback.sourceRevision.digest`.
+A changed, missing, or newly appeared comparison, or a mismatch with a supplied narrative-source revision, returns `MODEL_CHANGED` before invocation.
 
 Use `model explain` to request a new action from the local workhorse.
 Pass `-C` for the directory that holds the reported vault.
@@ -59,18 +59,19 @@ If it contains `explanation`, answer the accepted capture directly without anoth
 		"actionId": "<new-action-identity>",
 		"action": "explain-selection",
 		"model": "Shop",
-		"expectedRevision": "<complete-observed-revision-digest>",
+		"expectedRevision": "1111111111111111111111111111111111111111111111111111111111111111",
 		"subjects": ["Shop#Gateway"],
 		"reading": {
 			"scope": "Shop#Gateway",
 			"focus": [],
 			"relationshipKinds": ["sync"],
-			"groups": true,
 			"grammar": "architecture"
 		}
 	}
 }
 ```
+
+Replace the example model, subjects, and digest with the actual pane capture.
 
 ```bash
 archboard model explain --input explanation.json -C <directory>
@@ -92,7 +93,7 @@ Read progress through the same command:
 ```
 
 The result reports `captured`, `queued`, `running`, `completed`, `failed`, `cancelled`, or `unavailable`.
-After navigation, the answer still names its original model, state, subjects, and revision.
+Use `action.text` for the answer. `action.capture` preserves the original reading and revision across navigation.
 
 Send `type:"latest"` with `tabSessionId` for the last invocation or retry.
 Use returned `action.vault` for later reads, cancellation, and retry, even after navigation.

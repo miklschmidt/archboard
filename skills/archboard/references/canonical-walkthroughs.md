@@ -35,7 +35,7 @@ For relationships or messages, selection lights only those subjects and their en
 Module-only selection lights those modules and connecting lines, with adjacent subjects one step fainter.
 
 `filters.relationships` lists hidden kinds.
-Group regions are off by default, so `filters.groups` changes no picture.
+If you set `filters`, include `groups: []`. The field accepts configured group IDs for compatibility with saved readings and has no effect on the picture.
 A sequence or flowchart beat requires a qualified `flow` and includes that complete flow.
 
 The target accepts `state:"current"`, a stable proposal ID, or a unique proposal name.
