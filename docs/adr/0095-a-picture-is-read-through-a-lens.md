@@ -17,10 +17,9 @@ Amended on 2026-11-22 (TASK-663.08 to TASK-663.12): the lenses select `sync` and
 they selected `call`, a new lens finds sync computes, a reader hides effects by hand as well as
 kinds, and the lens and its outcome stand above the picture.
 
-Amended on 2026-11-25: the legend picks a lens from a `Select` dropdown showing each lens's
-question under its name instead of a multi-row tab grid, and separates `Kinds`, `Effects`,
-`Hidden by <lens>` and `Line marks` into bounded sub-groups so read-only line marks cannot be
-mistaken for hidden items.
+Amended on 2026-11-25: the legend uses a `Select` dropdown to pick a lens and shows any question
+from the policy under its name. It separates `Kinds`, `Effects`, `Hidden by <lens>` and
+`Line marks` into bounded sub-groups so readers can distinguish line marks from hidden items.
 
 ## Context
 
@@ -129,8 +128,9 @@ before the command reaches the server.
 
 ### The legend offers the lenses
 
-The `Relationships` section of the legend opens with a `Select` dropdown that lists every lens in
-the order above with its question under its name. Under it stand up to four bounded sub-groups,
+When a structural reading offers a choice of lenses, `Relationships` opens with a `Select` dropdown.
+It lists the lenses in policy order and shows each question that the policy defines under its lens
+name. Under it stand up to four bounded sub-groups,
 separated by hairline rules: `Kinds` (each kind's sample in its ink, with an eye), `Effects` (each
 effect's sample in neutral ink with its head, with an eye), `Hidden by <lens>` (dimmed rows that the
 active lens hides, with no switch, because turning them on would contradict the lens), and

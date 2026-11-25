@@ -739,12 +739,14 @@ it left out, such as `Main lines · 66 lines left out`, or `Main lines has no li
 relationships` where the default lens draws nothing and the picture shows every relationship. An
 export draws the same line above its picture.
 
-The `Relationships` part holds, from top to bottom, the lens selector and up to four bounded
-sub-groups: `Kinds`, `Effects`, `Hidden by <lens>` and `Line marks`. The lens selector is a
-full-width small `Select` (`quiet-key`) showing `Lens` in muted ink before the chosen lens's name.
-Its popover lists the lenses in the policy's order (Main lines, Side effects, Sync compute, Network,
-Reads, Declared dependencies, All relationships), with each lens's question under its name via
-`Select.Item`'s `description`. Choosing the active lens again clears manual kind and effect filters.
+The `Relationships` part opens with a selector when a structural reading offers a choice of lenses.
+The selector is a full-width small `Select` (`quiet-key`) with `Lens` in muted ink before the chosen
+lens's name. Its popover lists the lenses in the policy's order (Main lines, Side effects, Sync
+compute, Network, Reads, Declared dependencies, All relationships). If a lens defines a question,
+`Select.Item` shows it below the name via `description`. Choosing the active lens again clears
+manual kind and effect filters.
+
+Up to four bounded sub-groups follow: `Kinds`, `Effects`, `Hidden by <lens>` and `Line marks`.
 Each sub-group carries a sentence-case heading in Body at weight 500 and muted ink, with a hairline
 rule between adjacent sub-groups so no group bleeds into the next. Under `Kinds` and `Effects`,
 each kind and each effect stands on a row of its own. A kind's sample is a solid line in the kind's
