@@ -20,25 +20,24 @@ export interface DocsGroup {
 export const cliGroups = [
 	{
 		slug: "setup",
-		label: "`init`, `repo` and `telemetry`",
-		title: "Setup, checkouts and telemetry",
+		label: "`init`, `repo`, and `telemetry`",
+		title: "Setup, checkouts, and telemetry",
 		description:
-			"Set a repository up for Archboard, tell this machine where each repository's checkout is, and turn usage telemetry on or off.",
+			"Initialize Archboard in a repository, register local checkouts, and configure usage telemetry.",
 		commands: ["init", "repo", "telemetry"],
 	},
 	{
 		slug: "model",
 		label: "`model`",
 		title: "The `model` commands",
-		description:
-			"Read, write, compare, render and keep the canonical architecture model of a vault.",
+		description: "Read, edit, compare, render, and archive a vault's canonical architecture model.",
 		commands: ["model"],
 	},
 	{
 		slug: "upgrade",
 		label: "`upgrade`",
 		title: "The `upgrade` commands",
-		description: "Review the relationship inventory and install the current vault format.",
+		description: "Inspect relationship inventories and migrate vaults to the current format.",
 		commands: ["upgrade"],
 	},
 	{
@@ -46,23 +45,21 @@ export const cliGroups = [
 		label: "`check`",
 		title: "The `check` commands",
 		description:
-			"Hold the model to its vocabulary, its code and the pictures that embed it. A check fails while a finding remains.",
+			"Validate the model against its vault vocabulary, source code, and tracked embeds. Exits non-zero when errors or warnings remain.",
 		commands: ["check"],
 	},
 	{
 		slug: "server",
-		label: "`start`, `stop` and `status`",
-		title: "The server commands",
-		description:
-			"Start, stop and inspect the local Archboard server that the other commands talk to.",
+		label: "`start`, `stop`, and `status`",
+		title: "Server commands",
+		description: "Start, stop, restart, and check the status of the local Archboard server.",
 		commands: ["start", "stop", "restart", "status"],
 	},
 	{
 		slug: "browser",
 		label: "`browser`",
 		title: "The `browser` commands",
-		description:
-			"Show a reading to the person in the browser, and inspect the panes that are open.",
+		description: "Open readings in the browser UI and inspect open panes.",
 		commands: ["browser"],
 	},
 ] as const;
@@ -74,13 +71,13 @@ export const docsNav: readonly DocsGroup[] = [
 			{ path: "", label: "Introduction" },
 			{ path: "install", label: "Install and set up" },
 			{ path: "concepts", label: "Concepts" },
-			{ path: "first-map", label: "A first map in one session" },
+			{ path: "first-map", label: "Map your first repository" },
 		],
 	},
 	{
 		title: "Guides",
 		pages: [
-			{ path: "gate", label: "The check as a gate" },
+			{ path: "gate", label: "Run checks as a gate" },
 			{ path: "pull-requests", label: "Architecture on pull requests" },
 			{ path: "platform", label: "Application and infrastructure" },
 			{ path: "home-repo", label: "In a Home Repo" },

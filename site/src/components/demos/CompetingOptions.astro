@@ -7,16 +7,16 @@ const panes = [
 	{
 		drawing: drawings.nightlyBatch,
 		name: "Nightly batch",
-		summary: "Build every product's list once a night from 90 days of orders.",
+		summary: "Rebuild product recommendations nightly from the last 90 days of orders.",
 		counts: "4 added · 1 changed · 9 unchanged",
-		alt: "The Nightly batch proposal: a new Nightly job reads a new Orders replica and replaces every list in Suggestions, which is marked changed.",
+		alt: "Nightly batch proposal: a Nightly job reads an Orders replica and refreshes the Suggestions store, marked as changed.",
 	},
 	{
 		drawing: drawings.liveEvents,
 		name: "Live events",
-		summary: "Score product pairs as shoppers browse, so suggestions follow today's shopping.",
+		summary: "Score product pairs from live browse events so recommendations update in real time.",
 		counts: "7 added · 2 removed · 1 changed · 7 unchanged",
-		alt: "The Live events proposal: new Shopper events, Live scorer and Pair scores modules in green, and the Suggestions store removed as a red ghost.",
+		alt: "Live events proposal: Shopper events, Live scorer, and Pair scores added in green; the Suggestions store marked removed in red.",
 	},
 ];
 ---

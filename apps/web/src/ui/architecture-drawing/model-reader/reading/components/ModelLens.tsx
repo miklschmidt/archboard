@@ -1,20 +1,21 @@
 // The lens a structural picture is read through: a named question that chooses which of its
-// relationships draw. The legend offers each lens as one press, and the line above the picture says
-// which lens draws and what it left out.
+// relationships draw. The legend selects a lens from a dropdown that shows each lens's question,
+// and the line above the picture says which lens draws and what it left out.
 
 import { useCallback, useMemo, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
-import { ToggleGroup } from "@archboard/ui-kit/components";
+import { Select } from "@archboard/ui-kit/components";
 
 type LensOutcome = Pick<ReturnType<typeof projectModel>, "lens" | "leftOut" | "emptyLens">;
 
 /**
- * The lenses of a reading, one press each, in the policy's order, with the one that draws pressed.
+ * The lenses of a reading as a select dropdown, in the policy's order, with each lens's question
+ * under its name.
  * @param props The reading and how to choose another lens.
  * @param props.model The reading, whose policy names its lenses.
  * @param props.lens The lens the picture draws through.
  * @param props.onSelect Read the picture through another lens.
- * @returns The presets.
+ * @returns The lens selector.
  */
 function ModelLensPresets(props: {
 	readonly model: Model;
@@ -22,37 +23,31 @@ function ModelLensPresets(props: {
 	readonly onSelect: (id: string) => void;
 }): JSX.Element {
 	const { model, lens, onSelect } = props;
-	const pressed = useMemo(() => [lens], [lens]);
+	const entries = useMemo(() => Object.entries(model.policy.lenses), [model.policy.lenses]);
+	const currentName = model.policy.lenses[lens]?.name ?? lens;
 	const choose = useCallback(
-		(values: readonly unknown[]): void => {
-			const [value] = values;
-			onSelect(typeof value === "string" ? value : lens);
+		(value: string | null): void => {
+			if (typeof value === "string") onSelect(value);
 		},
-		[onSelect, lens],
+		[onSelect],
 	);
 	return (
-		<li className="pb-2">
-			<ToggleGroup
-				aria-label="Lens"
-				data-slot="model-lens"
-				size="sm"
-				spacing={0.5}
-				value={pressed}
-				onValueChange={choose}
-				className="trough grid w-full grid-cols-2"
-			>
-				{Object.entries(model.policy.lenses).map(([id, choice]) => (
-					<ToggleGroup.Item
-						key={id}
-						value={id}
-						data-lens-id={id}
-						title={choice.question}
-						className="text-muted-foreground hover:text-foreground aria-pressed:text-foreground aria-pressed:chosen-face rounded-control aria-pressed:bg-face h-6 min-w-0 px-2 hover:bg-transparent"
-					>
-						{choice.name}
-					</ToggleGroup.Item>
-				))}
-			</ToggleGroup>
+		<li className="pt-1 pb-2.5">
+			<Select value={lens} onValueChange={choose}>
+				<Select.Trigger size="sm" data-slot="model-lens" aria-label="Lens" className="w-full">
+					<Select.Value>
+						<span className="text-muted-foreground font-normal">Lens</span>
+						<span className="min-w-0 truncate">{currentName}</span>
+					</Select.Value>
+				</Select.Trigger>
+				<Select.Content>
+					{entries.map(([id, choice]) => (
+						<Select.Item key={id} value={id} data-lens-id={id} description={choice.question}>
+							{choice.name}
+						</Select.Item>
+					))}
+				</Select.Content>
+			</Select>
 		</li>
 	);
 }

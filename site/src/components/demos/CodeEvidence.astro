@@ -31,7 +31,7 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 			<span>Save order</span>
 		</p>
 		<p class="explain">
-			Place order calls Save order, and the architecture has no relationship between them.
+			Place order calls Save order, but no relationship connects them in the model.
 		</p>
 		<p class="strength"><Icon name="check" size={14} /> Resolved by analysis · awaited</p>
 	</div>
@@ -43,7 +43,7 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 		<pre tabindex="0"><code set:html={source} /></pre>
 	</figure>
 </div>
-<p class="caption example-caption">Example checkout and source evidence.</p>
+<p class="caption example-caption">Sample finding from a checkout service, linked to the calling line.</p>
 
 <style>
 	.evidence {

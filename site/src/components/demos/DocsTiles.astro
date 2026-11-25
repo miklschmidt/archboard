@@ -20,24 +20,24 @@ const tracked = [
 <div class="bento">
 	<article class="tile docs table" data-reveal>
 		<div class="tile-copy">
-			<h3 class="h3">Pictures for docs, ADRs and pull requests</h3>
+			<h3 class="h3">Diagrams for docs, ADRs, and PRs</h3>
 			<p class="body small">
-				The CLI exports self-contained SVG and PNG from the same model the browser reads. The SVG draws
-				its own glyphs, so it needs no font, and its traffic keeps moving.
+				The CLI renders self-contained SVG and PNG files from the same model the browser reads. Text
+				is converted to paths so SVGs need no external fonts, and animated traffic still plays.
 			</p>
 		</div>
-		<div class="doc-page" role="img" aria-label="Example design document with an Archboard drawing of Inventory service and its parts.">
+		<div class="doc-page" role="img" aria-label="Sample design doc with an embedded Archboard diagram of Inventory service.">
 			<p class="doc-path mono"><Icon name="fileText" size={14} /> docs/design/inventory.md</p>
 			<p class="doc-title">Inventory</p>
 			<p class="doc-text">
-				Stock API is the only way in. The reservation ledger sets items aside only while enough are
-				left, in one transaction with the counts.
+				Stock API is the single entry point. Reservation ledger holds items in the same transaction
+				as the stock counts, so inventory never oversells.
 			</p>
 			<img
 				src={picture.url}
 				width={picture.width}
 				height={picture.height}
-				alt="Inside Inventory service: Stock API, Reservation ledger, Warehouse sync and Stock DB."
+				alt="Inside Inventory service: Stock API, Reservation ledger, Warehouse sync, and Stock DB."
 				loading="lazy"
 				decoding="async"
 			/>
@@ -53,12 +53,12 @@ const tracked = [
 		<div class="tile-copy">
 			<h3 class="h3">Embeds that never go stale</h3>
 			<p class="body small">
-				Every tracked drawing carries its exact render recipe. Change the architecture, run one
-				command, and every diagram in your docs, ADRs and pull requests is current again.
+				Every tracked SVG or PNG embeds its render recipe. Update the model, run one command, and
+				every diagram across your docs and ADRs regenerates in place.
 			</p>
 		</div>
 		<div class="stage">
-			<ul class="tracked" aria-label="Tracked drawings after the fix">
+			<ul class="tracked" aria-label="Tracked embeds after running archboard check embeds --fix">
 				{
 					tracked.map((drawing, index) => (
 						<li style={`--flip-delay: ${1200 + index * 260}ms`}>
@@ -86,8 +86,8 @@ const tracked = [
 		<div class="tile-copy">
 			<h3 class="h3">Ask your architecture</h3>
 			<p class="body small">
-				Select a part and choose Explain, or press Talk and ask aloud. The local agent gets
-				the exact reading and the selection, and it changes nothing.
+				Select any module and click Explain, or hit Talk to ask out loud. The local agent sees your
+				exact view and selection without modifying the model.
 			</p>
 		</div>
 		<div class="stage">
@@ -102,13 +102,13 @@ const tracked = [
 			</div>
 			<p class="reply">
 				<span class="reply-who"><Icon name="voice" size={14} /> Codex</span>
-				Timeout guard starts a 10 s clock when an order arrives. If the payment has not answered by
-				then, it releases the stock and refunds the card.
+				Timeout guard starts a 10-second timer on every order. If checkout hasn't finished in time,
+				it calls Release route to free the stock and refunds the card.
 			</p>
 		</div>
 	</article>
 </div>
-<p class="caption example-caption">Example design document, tracked drawings and explanation.</p>
+<p class="caption example-caption">Sample design doc embed, stale-embed refresh, and read-only explanation.</p>
 
 <style>
 	.bento {

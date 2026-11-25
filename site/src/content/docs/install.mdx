@@ -1,6 +1,6 @@
 ---
 title: Install and set up
-description: Put the `archboard` CLI on your machine, set a repository up with `archboard init`, and make sure that the server answers.
+description: Install the `archboard` CLI, initialize a repository with `archboard init`, and verify the local server.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
@@ -9,24 +9,24 @@ import InstallCommands from "../../components/InstallCommands.astro";
 import reference from "../../generated/reference.json";
 import Exit from "../../components/docs/Exit.astro";
 
-## What you need
+## Prerequisites
 
-- Linux on x64 or arm64, or macOS on Apple silicon. Under Windows, use WSL 2.
-- Git, and a package manager to install the package: npm, pnpm, Yarn or Bun.
-- A Codex sign-in for the agent dock, voice, narration and recordings. The map, the checks and the pictures work without it.
-- Chromium or Chrome only for PNG pictures and recordings. SVG pictures need no browser.
+- Linux (x64 or arm64) or macOS (Apple silicon). On Windows, use WSL 2.
+- Git and a Node.js package manager: npm, pnpm, Yarn, or Bun.
+- A Codex sign-in only if you want the agent dock, voice mode, narration, or video recordings. Modeling, checks, and diagram rendering work without it.
+- Chromium or Chrome only for PNG exports and video recordings. SVG exports need no browser.
 
 ## Install the CLI
 
-The package is `archboard` on npm. `@archboard/cli` is the same program under a second name. Pick your package manager:
+The npm package is `archboard` (also published as `@archboard/cli`). Choose your package manager:
 
 <InstallCommands id="docs-install" then={["archboard --version"]} />
 
-The package manager installs only the build for your platform. The install puts `archboard` on your `PATH`.
+The package manager installs only the binary for your platform and puts `archboard` on your `PATH`.
 
 ## Set up a repository
 
-Run `archboard init` in the repository that you want to map:
+Run `archboard init` inside the repository you want to map:
 
 ```bash
 cd ~/Projects/payments-api
@@ -35,14 +35,14 @@ archboard init
 
 <Steps>
 
-1. **It installs the skills.** `archboard` writes and reads models. `archboard-pr` gives a pull request an architecture explainer. `archboard-plan` carries a proposal through the `to-spec`, `to-tickets` and `implement-spec` skills. `archboard-deepen` redesigns shallow modules and wide interfaces, from a report to merged code. Two advisor agents make the choices that a person would make. Codex gets them, and Claude Code gets them when `claude` is on the `PATH`.
-2. **It makes the vault.** The vault is `.archboard/vault` at the root of the checkout. The model takes the name of the repository directory.
-3. **It registers the checkout.** The browser then lists it, and bindings into this repository resolve here.
-4. **It hands the language servers to an agent.** At a terminal, `init` asks whether Claude Code or Codex sets them up. The agent shows its plan and waits for your consent. Without a terminal, the JSON answer ends with `next`, the prompt for the agent.
+1. **Installs the agent skills.** `archboard` reads and writes models. `archboard-pr` writes architecture summaries for pull requests. `archboard-plan` drives a proposal through `to-spec`, `to-tickets`, and `implement-spec`. `archboard-deepen` refactors shallow modules and wide interfaces using two advisor agents for design decisions. Skills install for Codex, and also for Claude Code when `claude` is on your `PATH`.
+2. **Creates the vault.** Archboard creates `.archboard/vault` at the repository root and names the model after the repository directory.
+3. **Registers the checkout.** The local browser UI lists the repository, and code bindings to this repository resolve to this checkout.
+4. **Configures language servers.** In an interactive terminal, `archboard init` asks whether Claude Code or Codex should set up language servers. The agent displays its plan and waits for confirmation. In non-interactive mode, the JSON output includes a `next` prompt for your agent.
 
 </Steps>
 
-Commit the vault with your code. A reviewer then reads a change to the architecture in the same diff as the change to the code.
+Commit the vault with your code so reviewers see architecture changes in the same diff as code changes:
 
 ```bash
 git add .archboard
@@ -50,85 +50,87 @@ git commit -m "docs(architecture): add the Archboard vault"
 ```
 
 <Aside type="note" title="No `CLAUDE.md` or `AGENTS.md` entry">
-	`init` adds nothing to `CLAUDE.md` or `AGENTS.md`. A command finds the vault from the repository, the way Git finds its own directory. A block that an earlier version wrote between `<!-- archboard:begin -->` and `<!-- archboard:end -->` is removed.
+	`archboard init` does not edit `CLAUDE.md` or `AGENTS.md`. CLI commands locate the vault from the
+	current repository automatically, just like Git locates `.git`. If an earlier version added a block
+	between `<!-- archboard:begin -->` and `<!-- archboard:end -->`, `init` removes it.
 </Aside>
 
 ## Set up the language servers
 
-A language server knows where code defines a name. With one, `archboard check code` resolves a name to its definition, and only resolved evidence can make a warning. A match by name only stays information.
+A language server resolves symbol definitions across your codebase. With a language server configured, `archboard check code` produces resolved evidence that can raise warnings. Without one, name-only matches stay at information severity.
 
 <Steps>
 
-1. Find the languages that the repository uses.
-2. Install a server for each language that has no default. TypeScript {reference.facts.nativeTypescript} and later needs none.
-3. In the checkout, register each server:
+1. Identify the languages used in the repository.
+2. Install a language server for each language that lacks built-in support. TypeScript {reference.facts.nativeTypescript} and later work without a separate server.
+3. Register each server in the checkout:
 
    ```bash
    archboard repo language-server python pyright-langserver --arg=--stdio
    ```
 
-4. Commit `.archboard/language-servers.json` with the vault. Every machine and every CI run then uses the same servers. Each machine still needs the server programs: install them in CI as [The check as a gate](../gate/#in-ci) shows.
+4. Commit `.archboard/language-servers.json` with the vault so every developer machine and CI job uses the same configuration. Each machine still needs the language server binaries installed. See [Run checks as a gate](../gate/#in-ci) for CI setup.
 
 </Steps>
 
-In the browser, Measures names each language that the last code check found with no server, and the server that it needs. **Fix with Codex** there asks the agent of that checkout to set it up, with the same steps that `archboard init` gives.
+In the browser UI, the Measures dialog lists any language from the last code check that lacks a server, along with the server it needs. Click **Fix with Codex** to ask the checkout's agent to configure it using the same steps as `archboard init`.
 
-<Aside type="caution" title="A language server runs the repository's code">
-	Read the `.archboard/language-servers.json` of a checkout before you run `archboard check code` on
-	a repository that you do not trust. `pyright`, `rust-analyzer`, `gopls` and the others run code of
-	the checkout, as your editor does.
+<Aside type="caution" title="Language servers execute repository code">
+	Inspect `.archboard/language-servers.json` before running `archboard check code` in an untrusted
+	repository. Tools such as `pyright`, `rust-analyzer`, and `gopls` execute code from the checkout,
+	just as they do in an editor.
 </Aside>
 
 ## Start the server
 
-Every command that needs the server starts it when nothing answers. To start it yourself, run:
+Any command that needs the local server starts it automatically. To start it manually and check its status, run:
 
 ```bash
 archboard start
 archboard status
 ```
 
-A release server listens on <code>{`http://archboard.localhost:${reference.facts.releasePort}`}</code>. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
+The release server listens on <code>{`http://archboard.localhost:${reference.facts.releasePort}`}</code>. Chrome and Firefox route `*.localhost` domains to your local machine without extra setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to disable automatic startup.
 
 <Aside type="caution" title="Keep the server on loopback">
-	The server has no authentication. Do not expose its port beyond this machine.
+	The server has no authentication. Do not expose its port outside your local machine.
 </Aside>
 
-## Make sure that it works
+## Verify the installation
 
 ```bash
 archboard model read
 archboard check
 ```
 
-`model read` prints the model as JSON. A new vault holds an empty planning model, which is a model with no current state yet. `archboard check` exits `0` on a new vault.
+`archboard model read` prints the model as JSON. A new vault starts as an empty planning model with no current state yet, and `archboard check` exits `0`.
 
 ## Find the vault from another directory
 
-A command finds its vault the way Git finds its repository. Inside a checkout, the vault is `.archboard/vault` at the checkout root. `-C <dir>` starts the search in another directory:
+CLI commands search upward from the working directory for `.archboard/vault`, just like Git finds `.git`. Pass `-C <dir>` to target another directory:
 
 ```bash
 archboard -C ~/Projects/payments-api model read
 ```
 
-If the root has no vault, the command refuses with exit <Exit command="model read" refusal="VAULT_NOT_FOUND" />, and its error says how to make one. The refusal names each known vault whose models bind this repository, as the `-C` to give.
+If no vault exists at the repository root, the command exits with <Exit command="model read" refusal="VAULT_NOT_FOUND" /> and prints setup instructions. If another registered vault binds to this repository, the error lists its path so you can pass it to `-C`.
 
-## Update and remove
+## Update and uninstall
 
-Run the install command again, then restart the server so that it runs the new version. Until then, every command warns that the server runs another version.
+Re-run the install command to update, then restart the server so it loads the new version. Until you restart, commands warn about the version mismatch.
 
 ```bash
 npm install --global archboard@latest
 archboard restart
 ```
 
-There is no uninstall command. To remove Archboard, stop the server and remove the package:
+There is no built-in uninstall command. To remove Archboard, stop the server and uninstall the package:
 
 ```bash
 archboard stop
 npm uninstall --global archboard
 ```
 
-Then delete the skill directories, such as `~/.agents/skills/archboard`, `~/.agents/skills/archboard-pr`, `~/.agents/skills/archboard-plan` and `~/.agents/skills/archboard-deepen`, and the state directory. The state directory holds the Codex sign-in, the registry of checkouts and the logs. On Linux it is `~/.local/state/archboard`, and on macOS it is `~/Library/Application Support/archboard`. Keep each vault that you still need: it is in its repository, not in the state directory.
+Then delete the skill directories (such as `~/.agents/skills/archboard`, `~/.agents/skills/archboard-pr`, `~/.agents/skills/archboard-plan`, and `~/.agents/skills/archboard-deepen`) and the local state directory. The state directory holds your Codex sign-in, checkout registry, and logs: `~/.local/state/archboard` on Linux, or `~/Library/Application Support/archboard` on macOS. Your vaults stay inside their repositories and are not affected.
 
-[`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone, Nix, every language server, recordings, machine state and macOS.
+See [`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) for building from source, Nix, full language server setup, video recording dependencies, machine state, and macOS details.

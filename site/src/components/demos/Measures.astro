@@ -20,7 +20,7 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 <div class="measures table" data-measures>
 	<div class="head">
 		<p class="title">Measures</p>
-		<p class="note">Archboard's own model, a year of its Git history</p>
+		<p class="note">Archboard's own model · 1 year of Git history</p>
 	</div>
 	<div class="tabs" role="tablist" aria-label="Measures">
 		{
@@ -89,7 +89,7 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 						</tbody>
 					</table>
 					{tab.key === "interface" && (
-						<p class="foot">0 is none. A blank has no count: a module with no parts has no interface.</p>
+						<p class="foot">Blank cells mean the module has no child parts, so it has no container interface.</p>
 					)}
 				</div>
 			);

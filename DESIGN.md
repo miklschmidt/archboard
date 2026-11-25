@@ -739,26 +739,32 @@ it left out, such as `Main lines · 66 lines left out`, or `Main lines has no li
 relationships` where the default lens draws nothing and the picture shows every relationship. An
 export draws the same line above its picture.
 
-The `Relationships` part holds, from top to bottom, the lenses, the kinds, the effects and the
-marks. The lenses come first, one press each, in the policy's order (Main lines, Side effects, Sync
-compute, Network, Reads, Declared dependencies, All relationships), and the lens in use is marked
-as pressed. A kind and an effect each stand on a row of their own. A kind's sample is a
-solid line in the kind's ink; an effect's sample is a
-line in Line Ink with that effect's ends; a reading from before effects samples each kind as its
-policy recorded it. A row is a row of the panel like any other, with the tone of a row under the
-pointer, 8px past the column on each side, and the ring of the keyboard's focus. Its sample and
-its name stand at the start, and an eye at its end says whether the picture draws its lines: an
-open eye while it does, and a struck eye while a reader hid them. A press on the eye, Space or
-Enter turns it, and the eye and the dim change in place. A press on the name shows only that row
-and hides the other rows of its section. There is no mode to enter and no key to find first,
-because a control that only appears on request reads as missing. Rows that the lens leaves out
-stand dimmed at the end of their section, under the caption `Left out by this lens`, with no eye,
-because turning one on would contradict the lens. Under the effects, 4px apart and in two columns,
-stand the marks that no reader hides, with no switch: `More emphasis`, `Illustrated traffic` and
-the comparison standings. While a kind or an effect is hidden, the key `Show all` stands at the
-right end of the `Relationships` row, 24px high and drawn as `Trace back` is. It selects All
-relationships and clears both lists in one press, and needs no count, because every hidden row
-stays in the list.
+The `Relationships` part opens with a selector when a structural reading offers a choice of lenses.
+The selector is a full-width small `Select` (`quiet-key`) with `Lens` in muted ink before the chosen
+lens's name. Its popover lists the lenses in the policy's order (Main lines, Side effects, Sync
+compute, Network, Reads, Declared dependencies, All relationships). If a lens defines a question,
+`Select.Item` shows it below the name via `description`. Choosing the active lens again clears
+manual kind and effect filters.
+
+Up to four bounded sub-groups follow: `Kinds`, `Effects`, `Hidden by <lens>` and `Line marks`.
+Each sub-group carries a sentence-case heading in Body at weight 500 and muted ink, with a hairline
+rule between adjacent sub-groups so no group bleeds into the next. Under `Kinds` and `Effects`,
+each kind and each effect stands on a row of its own. A kind's sample is a solid line in the kind's
+ink; an effect's sample is a line in Line Ink with that effect's ends; a reading from before effects
+samples each kind as its policy recorded it. A row is a row of the panel like any other, with the
+tone of a row under the pointer, 8px past the column on each side, and the ring of the keyboard's
+focus. Its sample and its name stand at the start, and an eye at its end says whether the picture
+draws its lines: an open eye while it does, and a struck eye while a reader hid them. A press on the
+eye, Space or Enter turns it, and the eye and the dim change in place. A press on the name shows
+only that row and hides the other rows of its section. There is no mode to enter and no key to find
+first, because a control that only appears on request reads as missing. Rows that the active lens
+hides stand dimmed in two columns under `Hidden by <lens>`, with no eye, because turning one on
+would contradict the lens. Under `Line marks`, in two columns with no switch, stand the marks that
+no reader hides: `More emphasis`, `Illustrated traffic` and the comparison standings. If the
+reading leaves out a line or the reader hides a kind or effect, `Show all` appears at the right
+end of the `Relationships` row. The key is 24px high and looks like `Trace back`. It selects
+All relationships and clears both lists in one press. The count of omitted lines stays above the
+picture.
 
 The rows come from the whole scope, not from what the picture draws now, and each list keeps
 the order of the policy. So hiding a row moves no row, and the legend keeps its height. A

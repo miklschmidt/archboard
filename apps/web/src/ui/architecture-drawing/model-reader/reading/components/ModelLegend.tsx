@@ -105,6 +105,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 				rows={rows}
 				marks={markRows(projection)}
 				standings={comparisonRows(projection)}
+				lensName={projection.lens.name}
 				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
 				onHide={hideRows}
 				onShowAll={props.onShowAll}
@@ -216,7 +217,9 @@ interface RelationshipsProps {
 	readonly rows: RelationshipRows;
 	readonly marks: readonly LegendMark[];
 	readonly standings: readonly LegendStanding[];
-	/** The lens presets of a structural picture, which open the list. */
+	/** The name of the lens the picture draws through. */
+	readonly lensName: string;
+	/** The lens selector of a structural picture, which opens the list. */
 	readonly children: ReactNode;
 	/** How many lines a structural reading leaves out; none for a flow. */
 	readonly leftOut: number;
@@ -225,8 +228,8 @@ interface RelationshipsProps {
 }
 
 /**
- * The relationships of the reading: the lenses, the kinds and the effects a reader can switch, those
- * the lens leaves out, and the marks that no reader hides.
+ * The relationships of the reading: the lens selector, then bounded sub-groups for kinds, effects,
+ * rows hidden by the lens, and line marks that no reader hides.
  * @param props The rows and how to change what draws.
  * @returns The section, or nothing when the reading has no line.
  */
@@ -259,17 +262,47 @@ function Relationships(props: RelationshipsProps): JSX.Element | null {
 			action={action}
 		>
 			{props.children}
-			<Switches slot="model-legend-lines" field="kind" rows={kinds} onHide={hideKinds} />
-			<Switches
-				slot="model-legend-effects"
-				field="effect"
-				rows={effects}
-				onHide={hideEffects}
-				spaced
-			/>
-			<LeftOut kinds={kinds} effects={effects} />
-			<Marks marks={props.marks} standings={props.standings} />
+			<li className="flex flex-col">
+				<Switches
+					label="Kinds"
+					slot="model-legend-lines"
+					field="kind"
+					rows={kinds}
+					onHide={hideKinds}
+				/>
+				<Switches
+					label="Effects"
+					slot="model-legend-effects"
+					field="effect"
+					rows={effects}
+					onHide={hideEffects}
+				/>
+				<LeftOut lensName={props.lensName} kinds={kinds} effects={effects} />
+				<Marks marks={props.marks} standings={props.standings} />
+			</li>
 		</ModelPanel.Section>
+	);
+}
+
+/**
+ * One bounded sub-group inside Relationships, with a muted sentence-case heading and a hairline
+ * rule between groups so each group stays unambiguous.
+ * @param props The heading and its rows.
+ * @param props.label The sub-group heading.
+ * @param props.children The list of entries.
+ * @returns The sub-group.
+ */
+function RelationshipGroup(props: {
+	readonly label: string;
+	readonly children: ReactNode;
+}): JSX.Element {
+	return (
+		<div className="not-first:border-border/65 flex flex-col not-first:mt-3 not-first:border-t not-first:pt-2.5">
+			<h5 title={props.label} className="text-body text-muted-foreground mb-1 truncate font-medium">
+				{props.label}
+			</h5>
+			{props.children}
+		</div>
 	);
 }
 
@@ -291,52 +324,52 @@ function RowSample(props: { readonly row: LegendKind | LegendEffect }): JSX.Elem
 /**
  * The kinds or the effects a reader can switch, one to a row.
  * @param props The rows and how to hide some of them.
+ * @param props.label The sub-group heading.
  * @param props.slot Where a test finds the list.
  * @param props.field Whether the rows are kinds or effects.
  * @param props.rows The rows, those the lens leaves out among them.
  * @param props.onHide Hide these rows and show the rest of the list.
- * @param props.spaced Whether the list stands a little apart from the list over it.
  * @returns The list, or nothing when the lens leaves out every row.
  */
 function Switches(props: {
+	readonly label: string;
 	readonly slot: string;
 	readonly field: "kind" | "effect";
 	readonly rows: readonly (LegendKind | LegendEffect)[];
 	readonly onHide: (ids: readonly string[]) => void;
-	/** Whether the list stands a little apart from the list over it. */
-	readonly spaced?: boolean;
 }): JSX.Element | null {
-	const { rows, field, onHide } = props;
+	const { label, rows, field, onHide } = props;
 	const shown = rows.filter((row) => !row.leftOut);
 	if (shown.length === 0) return null;
 	return (
-		<li className={cn(props.spaced === true && "mt-2")}>
+		<RelationshipGroup label={label}>
 			<ul data-slot={props.slot} className="flex flex-col">
 				{shown.map((row) => (
 					<SwitchRow key={row.id} row={row} field={field} rows={rows} onHide={onHide} />
 				))}
 			</ul>
-		</li>
+		</RelationshipGroup>
 	);
 }
 
 /**
- * The rows that the lens leaves out, dimmed under their caption, with no switch: only another lens
- * draws them.
+ * The rows that the lens hides, dimmed under a heading naming the active lens, with no switch: only
+ * another lens draws them.
  * @param props The rows.
+ * @param props.lensName The name of the active lens.
  * @param props.kinds The kinds.
  * @param props.effects The effects.
- * @returns The list, or nothing when the lens leaves out no row.
+ * @returns The list, or nothing when the lens hides no row.
  */
 function LeftOut(props: {
+	readonly lensName: string;
 	readonly kinds: readonly LegendKind[];
 	readonly effects: readonly LegendEffect[];
 }): JSX.Element | null {
 	const rows = [...props.kinds, ...props.effects].filter((row) => row.leftOut);
 	if (rows.length === 0) return null;
 	return (
-		<li className="mt-2">
-			<p className="text-body text-muted-foreground">Left out by this lens</p>
+		<RelationshipGroup label={`Hidden by ${props.lensName}`}>
 			<ul data-slot="model-legend-left-out" className={CELLS}>
 				{rows.map((row) => (
 					<Cell key={`${"entry" in row ? "effect" : "kind"}:${row.id}`}>
@@ -346,7 +379,7 @@ function LeftOut(props: {
 					</Cell>
 				))}
 			</ul>
-		</li>
+		</RelationshipGroup>
 	);
 }
 
@@ -365,8 +398,8 @@ function Marks(props: {
 	const { marks, standings } = props;
 	if (marks.length + standings.length === 0) return null;
 	return (
-		<li>
-			<ul data-slot="model-legend-marks" className={cn(CELLS, "mt-1")}>
+		<RelationshipGroup label="Line marks">
+			<ul data-slot="model-legend-marks" className={CELLS}>
 				{marks.map(({ mark, word, dimmed }) => (
 					<Cell key={mark}>
 						<Mark name={word} dimmed={dimmed}>
@@ -386,7 +419,7 @@ function Marks(props: {
 					</Cell>
 				))}
 			</ul>
-		</li>
+		</RelationshipGroup>
 	);
 }
 

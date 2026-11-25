@@ -16,19 +16,19 @@ export interface DockLine {
 export const heroScript: DockLine[] = [
 	{
 		kind: "you",
-		text: "Map this repository: its modules, what contains what, and how they talk.",
+		text: "Map this repo: the services, data stores, and how they connect.",
 		at: 100,
 	},
 	{ kind: "command", text: "archboard model claim --input claim.json", at: 500, cue: "claim" },
-	{ kind: "reply", text: "Claimed Shop for codex: mapping the shop", at: 1100 },
+	{ kind: "reply", text: "Claimed Shop for codex: mapping web-shop", at: 1100 },
 	{
 		kind: "command",
-		text: 'archboard model edit --input map.json --doing "mapping the shop"',
+		text: 'archboard model edit --input map.json --doing "mapping web-shop"',
 		at: 1300,
 	},
 	{
 		kind: "reply",
-		text: "8 modules and 8 relationships, at one new revision",
+		text: "Saved 8 modules and 8 relationships",
 		at: 2600,
 		cue: "draw",
 	},
