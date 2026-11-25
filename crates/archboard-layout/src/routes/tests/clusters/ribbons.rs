@@ -179,3 +179,45 @@ fn a_solid_cable_rises_over_a_cable_with_a_hero_strand_and_a_dashed_strand() {
     );
     assert_crossings_covered(&hops, &["0", "1"], &["2", "3"]);
 }
+
+#[test]
+fn a_partial_ribbon_can_make_room_for_another_ribbon() {
+    let mut cables = drawn(
+        &[
+            across_from(50.0, -100.0, 200.0),
+            across_from(58.0, -100.0, 200.0),
+            down_from(40.0, -100.0, 200.0),
+            down_from(48.0, -100.0, 200.0),
+            down_from(74.0, -100.0, 200.0),
+            down_from(90.0, -100.0, 200.0),
+            points(&[(-100.0, 83.0), (69.0, 83.0), (69.0, 150.0)]),
+            points(&[(-100.0, 91.0), (68.0, 91.0), (68.0, 145.0)]),
+        ],
+        &[
+            (2, "event", Emphasis::Normal),
+            (3, "event", Emphasis::Normal),
+            (4, "call", Emphasis::Hero),
+            (5, "call", Emphasis::Hero),
+            (6, "event", Emphasis::Normal),
+            (7, "event", Emphasis::Normal),
+        ],
+    );
+    let mut riders = BTreeMap::new();
+    link_cable(&mut cables, &mut riders, 0, &[1]);
+    link_cable(&mut cables, &mut riders, 2, &[3]);
+
+    let result = bridge_crossings(&cables, &lines_of(&cables), &riders);
+    let hops = hops_of(&result.bridges);
+    // The hero lines rise first, leaving the horizontal cable to rise over
+    // the vertical cable. Both vertical strands then rise over the two lines below.
+    assert_crossings_covered(&hops, &["0", "1"], &["2", "3", "4", "5"]);
+    assert_crossings_covered(&hops, &["6", "7"], &["2", "3"]);
+    for strand in ["2", "3"] {
+        assert!(
+            hops.iter()
+                .any(|hop| hop.edge_id == strand && hop.under == ["6", "7"]),
+            "strand {strand} needs one crest over both lines: {hops:?}"
+        );
+    }
+    assert_no_crosswise_overlap(&hops);
+}

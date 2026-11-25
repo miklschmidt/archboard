@@ -90,8 +90,16 @@ impl Settling<'_> {
             .partition(|plan| plan.rises.iter().any(|rise| in_ribbon[rise.cluster]));
         plans.extend(self.ribbon_plans(&cable_places, false));
         self.attempt_plans(plans);
-        let remaining = self.ribbon_plans(&cable_places, true);
-        self.attempt_plans(remaining);
+        // A partial ribbon may leave another cable place ready to rise over
+        // its remaining crossings. Refresh before giving individual strands a turn.
+        loop {
+            let before = self.stood.len();
+            let remaining = self.ribbon_plans(&cable_places, true);
+            self.attempt_plans(remaining);
+            if self.stood.len() == before {
+                break;
+            }
+        }
         self.attempt_plans(fallback);
     }
 
