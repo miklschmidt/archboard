@@ -33,13 +33,20 @@ test.each([
 	expect(crowdedArcs({ svg: HOP + verticalHop(top) })).toHaveLength(crowded);
 });
 
-test("a crosswise overlap with a shifted trunk copy counts once in either paint order", () => {
+test("a crosswise overlap with a shifted trunk copy counts once in every paint order", () => {
 	const copy = HOP.replace('id="over"', 'id="copy"')
 		.replaceAll(",50", ",51")
 		.replaceAll(",46.134", ",47.134")
 		.replaceAll(",43", ",44");
 	const vertical = verticalHop(50.5);
-	for (const svg of [HOP + copy + vertical, vertical + HOP + copy, copy + HOP + vertical]) {
+	for (const svg of [
+		HOP + copy + vertical,
+		HOP + vertical + copy,
+		copy + HOP + vertical,
+		copy + vertical + HOP,
+		vertical + HOP + copy,
+		vertical + copy + HOP,
+	]) {
 		const findings = crowdedArcs({ svg });
 		expect(findings).toHaveLength(1);
 		expect(findings[0]).toMatch(/\bcopy\b/u);
