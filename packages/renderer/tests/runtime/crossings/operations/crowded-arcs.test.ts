@@ -18,11 +18,38 @@ test("a junction behind the hop does not crowd its crest", () => {
 	expect(crowdedArcs({ svg: `${HOP}<g class="ab-junctions">${mark}</g>` })).toEqual([]);
 });
 
+/** A vertical arc whose top foot is at the supplied height. */
+function verticalHop(top: number): string {
+	return `<g data-semantic-kind="edge" data-semantic-id="vertical" data-arrowhead="none">
+<path d="M48,0 L48,${top} C51.866,${top} 55,${top + 3.134} 55,${top + 7} C55,${top + 10.866} 51.866,${top + 14} 48,${top + 14} L48,100"/>
+</g>`;
+}
+
+test.each([
+	[49, 1],
+	[50, 0],
+	[50 - 1e-9, 0],
+])("crosswise arc crowding at a vertical foot of %s", (top, crowded) => {
+	expect(crowdedArcs({ svg: HOP + verticalHop(top) })).toHaveLength(crowded);
+});
+
+test("a crosswise overlap with a shifted trunk copy counts once in either paint order", () => {
+	const copy = HOP.replace('id="over"', 'id="copy"')
+		.replaceAll(",50", ",51")
+		.replaceAll(",46.134", ",47.134")
+		.replaceAll(",43", ",44");
+	for (const trunk of [HOP + copy, copy + HOP]) {
+		expect(crowdedArcs({ svg: trunk + verticalHop(50.5) })).toHaveLength(1);
+	}
+	expect(crowdedArcs({ svg: HOP + copy + verticalHop(49) })).toHaveLength(1);
+});
+
+const crest = (from: number) =>
+	`C${from},46.13 ${from + 3.13},43 ${from + 7},43 L${from + 23},43 C${from + 26.87},43 ${from + 30},46.13 ${from + 30},50`;
+
 test("two crests on one line with a straight run between them read as two arcs", () => {
 	// One line hops twice under flat crests at y 43; another joins it before the second and
 	// shares that arc. The straight run between the crests is the line, not a third arc.
-	const crest = (from: number) =>
-		`C${from},46.13 ${from + 3.13},43 ${from + 7},43 L${from + 23},43 C${from + 26.87},43 ${from + 30},46.13 ${from + 30},50`;
 	const svg = `<g data-semantic-kind="edge" data-semantic-id="twice" data-arrowhead="none">
 <path d="M0,50 L10,50 ${crest(10)} L160,50 ${crest(160)} L200,50"/>
 </g>

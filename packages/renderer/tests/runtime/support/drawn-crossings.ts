@@ -5,12 +5,19 @@
 // so a reader sees which passes over. A crossing left plain, or a line cut
 // beneath another with no arc over the gap, reads as a join or a break. This
 // reads each route's own path, leaves out its arcs, and finds where the rest
-// of two routes' ink crosses. Two arcs side by side on one line, two arcs
-// facing each other across neighbouring lines, or an arc bulging into a
-// junction mark read as one knot.
+// of two routes' ink crosses. Side-by-side, facing and overlapping crosswise
+// arcs read as one knot, as does an arc bulging into a junction mark.
 
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import type { DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
+import {
+	ARC_SPACE,
+	STRAIGHT,
+	arcCrowding,
+	cornerOf,
+	type Box,
+	type DrawnArc,
+} from "#tests/runtime/support/drawn-arc-crowding.ts";
 import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
 
 /** One command of a route's path: a straight piece or a cubic curve. */
@@ -29,17 +36,8 @@ type Stretch = readonly [DrawnPoint, DrawnPoint];
 
 type DrawnRun = { readonly id: string; readonly stretch: Stretch };
 
-/** Engine coordinates carry floating noise, so a piece straight to the eye is straight here. */
-const STRAIGHT = 0.01;
-
 /** The chords a corner is read as, enough to find where a line crosses it. */
 const CORNER_CHORDS = 8;
-
-/** Routes this close across share one drawn line. */
-const SHARED_INK = 2;
-
-/** Clear space two arcs keep between them before they read as one knot. */
-const ARC_SPACE = 6;
 
 /** A crossing hop's radius in picture units. */
 const ARC_RADIUS = 7;
@@ -49,9 +47,6 @@ const CLUSTER_REACH = 2 * ARC_RADIUS + ARC_SPACE;
 
 /** The extra reach of a crest over several crossings. */
 const CREST_MARGIN = ARC_SPACE / 2;
-
-/** Clear space an arc keeps from a junction mark. */
-const MARK_SPACE = 3;
 
 /**
  * A route path's pieces. The renderer writes absolute `M`, `L` and `C` commands.
@@ -120,19 +115,6 @@ function arcPieces(pieces: readonly Piece[]): Set<number> {
 	}
 	return arcs;
 }
-
-/** One arc of a route: the line it leaves, which way it bulges, and its box. */
-type DrawnArc = {
-	readonly id: string;
-	readonly axis: "x" | "y";
-	readonly line: number;
-	readonly side: number;
-	readonly feet: Stretch;
-	readonly box: Box;
-};
-
-/** A box, by its low and high corners. */
-type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
 
 /**
  * The box around some points, widened by a mark's radius when given.
@@ -214,17 +196,6 @@ function junctionBoxes(svg: string): Box[] {
 			}
 		}
 	return boxes;
-}
-
-/**
- * How far apart two boxes lie: the larger of their gaps across and down, 0
- * where they overlap.
- * @param a A box.
- * @param b Another.
- * @returns The gap.
- */
-function gapOf(a: Box, b: Box): number {
-	return Math.max(0, b.x0 - a.x1, a.x0 - b.x1, b.y0 - a.y1, a.y0 - b.y1);
 }
 
 /**
@@ -331,75 +302,13 @@ function unbridgedCrossings(drawing: RenderedDiagram): string[] {
 }
 
 /**
- * Every place two arcs, or an arc and a junction mark, crowd each other: two
- * arcs side by side on one line, which one crest would draw; two arcs on
- * neighbouring lines bulging toward each other; an arc bulging into a
- * junction mark beside the line it passes over.
- * The routes of one trunk draw one arc each, and those count once.
+ * Every place two arcs, or an arc and a junction mark, crowd each other.
  * @param drawing The rendered document.
  * @returns Each such place, by what crowds and where.
  */
 function crowdedArcs(drawing: Pick<RenderedDiagram, "svg">): string[] {
-	const arcs: DrawnArc[] = [];
-	for (const arc of [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d))) {
-		const copy = arcs.some(
-			(other) =>
-				other.axis === arc.axis &&
-				Math.abs(other.line - arc.line) <= SHARED_INK &&
-				["x0", "y0", "x1", "y1"].every(
-					(corner) =>
-						Math.abs(other.box[corner as keyof Box] - arc.box[corner as keyof Box]) <=
-						SHARED_INK + STRAIGHT,
-				),
-		);
-		if (!copy) arcs.push(arc);
-	}
-	const found: string[] = [];
-	for (const [index, one] of arcs.entries())
-		for (const other of arcs.slice(index + 1)) {
-			if (one.axis !== other.axis) {
-				const overlap = Math.max(
-					other.box.x0 - one.box.x1,
-					one.box.x0 - other.box.x1,
-					other.box.y0 - one.box.y1,
-					one.box.y0 - other.box.y1,
-				);
-				if (overlap < 0)
-					found.push(`${one.id} and ${other.id} overlapping crosswise at ${cornerOf(one.box)}`);
-				continue;
-			}
-			if (gapOf(one.box, other.box) >= ARC_SPACE) continue;
-			const apart = other.line - one.line;
-			if (Math.abs(apart) <= SHARED_INK)
-				found.push(`${one.id} and ${other.id} side by side at ${cornerOf(one.box)}`);
-			else if (one.side === Math.sign(apart) && other.side === -one.side)
-				found.push(`${one.id} and ${other.id} facing at ${cornerOf(one.box)}`);
-		}
-	for (const box of junctionBoxes(drawing.svg)) {
-		const [x, y] = [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
-		for (const arc of arcs) {
-			const [along, beside, low, high] =
-				arc.axis === "x" ? [x, y, arc.box.x0, arc.box.x1] : [y, x, arc.box.y0, arc.box.y1];
-			const apart = beside - arc.line;
-			const into =
-				along > low &&
-				along < high &&
-				Math.abs(apart) > SHARED_INK &&
-				Math.sign(apart) === arc.side;
-			if (into && gapOf(arc.box, box) < MARK_SPACE)
-				found.push(`${arc.id} bulging into a junction at ${cornerOf(box)}`);
-		}
-	}
-	return found;
-}
-
-/**
- * A box's low corner, for a drawing diagnostic.
- * @param box The bounds of the ink.
- * @returns Its coordinates.
- */
-function cornerOf(box: Box): string {
-	return `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
+	const arcs = [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d));
+	return arcCrowding(arcs, junctionBoxes(drawing.svg));
 }
 
 /**
