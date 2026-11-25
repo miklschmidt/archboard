@@ -1,11 +1,16 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
-import { skillEvalMs } from "@archboard/timing";
+import { TimedOut } from "@archboard/timing";
+
+/** A short pause for test observations and the grace for a process that outlives TERM. */
+const TEST_POLL_MS = 100;
+/** Time for a local fixture command to start and publish its output. */
+const TEST_COMMAND_TIMEOUT_MS = 1_000;
 
 const env = { PATH: process.env["PATH"] ?? "" };
 const cwd = process.cwd();
@@ -22,7 +27,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["true"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 			});
 			expect(result.exitCode).toBe(0);
 		}
@@ -32,7 +37,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			argv: ["sh", "-c", "sleep 60 & echo $!; echo problem >&2; exit 7"],
 			cwd,
 			env,
-			timeoutMs: skillEvalMs("healthRequest"),
+			timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 		});
 		expect(result).toMatchObject({
 			exitCode: 7,
@@ -52,7 +57,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["sh", "-c", "sleep 60 & echo $!; wait"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 				signal: controller.signal,
 				onStdout: (chunk) => {
 					descendant = Number(chunk.trim());
@@ -82,7 +87,19 @@ describe("evaluation process ownership with local shell fakes", () => {
 			stdout: "pipe",
 			stderr: "ignore",
 		});
-		const owner = await ownProcess(child, skillEvalMs("healthPoll"));
+		const owner = await ownProcess(child);
+		// Each phase of the stop is shortened by name, so TERM's refusal costs a tenth of a second.
+		const schedule = globalThis.setTimeout;
+		globalThis.setTimeout = ((
+			handler: (...args: unknown[]) => void,
+			delay?: number,
+			...args: unknown[]
+		) =>
+			schedule(
+				handler,
+				args[0] === "skillEval.groupStop" ? TEST_POLL_MS : delay,
+				...args,
+			)) as typeof globalThis.setTimeout;
 		try {
 			const reader = child.stdout.getReader();
 			const { value } = await reader.read();
@@ -94,6 +111,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			expectStopped(child.pid);
 			expectStopped(descendant);
 		} finally {
+			globalThis.setTimeout = schedule;
 			await owner.stop();
 		}
 	});
@@ -107,7 +125,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 					argv: ["touch", output],
 					cwd,
 					env,
-					timeoutMs: skillEvalMs("healthRequest"),
+					timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 					signal: AbortSignal.abort(),
 				}),
 			).rejects.toBeInstanceOf(Error);
@@ -118,9 +136,10 @@ describe("evaluation process ownership with local shell fakes", () => {
 	});
 });
 
-test("cancelled server readiness stops the exact fake server and its inherited child", async () => {
+test("a parent timeout during the health probe stops the server and preserves the reason", async () => {
 	const root = mkdtempSync(path.join(tmpdir(), "skill-server-cancel-"));
 	const controller = new AbortController();
+	const cancelled = new TimedOut("server.mutationDrain");
 	const pids = path.join(root, "pids");
 	mkdirSync(path.join(root, "apps/server/src"), { recursive: true });
 	writeFileSync(
@@ -128,21 +147,32 @@ test("cancelled server readiness stops the exact fake server and its inherited c
 		`
 		const child = Bun.spawn(["sleep", "60"], { stdout: "ignore", stderr: "ignore" });
 		await Bun.write(${JSON.stringify(pids)}, JSON.stringify([process.pid, child.pid]));
-		Bun.serve({ port: Number(process.env.PORT), fetch() { return Response.json({ pid: 0 }); } });
+		Bun.serve({ port: Number(process.env.PORT), fetch() { return Response.json({ pid: process.pid }); } });
 	`,
 	);
-	let timer: ReturnType<typeof setInterval> | undefined;
+	const fetchHealth = globalThis.fetch;
+	const healthProbe = spyOn(globalThis, "fetch").mockImplementation(
+		Object.assign(
+			async (...args: Parameters<typeof fetchHealth>) => {
+				const response = await fetchHealth(...args);
+				if (response.ok) controller.abort(cancelled);
+				return response;
+			},
+			{ preconnect: fetchHealth.preconnect },
+		),
+	);
+	let server: Awaited<ReturnType<typeof startServer>> | undefined;
 	try {
-		timer = setInterval(() => {
-			if (existsSync(pids)) controller.abort();
-		}, skillEvalMs("healthPoll"));
 		await expect(
-			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal),
-		).rejects.toBeInstanceOf(Error);
+			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal).then(
+				(started) => (server = started),
+			),
+		).rejects.toBe(cancelled);
 		const identities: number[] = JSON.parse(readFileSync(pids, "utf8"));
 		identities.forEach(expectStopped);
 	} finally {
-		clearInterval(timer);
+		healthProbe.mockRestore();
+		await server?.stop();
 		rmSync(root, { recursive: true, force: true });
 	}
 });

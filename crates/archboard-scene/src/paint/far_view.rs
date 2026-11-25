@@ -28,7 +28,7 @@ fn placed(x: f64, y: f64, scale: f64) -> Transform {
     Transform {
         x: round_coord(x),
         y: round_coord(y),
-        scale: Some(scale),
+        scale,
     }
 }
 

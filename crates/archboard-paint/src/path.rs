@@ -1,6 +1,6 @@
 //! A scene's geometry as the paths a canvas takes.
 
-use archboard_scene::geometry::{Point, Rect, Segment};
+use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Cap, Geometry, Join, PathStep, Stroke};
 use std::borrow::Cow;
 
@@ -111,31 +111,20 @@ pub(crate) fn path_of(steps: &[PathStep]) -> BezPath {
     path
 }
 
-/// One piece of a route, added to a path.
-pub(crate) fn segment_onto(path: &mut BezPath, segment: &Segment) {
-    match *segment {
-        Segment::Line { to } => path.line_to(point_of(to)),
-        Segment::Cubic { first, second, to } => {
-            path.curve_to(point_of(first), point_of(second), point_of(to));
-        }
-    }
-}
-
 /// A geometry as a path, with the box a gradient or a clip measures it by.
 pub(crate) fn outline_of(geometry: &Geometry) -> (BezPath, kurbo::Rect) {
     let (path, bounds) = match geometry {
         Geometry::Rect { rect, radius } => {
             let plain = rect_of(rect);
-            let path = match radius {
-                Some(radius) if *radius > 0.0 => {
-                    kurbo::RoundedRect::from_rect(plain, *radius).to_path(TOLERANCE)
-                }
-                _ => plain.to_path(TOLERANCE),
+            let path = if *radius > 0.0 {
+                kurbo::RoundedRect::from_rect(plain, *radius).to_path(TOLERANCE)
+            } else {
+                plain.to_path(TOLERANCE)
             };
             (path, Some(plain))
         }
         Geometry::Circle { centre, radius } => {
-            let centre = centre.map_or(kurbo::Point::ZERO, point_of);
+            let centre = point_of(*centre);
             let circle = kurbo::Circle::new(centre, *radius);
             (circle.to_path(TOLERANCE), Some(circle.bounding_box()))
         }
@@ -162,21 +151,18 @@ pub(crate) fn straightened(path: &BezPath) -> BezPath {
 
 /// A stroke as a canvas takes it, its width times `scale`.
 pub(crate) fn stroke_of(stroke: &Stroke, scale: f64) -> kurbo::Stroke {
-    let mut drawn = kurbo::Stroke::new(stroke.width.unwrap_or(1.0) * scale)
+    let mut drawn = kurbo::Stroke::new(stroke.width * scale)
         .with_caps(match stroke.cap {
-            Some(Cap::Round) => kurbo::Cap::Round,
-            Some(Cap::Butt) | None => kurbo::Cap::Butt,
+            Cap::Round => kurbo::Cap::Round,
+            Cap::Butt => kurbo::Cap::Butt,
         })
         .with_join(match stroke.join {
-            Some(Join::Round) => kurbo::Join::Round,
-            None => kurbo::Join::Miter,
+            Join::Round => kurbo::Join::Round,
+            Join::Miter => kurbo::Join::Miter,
         })
         .with_miter_limit(MITER_LIMIT);
     if !stroke.dashes.is_empty() {
-        drawn = drawn.with_dashes(
-            stroke.dash_offset.unwrap_or(0.0),
-            stroke.dashes.iter().copied(),
-        );
+        drawn = drawn.with_dashes(stroke.dash_offset, stroke.dashes.iter().copied());
     }
     drawn
 }
@@ -206,8 +192,8 @@ pub(crate) fn end_of(path: &BezPath, start: bool) -> Option<(kurbo::Point, f64)>
 }
 
 /// The transform of one group: a move, and a scale inside it.
-pub(crate) fn placed(x: f64, y: f64, scale: Option<f64>) -> Affine {
-    Affine::translate((x, y)) * Affine::scale(scale.unwrap_or(1.0))
+pub(crate) fn placed(x: f64, y: f64, scale: f64) -> Affine {
+    Affine::translate((x, y)) * Affine::scale(scale)
 }
 
 /// How exactly a trim measures along a path, in the picture's units.
@@ -310,10 +296,7 @@ mod tests {
             width: 3.0,
             height: 4.0,
         };
-        let (_, bounds) = outline_of(&Geometry::Rect {
-            rect,
-            radius: Some(1.0),
-        });
+        let (_, bounds) = outline_of(&Geometry::Rect { rect, radius: 1.0 });
         assert_eq!(bounds, kurbo::Rect::new(1.0, 2.0, 4.0, 6.0));
     }
 

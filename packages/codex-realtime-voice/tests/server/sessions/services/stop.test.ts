@@ -1,6 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 
-import { codexSessionMs } from "@archboard/timing";
 import { createIdentityAuthorities, type TurnId } from "@archboard/codex-app-server/identity";
 import {
 	guardWorkhorse,
@@ -8,7 +7,6 @@ import {
 	stopReport,
 	stopWorkTree,
 	WorkhorseStopRefusal,
-	type WorkTreeStopClock,
 } from "#server/sessions/services/stop.ts";
 import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 import {
@@ -43,6 +41,14 @@ interface FakeThread {
 }
 
 /**
+ * Let time pass without a wait of the stop, as a slow read does.
+ * @param ms How long.
+ */
+function advance(ms: number): void {
+	jest.advanceTimersByTime(ms);
+}
+
+/**
  * A Codex that holds one work tree. An interrupt is acknowledged at once, and the turn reports
  * that it ended only when time passes, as turn/interrupt answers before turn/completed.
  */
@@ -53,7 +59,6 @@ function codexTree(threads: Record<string, FakeThread>) {
 	const onWait: (() => void)[] = [];
 	const onRead: (() => void)[] = [];
 	const onQueueRead: (() => void)[] = [];
-	let now = 0;
 	const descendants = (ancestor: string): string[] =>
 		Object.entries(threads)
 			.filter(([, thread]) => thread.parent !== null)
@@ -117,23 +122,34 @@ function codexTree(threads: Record<string, FakeThread>) {
 			return {} as never;
 		},
 	};
-	const clock: WorkTreeStopClock = {
-		now: () => now,
-		wait: async (ms) => {
-			now += ms;
-			for (const id of ending) threads[id]!.turn = null;
-			ending.clear();
-			onWait.shift()?.();
-		},
+	/** Time passes between two passes of the stop: Codex ends the turns it was asked to. */
+	const passTime = (): void => {
+		for (const id of ending) threads[id]!.turn = null;
+		ending.clear();
+		onWait.shift()?.();
 	};
 	/**
-	 * Let time pass without a wait of the stop, as a slow read does.
-	 * @param ms How long.
+	 * Run a stop on the fake clock: each timer it waits on fires in turn, and time passes for
+	 * Codex between two passes.
+	 * @param stopping The stop.
+	 * @returns What it observed.
 	 */
-	const advance = (ms: number): void => {
-		now += ms;
+	const drive = async <T>(stopping: Promise<T>): Promise<T> => {
+		const seen = { done: false };
+		void stopping.then(
+			() => (seen.done = true),
+			() => (seen.done = true),
+		);
+		for (let step = 0; step < 10_000; step++) {
+			// One turn of the loop lets every promise the last timer released settle.
+			await new Promise((resolve) => setImmediate(resolve));
+			if (seen.done) break;
+			jest.advanceTimersToNextTimer();
+			passTime();
+		}
+		return stopping;
 	};
-	return { session, clock, calls, threads, failing, onWait, onRead, onQueueRead, advance };
+	return { session, calls, threads, failing, onWait, onRead, onQueueRead, advance, drive };
 }
 
 /** The workhorse of one checkout, whose thread is the root of the tree. */
@@ -153,6 +169,12 @@ function workhorseOn(root: string | null): CodexWorkbenchWorkhorse {
 
 const COORDINATOR_TURN = decoder.adoptTurnId("coordinator-turn") as TurnId;
 
+/** The reviewed time a stop observes its work tree, which timing pins. */
+const WORK_TREE_STOP_MS = 5000;
+
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
+
 describe("the work tree stop", () => {
 	test("stops the workhorse, every nested sub-agent and every queued request, and succeeds only on a read after the interrupts", async () => {
 		const codex = codexTree({
@@ -160,7 +182,7 @@ describe("the work tree stop", () => {
 			child: { parent: "root", turn: "child-turn", queue: [] },
 			grandchild: { parent: "child", turn: "grandchild-turn", queue: ["queued-2"] },
 		});
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 
 		expect(stop).toEqual({ checkout: "/work/payments", outcome: "stopped", remaining: [] });
 		expect(codex.calls).toEqual([
@@ -180,7 +202,7 @@ describe("the work tree stop", () => {
 		codex.onWait.push(() => {
 			codex.threads["root"]!.turn = "mailbox-turn";
 		});
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 
 		expect(stop.outcome).toBe("stopped");
 		expect(codex.calls).toEqual([
@@ -195,13 +217,14 @@ describe("the work tree stop", () => {
 			root: { parent: null, turn: "root-turn", queue: [] },
 			child: { parent: "root", turn: "child-turn", queue: [], ignoresInterrupt: true },
 		});
-		const partial = await stopWorkTree(workhorseOn("root"), stuck.session, null, stuck.clock);
+		const started = Date.now();
+		const partial = await stuck.drive(stopWorkTree(workhorseOn("root"), stuck.session, null));
 		expect(partial).toEqual({
 			checkout: "/work/payments",
 			outcome: "partial",
 			remaining: [{ threadId: decoder.adoptThreadId("child"), state: "running" }],
 		});
-		expect(stuck.clock.now()).toBeGreaterThanOrEqual(codexSessionMs("workTreeStopSettle"));
+		expect(Date.now() - started).toBeGreaterThanOrEqual(WORK_TREE_STOP_MS);
 		// An acknowledged interrupt is sent once per turn and never counts as an end.
 		expect(stuck.calls.filter((call) => call === "interrupt child/child-turn")).toHaveLength(1);
 
@@ -209,7 +232,7 @@ describe("the work tree stop", () => {
 		const nameless = codexTree({
 			root: { parent: null, turn: "root-turn", queue: [], hidesTurn: true },
 		});
-		expect(await stopWorkTree(workhorseOn("root"), nameless.session, null, nameless.clock)).toEqual(
+		expect(await nameless.drive(stopWorkTree(workhorseOn("root"), nameless.session, null))).toEqual(
 			{
 				checkout: "/work/payments",
 				outcome: "partial",
@@ -222,7 +245,7 @@ describe("the work tree stop", () => {
 		const unreadable = codexTree({ root: { parent: null, turn: "root-turn", queue: [] } });
 		unreadable.failing.add("read");
 		expect(
-			await stopWorkTree(workhorseOn("root"), unreadable.session, null, unreadable.clock),
+			await unreadable.drive(stopWorkTree(workhorseOn("root"), unreadable.session, null)),
 		).toEqual({
 			checkout: "/work/payments",
 			outcome: "unconfirmed",
@@ -231,7 +254,7 @@ describe("the work tree stop", () => {
 
 		const unlisted = codexTree({ root: { parent: null, turn: null, queue: [] } });
 		unlisted.failing.add("list");
-		expect(await stopWorkTree(workhorseOn("root"), unlisted.session, null, unlisted.clock)).toEqual(
+		expect(await unlisted.drive(stopWorkTree(workhorseOn("root"), unlisted.session, null))).toEqual(
 			{
 				checkout: "/work/payments",
 				outcome: "unconfirmed",
@@ -242,12 +265,12 @@ describe("the work tree stop", () => {
 
 	test("reports a workhorse with nothing running or waiting as idle, and sends nothing", async () => {
 		const codex = codexTree({ root: { parent: null, turn: null, queue: [] } });
-		expect(await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock)).toEqual({
+		expect(await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null))).toEqual({
 			checkout: "/work/payments",
 			outcome: "idle",
 			remaining: [],
 		});
-		expect(await stopWorkTree(workhorseOn(null), codex.session, null, codex.clock)).toEqual({
+		expect(await codex.drive(stopWorkTree(workhorseOn(null), codex.session, null))).toEqual({
 			checkout: "/work/payments",
 			outcome: "idle",
 			remaining: [],
@@ -268,9 +291,9 @@ describe("the work tree stop", () => {
 			}
 			expect(stopReport(workhorse)).toEqual({ outcome: "stopping", remaining: [] });
 		});
-		const first = stopWorkTree(workhorse, codex.session, COORDINATOR_TURN, codex.clock);
+		const first = stopWorkTree(workhorse, codex.session, COORDINATOR_TURN);
 		// A second stop while the first runs answers with the first one's result.
-		expect(await stopWorkTree(workhorse, codex.session, null, codex.clock)).toBe(await first);
+		expect(await codex.drive(stopWorkTree(workhorse, codex.session, null))).toBe(await first);
 		expect(refusals.every((refusal) => refusal instanceof WorkhorseStopRefusal)).toBe(true);
 		expect(catching(() => refuseWhileStopping(workhorse, null))).toBeInstanceOf(
 			WorkhorseStopRefusal,
@@ -280,7 +303,7 @@ describe("the work tree stop", () => {
 		codex.threads["child"]!.ignoresInterrupt = false;
 		codex.threads["child"]!.turn = "child-turn-2";
 		expect(
-			(await stopWorkTree(workhorse, codex.session, COORDINATOR_TURN, codex.clock)).outcome,
+			(await codex.drive(stopWorkTree(workhorse, codex.session, COORDINATOR_TURN))).outcome,
 		).toBe("stopped");
 		expect(catching(() => refuseWhileStopping(workhorse, COORDINATOR_TURN))).toBeInstanceOf(
 			WorkhorseStopRefusal,
@@ -353,7 +376,7 @@ describe("the work tree stop", () => {
 		const codex = codexTree({
 			root: { parent: null, turn: null, queue: ["queued-1"], startsOnQueueRead: true },
 		});
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 		expect(stop.outcome).toBe("stopped");
 		expect(codex.calls).toEqual(["interrupt root/queued-1"]);
 	});
@@ -365,7 +388,7 @@ describe("the work tree stop", () => {
 			root.queue.push("late-1");
 			root.startsOnQueueRead = true;
 		});
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 		expect(stop.outcome).toBe("stopped");
 		expect(codex.calls).toEqual(["interrupt root/late-1"]);
 	});
@@ -374,8 +397,8 @@ describe("the work tree stop", () => {
 		const codex = codexTree({
 			root: { parent: null, turn: "root-turn", queue: ["queued-1"], ignoresInterrupt: true },
 		});
-		codex.onRead.push(() => codex.advance(codexSessionMs("workTreeStopSettle")));
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		codex.onRead.push(() => codex.advance(WORK_TREE_STOP_MS));
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 		expect(stop.outcome).toBe("partial");
 		expect(codex.calls).toEqual(["delete queued-1", "interrupt root/root-turn"]);
 	});
@@ -388,7 +411,7 @@ describe("the work tree stop", () => {
 			]),
 		);
 		const codex = codexTree({ root: { parent: null, turn: null, queue: [] }, ...children });
-		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		const stop = await codex.drive(stopWorkTree(workhorseOn("root"), codex.session, null));
 		expect(stop.outcome).toBe("partial");
 		expect(stop.remaining).toHaveLength(REMAINING_WORK_LIMIT);
 	});
@@ -396,15 +419,15 @@ describe("the work tree stop", () => {
 	test("keeps every asking coordinator turn refused across a joined stop and a later Stop control", async () => {
 		const codex = codexTree({ root: { parent: null, turn: "root-turn", queue: [] } });
 		const workhorse = workhorseOn("root");
-		const control = stopWorkTree(workhorse, codex.session, null, codex.clock);
-		await stopWorkTree(workhorse, codex.session, COORDINATOR_TURN, codex.clock);
+		const control = codex.drive(stopWorkTree(workhorse, codex.session, null));
+		await codex.drive(stopWorkTree(workhorse, codex.session, COORDINATOR_TURN));
 		expect((await control).outcome).toBe("stopped");
 		expect(catching(() => refuseWhileStopping(workhorse, COORDINATOR_TURN))).toBeInstanceOf(
 			WorkhorseStopRefusal,
 		);
 
 		codex.threads["root"]!.turn = "restarted-turn";
-		await stopWorkTree(workhorse, codex.session, null, codex.clock);
+		await codex.drive(stopWorkTree(workhorse, codex.session, null));
 		expect(catching(() => refuseWhileStopping(workhorse, COORDINATOR_TURN))).toBeInstanceOf(
 			WorkhorseStopRefusal,
 		);
@@ -430,7 +453,7 @@ describe("the work tree stop", () => {
 		const delegated = built.components.operations.delegate({
 			call: { turnId: decoder.adoptTurnId("earlier-turn") },
 		} as never);
-		const stopping = stopWorkTree(workhorse, codex.session, null, codex.clock);
+		const stopping = codex.drive(stopWorkTree(workhorse, codex.session, null));
 		gate.resolve();
 		await delegated;
 		expect((await stopping).outcome).toBe("stopped");

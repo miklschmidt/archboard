@@ -86,8 +86,6 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param activity The snapshot.
 	 */
 	onAgentActivity?: (vault: string, activity: readonly AgentActivityEntry[]) => void;
-	/** A checkout was chosen somewhere, so the repositories are worth reading again. */
-	onRepositoriesChanged?: () => void;
 	/** Temporary explanation progress changed in this tab. */
 	onExplanationsChanged?: () => void;
 	/**

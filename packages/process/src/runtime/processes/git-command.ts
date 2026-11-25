@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
+import { pollUntil, TimedOut, within } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -28,16 +28,11 @@ import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.t
  * @returns True when the group disappeared in time.
  */
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadline = gitGroupCleanupDeadline(Date.now());
-	for (;;) {
-		if (!processGroupExists(pgid)) {
-			return true;
-		}
-		if (Date.now() >= deadline) {
-			return false;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
-		await new Promise((resolve) => setTimeout(resolve, gitMs("groupPoll")));
+	try {
+		return await pollUntil("git.groupGone", () => (processGroupExists(pgid) ? undefined : true));
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
 }
 
@@ -158,28 +153,17 @@ interface RunHandles {
  * @returns Every outcome, in order.
  */
 async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
-	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+	const complete = Promise.all([handles.exited, handles.stdout.result, handles.stderr.result]);
+	const raced = await Promise.race([complete, run.terminationSignal.then(() => null)]);
+	if (raced !== null) return raced;
 	try {
-		const complete = Promise.all([handles.exited, handles.stdout.result, handles.stderr.result]);
-		const cleanupExpired = run.terminationSignal.then(
-			() =>
-				new Promise<null>((resolve) => {
-					cleanupTimer = setTimeout(() => resolve(null), gitMs("groupCleanup"));
-				}),
-		);
-		const raced = await Promise.race([complete, cleanupExpired]);
-		if (raced !== null) {
-			return raced;
-		}
-		const cancellation = new Error("Git process-group cleanup exceeded its grace.");
-		run.termination ??= { failure: "cleanup", cause: cancellation };
-		await Promise.all([handles.stdout.cancel(cancellation), handles.stderr.cancel(cancellation)]);
-		return await complete;
-	} finally {
-		if (cleanupTimer !== undefined) {
-			clearTimeout(cleanupTimer);
-		}
+		return await within("git.groupCleanup", () => complete);
+	} catch (error) {
+		if (!(error instanceof TimedOut) || error.wait !== "git.groupCleanup") throw error;
+		run.termination ??= { failure: "cleanup", cause: error };
+		await Promise.all([handles.stdout.cancel(error), handles.stderr.cancel(error)]);
 	}
+	return complete;
 }
 
 /**
@@ -347,27 +331,42 @@ function startCommand(cwd: string, args: readonly string[], options: GitOptions)
 }
 
 /**
- * Wait for the command to settle, under a timeout and the caller's own
- * cancellation, taking both back down whichever way it ends.
+ * Bound the running command, and wait for termination to settle if the bound expires.
+ * @param command The running command.
+ * @param timeoutMs An override of the command bound, or null to wait without one.
+ * @returns Every outcome.
+ */
+async function settleWithinCommandLimit(
+	command: RunningCommand,
+	timeoutMs: GitOptions["timeoutMs"],
+): Promise<Settled> {
+	const settled = settleRun(command.run, command.handles);
+	if (timeoutMs === null) return await settled;
+	try {
+		return await within("git.commandRun", () => settled, { ms: timeoutMs });
+	} catch (error) {
+		if (!(error instanceof TimedOut) || error.wait !== "git.commandRun") throw error;
+		command.run.terminate("timeout", error);
+		return await settled;
+	}
+}
+
+/**
+ * While the command settles, listen for the caller to cancel it.
  * @param command The running command.
  * @param options The timeout, and the caller's signal.
  * @returns Every outcome.
  */
 async function settleWithLimits(command: RunningCommand, options: GitOptions): Promise<Settled> {
 	const { run } = command;
-	const timeout =
-		options.timeoutMs === null
-			? undefined
-			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? gitMs("command"));
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");
 	};
 	options.signal?.addEventListener("abort", abort, { once: true });
 	try {
-		return await settleRun(run, command.handles);
+		return await settleWithinCommandLimit(command, options.timeoutMs);
 	} finally {
-		clearTimeout(timeout);
 		options.signal?.removeEventListener("abort", abort);
 	}
 }

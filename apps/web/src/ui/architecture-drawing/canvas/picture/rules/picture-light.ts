@@ -1,7 +1,7 @@
 // How a picture stands in the light, as the painter reads it. The marks say
 // what is lit, and this says how strongly each part of the picture shows.
 
-import { exploringMs, presentationMs, reachHopDelayMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 
 /** How strongly the picture lights a poked part's connections. */
 type ProbeMode = "pick" | "hover";
@@ -31,6 +31,16 @@ interface LightState {
 }
 
 /**
+ * How long a part that a trace reaches waits before it lights: one hop's wait for each hop beyond
+ * the first, so what a part reaches lights outward from it, nearest first.
+ * @param hops How many hops away the part is, 1 for a direct neighbour.
+ * @returns The wait, in milliseconds.
+ */
+function reachDelay(hops: number): number {
+	return (hops - 1) * ms("exploring.reachHop");
+}
+
+/**
  * How one lit subject shows.
  * @param hops How many hops from the part it is, 1 for what the part touches.
  * @returns Its opacity, and how long it waits to show so.
@@ -39,7 +49,7 @@ function shineOf(hops: number): { opacity: number; delay: number } {
 	const grade = Math.min(hops, REACH.length + 1);
 	return grade < 2
 		? { opacity: 1, delay: 0 }
-		: { opacity: REACH[grade - 2] ?? 1, delay: reachHopDelayMs(grade) };
+		: { opacity: REACH[grade - 2] ?? 1, delay: reachDelay(grade) };
 }
 
 /**
@@ -49,16 +59,16 @@ function shineOf(hops: number): { opacity: number; delay: number } {
  */
 function restOf(state: LightState): { rest: number; labels: number; duration: number } {
 	if (state.veiled && state.presenting) {
-		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: presentationMs("step") };
+		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: ms("presentation.step") };
 	}
 	if (state.veiled) return { rest: QUIET_VEIL, labels: QUIET_VEIL, duration: 0 };
 	if (state.probing === null) {
-		return { rest: 1, labels: 1, duration: exploringMs("lightingFade") };
+		return { rest: 1, labels: 1, duration: ms("exploring.lightingFade") };
 	}
 	return {
 		rest: RECEDE[state.probing],
 		labels: QUIET_VEIL,
-		duration: exploringMs("lightingFade"),
+		duration: ms("exploring.lightingFade"),
 	};
 }
 
@@ -81,4 +91,4 @@ function pictureLight(state: LightState) {
 	};
 }
 
-export { pictureLight, type LightState, type ProbeMode };
+export { pictureLight, reachDelay, type LightState, type ProbeMode };

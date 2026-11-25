@@ -4,49 +4,68 @@
 //! repeating gradient that slides by one spacing every spacing's time; a
 //! message's pulse crosses its line once in every turn of the shared clock.
 
-use archboard_scene::geometry::{Segment, round_coord};
+use archboard_scene::geometry::{Point, round_coord};
 use archboard_scene::js;
-use archboard_scene::scene::traffic::{
-    body_stops, longest_tail, pulse_breadth, pulse_reach, pulse_span, pulse_tail, train_shift,
-    turn_entry, turn_moment, turn_slide, with_light_room,
+use archboard_scene::scene::{
+    BeamGradient, BeamPiece, Frame, MaskLayer, PathStep, Slide, TrafficMark,
 };
-use archboard_scene::scene::{Motion, PulseLook, TrafficMark};
 
 use crate::css::css;
-use crate::legs::{Leg, leg_path, legs_of};
+use crate::path::{Spelling, path_data};
 use crate::xml::{Attributes, close, coord, empty, open};
 
 /// The class every moving mark carries, for the stylesheet to hide it from a
 /// reader who asked for less motion.
 pub(crate) const PULSE_CLASS: &str = "ab-pulse";
 
-/// How a pulse falls off across its line: how much wider than its core each
-/// layer of the glow is, and how much light it lets through.
-const GLOW: [(f64, f64); 4] = [(6.0, 0.07), (3.4, 0.2), (1.3, 0.5), (0.0, 0.9)];
-const HALO_OVER: f64 = 1.0;
-const TAIL_CURVE: f64 = 2.3;
-const TAIL_LIGHT: f64 = 0.6;
-const TAIL_STEPS: u32 = 9;
-const BAR_ROOM: f64 = 1.0;
-
-/// How high a bar must be to cover its piece's mask.
-fn bar_height(leg: &Leg, core: f64) -> f64 {
-    core + GLOW[0].0 + 2.0 * leg.sag + 2.0 * BAR_ROOM
+/// A box as the markup spells it: x, y, width and height.
+fn box_of(piece: &BeamPiece) -> [String; 4] {
+    let bounds = piece.bounds;
+    [
+        coord(bounds.x),
+        coord(bounds.y),
+        coord(bounds.width),
+        coord(bounds.height),
+    ]
 }
 
-/// The box the light of a piece stays inside, spelt as the markup spells it.
-fn box_of(leg: &Leg, core: f64) -> [String; 4] {
-    let reach = with_light_room(f64::midpoint(core, GLOW[0].0));
-    let mut points = vec![leg.from, leg.segment.to()];
-    if let Segment::Cubic { first, second, .. } = leg.segment {
-        points.push(first);
-        points.push(second);
-    }
-    let x0 = js::min(points.iter().map(|point| point.x)) - reach;
-    let y0 = js::min(points.iter().map(|point| point.y)) - reach;
-    let width = js::max(points.iter().map(|point| point.x)) + reach - x0;
-    let height = js::max(points.iter().map(|point| point.y)) + reach - y0;
-    [coord(x0), coord(y0), coord(width), coord(height)]
+/// A mask layer's path as path data, each point rounded as a coordinate.
+fn layer_path(layer: &MaskLayer) -> String {
+    let at = |point: Point| Point {
+        x: round_coord(point.x),
+        y: round_coord(point.y),
+    };
+    let steps: Vec<PathStep> = layer
+        .path
+        .iter()
+        .map(|step| match *step {
+            PathStep::Move { to } => PathStep::Move { to: at(to) },
+            PathStep::Line { to } => PathStep::Line { to: at(to) },
+            PathStep::Cubic { first, second, to } => PathStep::Cubic {
+                first: at(first),
+                second: at(second),
+                to: at(to),
+            },
+            other => other,
+        })
+        .collect();
+    path_data(&steps, Spelling::Route)
+}
+
+/// The frame a piece is drawn in, as a transform.
+fn frame_of(frame: &Frame) -> String {
+    let angle = (frame.angle * 180.0) / std::f64::consts::PI;
+    let scaled = if (frame.stretch - 1.0).abs() < 1e-4 {
+        String::new()
+    } else {
+        format!(" scale({} 1)", js::fixed_number(frame.stretch, 5))
+    };
+    format!(
+        "translate({} {}) rotate({}){scaled}",
+        coord(frame.origin.x),
+        coord(frame.origin.y),
+        js::fixed_number(angle, 3)
+    )
 }
 
 /// Seven characters of FNV-1a over some markup's UTF-16 code units, in base 36.
@@ -65,8 +84,8 @@ struct Defined {
 }
 
 /// The clip that keeps the light of a piece inside the box of its mask.
-fn clip_of(leg: &Leg, core: f64) -> Defined {
-    let [x, y, width, height] = box_of(leg, core);
+fn clip_of(piece: &BeamPiece) -> Defined {
+    let [x, y, width, height] = box_of(piece);
     let mut attributes = Attributes::new();
     attributes
         .set("x", x)
@@ -83,30 +102,22 @@ fn clip_of(leg: &Leg, core: f64) -> Defined {
 }
 
 /// The mask that lets a beam through only where a piece of the route is.
-fn mask_of(leg: &Leg, core: f64) -> Defined {
-    let joined = leg_path(leg, true);
-    let exact = leg_path(leg, false);
-    let [x, y, width, height] = box_of(leg, core);
-    let layers: String = GLOW
+fn mask_of(piece: &BeamPiece) -> Defined {
+    let [x, y, width, height] = box_of(piece);
+    let layers: String = piece
+        .mask
         .iter()
-        .map(|(over, light)| {
+        .map(|layer| {
             let mut attributes = Attributes::new();
             attributes
-                .set(
-                    "d",
-                    if *over > HALO_OVER {
-                        exact.as_str()
-                    } else {
-                        joined.as_str()
-                    },
-                )
+                .set("d", layer_path(layer))
                 .set("fill", "none")
                 .set("stroke", "#ffffff")
-                .set("stroke-width", js::fixed_number(core + over, 2))
-                .set("stroke-opacity", *light);
-            let mut layer = String::new();
-            empty("path", &attributes, &mut layer);
-            layer
+                .set("stroke-width", js::fixed_number(layer.width, 2))
+                .set("stroke-opacity", layer.light);
+            let mut markup = String::new();
+            empty("path", &attributes, &mut markup);
+            markup
         })
         .collect();
     let markup = format!(
@@ -120,38 +131,25 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
 }
 
 /// The gradient a pulse is painted with, along one axis, its front at the far end.
-fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined {
-    let reach = pulse_reach(tail);
-    let head = css(&look.head);
-    let hot = css(&look.hot);
-    let stop = |behind: f64, colour: &str, light: f64| {
-        let mut attributes = Attributes::new();
-        attributes
-            .set("offset", js::fixed_number((span - behind) / span, 4))
-            .set("stop-color", colour)
-            .set("stop-opacity", js::fixed_number(light, 3));
-        let mut stop = String::new();
-        empty("stop", &attributes, &mut stop);
-        stop
-    };
-    let mut stops = String::new();
-    if tail >= 1.0 {
-        for step in 0..TAIL_STEPS {
-            let share = f64::from(step) / f64::from(TAIL_STEPS);
-            stops.push_str(&stop(
-                reach - tail * share,
-                &head,
-                TAIL_LIGHT * js::pow(share, TAIL_CURVE),
-            ));
-        }
-    }
-    for (behind, is_hot, light) in body_stops(TAIL_LIGHT) {
-        stops.push_str(&stop(behind, if is_hot { &hot } else { &head }, light));
-    }
+fn gradient_of(gradient: &BeamGradient) -> Defined {
+    let stops: String = gradient
+        .stops
+        .iter()
+        .map(|stop| {
+            let mut attributes = Attributes::new();
+            attributes
+                .set("offset", js::fixed_number(stop.offset, 4))
+                .set("stop-color", css(&stop.colour))
+                .set("stop-opacity", js::fixed_number(stop.opacity, 3));
+            let mut markup = String::new();
+            empty("stop", &attributes, &mut markup);
+            markup
+        })
+        .collect();
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
-        js::fixed_number(span, 4),
-        if repeat {
+        js::fixed_number(gradient.span, 4),
+        if gradient.repeat {
             " spreadMethod=\"repeat\""
         } else {
             ""
@@ -174,43 +172,76 @@ fn ratio(value: f64) -> String {
     js::to_fixed(js::js_min(js::js_max(value, 0.0), 1.0), 6)
 }
 
-/// How one piece's bar sits in the piece's frame, and what it is painted with.
-struct Bar<'a> {
-    mask: &'a str,
-    clip: &'a str,
-    gradient: &'a str,
-    shift: f64,
-    from: f64,
-    width: f64,
-    height: f64,
-    motion: &'a Attributes,
+/// A bar's slide as an animation of its transform.
+fn motion_of(slide: &Slide) -> Attributes {
+    let mut motion = Attributes::new();
+    motion
+        .set("attributeName", "transform")
+        .set("type", "translate");
+    match *slide {
+        Slide::Loop { length, speed } => {
+            motion
+                .set("from", "0 0")
+                .set("to", format!("{} 0", js::fixed_number(length, 4)))
+                .set("dur", timecount(length / speed));
+        }
+        Slide::Pass {
+            cycle,
+            enter,
+            leave,
+            from,
+            to,
+        } => {
+            let values = [from, from, to, to]
+                .iter()
+                .map(|x| format!("{} 0", js::fixed_number(*x, 2)))
+                .collect::<Vec<_>>()
+                .join(";");
+            let times = [
+                "0".to_owned(),
+                ratio(enter / cycle),
+                ratio(leave / cycle),
+                "1".to_owned(),
+            ]
+            .join(";");
+            motion
+                .set("values", values)
+                .set("keyTimes", times)
+                .set("dur", timecount(cycle));
+        }
+    }
+    motion
+        .set("repeatCount", "indefinite")
+        .set("calcMode", "linear");
+    motion
 }
 
 /// One piece of a pulse: the mask, the clip inside it, and the bar that slides behind them.
-fn leg_markup(leg: &Leg, bar: &Bar<'_>) -> String {
-    let shift = if bar.shift == 0.0 {
+fn piece_markup(piece: &BeamPiece, mask: &str, clip: &str, gradient: &str) -> String {
+    let rest = if piece.rest == 0.0 {
         String::new()
     } else {
-        format!(" translate({} 0)", js::fixed_number(bar.shift, 2))
+        format!(" translate({} 0)", js::fixed_number(piece.rest, 2))
     };
     let mut out = String::new();
     let mut masked = Attributes::new();
-    masked.set("mask", format!("url(#{})", bar.mask));
+    masked.set("mask", format!("url(#{mask})"));
     open("g", &masked, &mut out);
     let mut clipped = Attributes::new();
-    clipped.set("clip-path", format!("url(#{})", bar.clip));
+    clipped.set("clip-path", format!("url(#{clip})"));
     open("g", &clipped, &mut out);
     let mut framed = Attributes::new();
-    framed.set("transform", format!("{}{shift}", leg.frame));
+    framed.set("transform", format!("{}{rest}", frame_of(&piece.frame)));
     open("g", &framed, &mut out);
+    let bar = piece.bar;
     let mut rect = Attributes::new();
-    rect.set("x", js::fixed_number(bar.from, 2))
-        .set("y", js::fixed_number(-bar.height / 2.0, 2))
+    rect.set("x", js::fixed_number(bar.x, 2))
+        .set("y", js::fixed_number(bar.y, 2))
         .set("width", js::fixed_number(bar.width, 2))
         .set("height", js::fixed_number(bar.height, 2))
-        .set("fill", format!("url(#{})", bar.gradient));
+        .set("fill", format!("url(#{gradient})"));
     open("rect", &rect, &mut out);
-    empty("animateTransform", bar.motion, &mut out);
+    empty("animateTransform", &motion_of(&piece.slide), &mut out);
     close("rect", &mut out);
     close("g", &mut out);
     close("g", &mut out);
@@ -218,151 +249,32 @@ fn leg_markup(leg: &Leg, bar: &Bar<'_>) -> String {
     out
 }
 
-/// A pulse as a group: its gradient and the masks and clips of its pieces, then the pieces.
-fn pulse_group(gradient: &Defined, pieces: &[(Defined, Defined, String)], out: &mut String) {
+/// One train of pulses written as SVG: a group that holds its gradient and the
+/// masks and clips of its pieces, then the pieces.
+pub(crate) fn write_traffic(mark: &TrafficMark, out: &mut String) {
+    let beam = mark.beam();
+    let gradient = gradient_of(&beam.gradient);
+    let pieces: Vec<(Defined, Defined, String)> = beam
+        .pieces
+        .iter()
+        .map(|piece| {
+            let mask = mask_of(piece);
+            let clip = clip_of(piece);
+            let markup = piece_markup(piece, &mask.id, &clip.id, &gradient.id);
+            (mask, clip, markup)
+        })
+        .collect();
     out.push_str("<g class=\"");
     out.push_str(PULSE_CLASS);
     out.push_str("\" pointer-events=\"none\"><defs>");
     out.push_str(&gradient.markup);
-    for (mask, clip, _) in pieces {
+    for (mask, clip, _) in &pieces {
         out.push_str(&mask.markup);
         out.push_str(&clip.markup);
     }
     out.push_str("</defs>");
-    for (_, _, markup) in pieces {
+    for (_, _, markup) in &pieces {
         out.push_str(markup);
     }
     out.push_str("</g>");
-}
-
-/// A line's traffic: a steady train of pulses `spacing` apart flying at `speed`.
-fn steady_pulses(
-    look: &PulseLook,
-    legs: &[Leg],
-    speed: f64,
-    spacing: f64,
-    phase: f64,
-    out: &mut String,
-) {
-    let period = round_coord(spacing);
-    let core = pulse_breadth(look.line_width);
-    let gradient = gradient_of(look, period, pulse_tail(period), true);
-    let mut motion = Attributes::new();
-    motion
-        .set("attributeName", "transform")
-        .set("type", "translate")
-        .set("from", "0 0")
-        .set("to", format!("{} 0", js::fixed_number(period, 4)))
-        .set("dur", timecount(period / speed))
-        .set("repeatCount", "indefinite")
-        .set("calcMode", "linear");
-    let pieces: Vec<(Defined, Defined, String)> = legs
-        .iter()
-        .map(|leg| {
-            let mask = mask_of(leg, core);
-            let clip = clip_of(leg, core);
-            let markup = leg_markup(
-                leg,
-                &Bar {
-                    mask: &mask.id,
-                    clip: &clip.id,
-                    gradient: &gradient.id,
-                    shift: train_shift(phase, leg.along, period),
-                    from: -period - 1.0,
-                    width: leg.length + 2.0 * period + 2.0,
-                    height: bar_height(leg, core),
-                    motion: &motion,
-                },
-            );
-            (mask, clip, markup)
-        })
-        .collect();
-    pulse_group(&gradient, &pieces, out);
-}
-
-/// How a message's bar slides along one piece of its route.
-fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Attributes {
-    let slide_at = |time: f64| turn_slide(time, start, speed, leg.along);
-    let from = js::js_max(0.0, turn_entry(start, speed, leg.along));
-    let to = js::js_min(
-        cycle,
-        turn_moment(leg.length + 1.0, start, speed, leg.along),
-    );
-    let slides = [slide_at(from), slide_at(from), slide_at(to), slide_at(to)];
-    let values = slides
-        .iter()
-        .map(|x| format!("{} 0", js::fixed_number(*x, 2)))
-        .collect::<Vec<_>>()
-        .join(";");
-    let times = [
-        "0".to_owned(),
-        ratio(from / cycle),
-        ratio(to / cycle),
-        "1".to_owned(),
-    ]
-    .join(";");
-    let mut motion = Attributes::new();
-    motion
-        .set("attributeName", "transform")
-        .set("type", "translate")
-        .set("values", values)
-        .set("keyTimes", times)
-        .set("dur", timecount(cycle))
-        .set("repeatCount", "indefinite")
-        .set("calcMode", "linear");
-    motion
-}
-
-/// A message's pulse: one that crosses its line once in every turn of the clock.
-fn turn_pulse(
-    look: &PulseLook,
-    legs: &[Leg],
-    speed: f64,
-    cycle: f64,
-    start: f64,
-    out: &mut String,
-) {
-    let core = pulse_breadth(look.line_width);
-    let span = pulse_span();
-    let gradient = gradient_of(look, span, longest_tail(), false);
-    let pieces: Vec<(Defined, Defined, String)> = legs
-        .iter()
-        .map(|leg| {
-            let mask = mask_of(leg, core);
-            let clip = clip_of(leg, core);
-            let motion = slide_of(leg, speed, cycle, start);
-            let markup = leg_markup(
-                leg,
-                &Bar {
-                    mask: &mask.id,
-                    clip: &clip.id,
-                    gradient: &gradient.id,
-                    shift: 0.0,
-                    from: 0.0,
-                    width: span,
-                    height: bar_height(leg, core),
-                    motion: &motion,
-                },
-            );
-            (mask, clip, markup)
-        })
-        .collect();
-    pulse_group(&gradient, &pieces, out);
-}
-
-/// One train of pulses written as SVG.
-pub(crate) fn write_traffic(mark: &TrafficMark, out: &mut String) {
-    let legs = legs_of(&mark.route);
-    match mark.motion {
-        Motion::Steady {
-            speed,
-            spacing,
-            phase,
-        } => steady_pulses(&mark.look, &legs, speed, spacing, phase, out),
-        Motion::Turn {
-            speed,
-            cycle,
-            start,
-        } => turn_pulse(&mark.look, &legs, speed, cycle, start, out),
-    }
 }

@@ -243,13 +243,13 @@ function plateOf(group: Item, purpose = "plate"): { box: number[]; radius: numbe
 	const shape = group.items?.find(
 		(item) => item.item === "shape" && item.purpose === purpose && item.geometry?.kind === "rect",
 	);
-	const rect = shape?.geometry?.rect;
-	if (!rect)
+	const { rect, radius } = shape?.geometry ?? {};
+	if (!rect || radius === undefined)
 		throw new Error(`The painting draws no ${purpose} for ${group.subject?.id ?? "a group"}.`);
 	const round = (value: number) => Math.round(value * 100) / 100;
 	return {
 		box: [rect.x, rect.y, rect.width, rect.height].map(round),
-		radius: shape.geometry?.radius ?? 0,
+		radius,
 	};
 }
 

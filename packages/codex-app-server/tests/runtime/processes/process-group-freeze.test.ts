@@ -1,6 +1,4 @@
-import { describe, expect, test } from "bun:test";
-
-import { codexProcessMs } from "@archboard/timing";
+import { afterEach, describe, expect, test, jest } from "bun:test";
 
 import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
@@ -9,8 +7,15 @@ import {
 	removeRoot,
 	startReady,
 	temporaryRoot,
+	waitForState,
 } from "#tests/runtime/support/process-support.ts";
-import { driveManual, fakeLifecycle } from "#tests/runtime/support/process-lifecycle-support.ts";
+import {
+	driveManual,
+	fakeLifecycle,
+	REVIEWED_SHUTDOWN_MS,
+} from "#tests/runtime/support/process-lifecycle-support.ts";
+
+afterEach(() => jest.useRealTimers());
 
 describe("Codex process group KILL", () => {
 	test("a child that forks into the group after it was stopped is stopped before KILL", async () => {
@@ -60,14 +65,53 @@ describe("Codex process group KILL", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(lifecycle.signals.at(-1)).toBe("SIGKILL");
 			expect(lifecycle.clock.now()).toBeLessThanOrEqual(
-				codexProcessMs("stdinEofGrace") +
-					codexProcessMs("termGrace") +
-					codexProcessMs("groupFreeze"),
+				REVIEWED_SHUTDOWN_MS.stdinEofGrace +
+					REVIEWED_SHUTDOWN_MS.termGrace +
+					REVIEWED_SHUTDOWN_MS.groupFreeze,
 			);
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);
 			}
+			removeRoot(root);
+		}
+	});
+
+	test("recovers when KILL proves the group gone at the cleanup bound", async () => {
+		const root = temporaryRoot();
+		const lifecycle = fakeLifecycle();
+		const group = lifecycle.dependencies.processGroup;
+		const owner = createCodexProcess({
+			...options(root, fixture(root, `process.stdin.resume();`)),
+			dependencies: {
+				...lifecycle.dependencies,
+				processGroup: {
+					...group,
+					signal: (identity, signal) => {
+						if (signal === "SIGKILL") {
+							// Let the bound expire while the kill and its proof are still in flight.
+							jest.advanceTimersByTime(
+								REVIEWED_SHUTDOWN_MS.composedShutdown - lifecycle.clock.now(),
+							);
+						}
+						group.signal(identity, signal);
+					},
+				},
+			},
+		});
+		try {
+			await startReady(owner);
+			const recovered = waitForState(
+				owner,
+				(state) => state === "backoff" || state === "terminal_failure",
+			);
+			lifecycle.closeChild();
+			expect(owner.snapshot().state).toBe("group_cleanup");
+			await driveManual(recovered, lifecycle.clock);
+			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGSTOP", "SIGKILL"]);
+			expect(owner.snapshot().state).toBe("backoff");
+		} finally {
+			await driveManual(owner.stop(), lifecycle.clock).catch(() => undefined);
 			removeRoot(root);
 		}
 	});

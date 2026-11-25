@@ -69,7 +69,7 @@ fn button(rect: Rect, color: Option<PaletteColor>, finish: &Finish) -> Items {
     let radius = DOOR_RADIUS - RIM / 2.0;
     lines(vec![
         shape(
-            Shape::rect(Purpose::Plate, boxed(rect), Some(DOOR_RADIUS))
+            Shape::rect(Purpose::Plate, boxed(rect), DOOR_RADIUS)
                 .pointer(Pointer::None)
                 .filled(Paint::Gradient {
                     id: GradientId::Door { color },
@@ -126,7 +126,6 @@ fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
             Role::DoorArrow,
             shape(
                 Shape::path(Purpose::Line, arrow_steps(way))
-                    .unfilled()
                     .stroked(Stroke::new(ink, ARROW_WIDTH).rounded().capped(Cap::Round)),
             ),
         )
@@ -134,7 +133,7 @@ fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
         .moved(Transform {
             x: round_coord(rect.x + rect.width - DOOR_ARROW_INSET),
             y: round_coord(rect.y + rect.height / 2.0),
-            scale: (scale != 1.0).then(|| round_coord(scale)),
+            scale: round_coord(scale),
         }),
     )
 }

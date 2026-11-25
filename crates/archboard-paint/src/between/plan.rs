@@ -111,12 +111,12 @@ fn faded_in(item: &Item, visible: f64) -> Item {
     match item {
         Item::Group(group) => {
             let mut group = group.clone();
-            group.opacity = Some(group.opacity.unwrap_or(1.0) * visible);
+            group.opacity *= visible;
             Item::Group(group)
         }
         other => {
             let mut around = Group::new(Role::Marks, vec![other.clone()]);
-            around.opacity = Some(visible);
+            around.opacity = visible;
             Item::Group(around)
         }
     }
@@ -152,7 +152,7 @@ impl Riding {
         let left = 1.0 - emphasised(phase(progress, self.start, self.end));
         let shadow = grounded(self.shadow.clone(), self.ground, progress);
         let mut around = Group::new(Role::Move, shadow);
-        around.transform = Some(Transform::translate(self.back.0 * left, self.back.1 * left));
+        around.transform = Transform::translate(self.back.0 * left, self.back.1 * left);
         Item::Group(around)
     }
 }

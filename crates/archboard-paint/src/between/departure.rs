@@ -72,8 +72,8 @@ pub(crate) fn departing(body: Vec<Item>, (width, height): (f64, f64), progress: 
         height,
     };
     let mut leaving = Group::new(Role::Marks, body);
-    leaving.opacity = Some(visible);
-    leaving.transform = Some(scale_about(page, lerp(1.0, LEAVING_SCALE, eased)));
+    leaving.opacity = visible;
+    leaving.transform = scale_about(page, lerp(1.0, LEAVING_SCALE, eased));
     vec![Item::Group(leaving)]
 }
 
@@ -93,8 +93,7 @@ mod tests {
         let [Item::Group(leaving)] = &departure(&picture, 0.5)[..] else {
             panic!("the picture leaves as one group")
         };
-        let receded = leaving.transform.expect("scaled");
-        assert!(receded.scale.is_some_and(|scale| scale < 1.0));
+        assert!(leaving.transform.scale < 1.0);
     }
 
     #[test]

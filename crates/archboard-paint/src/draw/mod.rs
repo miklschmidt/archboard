@@ -169,16 +169,13 @@ fn between(from: Transform, to: Transform, share: f64) -> Transform {
     Transform {
         x: mix(from.x, to.x),
         y: mix(from.y, to.y),
-        scale: Some(mix(from.scale.unwrap_or(1.0), to.scale.unwrap_or(1.0))),
+        scale: mix(from.scale, to.scale),
     }
 }
 
 /// How far what a flight lets go of first steps back while the next picture is
 /// on its way.
 const AWAITED_DEPTH: f64 = 0.45;
-
-/// No move.
-const STILL: Transform = Transform::translate(0.0, 0.0);
 
 /// How far a group that the light does not name recedes. A line's traffic runs
 /// through the line's own mask, which recedes as well, so an unlit line draws
@@ -285,14 +282,12 @@ impl<C: Canvas> Walk<'_, C> {
     }
 
     /// Where a group sits, in the swap between the near and the far view.
-    fn place_of(&self, group: &Group, view: View) -> Option<Transform> {
-        let far = self.presentation.far;
+    fn place_of(&self, group: &Group, view: View) -> Transform {
+        let (far, still) = (self.presentation.far, Transform::translate(0.0, 0.0));
         match (&group.role, view) {
-            (Role::Chip { far: place }, _) => {
-                Some(between(group.transform.unwrap_or(STILL), *place, far))
-            }
-            (Role::Words { away }, View::Near) => Some(between(STILL, *away, far)),
-            (Role::Words { away }, View::Far) => Some(between(*away, STILL, far)),
+            (Role::Chip { far: place }, _) => between(group.transform, *place, far),
+            (Role::Words { away }, View::Near) => between(still, *away, far),
+            (Role::Words { away }, View::Far) => between(*away, still, far),
             _ => group.transform,
         }
     }
@@ -342,7 +337,7 @@ impl<C: Canvas> Walk<'_, C> {
         );
         let words = if spoken { inside.words } else { 1.0 };
         let waiting = awaiting(self.presentation.awaited, &group.role);
-        let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words * waiting;
+        let opacity = group.opacity * swap * recede * words * waiting;
         // Nothing of it shows, and the cuts of a mask must not run on what is under it.
         if opacity <= 0.0 {
             return;
@@ -371,9 +366,7 @@ impl<C: Canvas> Walk<'_, C> {
         let drop = self.drop_of(group);
         let lowered = inside.transform * Affine::translate((0.0, drop));
         Inside {
-            transform: place.map_or(lowered, |place| {
-                lowered * placed(place.x, place.y, place.scale)
-            }),
+            transform: lowered * placed(place.x, place.y, place.scale),
             view,
             selected: inside.selected || selected,
             lit,
@@ -445,7 +438,7 @@ impl<C: Canvas> Walk<'_, C> {
         self.canvas.set_transform(inside.transform);
         self.canvas.push(Some((&clip, false)), 1.0);
         let held = Inside {
-            transform: inside.transform * placed(x, y, Some(scale)),
+            transform: inside.transform * placed(x, y, scale),
             ..inside
         };
         self.items(&viewport.items, held);

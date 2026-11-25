@@ -89,7 +89,7 @@ pub(super) fn boxed(rect: Rect) -> Rect {
 
 /// A rounded rect over a box, which takes no pointer unless it says so.
 pub(super) fn plate(rect: Rect, radius: f64) -> Shape {
-    Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius))).pointer(Pointer::None)
+    Shape::rect(Purpose::Plate, boxed(rect), round_coord(radius)).pointer(Pointer::None)
 }
 
 /// Which edge of a rounded box catches a band of light or shade.
@@ -150,13 +150,13 @@ pub(super) fn slab_seat(rect: Rect, radius: f64) -> Items {
 
 /// A shape as a seat: unpainted, taking the pointer for the whole of it.
 fn seat(shape: Shape) -> Shape {
-    shape.unfilled().pointer(Pointer::All)
+    shape.pointer(Pointer::All)
 }
 
 /// A plate that stays unseen until the reader's stylesheet lights it under the pointer.
 pub(super) fn ghost_light(shape: Shape, ink: &Colour) -> Shape {
     Shape {
-        fill_opacity: Some(0.0),
+        fill_opacity: 0.0,
         ..shape.filled(ink)
     }
 }
@@ -164,7 +164,7 @@ pub(super) fn ghost_light(shape: Shape, ink: &Colour) -> Shape {
 /// A shape painted as a ghost's see-through face.
 pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
     Shape {
-        fill_opacity: Some(GHOST_FACE),
+        fill_opacity: GHOST_FACE,
         ..shape.filled(&palette.slab_face)
     }
 }
@@ -189,9 +189,8 @@ pub(super) fn standing_border(
                 width: face.width - OUTLINE_WIDTH,
                 height: face.height - OUTLINE_WIDTH,
             }),
-            Some(round_coord(js::js_max(0.0, radius - half))),
+            round_coord(js::js_max(0.0, radius - half)),
         )
-        .unfilled()
         .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing)))
         .pointer(Pointer::None),
     )
@@ -328,7 +327,6 @@ fn solid_border(
     let half = OUTLINE_WIDTH / 2.0;
     shape(
         solid(&inset(face, half), js::js_max(0.0, radius - half))
-            .unfilled()
             .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing))),
     )
 }
@@ -400,14 +398,14 @@ fn sheen_gradient(id: GradientId, sheen: &Colour) -> Definition {
         },
         stops: vec![
             Stop {
-                offset: Some(0.0),
+                offset: 0.0,
                 colour: sheen.clone(),
-                opacity: None,
+                opacity: 1.0,
             },
             Stop {
-                offset: Some(1.0),
+                offset: 1.0,
                 colour: sheen.clone(),
-                opacity: Some(0.0),
+                opacity: 0.0,
             },
         ],
     })

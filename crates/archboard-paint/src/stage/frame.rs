@@ -40,7 +40,7 @@ impl Stage {
         draw_ground(canvas, &picture.scene, *size, palette);
         let camera = presentation.camera;
         let plane = plane_at(leaving.as_ref(), ghost.as_ref(), now);
-        let transform = plane.transform * placed(camera.x, camera.y, Some(camera.scale));
+        let transform = plane.transform * placed(camera.x, camera.y, camera.scale);
         let fades = dive.as_ref().map(|dive| dive.fades(now));
         let parent = fades.map_or(1.0, |fades| fades.parent) * plane.shown;
         let moved = flight.as_mut().map(|flight| flight.items(now));
@@ -120,9 +120,8 @@ fn draw_ghost<C: Canvas>(
         .passage(now)
         .map_or(Plane::STILL, |(axis, place)| axis.left(place));
     let held = ghost.held_at(now);
-    let place = own.transform
-        * held.transform
-        * placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
+    let place =
+        own.transform * held.transform * placed(ghost.camera.x, ghost.camera.y, ghost.camera.scale);
     let items = match tray.filter(|_| ghost.axis.is_none()) {
         Some(tray) => ghost.items_inside(now, tray, inks.presentation.camera),
         None => ghost.items(now),
@@ -188,7 +187,7 @@ fn draw_inset<C: Canvas>(
         canvas,
         items,
         &dive.inset.definitions,
-        transform * placed(x, y, Some(scale)),
+        transform * placed(x, y, scale),
         inks,
     );
     canvas.pop();

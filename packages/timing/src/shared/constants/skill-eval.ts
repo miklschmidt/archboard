@@ -5,44 +5,40 @@
 // archboard CLI to lay fixtures, and runs Codex authors and one grader, and
 // each of those has a point past which waiting longer is a hang, not patience.
 
-import { durations } from "#shared/constants/durations.ts";
-import { codexProcessMs } from "#shared/constants/codex.ts";
+import { bound, handed, polled } from "#shared/constants/uses.ts";
+
+/** `skillEval.groupStop`, named once so that reaping the stopped process waits as long. */
+const CODEX_TERM_GRACE_MS = 10_000;
 
 /** The durations of one skill evaluation batch. */
-const SKILL_EVAL_MS = durations({
+const SKILL_EVAL = {
 	/** An owned evaluation server answering /health after spawn; a cold bun start on a busy box. */
-	serverStartup: 20_000,
-	/** Between /health probes while an evaluation server starts. */
-	healthPoll: 100,
+	"skillEval.serverStartup": polled(20_000, "the evaluation server to answer /health"),
 	/** One /health probe; a listener that cannot answer in this time is treated as not up yet. */
-	healthRequest: 1000,
-	/** Let the server finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
-	serverShutdown: codexProcessMs("composedShutdown") * 2,
+	"skillEval.healthRequest": handed(1000),
+	/**
+	 * Each phase of stopping an evaluation server's group: it lets the server finish its separately
+	 * owned Codex shutdown before harness escalation, with one composed budget of margin.
+	 */
+	"skillEval.serverGroupStop": polled(2 * 10_000, "an evaluation server's process group to stop"),
 	/** One archboard CLI call laying a fixture or reading an outcome; each is one HTTP round trip. */
-	cli: 60_000,
+	"skillEval.cli": handed(60_000),
 	/** One git command fetching or checking out Flask; a first clone from the network is the slow case. */
-	git: 10 * 60_000,
+	"skillEval.git": handed(10 * 60_000),
 	/** One author run end to end; a run still going after this is killed and recorded as timed out. */
-	author: 40 * 60_000,
+	"skillEval.author": handed(40 * 60_000),
 	/** The one grading session over a whole batch; it reads three Flask revisions and every run. */
-	grader: 4 * 60 * 60_000,
+	"skillEval.grader": handed(4 * 60 * 60_000),
 	/**
 	 * How long the voice of a fixture's kept talk speaks about each step. Long enough for a subtitle
 	 * to be read in the video an author renders from it; every second is 30 frames the author's
 	 * replay draws in software, about 2.5 s of the run, so three steps render in under half a minute.
 	 */
-	talkStep: 3000,
-	/** From SIGTERM to SIGKILL for a Codex process the harness gives up on. */
-	codexTermGrace: 10_000,
-});
+	"skillEval.talkStep": handed(3000),
+	/** Each phase of stopping a Codex process group the harness gives up on, from SIGTERM to SIGKILL. */
+	"skillEval.groupStop": polled(CODEX_TERM_GRACE_MS, "an evaluation process group to stop"),
+	/** A stopped evaluation process being reaped, and its output pipes closing. */
+	"skillEval.reap": bound(CODEX_TERM_GRACE_MS, "a stopped evaluation process to be reaped"),
+};
 
-/**
- * One duration of a skill evaluation.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function skillEvalMs(key: keyof typeof SKILL_EVAL_MS): number {
-	return SKILL_EVAL_MS[key];
-}
-
-export { skillEvalMs };
+export { SKILL_EVAL };

@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { claimMs, modelLockMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a
@@ -23,23 +24,11 @@ afterEach(() => {
 });
 
 /**
- * Let fake time pass in poll-sized steps, so awaited lock waits settle.
- * @param ms How long.
- */
-async function advanceLockTime(ms: number): Promise<void> {
-	for (let elapsed = 0; elapsed < ms; elapsed += modelLockMs("poll")) {
-		jest.advanceTimersByTime(Math.min(modelLockMs("poll"), ms - elapsed));
-		await Promise.resolve();
-		await Promise.resolve();
-	}
-}
-
-/**
  * The server doing one synchronous piece of work longer than a claim's lease:
  * the clock moves and no timer runs.
  */
 function stallServer(): void {
-	jest.setSystemTime(Date.now() + claimMs("lease") + modelLockMs("renew"));
+	jest.setSystemTime(Date.now() + ms("claim.lease") + 1);
 }
 
 /**
@@ -51,14 +40,14 @@ async function writeUnderClaim(model: string): Promise<void> {
 	const id = lock.claimWriterId(vault, model);
 	expect(id).not.toBeNull();
 	const written = lock.withLease(
-		{ vault, model, holder: { id: id!, kind: "agent", claimed: true }, waitMs: 0 },
+		{ vault, model, holder: { id: id!, kind: "agent", claimed: true }, waits: false },
 		() => model,
 	);
-	await advanceLockTime(modelLockMs("stealGuard") * 2);
 	expect(await written).toBe(model);
 }
 
 test("claims on several models of one server stand through a stall while their holders write", async () => {
+	using timers = observeLockTimers();
 	const models = ["payments", "ledger", "queues", "audit"];
 	const claims = new Map<string, lock.Claim>();
 	for (const model of models) {
@@ -74,8 +63,10 @@ test("claims on several models of one server stand through a stall while their h
 		stallServer();
 		// After the pause, half the holders' writes land before the late renewal
 		// runs and half after it.
-		await Promise.all(models.slice(0, 2).map(writeUnderClaim));
-		await advanceLockTime(modelLockMs("renew"));
+		const beforeRenewal = Promise.all(models.slice(0, 2).map(writeUnderClaim));
+		jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
+		await beforeRenewal;
+		jest.advanceTimersByTime(timers.delay("modelLock.renew"));
 		await Promise.all(models.slice(2).map(writeUnderClaim));
 	}
 	for (const model of models) {
@@ -88,13 +79,14 @@ test("claims on several models of one server stand through a stall while their h
 			claimed: true,
 		});
 		const rival = await lock
-			.holdModel({ vault, model, holder: { id: `rival-${model}`, kind: "agent" }, waitMs: 0 })
+			.holdModel({ vault, model, holder: { id: `rival-${model}`, kind: "agent" }, waits: false })
 			.catch((error: unknown) => error);
 		expect(rival).toBeInstanceOf(lock.ModelHeldError);
 	}
 });
 
 test("a claim that ends without a person names what its renewal found", async () => {
+	using timers = observeLockTimers();
 	const taken = "taken";
 	const removed = "removed";
 	for (const model of [taken, removed]) {
@@ -108,7 +100,7 @@ test("a claim that ends without a person names what its renewal found", async ()
 		JSON.stringify({ ...record, id: "elsewhere", claimed: false, token: "elsewhere-token" }),
 	);
 	rmSync(join(vault, ".archboard/locks", `${removed}.lock`));
-	await advanceLockTime(modelLockMs("renew"));
+	jest.advanceTimersByTime(timers.delay("modelLock.renew"));
 
 	expect(lock.claimOn(vault, taken)).toBeNull();
 	expect(lock.takeClaimRevocation(vault, taken)).toMatchObject({

@@ -145,7 +145,7 @@ impl Flight {
             entrance.rebase(Transform {
                 x: (ghost.x - camera.x) / camera.scale,
                 y: (ghost.y - camera.y) / camera.scale,
-                scale: Some(ghost.scale / camera.scale),
+                scale: ghost.scale / camera.scale,
             });
         }
     }

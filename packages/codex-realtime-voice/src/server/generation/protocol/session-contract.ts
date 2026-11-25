@@ -34,7 +34,6 @@ import type {
 	WorkhorseStop,
 } from "#server/sessions/services/workhorses.ts";
 import type { SessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
-import type { WorkTreeStopClock } from "#server/sessions/services/stop.ts";
 import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 
 /** The runtime owners a tab session's coordinator and voice run on. */
@@ -155,8 +154,6 @@ interface CreateCodexWorkbenchSessionsOptions {
 	readonly transport: Pick<CodexTransport, "respond">;
 	/** What reads a thread's status, unsubscribes it once it is idle, and interrupts its turn. */
 	readonly session: Pick<CodexSession, "threadUnsubscribe"> & WorkTreeStopSession;
-	/** How a work tree stop tells time and waits between its passes; the system clock if omitted. */
-	readonly stopClock?: WorkTreeStopClock;
 	/** Where a session's links are cleared when the session ends. */
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */

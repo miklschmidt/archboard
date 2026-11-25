@@ -383,8 +383,6 @@ class Browser {
 				"--disable-gpu",
 				...(options.webgl === true ? ["--enable-unsafe-swiftshader"] : []),
 			],
-			startupTimeoutMs: CALL_MS,
-			cleanupTimeoutMs: 5_000,
 			tempRootPrefix: "archboard-readme-",
 		});
 		return new Browser(chromium);

@@ -111,7 +111,6 @@ pub(super) fn toggle_end(
             ),
             shape(
                 Shape::path(Purpose::Line, glyph(toggle, middle, scale))
-                    .unfilled()
                     .pointer(Pointer::None)
                     .stroked(Stroke::new(ink, GLYPH_WIDTH).capped(Cap::Round)),
             ),

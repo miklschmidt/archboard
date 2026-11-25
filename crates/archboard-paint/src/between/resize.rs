@@ -29,11 +29,11 @@ pub(super) struct Tray {
 
 impl Tray {
     pub(super) fn of(found: &Found<'_>, whole: Rect) -> Tray {
-        let outer = found.outer.unwrap_or(Transform::translate(0.0, 0.0));
+        let outer = found.outer;
         Tray {
             whole,
-            shown: found.group.opacity.unwrap_or(1.0),
-            scale: then(outer, found.group.transform).scale.unwrap_or(1.0),
+            shown: found.group.opacity,
+            scale: then(outer, found.group.transform).scale,
             edge: worn_edge(found.group).map(|(rect, solid)| (carried(rect, outer), solid)),
         }
     }
@@ -106,11 +106,7 @@ impl Resizing {
         }
         let moved = OPENS.at(here);
         let held = self.held(progress);
-        let scale = lerp(
-            self.stood.scale * self.carry.scale.unwrap_or(1.0),
-            1.0,
-            moved,
-        );
+        let scale = lerp(self.stood.scale * self.carry.scale, 1.0, moved);
         let inner = Rect {
             width: held.width / scale,
             height: held.height / scale,
@@ -120,8 +116,8 @@ impl Resizing {
             drawn: self.to,
             held: inner,
         };
-        let base = group.opacity.unwrap_or(1.0);
-        group.opacity = Some(lerp(self.stood.shown, base, ease_out(here)));
+        let base = group.opacity;
+        group.opacity = lerp(self.stood.shown, base, ease_out(here));
         group.items = vec![Item::Viewport(Viewport {
             frame: inner,
             view: inner,
@@ -130,7 +126,7 @@ impl Resizing {
         let placed = Transform {
             x: held.x - self.to.x * scale,
             y: held.y - self.to.y * scale,
-            scale: Some(scale),
+            scale,
         };
         if let Some((stood, solid)) = self.stood.edge {
             let at = mix_rect(carried(stood, self.carry), self.well, moved);
@@ -142,7 +138,7 @@ impl Resizing {
             };
             group.items.push(edge(local, solid * (1.0 - here).powi(2)));
         }
-        group.transform = Some(then(placed, group.transform));
+        group.transform = then(placed, group.transform);
         group
     }
 }
@@ -169,7 +165,7 @@ pub(super) fn resumed(
         .into_iter()
         .filter_map(|(last, b)| {
             let stood = under_way(last.group)?;
-            let outer = last.outer.unwrap_or(Transform::translate(0.0, 0.0));
+            let outer = last.outer;
             let tray = Tray::of(&last, carried(stood, outer));
             Some((b, Resizing::new(&new[b], tray, *ways.get(new[b].id)?, 1.0)))
         })
@@ -225,9 +221,11 @@ impl Anchors {
     /// A group: one placed by its own move keeps to the nearer edge as a whole.
     fn group(&self, group: &Group) -> Group {
         let mut group = group.clone();
-        match &mut group.transform {
-            Some(at) => (at.x, at.y) = (self.x(at.x), self.y(at.y)),
-            None => group.items = self.items(&group.items),
+        if group.transform.moves_nothing() {
+            group.items = self.items(&group.items);
+        } else {
+            let at = &mut group.transform;
+            (at.x, at.y) = (self.x(at.x), self.y(at.y));
         }
         group
     }
@@ -244,7 +242,7 @@ impl Anchors {
                     height: (self.y(rect.y + rect.height) - y).max(0.0),
                 };
             }
-            Geometry::Circle { centre, .. } => *centre = centre.map(|at| self.point(at)),
+            Geometry::Circle { centre, .. } => *centre = self.point(*centre),
             Geometry::Line { from, to } => (*from, *to) = (self.point(*from), self.point(*to)),
             Geometry::Path { steps } => *steps = self.steps(steps),
         }
@@ -373,12 +371,12 @@ mod tests {
         band.rebase(Transform {
             x: 5.0,
             y: 7.0,
-            scale: Some(2.0),
+            scale: 2.0,
         });
         let group = band.at(0.0);
         let (held, _) = boxes(&group);
-        let placed = group.transform.expect("it is moved");
-        assert_eq!(placed.scale, Some(2.0));
+        let placed = group.transform;
+        assert_eq!(placed.scale, 2.0);
         assert_eq!(held.x * 2.0 + placed.x, 10.0 * 2.0 + 5.0);
         assert_eq!(held.y * 2.0 + placed.y, 20.0 * 2.0 + 7.0);
         assert_eq!(held.width * 2.0, 106.0 * 2.0);
@@ -392,7 +390,7 @@ mod tests {
         let carry = Transform {
             x: 5.0,
             y: 7.0,
-            scale: Some(2.0),
+            scale: 2.0,
         };
         band.rebase(carry);
         for progress in [0.0, 0.1, 0.4] {

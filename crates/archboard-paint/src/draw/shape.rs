@@ -2,7 +2,7 @@
 //! names, with the markers its stroke ends in.
 
 use archboard_scene::paint::design::{far_line_scale, widens_far};
-use archboard_scene::scene::{Colour, Geometry, Marker, Paint, Purpose, Shape, Stroke, Token};
+use archboard_scene::scene::{Geometry, Marker, Paint, Purpose, Shape, Stroke, Token};
 use kurbo::{Affine, BezPath, Rect};
 
 use super::{Inside, Walk};
@@ -33,9 +33,8 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// The width a line's direct stroke grows by in the far view.
     fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
-        let grows = inside.line
-            && matches!(geometry, Geometry::Path { .. })
-            && stroke.width.is_some_and(widens_far);
+        let grows =
+            inside.line && matches!(geometry, Geometry::Path { .. }) && widens_far(stroke.width);
         if grows {
             far_line_scale(self.presentation.far)
         } else {
@@ -79,12 +78,8 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Fill a shape, then stroke it.
     fn paint(&mut self, shape: &Shape, path: &BezPath, bounds: Rect, ring: bool, inside: Inside) {
-        let black = Paint::Colour {
-            colour: Colour::Black,
-        };
-        let fill = shape.fill.as_ref().unwrap_or(&black);
-        let alpha = shape.fill_opacity.unwrap_or(1.0) * self.shown_with_members(shape);
-        if let Some(ink) = self.ink(fill, alpha, bounds) {
+        let alpha = shape.fill_opacity * self.shown_with_members(shape);
+        if let Some(ink) = self.ink(&shape.fill, alpha, bounds) {
             let ink = self.glowing(ink, inside.glow);
             self.canvas.fill(path, &ink, false);
         }
@@ -105,13 +100,13 @@ impl<C: Canvas> Walk<'_, C> {
     ) {
         let selection = Paint::from(Token::DiagramSelection);
         let paint = if ring { &selection } else { &stroke.paint };
-        let alpha = stroke.opacity.unwrap_or(1.0) * self.shown_with_members(shape);
+        let alpha = stroke.opacity * self.shown_with_members(shape);
         let Some(ink) = self.ink(paint, alpha, bounds) else {
             return;
         };
         let ink = self.glowing(ink, inside.glow);
         let grown = self.far_scale(stroke, &shape.geometry, inside);
-        let width = stroke.width.unwrap_or(1.0) * grown;
+        let width = stroke.width * grown;
         let marks: Vec<Mark<'_>> = [(&shape.start_marker, true), (&shape.marker, false)]
             .into_iter()
             .filter_map(|(marker, start)| {

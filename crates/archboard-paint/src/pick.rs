@@ -132,9 +132,9 @@ impl Finder<'_> {
     }
 
     /// Where a group sits in this view.
-    fn place_of(&self, group: &Group) -> Option<Transform> {
+    fn place_of(&self, group: &Group) -> Transform {
         match &group.role {
-            Role::Chip { far } if self.far => Some(*far),
+            Role::Chip { far } if self.far => *far,
             _ => group.transform,
         }
     }
@@ -151,9 +151,10 @@ impl Finder<'_> {
         };
         let lowered = around.transform * Affine::translate((0.0, drop));
         let held = Around {
-            transform: self.place_of(group).map_or(lowered, |place| {
+            transform: {
+                let place = self.place_of(group);
                 lowered * placed(place.x, place.y, place.scale)
-            }),
+            },
             pointer: group.pointer.or(around.pointer),
             marked: marked.or(around.marked),
             stuck: around.stuck || drop > 0.0,
@@ -178,7 +179,7 @@ impl Finder<'_> {
             return;
         }
         let all = pointer == Some(Pointer::All);
-        let filled = all || shape.fill.as_ref().is_none_or(|fill| *fill != Paint::None);
+        let filled = all || shape.fill != Paint::None;
         let stroke = shape
             .stroke
             .as_ref()
@@ -188,7 +189,7 @@ impl Finder<'_> {
         }
         let (path, own) = outline_of(&shape.geometry);
         let reach = stroke
-            .map(|stroke| stroke.width.unwrap_or(1.0) / 2.0)
+            .map(|stroke| stroke.width / 2.0)
             .or_else(|| all.then_some(0.5));
         let room = reach.unwrap_or(0.0);
         self.found.push(Target {
@@ -210,7 +211,7 @@ impl Finder<'_> {
         let x = frame.x + (frame.width - view.width * scale) / 2.0 - view.x * scale;
         let y = frame.y + (frame.height - view.height * scale) / 2.0 - view.y * scale;
         let held = Around {
-            transform: around.transform * placed(x, y, Some(scale)),
+            transform: around.transform * placed(x, y, scale),
             ..around
         };
         self.items(&viewport.items, held);
@@ -284,7 +285,7 @@ mod tests {
             Group::new(
                 Role::Label,
                 vec![Item::Shape(
-                    Shape::rect(Purpose::Plate, rect, None).filled(Token::SlabFace),
+                    Shape::rect(Purpose::Plate, rect, 0.0).filled(Token::SlabFace),
                 )],
             )
             .drawing(subject(id, SubjectKind::Node)),
@@ -348,7 +349,6 @@ mod tests {
                                 },
                             ],
                         )
-                        .unfilled()
                         .stroked(Stroke::new(paint, 6.0)),
                     )],
                 )
@@ -401,7 +401,7 @@ mod tests {
             Group::new(
                 Role::Label,
                 vec![Item::Shape(
-                    Shape::rect(Purpose::Plate, rect, None)
+                    Shape::rect(Purpose::Plate, rect, 0.0)
                         .filled(Token::SlabFace)
                         .pointer(Pointer::None),
                 )],
@@ -430,9 +430,8 @@ mod tests {
                             width: 10.0,
                             height: 10.0,
                         },
-                        None,
+                        0.0,
                     )
-                    .unfilled()
                     .pointer(Pointer::All),
                 )],
             )

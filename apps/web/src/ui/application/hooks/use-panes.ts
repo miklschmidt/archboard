@@ -33,8 +33,6 @@ interface PaneEvents {
 	readonly onReadingTrouble: (paneId: string, trouble: ReadingTrouble | null) => void;
 	/** Which models an agent is working on in one vault (ADR 0022). */
 	readonly onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]) => void;
-	/** A checkout was chosen somewhere, so the repositories are read again (ADR 0050). */
-	readonly onRepositoriesChanged: () => void;
 	readonly onStaleFrontend: (message: string) => void;
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	/** A pane's socket came back after being lost; nothing it cached is trustworthy. */
@@ -58,7 +56,6 @@ type PaneCallbacks = Required<
 		| "onStaleFrontend"
 		| "onCodeTargetNotice"
 		| "onAgentActivity"
-		| "onRepositoriesChanged"
 		| "onModelAdopted"
 	>
 > & {
@@ -190,10 +187,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		 */
 		onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]): void => {
 			events.read().onAgentActivity(vault, activity);
-		},
-		/** A checkout was chosen somewhere. */
-		onRepositoriesChanged: (): void => {
-			events.read().onRepositoriesChanged();
 		},
 		/**
 		 * The server moved a pane onto a model.

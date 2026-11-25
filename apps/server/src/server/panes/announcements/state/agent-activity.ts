@@ -4,13 +4,14 @@
 import { watchArchitectureModel } from "@archboard/model/store-read";
 import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
-import { claimMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 
 type AgentActivity = AgentActivityMessage["activity"][number];
 
 interface Entry {
 	activity: AgentActivity;
-	linger: ReturnType<typeof setTimeout> | null;
+	/** Ends the linger of the last line, while it lingers. */
+	linger: (() => void) | null;
 }
 
 /**
@@ -46,7 +47,7 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 	 * @param entry The owned entry.
 	 */
 	function clearLinger(entry: Entry): void {
-		if (entry.linger !== null) clearTimeout(entry.linger);
+		entry.linger?.();
 		entry.linger = null;
 	}
 	/**
@@ -66,8 +67,7 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 	 * @param entry The idle entry.
 	 */
 	function linger(vault: string, entry: Entry): void {
-		entry.linger = setTimeout(() => forget(vault), claimMs("activityLinger"));
-		entry.linger.unref();
+		entry.linger = after("claim.activityLinger", () => forget(vault));
 	}
 	/**
 	 * Read or create a snapshot for this exact canonical model.

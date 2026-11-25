@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { modelLockMs } from "@archboard/timing";
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
 const originalWarn = logger().warn;
@@ -12,6 +12,7 @@ const originalWarn = logger().warn;
 test("announcements isolate passenger failure and report release at once", async () => {
 	jest.useFakeTimers();
 	try {
+		using timers = observeLockTimers();
 		const warnings: unknown[][] = [];
 		logger().warn = (...args: unknown[]) => {
 			warnings.push(args);
@@ -21,7 +22,7 @@ test("announcements isolate passenger failure and report release at once", async
 			throw new Error("note-watch fixture failed");
 		});
 		lock.watchModelLocks({ models: () => [{ vault, model: "passenger" }] });
-		jest.advanceTimersByTime(modelLockMs("watch"));
+		jest.advanceTimersByTime(timers.delay("modelLock.watch"));
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();
@@ -36,7 +37,7 @@ test("announcements isolate passenger failure and report release at once", async
 			vault,
 			model: "broadcast",
 			holder: { id: "pane", kind: "human" },
-			waitMs: 0,
+			waits: false,
 		});
 		expect(news.at(-1)).toEqual({ model: "broadcast", id: "pane", held: true });
 		const beforeRenew = news.length;
@@ -44,7 +45,7 @@ test("announcements isolate passenger failure and report release at once", async
 			vault,
 			model: "broadcast",
 			holder: { id: "pane", kind: "human" },
-			waitMs: 0,
+			waits: false,
 		});
 		expect(news.length).toBe(beforeRenew);
 		// Release news goes out with the release, not after a linger (TASK-153).

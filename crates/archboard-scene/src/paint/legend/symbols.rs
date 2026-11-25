@@ -18,12 +18,12 @@ use crate::paint::styles::{HEAD_LENGTH, drawn_ink, effect_look, head_of, stroke_
 use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash, LineEffect};
 use crate::route::Stand;
-use crate::scene::traffic::pulse_breadth;
 use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
     Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,
 };
 use crate::sizes::ICON_CHIP_SIZE;
+use crate::sizes::pulse_breadth;
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;
@@ -63,7 +63,6 @@ fn run_across(from: f64, y: f64, to: f64) -> Vec<PathStep> {
 fn line_at(x: f64, y: f64, stroke: Stroke, end: f64) -> Items {
     shape(
         Shape::path(Purpose::Sample, run_across(x + 1.0, y, x + GLYPH - end))
-            .unfilled()
             .stroked(stroke.capped(Cap::Round)),
     )
 }
@@ -193,11 +192,11 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
             width: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
             height: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
         },
-        Some(LEGEND_CHIP_RADIUS),
+        LEGEND_CHIP_RADIUS,
     )
     .filled(&ink)
     .stroked(Stroke::new(&ink, LEGEND_CHIP_EDGE).at(LEGEND_CHIP_STROKE));
-    chip.fill_opacity = Some(LEGEND_CHIP_FACE);
+    chip.fill_opacity = LEGEND_CHIP_FACE;
     let icons = applied.icon.iter().map(|drawn| {
         Item::Icon(Icon {
             name: drawn.name.clone(),
@@ -279,9 +278,9 @@ fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Items {
         stops: PULSE_STOPS
             .iter()
             .map(|(offset, opacity)| Stop {
-                offset: Some(*offset),
+                offset: *offset,
                 colour: light.clone(),
-                opacity: Some(*opacity),
+                opacity: *opacity,
             })
             .collect(),
     };
@@ -306,14 +305,9 @@ fn traffic_symbol(palette: &Palette, x: f64, y: f64) -> Items {
             line_at(x, y, plain, 1.0),
             shape(
                 Shape::path(Purpose::Sample, run.clone())
-                    .unfilled()
                     .stroked(pulse(pulse_breadth(width) + PULSE_GLOW).at(0.25)),
             ),
-            shape(
-                Shape::path(Purpose::Sample, run)
-                    .unfilled()
-                    .stroked(pulse(pulse_breadth(width))),
-            ),
+            shape(Shape::path(Purpose::Sample, run).stroked(pulse(pulse_breadth(width)))),
         ]),
     })]
 }

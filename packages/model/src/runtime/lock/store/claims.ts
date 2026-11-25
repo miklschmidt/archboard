@@ -1,4 +1,4 @@
-import { claimMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { holdModel } from "#runtime/lock/store/acquisition.ts";
 import {
@@ -29,7 +29,7 @@ async function claimModel(
 		model: string;
 		reason: string;
 		forMs?: number;
-		waitMs?: number;
+		waits?: false;
 		signal?: Readonly<AbortSignal>;
 	}>,
 ): Promise<{ claim: Claim; created: boolean }> {
@@ -45,8 +45,8 @@ async function claimModel(
 		vault: request.vault,
 		model,
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
-		leaseMs: claimMs("lease"),
-		...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {}),
+		leaseMs: ms("claim.lease"),
+		...(request.waits === false ? { waits: false } : {}),
 		...(request.signal !== undefined ? { signal: request.signal } : {}),
 	});
 	const entry: ClaimEntry = {
@@ -68,7 +68,10 @@ async function claimModel(
  * @returns The campaign's length in milliseconds.
  */
 function campaignLength(asked: number | undefined): number {
-	return Math.min(Math.max(asked ?? claimMs("default"), claimMs("lease")), claimMs("max"));
+	return Math.min(
+		Math.max(asked ?? ms("claim.campaign"), ms("claim.lease")),
+		ms("claim.campaignMax"),
+	);
 }
 
 /**

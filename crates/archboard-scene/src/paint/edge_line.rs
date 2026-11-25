@@ -76,7 +76,6 @@ pub(super) fn imprint_at(end: Stand, reach: f64, ink: &Colour) -> [Shape; 2] {
                 to: point(to.x, to.y),
             },
         )
-        .unfilled()
         .stroked(stroke)
     };
     let (breadth, light, dark) = IMPRINT_GLOW;
@@ -118,9 +117,7 @@ pub(super) fn line_ink(
 
 /// A line's body along its route, stroked and broken by its line type's dashes.
 pub(super) fn body(curve: &Curve, dash: Dash, stroke: &Stroke, purpose: Purpose) -> Shape {
-    Shape::path(purpose, route(curve))
-        .unfilled()
-        .stroked(stroke.clone().dashed(dash_array(dash)))
+    Shape::path(purpose, route(curve)).stroked(stroke.clone().dashed(dash_array(dash)))
 }
 
 /// One final route, its head, its halo and the insides of the ports it runs into.
@@ -180,9 +177,7 @@ pub(super) fn paint_edge_line(
     }
     parts.push(standing_swipe(&path, width, standing, palette));
     parts.push(shape(
-        Shape::path(Purpose::Halo, path)
-            .unfilled()
-            .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
+        Shape::path(Purpose::Halo, path).stroked(styles.ring(width + EDGE_HALO_EXTRA).rounded()),
     ));
     let inside = line.stroke.clone().unwrap_or(stroke);
     parts.push(shape(line));

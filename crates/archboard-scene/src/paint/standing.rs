@@ -137,9 +137,13 @@ pub(super) fn subject(kind: SubjectKind, id: &str, standing: Option<Standing>) -
     }
 }
 
-/// The opacity a removed line's group takes, or none for a line still on the proposal.
-pub(super) fn ghost_opacity(standing: Option<Standing>) -> Option<f64> {
-    (standing == Some(Standing::Removed)).then_some(GHOST_OPACITY)
+/// The opacity a removed line's group takes, or full for a line still on the proposal.
+pub(super) fn ghost_opacity(standing: Option<Standing>) -> f64 {
+    if standing == Some(Standing::Removed) {
+        GHOST_OPACITY
+    } else {
+        1.0
+    }
 }
 
 /// The colours a subject's own words are drawn with: a removed block's names
@@ -190,7 +194,7 @@ pub(super) fn standing_pin_at(
                 Shape::new(
                     Purpose::Line,
                     Geometry::Circle {
-                        centre: None,
+                        centre: Point { x: 0.0, y: 0.0 },
                         radius: PIN_RADIUS,
                     },
                 )
@@ -199,7 +203,6 @@ pub(super) fn standing_pin_at(
             ),
             shape(
                 Shape::path(Purpose::Line, pin_glyph(standing))
-                    .unfilled()
                     .stroked(Stroke::new(&palette.background, PIN_STROKE).capped(Cap::Round)),
             ),
         ]),
@@ -217,15 +220,13 @@ pub(super) fn standing_swipe(
         return Items::new();
     };
     shape(
-        Shape::path(Purpose::Swipe, path.to_vec())
-            .unfilled()
-            .stroked(Stroke {
-                cap: Some(Cap::Butt),
-                ..Stroke::new(ink, width + SWIPE_EXTRA)
-                    .rounded()
-                    .at(SWIPE_OPACITY)
-                    .dashed(outline_dash(standing))
-            }),
+        Shape::path(Purpose::Swipe, path.to_vec()).stroked(Stroke {
+            cap: Cap::Butt,
+            ..Stroke::new(ink, width + SWIPE_EXTRA)
+                .rounded()
+                .at(SWIPE_OPACITY)
+                .dashed(outline_dash(standing))
+        }),
     )
 }
 
@@ -263,7 +264,6 @@ pub(super) fn warning_glyph(palette: &Palette) -> Items {
         shape(Shape::path(Purpose::Line, badge_glyph()).filled(&palette.warning)),
         shape(
             Shape::path(Purpose::Line, badge_bang_and_dot())
-                .unfilled()
                 .stroked(Stroke::new(&palette.background, PIN_STROKE).capped(Cap::Round)),
         ),
     ])

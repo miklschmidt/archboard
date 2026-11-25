@@ -1,43 +1,43 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
-      "order": 51000,
-      "kind": "async",
-      "effect": "mutation",
-      "label": "read the repositories; choose a checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
-        "symbol": "requestJson"
-      },
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "id": "vKEsyHFk#sbRLNpob",
-      "order": 1008060,
-      "kind": "http",
-      "effect": "query",
-      "label": "read the repository listing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
-        "symbol": "fetchRepositories"
-      },
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
-    }
-  ],
   "order": 5010,
   "name": "Repository queries",
   "kind": "module",
-  "responsibility": "Shares repository requests and the tab query cache",
+  "responsibility": "Mirrors the repositories that the server sends over the tab's feed, chooses a repository's checkout, and shares the tab query cache",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/model-catalog/clients"
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#dneK7oM5",
-  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "outgoing": [
+    {
+      "order": 51000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 1008060,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "follow the repositories over the tab's feed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
+        "symbol": "followRepositories"
+      },
+      "to": "vKEsyHFk#guvtYApo",
+      "id": "vKEsyHFk#i9svCsmS"
+    }
+  ]
 }

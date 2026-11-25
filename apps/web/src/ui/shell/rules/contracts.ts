@@ -154,7 +154,6 @@ interface ShellActions {
 	 * @param root One of its known checkouts.
 	 */
 	chooseCheckout(repository: string, root: string): void;
-	refreshModels(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
 	closePane(paneId: string): void;

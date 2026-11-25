@@ -99,12 +99,6 @@ pub fn fixed_number(value: f64, places: usize) -> String {
     number(fixed(value, places))
 }
 
-/// Where a value falls within one period from zero: ECMAScript's remainder,
-/// moved up by the period where it is negative.
-pub fn within(value: f64, period: f64) -> f64 {
-    ((value % period) + period) % period
-}
-
 /// `value.toLocaleString("en-US", { useGrouping: false, maximumSignificantDigits: 21 })`:
 /// the shortest digits that read back as the number, always without an exponent.
 pub fn plain_decimal(value: f64) -> String {

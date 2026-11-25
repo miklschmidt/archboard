@@ -2,13 +2,13 @@
 // for the other: the pane's own reports, its socket, and the server's waits on a
 // pane after it asked the browser to do something.
 
-import { durations } from "#shared/constants/durations.ts";
+import { delay, polled, tick } from "#shared/constants/uses.ts";
 
-/** `PANE_MS.socketReconnect`, named once so that `contactLost` can count redials of it. */
+/** `pane.socketReconnect`, named once so that `contactLost` can count redials of it. */
 const SOCKET_RECONNECT_MS = 3000;
 
 /** The pane and the server, each waiting on the other. */
-const PANE_MS = durations({
+const PANE = {
 	/**
 	 * How long the pane waits before publishing a changed selection.
 	 *
@@ -16,7 +16,7 @@ const PANE_MS = durations({
 	 * shorter debounce. 150 ms coalesces a lasso drag into one POST while still
 	 * feeling immediate to somebody talking to an agent about "these boxes".
 	 */
-	selectionDebounce: 150,
+	"pane.selectionDebounce": delay(150),
 	/**
 	 * How long the pane waits before reporting which model it shows and where it
 	 * sits.
@@ -25,7 +25,7 @@ const PANE_MS = durations({
 	 * it every turn, which it can only afford if the browser is not posting it
 	 * continuously.
 	 */
-	report: 300,
+	"pane.report": delay(300),
 	/**
 	 * How long a pane waits before dialling the socket again after it drops.
 	 *
@@ -36,11 +36,11 @@ const PANE_MS = durations({
 	 * own edit for a network hiccup is the wall stopping for no reason they can
 	 * see. Only `contactLost` below puts the pane in view mode.
 	 *
-	 * It also pulls against CODEX_REALTIME_MS.tabSessionGrace: the pane socket names its tab
+	 * It also pulls against `codex.tabSessionGrace`: the pane socket names its tab
 	 * session, so a reload plus these redials must fit inside that grace, or the
 	 * server ends the tab's Codex conversation before the pane is back.
 	 */
-	socketReconnect: SOCKET_RECONNECT_MS,
+	"pane.socketReconnect": delay(SOCKET_RECONNECT_MS),
 	/**
 	 * How long a pane goes without the server before it treats contact as lost
 	 * and shows the model in view mode.
@@ -51,7 +51,16 @@ const PANE_MS = durations({
 	 * stops accepting content edits, since it can no longer say whether an agent
 	 * has claimed the model (ADR 0022). Pan and zoom keep working throughout.
 	 */
-	contactLost: 2 * SOCKET_RECONNECT_MS,
+	"pane.contactLost": delay(2 * SOCKET_RECONNECT_MS),
+	/**
+	 * How often the server looks at the repositories of this machine again while a tab follows
+	 * them. A command that registers or chooses a checkout writes the registry, which the server
+	 * watches, but a checkout or a vault can come or go on disk with the registry unchanged. A
+	 * person who runs `archboard init` in a registered checkout expects its row soon after the
+	 * command ends. One look reads the registry and a few directories, once per server and not
+	 * once per tab.
+	 */
+	"pane.repositoryRecheck": { ...tick(2_000), background: true },
 	/**
 	 * How long the server waits for the panes to say where they ended up, after
 	 * asking the browser to split or close one.
@@ -64,12 +73,12 @@ const PANE_MS = durations({
 	 * That is how a plain left/right split once came back described as "row 2,
 	 * column 2". Observed on the first real browser run, not guessed.
 	 *
-	 * The beat it is waiting out is PANE_MS.report, which is the coupling worth
+	 * The beat it is waiting out is `pane.report`, which is the coupling worth
 	 * knowing about: this must stay comfortably above it, or the cap expires while
 	 * the browser is still sitting on the report that would have ended the wait.
 	 * 300 against 1500 leaves room for the round trip and a slow frame.
 	 */
-	settleCap: 1500,
+	"pane.settleCap": polled(1500, "the moved panes to report where they ended up"),
 	/**
 	 * How long the server waits for the browser to change its layout at all.
 	 *
@@ -79,41 +88,30 @@ const PANE_MS = durations({
 	 * it is generous because failing it means telling a user their split did not
 	 * happen when it may only have been slow.
 	 */
-	layoutTimeout: 10_000,
+	"pane.layoutTimeout": delay(10_000, "the browser to change its layout"),
 	/**
 	 * How often the server looks whether a pane it asked for a walkthrough step is
 	 * still there: the first step of a narration (TASK-251).
 	 *
 	 * The acknowledgement is the pane's own report, for the same reason a layout's
-	 * is a registration. A step costs the glide (`PRESENTATION_MS.step`, 900), or a
-	 * picture flight when it changes view (`PICTURE_MS.transition`, 640) after the
+	 * is a registration. A step costs the glide (`presentation.step`, 900), or a
+	 * picture flight when it changes view (`picture.transition`, 640) after the
 	 * new picture has been fetched and drawn, then the report's debounce
-	 * (`PANE_MS.selectionDebounce`, 150) and a round trip: a couple of seconds at worst.
+	 * (`pane.selectionDebounce`, 150) and a round trip: a couple of seconds at worst.
 	 * A slow pane keeps its request, because the voice stays silent until that step
 	 * reaches it. Only a pane that has gone ends the wait, so this bounds how long a
 	 * dead request lingers and nothing a person sees.
 	 */
-	presentationPaneCheck: 8000,
+	"pane.presentationPaneCheck": tick(8000),
 	/**
 	 * How long `browser show` and `browser open` wait for the first pane after they
 	 * opened the canvas in the default browser, because none was connected.
 	 *
 	 * A cold browser start, the page load and the pane's first socket message fit
 	 * well inside it. Failing it refuses the command with `BROWSER_REQUIRED`, so it
-	 * is generous for the same reason `layoutTimeout` is.
+	 * is generous for the same reason `pane.layoutTimeout` is.
 	 */
-	browserConnect: 20_000,
-	/** How often the CLI asks the server whether that first pane has connected. */
-	browserConnectPoll: 250,
-});
+	"pane.browserConnect": polled(20_000, "a pane to connect"),
+};
 
-/**
- * One duration of a pane.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function paneMs(key: keyof typeof PANE_MS): number {
-	return PANE_MS[key];
-}
-
-export { paneMs };
+export { PANE };

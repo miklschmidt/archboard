@@ -5,9 +5,11 @@
 
 import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
-import { codexRealtimeMs } from "@archboard/timing";
 import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createTabSessions } from "#server/sessions/services/browser-tabs.ts";
+
+/** The reviewed tab session grace, which timing pins: how far the fake clock moves to end a tab. */
+const TAB_SESSION_GRACE_MS = 60_000;
 
 const TAB = parseTabSessionId("tab-one") as TabSessionId;
 const PAYMENTS = "/work/payments";
@@ -46,12 +48,12 @@ test("a tab's shown conversation ends with the tab, and a tab that comes back is
 
 	// A reload within the grace keeps it.
 	tabs.forget("chat-a");
-	jest.advanceTimersByTime(codexRealtimeMs("tabSessionGrace") - 1);
+	jest.advanceTimersByTime(TAB_SESSION_GRACE_MS - 1);
 	tabs.note("chat-a", TAB);
 	expect(tabs.current(TAB)).toBe(SHOP);
 
 	tabs.forget("chat-a");
-	jest.advanceTimersByTime(codexRealtimeMs("tabSessionGrace"));
+	jest.advanceTimersByTime(TAB_SESSION_GRACE_MS);
 	expect(tabs.current(TAB)).toBeNull();
 	tabs.note("chat-a", TAB);
 	expect(tabs.shown(TAB, () => PAYMENTS)).toBe(PAYMENTS);

@@ -3,7 +3,7 @@ import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { codexRealtimeMs } from "@archboard/timing";
+import { expiresAt } from "@archboard/timing";
 import {
 	createDefaultWorkbenchHost,
 	type DefaultWorkbenchHostInput,
@@ -207,8 +207,8 @@ describe("the default workbench host", () => {
 			expect(context.child).toEqual({ id: h.authority.childId, epoch: h.authority.epoch });
 			expect(context.workhorse.threadId).toBe(h.authority.threadId);
 			expect(context.brief.text).toBe("The actual host task.");
-			expect(context.brief.freshUntilMs - context.brief.capturedAtMs).toBe(
-				codexRealtimeMs("contextFreshness"),
+			expect(context.brief.freshUntilMs).toBe(
+				expiresAt("codex.contextFreshness", context.brief.capturedAtMs),
 			);
 			expect(context.operation).toEqual({ ...OPERATION, outcome: null });
 			expect(Object.isFrozen(context.brief)).toBe(true);

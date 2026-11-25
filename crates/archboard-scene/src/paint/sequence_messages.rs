@@ -16,11 +16,11 @@ use crate::paint::styles::{
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
-use crate::scene::traffic::{pulse_span, with_light_room};
 use crate::scene::{
     Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
     SubjectKind, TrafficMark,
 };
+use crate::sizes::pulse_clearance;
 use crate::sizes::{
     MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
     STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
@@ -183,8 +183,7 @@ pub(super) struct Crossing {
 
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 pub(super) fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
-    let distance =
-        lengths.iter().fold(0.0, |sum, length| sum + length) + with_light_room(pulse_span());
+    let distance = lengths.iter().fold(0.0, |sum, length| sum + length) + pulse_clearance();
     let speed = js::js_max(
         clock.traffic_speed * PULSE_PACE,
         distance / (clock.cycle_cap_ms / 1000.0),
@@ -246,14 +245,14 @@ pub(super) fn row_tint(rect: Rect, standing: Option<Standing>, palette: &Palette
         return Items::new();
     };
     shape(Shape {
-        fill_opacity: Some(ROW_TINT),
-        ..Shape::rect(Purpose::Box, boxed(rect), None).filled(ink)
+        fill_opacity: ROW_TINT,
+        ..Shape::rect(Purpose::Box, boxed(rect), 0.0).filled(ink)
     })
 }
 
 /// A rounded plate.
 fn plate_of(rect: Rect) -> Shape {
-    Shape::rect(Purpose::Box, boxed(rect), Some(PILL_RADIUS))
+    Shape::rect(Purpose::Box, boxed(rect), PILL_RADIUS)
 }
 
 /// One message's label, a line at a time, each centred, on a chip.
@@ -280,9 +279,7 @@ fn paint_label(
     };
     let rule = shape(Shape {
         purpose: Purpose::Halo,
-        ..plate_of(rect)
-            .unfilled()
-            .stroked(styles.ring(Some(LIT_RULE_WIDTH)))
+        ..plate_of(rect).stroked(styles.ring(LIT_RULE_WIDTH))
     });
     let lines_of_words = placed.words.lines.iter().enumerate().map(|(index, line)| {
         text(
@@ -368,9 +365,7 @@ pub(super) fn paint_step(
     let width = stroke_width(STEP_WEIGHT);
     let line = Shape {
         marker: Some(marker_for(STEP_WEIGHT, head, mark)),
-        ..Shape::path(Purpose::Line, path.clone())
-            .unfilled()
-            .stroked(step_stroke(kind, palette, mark))
+        ..Shape::path(Purpose::Line, path.clone()).stroked(step_stroke(kind, palette, mark))
     };
     let lit = Shape {
         marker: Some(MarkerId::Shared {
@@ -379,7 +374,7 @@ pub(super) fn paint_step(
             ink: HeadInk::Lit,
         }),
         ..styles.halo(Shape::path(Purpose::LitLine, path.clone()).stroked(Stroke {
-            width: Some(width + LIT_TRACE_EXTRA),
+            width: width + LIT_TRACE_EXTRA,
             ..step_stroke(kind, palette, None)
         }))
     };
@@ -389,9 +384,9 @@ pub(super) fn paint_step(
             Role::Line(None),
             lines(vec![
                 shape(
-                    Shape::path(Purpose::Halo, path).unfilled().stroked(
+                    Shape::path(Purpose::Halo, path).stroked(
                         styles
-                            .ring(Some(width + STEP_HALO_EXTRA))
+                            .ring(width + STEP_HALO_EXTRA)
                             .at(STEP_HALO_OPACITY)
                             .rounded(),
                     ),

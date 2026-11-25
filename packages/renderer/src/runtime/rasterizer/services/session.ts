@@ -19,7 +19,7 @@ import {
 	type HeadlessChromium,
 } from "#runtime/headless-chromium/processes/launch.ts";
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
-import { processGroupPollMs } from "@archboard/timing";
+import { ms, pollUntil } from "@archboard/timing";
 
 import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
 import {
@@ -32,8 +32,6 @@ import {
 interface SessionOptions {
 	readonly chromiumPath: string;
 	readonly jobTimeoutMs: number;
-	readonly startupTimeoutMs: number;
-	readonly cleanupTimeoutMs: number;
 }
 
 /** What one capture is: the document and the bitmap it should become. */
@@ -126,13 +124,11 @@ class RasterSession {
 		const chromium = await launchHeadlessChromium({
 			chromiumPath: options.chromiumPath,
 			extraArgs: RASTER_FLAGS,
-			startupTimeoutMs: options.startupTimeoutMs,
-			cleanupTimeoutMs: options.cleanupTimeoutMs,
 			tempRootPrefix: "archboard-raster-",
 			...(signal === undefined ? {} : { signal }),
 		});
 		try {
-			const page = await chromium.openPage(options.startupTimeoutMs, signal);
+			const page = await chromium.openPage(ms("chromium.openPage"), signal);
 			return new RasterSession(options, chromium, page);
 		} catch (error) {
 			const cleanup = await chromium.stop();
@@ -187,15 +183,15 @@ class RasterSession {
 	 */
 	private async load(devtools: DevTools, file: string, signal?: AbortSignal): Promise<void> {
 		const timeoutMs = this.options.jobTimeoutMs;
-		const deadline = Date.now() + timeoutMs;
 		await devtools.call("Page.navigate", { url: pathToFileURL(file).href }, timeoutMs);
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		while ((await devtools.evaluate("document.readyState", { timeoutMs })) !== "complete") {
-			signal?.throwIfAborted();
-			if (Date.now() > deadline) throw new Error("The document did not finish loading in time.");
-			// oxlint-disable-next-line no-await-in-loop -- the pause between two probes of one poll
-			await Bun.sleep(processGroupPollMs());
-		}
+		await pollUntil(
+			"raster.documentLoad",
+			async () =>
+				(await devtools.evaluate("document.readyState", { timeoutMs })) === "complete"
+					? true
+					: undefined,
+			{ signal },
+		);
 	}
 
 	/**

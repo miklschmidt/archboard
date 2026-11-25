@@ -4,7 +4,7 @@ import { verifyCodexExecutable } from "#runtime/services/executable.ts";
 import type { CodexProcessTestOptions } from "#runtime/processes/process-contract.ts";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import { prepareCodexStorage } from "#runtime/store/storage.ts";
-import type { SpawnChild, Timer } from "#runtime/processes/process-contract.ts";
+import type { SpawnChild } from "#runtime/processes/process-contract.ts";
 
 /** The resolved dependency seams, defaults applied. */
 interface OwnerDependencies {
@@ -13,9 +13,6 @@ interface OwnerDependencies {
 	readonly prepareStorage: typeof prepareCodexStorage;
 	readonly fileSystem: NonNullable<CodexProcessTestOptions["dependencies"]>["fileSystem"];
 	readonly processGroup: ReturnType<typeof createCodexProcessGroupOperations>;
-	readonly now: () => number;
-	readonly schedule: (callback: () => void, delayMs: number) => Timer;
-	readonly cancel: (timer: Timer) => void;
 }
 
 /**
@@ -31,22 +28,6 @@ function resolveDependencies(options: CodexProcessTestOptions): OwnerDependencie
 		prepareStorage: dependencies.prepareStorage ?? prepareCodexStorage,
 		fileSystem: dependencies.fileSystem,
 		processGroup: dependencies.processGroup ?? createCodexProcessGroupOperations(),
-		...resolveClock(dependencies),
-	};
-}
-
-/**
- * Apply the production defaults to the clock seams the restart policy runs on.
- * @param dependencies - The injected seams, which may name none of them.
- * @returns The resolved clock and timer seams.
- */
-function resolveClock(
-	dependencies: NonNullable<CodexProcessTestOptions["dependencies"]>,
-): Pick<OwnerDependencies, "now" | "schedule" | "cancel"> {
-	return {
-		now: dependencies.now ?? Date.now,
-		schedule: dependencies.schedule ?? ((callback, delayMs) => setTimeout(callback, delayMs)),
-		cancel: dependencies.cancel ?? ((timer) => clearTimeout(timer)),
 	};
 }
 

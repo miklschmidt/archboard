@@ -6,7 +6,7 @@ import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fix
 // a show of another vault's model moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { WebSocket, type RawData } from "ws";
@@ -20,6 +20,7 @@ import { packageBin } from "../cli/support/package-cli.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { holderOf } from "../support/test-vault.ts";
+import { openRepositoryFeed, type RepositoriesFrame } from "../support/architecture-feed.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession } from "./support/pane-session.ts";
 
@@ -32,6 +33,9 @@ interface Listed {
 	state: string;
 	checkouts: { root: string; chosen: boolean; hasVault: boolean }[];
 }
+
+/** The answer to a choice: the listing that follows it. */
+type Answer = Omit<RepositoriesFrame, "type">;
 
 let fixture: RepositoryFixture;
 let server: OwnedServer;
@@ -156,26 +160,22 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		resources.defer(() => pane.close());
 		// A pane of another tab, in a vault the choice does not touch.
-		const elsewhere = await openPaneSession(server.base, inServed, {
-			clientId: "pane-elsewhere",
-			model: "notes",
-		});
-		resources.defer(() => elsewhere.close());
+		// A tab that follows the repositories, in no vault the choice touches.
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		const snapshot = await tab.next();
 
 		// Choosing the worktree moves the pane into its vault and keeps its model,
-		// which the worktree has not got, and every tab is told to list again.
+		// which the worktree has not got. The answer is the new listing, and every
+		// tab that follows the repositories is sent it.
 		const mark = pane.mark();
-		const elsewhereMark = elsewhere.mark();
-		const chose = await fetch(`${server.base}/api/repositories/chosen`, {
-			method: "PUT",
-			headers: { ...pageHeaders(), "Content-Type": "application/json" },
-			body: JSON.stringify({ repository: ORDERS, root: worktree }),
-		});
+		const chose = await choose(worktree);
 		expect(chose.status).toBe(200);
+		const { instance, revision, repositories } = (await chose.json()) as Answer;
+		expect(revision).toBeGreaterThan(snapshot.revision);
+		expect(ordersVault(repositories)).toBe(worktreeVault);
 		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ paneKey: "payments", vault: worktreeVault, repository: ORDERS });
-		await pane.waitFor("repositories_changed", mark);
-		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
+		expect(await tab.next()).toEqual({ type: "repositories", instance, revision, repositories });
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
 		// A show names the pane and the vault of another repository's model, and the
@@ -283,11 +283,84 @@ describe.serial("the repositories of the navigator", () => {
 		await pane.sync();
 		expect(pane.events.slice(mark).filter((event) => event.type === "pane_place")).toEqual([]);
 
-		// With a vault it is chosen, and the pane moves there with its model.
+		// The CLI can choose a checkout before it has a vault. Once the vault appears,
+		// the same disk recheck that updates the listing also moves the pane.
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		await tab.next();
+		cli("repo", "use", fix);
+		await tab.until((listing) =>
+			listing.repositories.some((entry) => entry.name === ORDERS && entry.state === "no-vault"),
+		);
+		await pane.sync();
+		const beforeVault = pane.mark();
 		const fixVault = vaultOf(fix);
-		expect((await choose(fix)).status).toBe(200);
-		const moved = await pane.waitFor("pane_place", mark);
+		await tab.until((listing) => ordersVault(listing.repositories) === fixVault);
+		const moved = await pane.waitFor("pane_place", beforeVault);
 		expect(moved).toMatchObject({ paneKey: "payments", vault: fixVault, repository: ORDERS });
+	});
+
+	test("a tab is sent a vault that leaves the disk while the registry stays, and a returning tab the listing as it is", async () => {
+		await using resources = new AsyncDisposableStack();
+		const holder = join(fixture.root, "zz-scratch");
+		const vault = vaultOf(holder);
+		cli("repo", "add", holder);
+		{
+			using tab = await openRepositoryFeed(server.base);
+			expect(names(await tab.next())).toContain("zz-scratch");
+			const pane = await openPaneSession(server.base, createRequester({ ...server, vault }), {
+				clientId: "scratch-pane",
+			});
+			resources.defer(() => pane.close());
+			// Nothing writes the registry: the server finds the change on its own look at the disk.
+			rmSync(holder, { recursive: true, force: true });
+			await tab.until((listing) => !names(listing).includes("zz-scratch"));
+
+			// Forgetting an already missing vault leaves the listing alone but removes the pane's name.
+			await pane.sync();
+			const mark = pane.mark();
+			cli("repo", "forget", holder);
+			expect(await pane.waitFor("pane_place", mark)).toMatchObject({ vault, repository: null });
+		}
+		// While no tab follows, a choice changes the listing; a tab that comes back is sent it.
+		expect((await choose(main)).status).toBe(200);
+		using back = await openRepositoryFeed(server.base);
+		const snapshot = await back.next();
+		expect(names(snapshot)).not.toContain("zz-scratch");
+		expect(ordersVault(snapshot.repositories)).toBe(vaultOf(main));
+	});
+
+	test("two choices at once are each answered with the listing that follows them, in order", async () => {
+		const other = realpathSync.native(join(fixture.root, "orders-fix"));
+		expect((await choose(other)).status).toBe(200);
+		using tab = await openRepositoryFeed(server.base);
+		const snapshot = await tab.next();
+		expect(ordersVault(snapshot.repositories)).toBe(vaultOf(other));
+		const answers = await Promise.all(
+			[main, worktree].map(async (root) => {
+				const response = await choose(root);
+				expect(response.status).toBe(200);
+				const listing = (await response.json()) as Answer;
+				expect(ordersVault(listing.repositories)).toBe(vaultOf(root));
+				return listing;
+			}),
+		);
+		const [first, last] = answers.toSorted((a, b) => a.revision - b.revision);
+		expect(first!.revision).toBe(snapshot.revision + 1);
+		expect(last!.revision).toBe(snapshot.revision + 2);
+		expect(await tab.next()).toEqual({
+			type: "repositories",
+			instance: first!.instance,
+			revision: first!.revision,
+			repositories: first!.repositories,
+		});
+		expect(await tab.next()).toEqual({
+			type: "repositories",
+			instance: last!.instance,
+			revision: last!.revision,
+			repositories: last!.repositories,
+		});
+		const now = (await listed()).find((each) => each.name === ORDERS);
+		expect(now?.vault).toBe(ordersVault(last!.repositories));
 	});
 
 	test("a vault that a link leads out of the layout is not listed", async () => {
@@ -368,6 +441,24 @@ describe.serial("the repositories of the navigator", () => {
 		});
 	});
 });
+
+/**
+ * The names a listing lists.
+ * @param listing The listing.
+ * @returns The names.
+ */
+function names(listing: RepositoriesFrame): string[] {
+	return listing.repositories.map((each) => each.name);
+}
+
+/**
+ * The vault the fixture's repository reads in a listing.
+ * @param repositories The listing.
+ * @returns The vault of its chosen checkout.
+ */
+function ordersVault(repositories: RepositoriesFrame["repositories"]): string | null | undefined {
+	return repositories.find((each) => each.name === ORDERS)?.vault;
+}
 
 /**
  * Run the CLI against this server's registry, as a command that reaches no

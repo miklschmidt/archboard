@@ -15,7 +15,6 @@ import {
 	type CodexProcessSnapshot,
 	type CodexProcessState,
 	type CodexProcessTestOptions,
-	type Timer,
 } from "#runtime/processes/process-contract.ts";
 import {
 	type CodexProcessGroupIdentity,
@@ -50,7 +49,8 @@ interface ChildRecord {
 	strictHint: boolean;
 	strictTail: string;
 	groupQuiescent: boolean;
-	readinessTimer: Timer | undefined;
+	/** Cancels the readiness timeout, while one is armed. */
+	readinessTimer: (() => void) | undefined;
 	groupCleanup: Promise<void> | undefined;
 	error?: Error;
 }
@@ -87,7 +87,8 @@ interface ProcessOwnerState {
 	storage: PreparedCodexStorage | undefined;
 	storageCleanup: (() => void) | undefined;
 	current: ChildRecord | undefined;
-	restartTimer: Timer | undefined;
+	/** Cancels the scheduled restart, while one is armed. */
+	restartTimer: (() => void) | undefined;
 	restartAttempt: number;
 	nextRestartAtMs: number | null;
 	restartDelayMs: number | null;
@@ -173,22 +174,8 @@ function failureValue(state: ProcessOwnerState, error: CodexProcessError): Codex
 }
 
 /**
- * Cancel a timer, ignoring a scheduler that no longer knows it.
- * @param state - The owner state.
- * @param timer - The timer, when one is set.
- */
-function cancelTimer(state: ProcessOwnerState, timer: Timer | undefined): void {
-	if (timer === undefined) return;
-	try {
-		state.dependencies.cancel(timer);
-	} catch {
-		/* A timer that already fired has no further ownership. */
-	}
-}
-
-/**
  * Create the owner state with production defaults applied and the process
- * group cleanup bound to the owner's clock and diagnostics.
+ * group cleanup bound to the owner's diagnostics.
  * @param options - The process options.
  * @returns The mutable owner state; its hooks must be bound before use.
  */
@@ -205,34 +192,20 @@ function createOwnerState(options: CodexProcessTestOptions): ProcessOwnerState {
 		childListeners: new Set(),
 		groups: new Set(),
 		unprovenChildren: new Set(),
-		processGroupCleanup: createProcessGroupCleanup(
-			dependencies.processGroup,
-			{
-				now: dependencies.now,
-				schedule: dependencies.schedule,
-				/**
-				 * Cancel a timer through the owner, so a cancel failure is charged to it.
-				 * @param timer - The timer to cancel.
-				 */
-				cancel: (timer): void => {
-					cancelTimer(state, timer);
-				},
-			},
-			{
-				/**
-				 * Build the terminal failure a cleanup breach becomes.
-				 * @param message - The reason.
-				 * @returns The terminal error.
-				 */
-				failure: (message) => shutdownError(state, message),
-				/**
-				 * Describe a caught value for a public message.
-				 * @param cause - The caught value.
-				 * @returns The redacted description.
-				 */
-				safeCauseMessage: (cause) => safeCauseMessage(state, cause),
-			},
-		),
+		processGroupCleanup: createProcessGroupCleanup(dependencies.processGroup, {
+			/**
+			 * Build the terminal failure a cleanup breach becomes.
+			 * @param message - The reason.
+			 * @returns The terminal error.
+			 */
+			failure: (message) => shutdownError(state, message),
+			/**
+			 * Describe a caught value for a public message.
+			 * @param cause - The caught value.
+			 * @returns The redacted description.
+			 */
+			safeCauseMessage: (cause) => safeCauseMessage(state, cause),
+		}),
 		hooks: {
 			/**
 			 * Placeholder until the owner binds the real stop.
@@ -411,11 +384,10 @@ function resolvePendingStart(state: ProcessOwnerState): void {
 
 /**
  * Cancel a child's readiness timeout.
- * @param state - The owner state.
  * @param record - The child generation.
  */
-function clearReadiness(state: ProcessOwnerState, record: ChildRecord): void {
-	cancelTimer(state, record.readinessTimer);
+function clearReadiness(record: ChildRecord): void {
+	record.readinessTimer?.();
 	record.readinessTimer = undefined;
 }
 
@@ -424,7 +396,7 @@ function clearReadiness(state: ProcessOwnerState, record: ChildRecord): void {
  * @param state - The owner state.
  */
 function clearRestart(state: ProcessOwnerState): void {
-	cancelTimer(state, state.restartTimer);
+	state.restartTimer?.();
 	state.restartTimer = undefined;
 	state.nextRestartAtMs = null;
 	state.restartDelayMs = null;
@@ -509,7 +481,7 @@ function terminalFailure(state: ProcessOwnerState, error: CodexProcessError): vo
 	state.accountReady = false;
 	if (state.current) {
 		state.current.ready = false;
-		clearReadiness(state, state.current);
+		clearReadiness(state.current);
 	}
 	setState(state, "terminal_failure");
 	rejectPendingStart(state, sanitized);

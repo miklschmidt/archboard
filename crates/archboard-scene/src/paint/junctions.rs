@@ -416,7 +416,7 @@ pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
                 None => Shape::new(
                     Purpose::Line,
                     Geometry::Circle {
-                        centre: Some(from),
+                        centre: from,
                         radius: round_coord(radius),
                     },
                 )
@@ -430,7 +430,6 @@ pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
                         },
                     ],
                 )
-                .unfilled()
                 .stroked(Stroke::new(ink, round_coord(radius * 2.0)).capped(Cap::Round)),
             };
             shape(Shape {

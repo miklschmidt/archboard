@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
-import { claimMs } from "@archboard/timing";
+import { expiresAt } from "@archboard/timing";
 import { architectureClaimResultSchema } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -249,7 +249,7 @@ test("off-screen durable work keeps attribution, refuses failed writes, and clea
 		);
 		if (!renewed.success) throw new Error(JSON.stringify(renewed));
 		start = pane.since();
-		writeFileSync(clock, String(claimMs("default") + 1));
+		writeFileSync(clock, String(expiresAt("claim.subjects", 0) + 1));
 		expect(
 			await pane.waitFor(
 				(event) =>

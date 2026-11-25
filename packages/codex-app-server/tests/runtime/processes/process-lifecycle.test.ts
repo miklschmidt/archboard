@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test, jest } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import type { Readable } from "node:stream";
@@ -6,7 +6,6 @@ import { readProcessObservation } from "@archboard/process/observation";
 
 import { CodexProcessError } from "#runtime/processes/process-contract.ts";
 import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
-import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import {
 	fixture,
 	processOptions as options,
@@ -19,6 +18,7 @@ import {
 	driveManual,
 	fakeLifecycle,
 	manualScheduler,
+	REVIEWED_SHUTDOWN_MS,
 } from "#tests/runtime/support/process-lifecycle-support.ts";
 
 /**
@@ -26,7 +26,8 @@ import {
  * kill lands asynchronously, and a hosted macOS runner needed three (TASK-361).
  * More would mean cleanup waits on something after the kill.
  */
-const KILLED_GROUP_EXIT_POLLS = 3;
+/** How long past the TERM grace a killed real group may take to be seen gone. A test number. */
+const KILLED_GROUP_EXIT_MS = 400;
 
 /**
  * A leader that exits 17 once its descendant ignores TERM. The descendant says
@@ -39,6 +40,8 @@ const LEADER_WITH_TERM_RESISTANT_DESCENDANT = `const { spawn } = require("node:c
 function processState(pid: number): string | undefined {
 	return readProcessObservation(pid)?.state;
 }
+
+afterEach(() => jest.useRealTimers());
 
 describe("Codex process lifecycle", () => {
 	test("keeps start pending until the typed app-server readiness acknowledgement", async () => {
@@ -302,11 +305,6 @@ describe("Codex process lifecycle", () => {
 			const executable = fixture(root, LEADER_WITH_TERM_RESISTANT_DESCENDANT);
 			owner = createCodexProcess({
 				...options(root, executable),
-				dependencies: {
-					now: clock.now,
-					schedule: clock.schedule,
-					cancel: clock.cancel,
-				},
 			});
 			const descendant = new Promise<number>((resolve) => {
 				owner!.onChild((child) => {
@@ -333,9 +331,9 @@ describe("Codex process lifecycle", () => {
 			});
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.lastExit?.classification).toBe("early_exit");
-			expect(clock.now()).toBeGreaterThanOrEqual(codexProcessMs("termGrace"));
+			expect(clock.now()).toBeGreaterThanOrEqual(REVIEWED_SHUTDOWN_MS.termGrace);
 			expect(clock.now()).toBeLessThanOrEqual(
-				codexProcessMs("termGrace") + KILLED_GROUP_EXIT_POLLS * processGroupPollMs(),
+				REVIEWED_SHUTDOWN_MS.termGrace + KILLED_GROUP_EXIT_MS,
 			);
 			expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		} finally {
@@ -371,11 +369,6 @@ describe("Codex process lifecycle", () => {
 			const executable = fixture(root, LEADER_WITH_TERM_RESISTANT_DESCENDANT);
 			owner = createCodexProcess({
 				...options(root, executable),
-				dependencies: {
-					now: clock.now,
-					schedule: clock.schedule,
-					cancel: clock.cancel,
-				},
 			});
 			const descendant = new Promise<number>((resolve) => {
 				owner!.onChild((child) => {
@@ -417,10 +410,8 @@ describe("Codex process lifecycle", () => {
 		expect([undefined, "zombie"]).toContain(processState(leaderPid));
 		expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		expect(fs.existsSync(root)).toBe(false);
-		expect(clock.now()).toBeGreaterThanOrEqual(codexProcessMs("termGrace"));
-		expect(clock.now()).toBeLessThanOrEqual(
-			codexProcessMs("termGrace") + KILLED_GROUP_EXIT_POLLS * processGroupPollMs(),
-		);
+		expect(clock.now()).toBeGreaterThanOrEqual(REVIEWED_SHUTDOWN_MS.termGrace);
+		expect(clock.now()).toBeLessThanOrEqual(REVIEWED_SHUTDOWN_MS.termGrace + KILLED_GROUP_EXIT_MS);
 	});
 
 	test("sends TERM, then KILL, to a child that refuses TERM", async () => {

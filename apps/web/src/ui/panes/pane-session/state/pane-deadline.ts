@@ -7,55 +7,7 @@
 // the compromise, and `immediate` is the escape for the one case that cannot
 // wait — a pane arriving on a model, which the next CLI turn reads.
 
-import { paneMs } from "@archboard/timing";
-
-/** A clock the deadline schedules against; the browser's by default. */
-interface PaneDeadlineClock {
-	set(delayMs: number, callback: () => void): unknown;
-	clear(handle: unknown): void;
-}
-
-/**
- * The browser's clock, handing out numeric keys so a handle needs no cast back.
- * @returns A clock over `setTimeout`.
- */
-function createBrowserClock(): PaneDeadlineClock {
-	const timeouts = new Map<number, ReturnType<typeof setTimeout>>();
-	let nextKey = 0;
-	return {
-		/**
-		 * Schedule a callback.
-		 * @param delayMs How long to wait.
-		 * @param callback What to run.
-		 * @returns The key that clears it.
-		 */
-		set(delayMs, callback) {
-			const key = ++nextKey;
-			timeouts.set(
-				key,
-				setTimeout(() => {
-					timeouts.delete(key);
-					callback();
-				}, delayMs),
-			);
-			return key;
-		},
-		/**
-		 * Cancel a scheduled callback.
-		 * @param handle The key `set` returned.
-		 */
-		clear(handle) {
-			if (typeof handle !== "number") {
-				return;
-			}
-			const timeout = timeouts.get(handle);
-			if (timeout !== undefined) {
-				clearTimeout(timeout);
-				timeouts.delete(handle);
-			}
-		},
-	};
-}
+import { after } from "@archboard/timing";
 
 /** The debounce between a pane change and its registry report. */
 interface PaneReportDeadline {
@@ -66,19 +18,13 @@ interface PaneReportDeadline {
 
 /**
  * Own the replaceable debounce between a pane change and its registry report.
- * @param clock The clock to schedule on.
  * @returns The deadline.
  */
-function createPaneReportDeadline(
-	clock: PaneDeadlineClock = createBrowserClock(),
-): PaneReportDeadline {
-	let handle: unknown = null;
+function createPaneReportDeadline(): PaneReportDeadline {
+	let handle: (() => void) | null = null;
 	/** Drop the pending timer, if any. */
 	function cancel(): void {
-		if (handle === null) {
-			return;
-		}
-		clock.clear(handle);
+		handle?.();
 		handle = null;
 	}
 	/**
@@ -92,7 +38,7 @@ function createPaneReportDeadline(
 			send();
 			return;
 		}
-		handle = clock.set(paneMs("report"), () => {
+		handle = after("pane.report", () => {
 			handle = null;
 			send();
 		});

@@ -3,6 +3,7 @@
 //! `paint::design`.
 
 use crate::drawing::{DiagramFont, FontFamily};
+use crate::js;
 
 /// How close two points must be to be one, and the least a turn may move.
 pub(crate) const EPSILON: f64 = 0.01;
@@ -214,3 +215,36 @@ pub(crate) const FRAME_GUARD_HEIGHT: f64 = 16.0;
 pub(crate) const FRAME_PAD: f64 = 10.0;
 /// The padding of a frame's tab around its operator.
 pub(crate) const FRAME_TAB_PADDING: f64 = 6.0;
+
+// The dimensions of a traffic pulse, which the scene's beam is cut to and
+// the painter leaves room for.
+
+/// How long a pulse's hot front is, along its line.
+pub(crate) const PULSE_FRONT: f64 = 3.0;
+/// How long a pulse's head is, behind its front.
+pub(crate) const PULSE_HEAD: f64 = 12.0;
+/// How long a pulse's tail is at most, behind its head.
+pub(crate) const PULSE_TAIL: f64 = 56.0;
+/// How far a pulse's light reaches past the line it rides, either side.
+pub(crate) const PULSE_MASK_ROOM: f64 = 2.0;
+
+/// How long a pulse with its longest tail is.
+pub(crate) const fn pulse_span() -> f64 {
+    PULSE_FRONT + PULSE_HEAD + PULSE_TAIL
+}
+
+/// A length with the room a pulse's light takes past it added.
+pub(crate) fn with_light_room(length: f64) -> f64 {
+    length + PULSE_MASK_ROOM
+}
+
+/// How long a clock runs on after a message's pulse has left its route: the
+/// whole pulse and the room its light takes.
+pub(crate) fn pulse_clearance() -> f64 {
+    with_light_room(pulse_span())
+}
+
+/// How thick a pulse's core is on a line of one width.
+pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
+    js::js_max(1.5, line_width + 0.6)
+}

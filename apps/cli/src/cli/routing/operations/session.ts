@@ -22,7 +22,7 @@ import {
 } from "#cli/contract/protocol/shared-options.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
-import { gitMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "#cli/routing/protocol/route.ts";
 import { helpText, usageLine } from "#cli/routing/rules/help.ts";
 import { dispatchedCommand } from "#cli/routing/rules/dispatch.ts";
@@ -61,7 +61,7 @@ async function runInterruptibleCommand(
 ): Promise<void> {
 	const controller = new AbortController();
 	let interrupted: NodeJS.Signals | undefined;
-	let forceTimer: ReturnType<typeof setTimeout> | undefined;
+	let cancelForce: (() => void) | undefined;
 	/**
 	 * Detaches the signal handlers so a second signal takes the default path.
 	 */
@@ -79,10 +79,10 @@ async function runInterruptibleCommand(
 		}
 		interrupted = signal;
 		controller.abort(new Error(`CLI interrupted by ${signal}.`));
-		forceTimer = setTimeout(() => {
+		cancelForce = after("git.cliInterruptCleanup", () => {
 			remove();
 			process.kill(process.pid, signal);
-		}, gitMs("cliInterruptCleanup"));
+		});
 	};
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);
@@ -97,9 +97,7 @@ async function runInterruptibleCommand(
 		);
 	} finally {
 		remove();
-		if (forceTimer !== undefined) {
-			clearTimeout(forceTimer);
-		}
+		cancelForce?.();
 		if (interrupted) {
 			process.kill(process.pid, interrupted);
 		}

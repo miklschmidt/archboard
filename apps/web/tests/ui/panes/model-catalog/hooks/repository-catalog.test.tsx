@@ -1,9 +1,10 @@
-// Repository discovery reads no model: the event feed reports each vault's summary.
-import { architectureFeedRequestSchema } from "@archboard/model/contract";
+// Repository discovery reads no model: the event feed reports the repositories and each vault's
+// summary.
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
 import type { ArchitectureFeedFrame } from "@archboard/model/contract";
+import { installFeedServer } from "#tests/ui/support/model-catalog/feed-server.ts";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -16,8 +17,10 @@ const { useModelCatalog } = await import("#ui/panes/model-catalog/hooks/use-mode
 
 const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";
-const REPOSITORIES = {
-	success: true,
+const REPOSITORIES: Extract<ArchitectureFeedFrame, { type: "repositories" }> = {
+	type: "repositories",
+	instance: "fixture",
+	revision: 0,
 	repositories: [
 		{ name: "github.com/acme/shop", untracked: false, vault: SHOP, state: "ready", checkouts: [] },
 		{
@@ -72,53 +75,16 @@ const LEGACY: Extract<Summary, { success: false }> = {
 	],
 };
 const read: string[] = [];
-let repositoriesRefused = false;
-const followed = new Set<string>();
-const sockets: ModelSocket[] = [];
-
-/** Controlled tab socket for the architecture event protocol. */
-class ModelSocket extends EventTarget {
-	static readonly OPEN = 1;
-	readonly readyState = ModelSocket.OPEN;
-	/** Open at once, as a local server does. */
-	constructor() {
-		super();
-		sockets.push(this);
-		queueMicrotask(() => this.dispatchEvent(new Event("open")));
-	}
-	/**
-	 * Keep the vaults the production subscriber follows.
-	 * @param frame One request.
-	 */
-	send(frame: string): void {
-		const { type, vault } = architectureFeedRequestSchema().parse(JSON.parse(frame));
-		if (type === "subscribe") followed.add(vault);
-		else followed.delete(vault);
-	}
-	/** Close as the browser does. */
-	close(): void {
-		this.dispatchEvent(new Event("close"));
-	}
-}
-const realSocket = Object.getOwnPropertyDescriptor(globalThis, "WebSocket");
-Object.defineProperty(globalThis, "WebSocket", { value: ModelSocket, configurable: true });
+const feed = installFeedServer();
 const realFetch = globalThis.fetch;
 
 /**
- * Answer actual discovery and model HTTP requests.
+ * Record a model read, which discovery must never make.
  * @param input The requested resource.
- * @returns Its public response.
+ * @returns Never.
  */
 async function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const asked = new URL(input instanceof Request ? input.url : String(input), "http://localhost");
-	if (asked.pathname === "/api/repositories") {
-		return repositoriesRefused
-			? Response.json(
-					{ success: false, error: "Repository discovery is unavailable." },
-					{ status: 500 },
-				)
-			: Response.json(REPOSITORIES);
-	}
 	if (asked.pathname === "/api/architecture/model") read.push(asked.searchParams.get("vault")!);
 	throw new Error(`Unexpected route: ${asked.pathname}`);
 }
@@ -137,31 +103,30 @@ function Provided(props: { children: ReactNode }): ReactNode {
 afterEach(() => {
 	cleanup();
 	read.length = 0;
-	followed.clear();
-	sockets.length = 0;
-	repositoriesRefused = false;
+	feed.reset();
 });
 afterAll(async () => {
 	globalThis.fetch = realFetch;
-	if (realSocket) Object.defineProperty(globalThis, "WebSocket", realSocket);
-	else Reflect.deleteProperty(globalThis, "WebSocket");
+	feed.uninstall();
 	await GlobalRegistrator.unregister();
 });
 
 /**
- * Report a vault as the server does when a tab subscribes, or a change of it.
- * @param frame The architecture event.
+ * Send the tab a frame as the server does when it subscribes, or on a change.
+ * @param frame The frame.
  */
 async function hear(frame: ArchitectureFeedFrame): Promise<void> {
-	await act(async () => {
-		sockets[0]!.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(frame) }));
-	});
+	await act(async () => feed.latest()!.receive(frame));
 }
 
 test("each readable repository takes its model or migration requirement from the feed and reads no model", async () => {
 	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
-	await waitFor(() => expect([...followed].toSorted()).toEqual([BILLING, SHOP]));
-	expect(sockets).toHaveLength(1);
+	await waitFor(() => expect([...(feed.latest()?.topics ?? [])]).toEqual(["repositories"]));
+	await hear(REPOSITORIES);
+	await waitFor(() =>
+		expect([...feed.latest()!.topics].toSorted()).toEqual([BILLING, SHOP, "repositories"]),
+	);
+	expect(feed.sockets).toHaveLength(1);
 	expect(result.current.repositories.map((each) => each.loading)).toEqual([
 		true,
 		true,
@@ -206,10 +171,11 @@ test("each readable repository takes its model or migration requirement from the
 	expect(read).toEqual([]);
 });
 
-test("a failed repository discovery remains explicit and starts no model read", async () => {
-	repositoriesRefused = true;
+test("a server that does not answer leaves the catalog empty with its reason, and starts no model read", async () => {
+	feed.refuse(true);
 	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
 	await waitFor(() => expect(result.current.error).not.toBeNull());
 	expect(result.current.repositories).toEqual([]);
-	expect(followed.size).toBe(0);
+	expect(feed.sockets.flatMap((socket) => [...socket.topics])).toEqual([]);
+	expect(read).toEqual([]);
 });

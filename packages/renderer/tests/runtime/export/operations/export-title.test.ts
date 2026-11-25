@@ -51,7 +51,7 @@ for (const view of [undefined, "Exchange"] as const) {
 		expect(band).toBeGreaterThan(0);
 		expect(titled.width).toBe(plain.width);
 		expect(paintedBody(titled.svg)).toContain(
-			`<g transform="translate(0 ${band})">${paintedBody(plain.svg)}</g>`,
+			`<g transform="translate(0,${band})">${paintedBody(plain.svg)}</g>`,
 		);
 		// Every subject keeps its size and moves by the band, so none reaches up into it.
 		for (const [key, box] of boxes(plain)) {

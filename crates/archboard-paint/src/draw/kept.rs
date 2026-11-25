@@ -60,7 +60,7 @@ impl<C: Canvas> Walk<'_, C> {
             }
             let x = f64::from(glyph.x) * scale;
             let y = f64::from(glyph.y) * scale;
-            self.canvas.set_transform(at * placed(x, y, Some(scale)));
+            self.canvas.set_transform(at * placed(x, y, scale));
             self.canvas.fill(&outline, &ink, false);
         }
     }

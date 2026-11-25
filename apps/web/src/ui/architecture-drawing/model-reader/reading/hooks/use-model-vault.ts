@@ -1,11 +1,9 @@
-import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
+import { useRepositories } from "#ui/panes/model-catalog/hooks/use-repositories.ts";
 
 /**
- * A portable repository address resolves through the application's existing registry query.
+ * A portable repository address resolves through the repositories the server sends the tab.
  * @param fallback The server pane's vault when the address names no repository.
  * @param paneId The addressed pane.
  * @returns The requested vault or an explicit loading or unavailable outcome.
@@ -19,17 +17,14 @@ function useModelVault(fallback: string, paneId: string) {
 		 */
 		select: (state) => state.location.search[`repo${paneId}`] ?? null,
 	});
-	const query = useQuery(repositoriesQuery());
-	const { refetch } = query;
-	const refresh = useCallback((): void => {
-		void refetch();
-	}, [refetch]);
-	const listing = query.data?.repositories;
+	const listed = useRepositories();
+	const listing = listed.repositories;
+	const resolved = resolveVault(fallback, repository, listing);
 	return {
-		...resolveVault(fallback, repository, listing),
+		...resolved,
+		error: resolved.error ?? listed.error,
+		loading: listed.loading,
 		repository: repository ?? listing?.find((entry) => entry.vault === fallback)?.name ?? null,
-		query,
-		refresh,
 	};
 }
 
@@ -51,7 +46,7 @@ function resolveVault(
 	if (entry?.state === "ready" && entry.vault !== null) return { vault: entry.vault, error: null };
 	return {
 		vault: null,
-		error: `Repository ${repository} is unavailable. Register or choose its checkout, then refresh.`,
+		error: `Repository ${repository} is unavailable. Register or choose its checkout, and it opens here.`,
 	};
 }
 

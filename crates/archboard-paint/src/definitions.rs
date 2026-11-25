@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use archboard_scene::scene::{
     Clip, Definition, Gradient, GradientForm, GradientId, Item, Marker, MarkerId, Mask, Scene,
+    every,
 };
 use kurbo::Affine;
 use peniko::{ColorStop, Extend, InterpolationAlphaSpace};
@@ -26,7 +27,11 @@ impl Definitions {
     pub(crate) fn of(scene: &Scene) -> Definitions {
         let mut found = Definitions::default();
         found.take(&scene.definitions);
-        found.read(&scene.body);
+        for item in every(&scene.body) {
+            if let Item::Definitions { definitions } = item {
+                found.take(definitions);
+            }
+        }
         found
     }
 
@@ -55,18 +60,6 @@ impl Definitions {
                 Definition::Clip(clip) => {
                     self.clips.insert(clip.id.card.clone(), clip.clone());
                 }
-            }
-        }
-    }
-
-    /// Find the definitions that stand among some items.
-    fn read(&mut self, items: &[Item]) {
-        for item in items {
-            match item {
-                Item::Definitions { definitions } => self.take(definitions),
-                Item::Group(group) => self.read(&group.items),
-                Item::Viewport(viewport) => self.read(&viewport.items),
-                _ => {}
             }
         }
     }
@@ -135,7 +128,7 @@ impl Definitions {
                     clippy::cast_possible_truncation,
                     reason = "an offset is f32 in peniko"
                 )]
-                let offset = stop.offset.unwrap_or(0.0) as f32;
+                let offset = stop.offset as f32;
                 ColorStop {
                     offset,
                     color: palette.stop(stop, alpha).into(),

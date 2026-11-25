@@ -1,5 +1,4 @@
 {
-  "outgoing": [],
   "order": 41100,
   "name": "archboard-paint",
   "kind": "package",
@@ -14,8 +13,9 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#NFwqWgrm",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Painter core"
   ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }

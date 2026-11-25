@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { backoff as restartDelay } from "@archboard/timing";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -7,7 +8,6 @@ import {
 	CodexProcessError,
 } from "#runtime/processes/process-contract.ts";
 import { createProcessOwner } from "#runtime/processes/process-owner.ts";
-import { codexProcessMs, codexRestartDelayMs } from "@archboard/timing";
 import {
 	fixture,
 	processOptions,
@@ -31,7 +31,7 @@ describe("Codex process owner", () => {
 			await started.catch(() => undefined);
 			expect(backoff.failure?.code).toBe("early_exit");
 			expect(backoff.restartAttempt).toBe(1);
-			expect(backoff.restartDelayMs).toBe(codexRestartDelayMs(0));
+			expect(backoff.restartDelayMs).toBe(restartDelay("codex.restart", 0));
 			await owner.stop();
 			expect(owner.snapshot().state).toBe("stopped");
 		} finally {
@@ -46,10 +46,7 @@ describe("Codex process owner", () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
 		try {
-			const executable = fixture(
-				root,
-				`process.stdin.resume(); setInterval(() => {}, ${codexProcessMs("termGrace")});`,
-			);
+			const executable = fixture(root, `process.stdin.resume(); setInterval(() => {}, 5000);`);
 			owner = createProcessOwner(processOptions(root, executable));
 			await startReady(owner);
 			const currentChild = owner.currentChild();
@@ -66,7 +63,7 @@ describe("Codex process owner", () => {
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			expect(backoff.accountReady).toBe(false);
 			expect(backoff.restartAttempt).toBe(1);
-			expect(backoff.restartDelayMs).toBe(codexRestartDelayMs(0));
+			expect(backoff.restartDelayMs).toBe(restartDelay("codex.restart", 0));
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);

@@ -13,9 +13,9 @@ use crate::paint::junctions::mark_radius;
 use crate::paint::shared_ink::shared_ink;
 use crate::paint::slab::boxed;
 use crate::paint::styles::stroke_width;
-use crate::scene::traffic::pulse_breadth;
 use crate::scene::{Cap, Colour, Definition, Mask, MaskId, Purpose, Shape, Stroke};
 use crate::sizes::PILL_RADIUS;
+use crate::sizes::pulse_breadth;
 
 /// A restrained sliver of clear space on each side of the upper arc.
 const BRIDGE_INK_GAP: f64 = 1.5;
@@ -46,7 +46,6 @@ pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec
             width + BRIDGE_INK_GAP * 2.0
         };
         let shape = Shape::path(Purpose::Line, route(&bridge.curve))
-            .unfilled()
             .stroked(Stroke::new(Colour::Black, stroke).rounded());
         for edge_id in &bridge.under {
             cutouts.push(Cutout {
@@ -103,7 +102,6 @@ pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
                     Purpose::Cutout,
                     route(&past_end(&piece, end, width + BRIDGE_INK_GAP)),
                 )
-                .unfilled()
                 .stroked(Stroke::new(Colour::Black, breadth).capped(Cap::Butt)),
             });
         }
@@ -120,8 +118,7 @@ fn overlaps(a: Rect, b: Rect) -> bool {
 pub(super) fn label_cutouts(edges: &[Edge], labels: &[Rect]) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for label in labels {
-        let shape =
-            Shape::rect(Purpose::Box, boxed(*label), Some(PILL_RADIUS)).filled(Colour::Black);
+        let shape = Shape::rect(Purpose::Box, boxed(*label), PILL_RADIUS).filled(Colour::Black);
         for routed in edges
             .iter()
             .filter(|routed| overlaps(inflate(curve_bounds(&routed.curve), 1.0), *label))
@@ -165,7 +162,7 @@ fn grouped(cutouts: Vec<Cutout>) -> Grouped {
 /// One route's mask: all of the route's ink but its cutouts.
 fn mask_of(routed: &Edge, cutouts: Vec<Shape>) -> Mask {
     let bounds = boxed(inflate(curve_bounds(&routed.curve), 18.0));
-    let mut shapes = vec![Shape::rect(Purpose::Box, bounds, None).filled(Colour::White)];
+    let mut shapes = vec![Shape::rect(Purpose::Box, bounds, 0.0).filled(Colour::White)];
     shapes.extend(cutouts);
     Mask {
         id: MaskId {

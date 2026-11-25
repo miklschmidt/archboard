@@ -1,5 +1,5 @@
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { paneMs } from "@archboard/timing";
+import { after, pollUntil, TimedOut } from "@archboard/timing";
 
 import { panes } from "#server/panes/services/registry.ts";
 
@@ -30,7 +30,8 @@ function registerPane(registration: PaneRegistration): PaneRegistration | undefi
 interface PendingPaneOpen {
 	resolve: (pane: PaneRegistration) => void;
 	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
+	/** Stops the wait for the layout change. */
+	timeout: () => void;
 	/** The panes that already existed, so the new one can be told from them. */
 	known: Set<string>;
 }
@@ -40,7 +41,8 @@ interface PendingPaneClose {
 	clientId: string;
 	resolve: () => void;
 	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
+	/** Stops the wait for the layout change. */
+	timeout: () => void;
 }
 const pendingPaneCloses = new Set<PendingPaneClose>();
 
@@ -59,15 +61,15 @@ function expectPaneOpen(): {
 			resolve,
 			reject,
 			known: new Set(panes.keys()),
-			timeout: setTimeout(() => {
+			timeout: after("pane.layoutTimeout", () => {
 				pendingPaneOpens.delete(pending);
 				reject(
 					new Error(
-						"The browser was asked for another pane and none appeared within 10 seconds. " +
+						`The browser was asked for another pane and none appeared. ${new TimedOut("pane.layoutTimeout").message} ` +
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, paneMs("layoutTimeout")),
+			}),
 		};
 		pendingPaneOpens.add(pending);
 	});
@@ -77,7 +79,7 @@ function expectPaneOpen(): {
 		/** Stop waiting: the request that asked is giving up. */
 		cancel: () => {
 			pendingPaneOpens.delete(pending);
-			clearTimeout(pending.timeout);
+			pending.timeout();
 		},
 	};
 }
@@ -98,15 +100,15 @@ function expectPaneClose(
 			clientId,
 			resolve,
 			reject,
-			timeout: setTimeout(() => {
+			timeout: after("pane.layoutTimeout", () => {
 				pendingPaneCloses.delete(pending);
 				reject(
 					new Error(
-						`The browser was asked to close the ${place} pane and it is still there after 10 seconds. ` +
+						`The browser was asked to close the ${place} pane and it is still there. ${new TimedOut("pane.layoutTimeout").message} ` +
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, paneMs("layoutTimeout")),
+			}),
 		};
 		pendingPaneCloses.add(pending);
 	});
@@ -115,7 +117,7 @@ function expectPaneClose(
 		/** Stop waiting: the request that asked is giving up. */
 		cancel: () => {
 			pendingPaneCloses.delete(pending);
-			clearTimeout(pending.timeout);
+			pending.timeout();
 		},
 	};
 }
@@ -134,7 +136,7 @@ function notePaneOpened(registration: PaneRegistration): void {
 			continue;
 		}
 		pendingPaneOpens.delete(pending);
-		clearTimeout(pending.timeout);
+		pending.timeout();
 		pending.resolve(registration);
 	}
 }
@@ -149,7 +151,7 @@ function notePaneClosed(clientId: string): void {
 			continue;
 		}
 		pendingPaneCloses.delete(pending);
-		clearTimeout(pending.timeout);
+		pending.timeout();
 		pending.resolve();
 	}
 }
@@ -159,11 +161,11 @@ function notePaneClosed(clientId: string): void {
  */
 function rejectPendingLayouts(): void {
 	for (const pending of pendingPaneOpens) {
-		clearTimeout(pending.timeout);
+		pending.timeout();
 		pending.reject(new Error("The Archboard server stopped before the pane opened."));
 	}
 	for (const pending of pendingPaneCloses) {
-		clearTimeout(pending.timeout);
+		pending.timeout();
 		pending.reject(new Error("The Archboard server stopped before the pane closed."));
 	}
 	pendingPaneOpens.clear();
@@ -182,26 +184,24 @@ function rejectPendingLayouts(): void {
  * or close and the ones sharing the screen whose rectangle changes with them.
  * A pane that registers meanwhile, or one that has gone since, is not asked
  * and not waited for, and the wait ends the moment the last named pane has
- * re-reported (TASK-153). paneMs("settleCap") is the bound, never the delay.
+ * re-reported (TASK-153). `pane.settleCap` is the bound, never the delay.
  * @param askedAt When the layout change was asked for, as an ISO timestamp.
  * @param moved The client ids whose rectangles the change affects.
  */
 async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Promise<void> {
 	const waitedOn = new Set(moved);
-	const deadline = Date.now() + paneMs("settleCap");
-	while (Date.now() < deadline) {
+	await pollUntil("pane.settleCap", () => {
 		for (const clientId of waitedOn) {
 			const pane = panes.get(clientId);
 			if (!pane || pane.at > askedAt) {
 				waitedOn.delete(clientId);
 			}
 		}
-		if (waitedOn.size === 0) {
-			return;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling the registry: each check waits for the previous pause to elapse
-		await Bun.sleep(50);
-	}
+		return waitedOn.size === 0 || undefined;
+	}).catch((error: unknown) => {
+		// The cap answers out of what the panes said by then.
+		if (!(error instanceof TimedOut)) throw error;
+	});
 }
 
 export {

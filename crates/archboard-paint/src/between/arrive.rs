@@ -31,9 +31,6 @@ pub(super) const SHOWN_BY: f64 = 0.6;
 /// Where a label that crosses the picture is gone, as a share of the move.
 pub(super) const LABEL_GONE_BY: f64 = 0.16;
 
-/// The move that changes nothing.
-const STILL: Transform = Transform::translate(0.0, 0.0);
-
 /// When cards in an edit are ready for lines at their new places. Shared cards
 /// can still be moving or fading, and added cards arrive alone or inside a door.
 pub(super) fn ready_cards<'a>(
@@ -56,7 +53,7 @@ pub(super) fn ready_cards<'a>(
                 Some(old) => {
                     let moved =
                         old.frame != card.frame || old.group.transform != card.group.transform;
-                    let faded = base(old.group) < base(card.group);
+                    let faded = old.group.opacity < card.group.opacity;
                     let place = if moved { phases.move_end } else { 0.0 };
                     place.max(if faded { phases.fade_end } else { 0.0 })
                 }
@@ -66,11 +63,6 @@ pub(super) fn ready_cards<'a>(
             (card.id, ready)
         })
         .collect()
-}
-
-/// How solid a group is drawn, whatever the move does to it.
-fn base(group: &Group) -> f64 {
-    group.opacity.unwrap_or(1.0)
 }
 
 /// A group borrowed from the last scene: drawn but not picked, and without the
@@ -86,10 +78,7 @@ fn borrowed(group: &Group) -> Group {
 /// A group scaled about the middle of a box, under the move it already has.
 fn scaled_about(group: &mut Group, frame: Option<Rect>, scale: f64) {
     if let Some(frame) = frame {
-        group.transform = Some(then(
-            group.transform.unwrap_or(STILL),
-            Some(scale_about(frame, scale)),
-        ));
+        group.transform = then(group.transform, scale_about(frame, scale));
     }
 }
 
@@ -132,7 +121,7 @@ pub(super) struct Leave {
     group: Group,
     frame: Option<Rect>,
     /// How the plain groups around it moved it.
-    outer: Option<Transform>,
+    outer: Transform,
     exit_end: f64,
 }
 
@@ -152,7 +141,7 @@ impl Leave {
         Leave {
             group: Group::new(Role::Marks, vec![item]),
             frame: None,
-            outer: None,
+            outer: Transform::translate(0.0, 0.0),
             exit_end,
         }
     }
@@ -164,16 +153,15 @@ impl Leave {
             return Vec::new();
         }
         let mut group = self.group.clone();
-        group.opacity = Some(base(&group) * (1.0 - gone));
+        group.opacity *= 1.0 - gone;
         scaled_about(&mut group, self.frame, 1.0 - (1.0 - LEAVE_SCALE) * gone);
         let item = Item::Group(group);
-        match self.outer {
-            Some(outer) => {
-                let mut around = Group::new(Role::Marks, vec![item]);
-                around.transform = Some(outer);
-                vec![Item::Group(around)]
-            }
-            None => vec![item],
+        if self.outer.moves_nothing() {
+            vec![item]
+        } else {
+            vec![Item::Group(
+                Group::new(Role::Marks, vec![item]).moved(self.outer),
+            )]
         }
     }
 }
@@ -260,7 +248,7 @@ impl Grow {
             return group;
         }
         let shown = ease_out(phase(here, 0.0, SHOWN_BY));
-        group.opacity = Some(self.shown + (base(&group) - self.shown) * shown);
+        group.opacity = self.shown + (group.opacity - self.shown) * shown;
         let placed = emphasised(here);
         scaled_about(
             &mut group,
@@ -268,10 +256,10 @@ impl Grow {
             self.from + (1.0 - self.from) * placed,
         );
         let left = 1.0 - placed;
-        group.transform = Some(then(
+        group.transform = then(
             Transform::translate(self.pull.0 * left, self.pull.1 * left),
             group.transform,
-        ));
+        );
         group
     }
 }
@@ -316,11 +304,11 @@ impl Swap {
         let gone = ease_in_out(phase(progress, self.out.0, self.out.1));
         let come = ease_in_out(phase(progress, self.arrives.0, self.arrives.1));
         let mut new = self.new.clone();
-        new.opacity = Some(base(&new) * come);
+        new.opacity *= come;
         let mut items = Vec::with_capacity(2);
         if gone < 1.0 {
             let mut old = self.old.clone();
-            old.opacity = Some(base(&old) * (1.0 - gone));
+            old.opacity *= 1.0 - gone;
             items.push(Item::Group(old));
         }
         items.push(Item::Group(new));
@@ -343,7 +331,7 @@ impl Ground {
     /// The easing of a shared subject's opacity, or nothing when the two scenes
     /// draw it equally visible.
     pub(super) fn new(old: &Group, new: &Group, phases: Transition) -> Option<Ground> {
-        let (from, to) = (base(old), base(new));
+        let (from, to) = (old.opacity, new.opacity);
         (from != to).then_some(Ground {
             from,
             to,
@@ -355,6 +343,6 @@ impl Ground {
     /// Draw a group this far through the move.
     pub(super) fn apply(self, group: &mut Group, progress: f64) {
         let t = ease_in_out(phase(progress, self.start, self.end));
-        group.opacity = Some(self.from + (self.to - self.from) * t);
+        group.opacity = self.from + (self.to - self.from) * t;
     }
 }

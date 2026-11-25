@@ -75,16 +75,14 @@ pub(super) fn corner_drill_mark(
                     Shape::new(
                         Purpose::Line,
                         Geometry::Circle {
-                            centre: None,
+                            centre: Point { x: 0.0, y: 0.0 },
                             radius: DRILL_MARK_RADIUS,
                         },
                     )
-                    .unfilled()
                     .stroked(Stroke::new(ink, RING_STROKE).at(0.75)),
                 ),
                 shape(
                     Shape::path(Purpose::Line, arrow(direction))
-                        .unfilled()
                         .stroked(Stroke::new(ink, 1.4).rounded()),
                 ),
             ]),
@@ -92,7 +90,7 @@ pub(super) fn corner_drill_mark(
         .moved(Transform {
             x: round_coord(cx),
             y: round_coord(cy),
-            scale: (scale != 1.0).then(|| round_coord(scale)),
+            scale: round_coord(scale),
         }),
     )
 }

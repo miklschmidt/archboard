@@ -263,7 +263,7 @@ Each section keeps its row on screen in view with `useRevealedRow`: the tree its
 `plate` is a ringed plane in the ground's tone.
 A count is `Badge` with `variant="count"` and `size="technical"`.
 
-Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `columnMs("popoverIn")` and `columnMs("popoverOut")` on the root element when the page starts.
+Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `ms("column.popoverIn")` and `ms("column.popoverOut")` on the root element when the page starts.
 
 Every scrollbar takes its look from one rule in the base layer of `app.css`, the Quiet Scrollbar Rule in DESIGN.md. Do not style or hide a scrollbar in a component. `scrollbar-gutter` stays free, because it reserves room and changes no look.
 
@@ -388,7 +388,7 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 A failed drawing lies over the picture as a floating card, with Retry and Back, and with `No comparison` when a comparison can be what failed.
 A failed read under a kept picture, a lost server and an unconfirmed reading are the shell's toast, one for each pane: `readingTrouble` says what is wrong, `useTroubleReport` hands it to the pane's `onTrouble` when it changes, and the application raises or dismisses the notice `reading:<pane>`, which carries the refusal's code as `data-code`.
 Its Retry reads every model again. A lost server's toast has none and goes when the server answers.
-A failed listing of the repositories is a toast too, with Retry, from `useListingNotice`.
+`useListingNotice` shows a toast when the repository list is unavailable. The page keeps trying and dismisses the toast when the list arrives.
 Back is the browser's, so a reading opened directly has none.
 What stays in the pane lies over the picture in `model-notices`, so nothing moves it.
 A claim is status, and no surface offers an action on it.
@@ -401,7 +401,7 @@ The shell marks the claimed model in the repository switcher and its list from t
 A mark takes no click and no focus, so a claim that starts or ends moves nothing.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
 A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
-A message about a wait appears after `pictureMs("waitNotice")` and names the destination.
+A message about a wait appears after `picture.waitNotice` and names the destination.
 A scope in `retiredIds` says that the module was removed, and `/api/architecture/retained-module` finds the newest retained reading that holds it.
 That reading opens with no comparison. An address of a reader goes through `/api/panes/show` with a missing scope, because the pane states what is missing. An agent's show is refused.
 `model-reader/rules/scene.ts` decides what carries, what leaves and which way, from the two readings, so every route to a reading moves the same way.

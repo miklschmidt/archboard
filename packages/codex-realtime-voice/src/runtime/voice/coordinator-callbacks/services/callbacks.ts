@@ -4,7 +4,7 @@ import {
 	createSettledLedger,
 	type RealtimeGeneration,
 } from "#runtime/voice/coordinator-callbacks/services/settled-ledger.ts";
-import { codexContextFreshUntil } from "@archboard/timing";
+import { expiresAt } from "@archboard/timing";
 import { createWorkhorseNewsObserver } from "#runtime/voice/coordinator-callbacks/rules/workhorse-news.ts";
 import { createTellCoordinator } from "#runtime/voice/coordinator-callbacks/services/tell-coordinator.ts";
 import {
@@ -182,7 +182,8 @@ export function createCodexCoordinatorCallbacks(
 		return Object.freeze({
 			sourceOrder: nextSourceOrder++,
 			capturedAtMs,
-			freshUntilMs: context === null ? codexContextFreshUntil(capturedAtMs) : context.freshUntilMs,
+			freshUntilMs:
+				context === null ? expiresAt("codex.contextFreshness", capturedAtMs) : context.freshUntilMs,
 		});
 	};
 

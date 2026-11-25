@@ -95,7 +95,7 @@ impl Ride {
             route: route.unwrap_or_else(|| mark.route.clone()),
             ..mark.clone()
         })];
-        group.opacity = Some(group.opacity.unwrap_or(1.0) * visible);
+        group.opacity *= visible;
         Item::Group(group)
     }
 
@@ -112,5 +112,60 @@ impl Ride {
             self.drawn(last, along, (1.0 - swapped) * shown, progress),
             self.drawn(&self.next, along, swapped * shown, progress),
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::geometry::{Point, Segment};
+    use archboard_scene::scene::{Group, Item, Role, TrafficMark};
+
+    use super::Ride;
+    use crate::between::phases::fixtures::PHASES;
+    use crate::traffic::parity::{MESSAGE, assert_agree, mark, moments};
+
+    /// The marks a ride draws at a moment of the move.
+    fn marks(ride: &Ride, progress: f64) -> Vec<TrafficMark> {
+        ride.at(progress)
+            .into_iter()
+            .filter_map(|item| match item {
+                Item::Group(group) => super::mark_of(&group).cloned(),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_message_agrees_with_the_svg_while_its_route_changes_shape() {
+        let next = mark(MESSAGE);
+        let mut last = next.clone();
+        // The line ran further left and bent less before the move.
+        last.route.from.x -= 60.0;
+        last.route.segments[0] = Segment::Line {
+            to: Point { x: 120.0, y: 10.0 },
+        };
+        let group = |mark: &TrafficMark| {
+            Group::new(
+                Role::Traffic("e".to_owned()),
+                vec![Item::Traffic(mark.clone())],
+            )
+        };
+        let ride = Ride::new(&group(&last), &group(&next), PHASES.transition).expect("a ride");
+        for progress in [0.2, 0.45, 0.7] {
+            let drawn = marks(&ride, progress);
+            assert_eq!(drawn.len(), 1);
+            assert_ne!(
+                drawn[0].route, next.route,
+                "the route is moving at {progress}"
+            );
+            let mut edges = vec![0.0, 3.0];
+            for piece in drawn[0].beam().pieces {
+                let archboard_scene::scene::Slide::Pass { enter, leave, .. } = piece.slide else {
+                    panic!("a message passes");
+                };
+                edges.extend([enter, leave]);
+            }
+            assert_agree(&drawn[0], &moments(3.0, &edges));
+        }
     }
 }

@@ -138,7 +138,10 @@ interface Ring extends DrawnPoint {
 }
 
 const RING =
-	/class="ab-drill"[^>]*transform="translate\((-?[\d.]+),(-?[\d.]+)\)(?: scale\(([\d.]+)\))?"><circle r="([\d.]+)"[^>]*stroke-width="([\d.]+)"/u;
+	/class="ab-drill"[^>]*transform="translate\((-?[\d.]+),(-?[\d.]+)\)(?: scale\(([\d.]+)\))?"[^>]*><circle r="([\d.]+)"([^>]*)>/u;
+
+/** A shape's stroke width, which an absent attribute leaves at SVG's initial one. */
+const STROKE_WIDTH = /stroke-width="([\d.]+)"/u;
 
 /** The warning badge: a translated group whose first shape is its triangle. */
 const BADGE =
@@ -163,8 +166,9 @@ function ringOf(group: DrawnGroup, view: "near" | "far"): Ring | undefined {
 	const markup = group.markup.split('class="ab-far"')[view === "near" ? 0 : 1];
 	const found = markup === undefined ? null : RING.exec(markup);
 	if (found === null) return undefined;
-	const [x, y, scale, radius, stroke] = found.slice(1).map((value) => Number(value ?? 1));
-	return { x: x!, y: y!, reach: scale! * (radius! + stroke! / 2) };
+	const [x, y, scale, radius] = found.slice(1, 5).map((value) => Number(value ?? 1));
+	const stroke = Number(STROKE_WIDTH.exec(found[5] ?? "")?.[1] ?? 1);
+	return { x: x!, y: y!, reach: scale! * (radius! + stroke / 2) };
 }
 
 /**

@@ -215,7 +215,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * Report what this pane shows, after the debounce or now.
-	 * @param immediate Send now rather than after `paneMs("report")`.
+	 * @param immediate Send now rather than after `pane.report`.
 	 */
 	function schedulePaneReport(immediate: boolean): void {
 		// A pane being removed has nothing to say about what it shows.
@@ -289,13 +289,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 */
 		get onExplanationsChanged() {
 			return ports.options().onExplanationsChanged;
-		},
-		/**
-		 * Read the current repository change callback.
-		 * @returns The current listener, when installed.
-		 */
-		get onRepositoriesChanged() {
-			return ports.options().onRepositoriesChanged;
 		},
 	};
 

@@ -13,7 +13,7 @@ async function lockMode(): Promise<void> {
 		vault,
 		model,
 		holder: { id: holderId, kind: "agent" },
-		waitMs: 0,
+		waits: false,
 	});
 	const lockFile = join(vault, ".archboard/locks", `${model}.lock`);
 	const port = Number(process.env["ARCHBOARD_TEST_STUBBORN_PORT"]) || undefined;
@@ -25,7 +25,7 @@ async function lockMode(): Promise<void> {
 		});
 	}
 	const renewal = setInterval(() => {
-		void holdModel({ vault, model, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
+		void holdModel({ vault, model, holder: { id: holderId, kind: "agent" }, waits: false });
 	}, 800);
 	const stop = () => {
 		clearInterval(renewal);

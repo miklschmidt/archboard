@@ -9,6 +9,7 @@ type ServerApplicationPhase =
 
 type ServerApplicationStopReason = NodeJS.Signals | "server-error" | "startup-failed" | "test";
 
+import { type Bound, TimedOut, within } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
 	createServerMutationAdmission,
@@ -22,7 +23,7 @@ interface ServerApplicationResource {
 	/** Resolve only after the resource has reached its terminal state. */
 	readonly stop: (reason: ServerApplicationStopReason) => Promise<void> | void;
 	/** Grace before forceStop runs. A timed resource must provide forceStop. */
-	readonly stopGraceMs?: number;
+	readonly stopGrace?: Bound;
 	/** Force terminal state, then allow the original stop promise to settle. */
 	readonly forceStop?: (reason: ServerApplicationStopReason) => Promise<void> | void;
 }
@@ -114,24 +115,13 @@ const waitOutStopGrace = async (
 	resource: ServerApplicationResource,
 	settled: Promise<void>,
 ): Promise<void> => {
-	if (resource.stopGraceMs === undefined) {
+	if (resource.stopGrace === undefined) {
 		await settled;
 		return;
 	}
-	let timeout: ReturnType<typeof setTimeout> | null = null;
-	try {
-		await Promise.race([
-			settled,
-			new Promise<void>((resolve) => {
-				timeout = setTimeout(resolve, resource.stopGraceMs);
-			}),
-		]);
-	} finally {
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- the timer is set inside the promise executor above, which the narrowing from the declaration does not see
-		if (timeout !== null) {
-			clearTimeout(timeout);
-		}
-	}
+	await within(resource.stopGrace, () => settled).catch((error: unknown) => {
+		if (!(error instanceof TimedOut)) throw error;
+	});
 };
 
 /** Every reason a server stop can carry, for narrowing an abort signal's own. */
@@ -189,13 +179,7 @@ function requireStartupNotCancelled(signal: AbortSignal): void {
  */
 function createServerApplicationLifetime(options: ServerApplicationLifetimeOptions) {
 	for (const resource of options.resources) {
-		if (resource.stopGraceMs === undefined) {
-			continue;
-		}
-		if (!Number.isFinite(resource.stopGraceMs) || resource.stopGraceMs < 0) {
-			throw new Error(`${resource.name} has an invalid stop grace.`);
-		}
-		if (resource.forceStop === undefined) {
+		if (resource.stopGrace !== undefined && resource.forceStop === undefined) {
 			throw new Error(`${resource.name} has a stop grace but no forceStop action.`);
 		}
 	}

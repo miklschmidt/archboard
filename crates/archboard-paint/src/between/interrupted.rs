@@ -9,10 +9,8 @@ use super::{Between, Entrance, Scene};
 /// A card's visible box includes the growth of its entrance.
 fn drawn_box(group: &Group) -> archboard_scene::geometry::Rect {
     let frame = plate(group);
-    let transform = group
-        .transform
-        .unwrap_or(archboard_scene::scene::Transform::translate(0.0, 0.0));
-    let scale = transform.scale.unwrap_or(1.0);
+    let transform = group.transform;
+    let scale = transform.scale;
     rect(
         frame.x * scale + transform.x,
         frame.y * scale + transform.y,
@@ -87,7 +85,7 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
                     Item::Group(group)
                         if matches!(group.role, Role::Shadow(_) | Role::Traffic(_)) =>
                     {
-                        Some(group.opacity.unwrap_or(1.0))
+                        Some(group.opacity)
                     }
                     _ => None,
                 })

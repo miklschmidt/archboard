@@ -2,7 +2,7 @@
 // the snapshot it has reduced so far. The transport owns at most one run at a
 // time; a retired run answers nothing and touches nothing.
 
-import { codexSessionMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import {
 	BrowserWorkbenchTransportError,
@@ -35,7 +35,8 @@ interface PendingRequest {
 	readonly commandId: BrowserCommandLease["commandId"] | null;
 	readonly resolve: (value: unknown) => void;
 	readonly reject: (error: BrowserWorkbenchTransportError) => void;
-	timer: ReturnType<typeof setTimeout> | null;
+	/** Cancels the request's settlement timeout, while one is armed. */
+	timer: (() => void) | null;
 }
 
 /** One socket generation. */
@@ -140,10 +141,8 @@ function deferred<Value>(): Deferred<Value> {
  * @param pending The request.
  */
 function clearPendingTimer(pending: PendingRequest): void {
-	if (pending.timer !== null) {
-		clearTimeout(pending.timer);
-		pending.timer = null;
-	}
+	pending.timer?.();
+	pending.timer = null;
 }
 
 /**
@@ -225,10 +224,7 @@ function sendRequest(run: SocketRun, ports: SocketRunPorts, spec: RequestSpec): 
 		timer: null,
 	};
 	run.pending.set(requestId, pending);
-	pending.timer = setTimeout(
-		() => expirePending(run, requestId, pending),
-		codexSessionMs("requestSettlement"),
-	);
+	pending.timer = after("codex.requestSettlement", () => expirePending(run, requestId, pending));
 	try {
 		run.socket.send(JSON.stringify(request));
 	} catch (error) {

@@ -8,7 +8,7 @@
 // a correct model either way. The SVG under the canvas keeps its words and its
 // marks for search, copy, screen readers and the viewer.
 
-import { pictureMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import { HeldInk } from "#ui/architecture-drawing/canvas/picture/clients/picture-ink.ts";
@@ -126,7 +126,7 @@ class PictureStage {
 	 */
 	carry(painting: string | undefined, shift: StageShift): void {
 		this.#take(painting, (painter, taken) => {
-			painter.carry(taken, shift.x, shift.y, pictureMs("transition"));
+			painter.carry(taken, shift.x, shift.y, ms("picture.transition"));
 		});
 	}
 
@@ -145,7 +145,7 @@ class PictureStage {
 		 * @param taken The picture's painting.
 		 */
 		const arrive: PictureHand = (painter, taken) => {
-			painter.enter(taken, headingJson(heading), pictureMs("entry"), x, y, frameClock().now());
+			painter.enter(taken, headingJson(heading), ms("picture.entry"), x, y, frameClock().now());
 		};
 		this.#take(painting, arrive);
 		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(arrive);
@@ -157,9 +157,9 @@ class PictureStage {
 	 * @param reducedMotion Whether the person asked for no motion; then it is simply gone.
 	 */
 	leave(heading: Departure, reducedMotion: boolean): void {
-		const ms = reducedMotion ? 0 : pictureMs("exit");
+		const exit = reducedMotion ? 0 : ms("picture.exit");
 		this.#tell((painter) => {
-			painter.leave(headingJson(heading), ms, frameClock().now());
+			painter.leave(headingJson(heading), exit, frameClock().now());
 		});
 	}
 
@@ -174,12 +174,12 @@ class PictureStage {
 	 * Put a model inside its card and start the fades of the flight.
 	 * @param painting The model's painting, or nothing when it has none.
 	 * @param dive The flight.
-	 * @param ms How long the flight takes.
+	 * @param duration How long the flight takes.
 	 */
-	dive(painting: string | undefined, dive: StageDive, ms: number): void {
+	dive(painting: string | undefined, dive: StageDive, duration: number): void {
 		if (painting === undefined) return;
 		this.#tell((painter) => {
-			painter.dive(painting, JSON.stringify(dive), ms, frameClock().now());
+			painter.dive(painting, JSON.stringify(dive), duration, frameClock().now());
 		});
 	}
 
@@ -264,9 +264,9 @@ class PictureStage {
 	/**
 	 * Move the picture.
 	 * @param camera Where it goes.
-	 * @param ms How long it takes.
+	 * @param duration How long it takes.
 	 */
-	setCamera(camera: StageCamera, ms: number): void {
+	setCamera(camera: StageCamera, duration: number): void {
 		const ratio = window.devicePixelRatio || 1;
 		const { x, y, scale } = {
 			x: camera.x * ratio,
@@ -275,29 +275,29 @@ class PictureStage {
 		};
 		this.#held.camera = { x, y, scale };
 		this.#tell((painter) => {
-			painter.setCamera(x, y, scale, ms, frameClock().now());
+			painter.setCamera(x, y, scale, duration, frameClock().now());
 		});
 	}
 
 	/**
 	 * Say whether the next picture is on its way, so that the one here steps back for it.
 	 * @param awaited Whether it is.
-	 * @param ms How long the picture here takes to step back or forward.
+	 * @param duration How long the picture here takes to step back or forward.
 	 */
-	setAwaited(awaited: boolean, ms: number): void {
+	setAwaited(awaited: boolean, duration: number): void {
 		this.#held.awaited = awaited;
 		this.#tell((painter) => {
-			painter.setAwaited(awaited, ms, frameClock().now());
+			painter.setAwaited(awaited, duration, frameClock().now());
 		});
 	}
 
 	/**
 	 * Say where the far view begins. The painter swaps the views the moment the camera crosses.
 	 * @param scale The camera's scale at the line, or 0 for a picture with no far view.
-	 * @param ms How long a swap takes.
+	 * @param duration How long a swap takes.
 	 */
-	setFarLine(scale: number, ms: number): void {
-		this.#held.farLine = { scale: scale * (window.devicePixelRatio || 1), ms };
+	setFarLine(scale: number, duration: number): void {
+		this.#held.farLine = { scale: scale * (window.devicePixelRatio || 1), ms: duration };
 		const line = this.#held.farLine;
 		this.#tell((painter) => {
 			painter.setFarLine(line.scale, line.ms);
@@ -455,7 +455,7 @@ class PictureStage {
 		let retry = false;
 		if (failed.kind === "gpu") {
 			const now = frameClock().now();
-			retry = now - this.#gpuFailedAt > pictureMs("gpuRetry");
+			retry = now - this.#gpuFailedAt > ms("picture.gpuRetry");
 			this.#gpuFailedAt = now;
 		}
 		void this.#start({ painter: failed.kind, reason, retry });

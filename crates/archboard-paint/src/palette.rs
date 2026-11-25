@@ -294,7 +294,7 @@ impl Palette {
 
     /// A gradient stop's colour at a share of its alpha.
     pub(crate) fn stop(&self, stop: &Stop, alpha: f64) -> Color {
-        self.colour(&stop.colour, stop.opacity.unwrap_or(1.0) * alpha)
+        self.colour(&stop.colour, stop.opacity * alpha)
     }
 }
 

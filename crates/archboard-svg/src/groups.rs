@@ -8,6 +8,7 @@ use archboard_scene::request::{NodeAppearance, PaletteColor};
 use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, Transform};
 
 use crate::definitions::Names;
+use crate::shapes::stated;
 use crate::xml::Attributes;
 
 /// The class of what a part draws when the picture is seen near.
@@ -42,9 +43,10 @@ fn placed(transform: Transform, unit: &str) -> String {
         js::number(transform.x),
         js::number(transform.y)
     );
-    match transform.scale {
-        None => moved,
-        Some(scale) => format!("{moved} scale({})", js::number(scale)),
+    if transform.scale == 1.0 {
+        moved
+    } else {
+        format!("{moved} scale({})", js::number(transform.scale))
     }
 }
 
@@ -77,11 +79,6 @@ fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
     .set("data-type-kind", appearance.type_kind.as_str());
 }
 
-/// A group's transform, as its role writes it.
-fn transform(group: &Group, out: &mut Attributes) {
-    out.maybe("transform", group.transform.map(|moved| placed(moved, "")));
-}
-
 /// The subjects a group stands with, when it stands with any.
 fn members(group: &Group, out: &mut Attributes) {
     out.maybe(
@@ -90,9 +87,9 @@ fn members(group: &Group, out: &mut Attributes) {
     );
 }
 
-/// What a line's group says: how solid it is, its mask, and how it was drawn.
+/// What a line's group says: its mask, and how it was drawn.
 fn line(group: &Group, facts: Option<&LineFacts>, names: &Names, out: &mut Attributes) {
-    out.maybe("opacity", group.opacity).maybe(
+    out.maybe(
         "mask",
         group
             .mask
@@ -110,49 +107,52 @@ fn line(group: &Group, facts: Option<&LineFacts>, names: &Names, out: &mut Attri
     }
 }
 
+/// The class a group's role gives it, which the stylesheet and a viewer reach it by.
+fn class_of(role: &Role) -> Option<&'static str> {
+    match role {
+        Role::Chip { .. } => Some(CHIP_CLASS),
+        Role::NearView => Some(NEAR_CLASS),
+        Role::FarView => Some(FAR_CLASS),
+        Role::Words { .. } => Some(WORDS_CLASS),
+        Role::DrillMark(_) => Some("ab-drill"),
+        Role::DoorArrow => Some("ab-door-arrow"),
+        Role::Toggle(_) => Some("ab-toggle"),
+        Role::Shadow(_) => Some("ab-shadow"),
+        Role::Junctions => Some("ab-junctions"),
+        Role::Port => Some("ab-port"),
+        Role::HeadShade => Some(HEAD_SHADE_CLASS),
+        _ => None,
+    }
+}
+
 /// What the groups of a part's two views say: which view, and where a chip
 /// and a block of words move between them. False for a group of another role.
 fn view(group: &Group, out: &mut Attributes) -> bool {
     match &group.role {
         Role::Chip { far } => {
-            out.set("class", CHIP_CLASS);
-            transform(group, out);
-            if let Some(near) = group.transform {
-                out.set(
-                    "style",
-                    format!(
-                        "{NEAR_PLACE}:{};{FAR_PLACE}:{}",
-                        placed(near, "px"),
-                        placed(*far, "px")
-                    ),
-                );
-            }
-        }
-        Role::NearView => {
-            out.set("class", NEAR_CLASS);
+            // Its stylesheet reads where it stands near and far, so both are always written.
+            out.set(
+                "style",
+                format!(
+                    "{NEAR_PLACE}:{};{FAR_PLACE}:{}",
+                    placed(group.transform, "px"),
+                    placed(*far, "px")
+                ),
+            );
         }
         Role::FarView => {
-            out.set("class", FAR_CLASS).set("display", "none");
+            out.set("display", "none");
         }
         Role::Words { away } => {
-            out.set("class", WORDS_CLASS)
-                .set("style", format!("{AWAY_PLACE}:{}", placed(*away, "px")));
+            out.set("style", format!("{AWAY_PLACE}:{}", placed(*away, "px")));
         }
         Role::DrillMark(direction) => {
-            out.set("class", "ab-drill")
-                .set("data-drill", word(direction));
-            transform(group, out);
-        }
-        Role::DoorArrow => {
-            out.set("class", "ab-door-arrow");
-            transform(group, out);
+            out.set("data-drill", word(direction));
         }
         Role::Toggle(toggle) => {
-            out.set("class", "ab-toggle")
-                .set(TOGGLE_ATTRIBUTE, word(toggle));
+            out.set(TOGGLE_ATTRIBUTE, word(toggle));
         }
         Role::Icon(asked) => {
-            transform(group, out);
             out.maybe("data-type-icon", asked.as_deref());
         }
         _ => return false,
@@ -164,15 +164,7 @@ fn view(group: &Group, out: &mut Attributes) -> bool {
 /// parts an export adds. False for a group of another role.
 fn page(group: &Group, out: &mut Attributes) -> bool {
     match &group.role {
-        Role::Move => transform(group, out),
-        Role::Inset => {
-            out.maybe(
-                "transform",
-                group.transform.map(|moved| {
-                    format!("translate({} {})", js::number(moved.x), js::number(moved.y))
-                }),
-            );
-        }
+        Role::Move | Role::Inset => {}
         Role::Slot(Slot::PlannedFrame) => {
             out.set("data-slot", "planned-frame");
         }
@@ -210,46 +202,38 @@ fn role(group: &Group, names: &Names, out: &mut Attributes) {
             out.set(PART_ATTRIBUTE, "label");
         }
         Role::Lifeline => {
-            out.maybe("opacity", group.opacity)
-                .set(PART_ATTRIBUTE, "lifeline");
-        }
-        Role::Fragment => {
-            out.maybe("opacity", group.opacity);
+            out.set(PART_ATTRIBUTE, "lifeline");
         }
         Role::RowMark | Role::Marks => members(group, out),
         Role::Shadow(part) => {
-            out.set("class", "ab-shadow");
             members(group, out);
             out.maybe(PART_ATTRIBUTE, part.map(|part| word(&part)));
         }
         Role::Traffic(line) => {
             out.set(TRAFFIC_ATTRIBUTE, line.as_str());
         }
-        Role::Junctions => {
-            out.set("class", "ab-junctions");
-        }
-        Role::Port => {
-            out.set("class", "ab-port");
-        }
         Role::FlowHead(flow) => {
             out.set("data-flow-head", flow.as_str());
         }
         Role::HeadShade => {
-            out.set("class", HEAD_SHADE_CLASS)
-                .set("visibility", "hidden");
+            out.set("visibility", "hidden");
         }
-        Role::Pin | Role::Warning => transform(group, out),
         _ => {}
     }
 }
 
-/// A group's own attributes: the subject it draws, what its role says, and
-/// whether it takes the pointer.
+/// A group's own attributes: the subject it draws, its class, where it is and how
+/// solid, what its role says, and whether it takes the pointer.
 pub(crate) fn group_attributes(group: &Group, names: &Names) -> Attributes {
     let mut out = Attributes::new();
     if let Some(drawn) = &group.subject {
         subject(drawn, &mut out);
     }
+    out.maybe("class", class_of(&group.role));
+    if !group.transform.moves_nothing() {
+        out.set("transform", placed(group.transform, ""));
+    }
+    stated(&mut out, "opacity", js::number(group.opacity));
     role(group, names, &mut out);
     out.maybe(
         "pointer-events",

@@ -7,7 +7,7 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { replayMs } from "@archboard/timing";
+import { lapsed, TimedOut } from "@archboard/timing";
 
 /**
  * One turn of the browser's event loop.
@@ -41,7 +41,7 @@ class FrameReadiness {
 	 * @throws {Error} Naming what was pending when it is not ready in time.
 	 */
 	async until(pending: () => string | null, frame: number): Promise<void> {
-		const deadline = performance.now() + replayMs("frameReady");
+		const started = performance.now();
 		let quiet = 0;
 		let seen = this.#changes;
 		while (quiet < 2) {
@@ -49,7 +49,7 @@ class FrameReadiness {
 			const waiting = await waitingFor(pending);
 			quiet = waiting === null && this.#changes === seen ? quiet + 1 : 0;
 			seen = this.#changes;
-			if (performance.now() > deadline) throw notReady(frame, waiting);
+			if (lapsed("replay.frameReady", started, performance.now())) throw notReady(frame, waiting);
 			// oxlint-disable-next-line no-await-in-loop -- the page is looked at again only after the browser has had a turn
 			await turn();
 		}
@@ -74,7 +74,7 @@ async function waitingFor(pending: () => string | null): Promise<string | null> 
  */
 function notReady(frame: number, waiting: string | null): Error {
 	return new Error(
-		`Frame ${frame} was not ready within ${replayMs("frameReady") / 1000} s: it waited for ${waiting ?? "the page to stop changing"}.`,
+		`${new TimedOut("replay.frameReady").message} Frame ${frame} waited for ${waiting ?? "the page to stop changing"}.`,
 	);
 }
 

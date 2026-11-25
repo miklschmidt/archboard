@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { subtitleMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SpokenCue } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 
@@ -41,18 +41,18 @@ function replaces(cue: SpokenCue, kept: SpokenCue | null): boolean {
 /**
  * Run something once a while has passed, from when a token appears.
  * @param token What the wait is for: nothing while null, and a new wait for each new one.
- * @param ms How long to wait.
+ * @param wait How long to wait.
  * @param then What to run.
  */
-function useAfter(token: SpokenCue | null, ms: number, then: () => void): void {
+function useAfter(token: SpokenCue | null, wait: number, then: () => void): void {
 	useEffect(() => {
 		if (token === null) return undefined;
 		const clock = frameClock();
-		const timer = clock.after(ms, then);
+		const timer = clock.after(wait, then);
 		return (): void => {
 			clock.cancelAfter(timer);
 		};
-	}, [token, ms, then]);
+	}, [token, wait, then]);
 }
 
 /**
@@ -93,8 +93,8 @@ function useSubtitleFade(cue: SpokenCue | null): SubtitleFade {
 	const clearReplaced = useCallback((): void => {
 		setKept((current) => ({ ...current, replaced: null }));
 	}, []);
-	useAfter(cue === null ? kept.shown : null, subtitleMs("out"), clearShown);
-	useAfter(kept.replaced, subtitleMs("swap"), clearReplaced);
+	useAfter(cue === null ? kept.shown : null, ms("subtitle.out"), clearShown);
+	useAfter(kept.replaced, ms("subtitle.swap"), clearReplaced);
 	return { shown: cue ?? kept.shown, replaced: kept.replaced };
 }
 

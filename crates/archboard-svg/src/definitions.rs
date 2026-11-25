@@ -9,12 +9,12 @@ use std::collections::HashMap;
 use archboard_scene::names::word;
 use archboard_scene::scene::{
     Clip, ClipId, Definition, Gradient, GradientForm, GradientId, HeadInk, Item, Marker, MarkerId,
-    Mask, MaskId, Scene, Stop,
+    Mask, MaskId, Scene, Stop, every,
 };
 
 use crate::css::{colour_id, css};
 use crate::path::{Spelling, path_data};
-use crate::shapes::write_shape;
+use crate::shapes::{stated, write_shape};
 use crate::xml::{Attributes, close, content_id, empty, open};
 
 /// The ids a document spells its definitions with.
@@ -31,7 +31,11 @@ impl Names {
     pub(crate) fn of(scene: &Scene) -> Names {
         let mut names = Names::default();
         names.take(&scene.definitions);
-        names.walk(&scene.body);
+        for item in every(&scene.body) {
+            if let Item::Definitions { definitions } = item {
+                names.take(definitions);
+            }
+        }
         names
     }
 
@@ -48,19 +52,6 @@ impl Names {
                     self.clips.insert(clip.id.card.clone(), id);
                 }
                 Definition::Marker(_) | Definition::Gradient(_) => {}
-            }
-        }
-    }
-
-    /// The masks and clips defined among some items.
-    fn walk(&mut self, items: &[Item]) {
-        for item in items {
-            match item {
-                Item::Definitions { definitions } => self.take(definitions),
-                Item::Group(group) => self.walk(&group.items),
-                Item::Viewport(viewport) => self.walk(&viewport.items),
-                Item::Shape(_) | Item::Text(_) | Item::Icon(_) | Item::Traffic(_) | Item::Break => {
-                }
             }
         }
     }
@@ -150,10 +141,9 @@ fn clip_outline(clip: &Clip) -> String {
 /// A gradient's stop.
 fn write_stop(stop: &Stop, out: &mut String) {
     let mut attributes = Attributes::new();
-    attributes
-        .maybe("offset", stop.offset)
-        .set("stop-color", css(&stop.colour))
-        .maybe("stop-opacity", stop.opacity);
+    stated(&mut attributes, "offset", stop.offset);
+    attributes.set("stop-color", css(&stop.colour));
+    stated(&mut attributes, "stop-opacity", stop.opacity);
     empty("stop", &attributes, out);
 }
 

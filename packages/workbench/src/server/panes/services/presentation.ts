@@ -14,7 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { paneMs } from "@archboard/timing";
+import { every } from "@archboard/timing";
 import {
 	paneKeyOfClient,
 	panes,
@@ -262,9 +262,9 @@ function awaitAnswer(
 	const request = `present:${randomUUID()}`;
 	return new Promise<PresentOutcome>((resolve) => {
 		// A slow pane keeps its request, so only a pane that has gone ends the wait.
-		const watch = setInterval(() => {
+		const stopWatching = every("pane.presentationPaneCheck", () => {
 			if (parts.paneFor(clientId) === null) settle({ kind: "refused", reason: "no_pane" });
-		}, paneMs("presentationPaneCheck"));
+		});
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.
@@ -274,7 +274,7 @@ function awaitAnswer(
 				return;
 			}
 			pending.delete(clientId);
-			clearInterval(watch);
+			stopWatching();
 			resolve(outcome);
 		}
 		pending.set(clientId, {

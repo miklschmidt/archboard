@@ -1,20 +1,29 @@
 // How long one writer holds a model, and how long a claim outlives one write.
 //
-// `packages/model/src/runtime/lock/store` reads both groups. It was built
+// `packages/model/src/runtime/lock/store` uses both groups. It was built
 // against them rather than around them: a number that governs the lock and
 // lives next to the lock is a number the next person tunes without seeing what
 // it pulls against. The lock of the checkout registry (`repo-registry.ts`)
-// reads two of `MODEL_LOCK_MS`, the lease and the poll, because it is a lock
+// has a lease and a poll of its own of the same length, because it is a lock
 // file of the same kind: a crash costs the registry one lease, as it costs a
 // model.
 
-import { durations } from "#shared/constants/durations.ts";
+import { delay, handed, polled, span, tick } from "#shared/constants/uses.ts";
 
-/** `MODEL_LOCK_MS.renew`, named once so that `watch` can be one renewal interval. */
+/** `modelLock.renew`, named once so that `modelLock.watch` can be one renewal interval. */
 const LOCK_RENEW_MS = 1000;
 
+/** `modelLock.lease`, named once so that a claim's lease and the registry's lock can be as long. */
+const LOCK_LEASE_MS = 3000;
+
+/** The wait cap shared by writers and readers. */
+const LOCK_WAIT_MS = 5000;
+
+/** `claim.campaign`, named once so that a claim of subjects runs as long. */
+const CLAIM_DEFAULT_MS = 10 * 60_000;
+
 /** One writer at a time: the lease file every model write takes. */
-const MODEL_LOCK_MS = durations({
+const MODEL_LOCKS = {
 	/**
 	 * How long a lock is held without renewal before it lapses.
 	 *
@@ -29,7 +38,7 @@ const MODEL_LOCK_MS = durations({
 	 * long edit is the wrong fix,
 	 * and it is paid for in how long a crashed holder keeps the model.
 	 */
-	lease: 3000,
+	"modelLock.lease": handed(LOCK_LEASE_MS),
 	/**
 	 * How often a live holder renews.
 	 *
@@ -40,7 +49,7 @@ const MODEL_LOCK_MS = durations({
 	 * long. Pushing this closer to the lease trades the second property for
 	 * nothing.
 	 */
-	renew: LOCK_RENEW_MS,
+	"modelLock.renew": { ...tick(LOCK_RENEW_MS), background: true },
 	/**
 	 * How long an agent waits for a model somebody else holds before giving up and
 	 * naming the holder.
@@ -50,7 +59,7 @@ const MODEL_LOCK_MS = durations({
 	 * When it does give up it says who holds the model and since when, so a voice
 	 * session has something to say instead of going silent.
 	 *
-	 * Keep it above MODEL_LOCK_MS.lease. An agent waiting on a holder that crashed
+	 * Keep it above `modelLock.lease`. An agent waiting on a holder that crashed
 	 * should outlast the lease and get the model, rather than time out first and
 	 * report a holder that no longer exists. 3000 against 5000 leaves two seconds
 	 * for the wait to notice the lapse. This is the relationship most likely to be
@@ -58,22 +67,9 @@ const MODEL_LOCK_MS = durations({
 	 * this one for how long a person is willing to hear nothing, that one for how
 	 * long a crash costs.
 	 */
-	waitCap: 5000,
-	/**
-	 * How often a waiter re-asks for a model somebody else is holding.
-	 *
-	 * The lock is a file, so waiting is polling: there is nothing to wait *on*
-	 * that a second process could signal. 50 ms against a lease of 3000 and a
-	 * write that takes about 20 keeps the wait feeling immediate — a handover
-	 * costs at most one poll — while a model held for the whole wait cap costs a
-	 * hundred reads of a small file rather than a spin.
-	 *
-	 * It is the granularity of the wait, so it is also the floor on how quickly a
-	 * released model is picked up. Raising it makes an agent look slow behind a
-	 * user who has just finished; lowering it buys nothing once it is under the
-	 * time a write takes.
-	 */
-	poll: 50,
+	"modelLock.wait": polled(LOCK_WAIT_MS, "the model to come free"),
+	/** The same wait, handed to a reader in the browser that asks again while a write holds the model. */
+	"modelLock.readerWait": handed(LOCK_WAIT_MS),
 	/**
 	 * How long a process pauses after taking over a lapsed lease before it
 	 * believes it got it.
@@ -88,7 +84,7 @@ const MODEL_LOCK_MS = durations({
 	 * It is paid only when a lease has actually lapsed, which means only after a
 	 * holder died. Nothing on the ordinary path waits it out.
 	 */
-	stealGuard: 25,
+	"modelLock.stealGuard": delay(25),
 	/**
 	 * How often a server looks at the lock files of the models on its screen.
 	 *
@@ -105,11 +101,21 @@ const MODEL_LOCK_MS = durations({
 	 * followed vault per second, and only while a browser is connected: with nothing
 	 * rendering, there is no pane to be wrong.
 	 */
-	watch: LOCK_RENEW_MS,
-});
+	"modelLock.watch": { ...tick(LOCK_RENEW_MS), background: true },
+	/**
+	 * How long the checkout registry's lock directory stands before it counts as left by a process
+	 * that died: one model lock lease, since it is a lock file of the same kind.
+	 */
+	"registry.lockLease": span(LOCK_LEASE_MS),
+	/**
+	 * How often a process that waits for the registry's lock asks again. The registry is written
+	 * synchronously, so this is a synchronous pause handed to the one loop that waits.
+	 */
+	"registry.lockPoll": handed(50),
+};
 
 /** A claim: one writer for longer than one write (TASK-080), and what every pane shows of it. */
-const CLAIM_MS = durations({
+const CLAIMS = {
 	/**
 	 * How long a claim runs when the agent does not say.
 	 *
@@ -124,7 +130,9 @@ const CLAIM_MS = durations({
 	 * that a claim nobody released stops mattering before the person who wanted
 	 * the model has given up on it.
 	 */
-	default: 10 * 60_000,
+	"claim.campaign": handed(CLAIM_DEFAULT_MS),
+	/** How long a claim of subjects in the archive runs: one default campaign. */
+	"claim.subjects": span(CLAIM_DEFAULT_MS),
 	/**
 	 * The longest claim anybody may ask for, however long they said.
 	 *
@@ -138,7 +146,7 @@ const CLAIM_MS = durations({
 	 * about the work, not about the display, and a refusal would leave the agent
 	 * unclaimed and drawing anyway.
 	 */
-	max: 60 * 60_000,
+	"claim.campaignMax": handed(60 * 60_000),
 	/**
 	 * How long a claimed model's lease runs between renewals.
 	 *
@@ -149,12 +157,12 @@ const CLAIM_MS = durations({
 	 * arriving on a bigger scale.
 	 *
 	 * So it is a name rather than a number, kept separate because the reason for
-	 * the value differs: MODEL_LOCK_MS.lease has to clear the gap between two
+	 * the value differs: `modelLock.lease` has to clear the gap between two
 	 * writes of one holder plus a write, and this has to clear a renewal interval. Both are
 	 * satisfied by the same three seconds today, and the two would be tuned for
 	 * different reasons.
 	 */
-	lease: MODEL_LOCK_MS.lease,
+	"claim.lease": handed(LOCK_LEASE_MS),
 	/**
 	 * How long an agent's unclaimed write stays on every pane's activity list.
 	 *
@@ -170,29 +178,7 @@ const CLAIM_MS = durations({
 	 * unclaimed writes reads as one visit rather than a model that never comes
 	 * free. Each write restarts it, so continuous work never flickers.
 	 */
-	activityLinger: 8000,
-});
+	"claim.activityLinger": { ...delay(8000), background: true },
+};
 
-/**
- * One duration of a model lock.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function modelLockMs(key: keyof typeof MODEL_LOCK_MS): number {
-	return MODEL_LOCK_MS[key];
-}
-
-/**
- * One duration of a subject claim.
- * @param key Which one.
- * @param startedAtMs When the duration starts, if asking for a deadline.
- * @returns A duration in milliseconds, or a deadline on the supplied clock.
- */
-function claimMs(key: "default", startedAtMs: number): number;
-function claimMs(key: keyof typeof CLAIM_MS): number;
-function claimMs(key: keyof typeof CLAIM_MS, startedAtMs?: number): number {
-	const duration = CLAIM_MS[key];
-	return startedAtMs === undefined ? duration : startedAtMs + duration;
-}
-
-export { modelLockMs, claimMs };
+export { CLAIMS, MODEL_LOCKS };

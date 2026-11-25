@@ -12,7 +12,7 @@
 //
 // Pure: each tick the page observes the voice and the pane and asks what to do.
 
-import { recordingMs } from "@archboard/timing";
+import { expiresAt, lapsed, type Span, TimedOut } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
@@ -127,11 +127,11 @@ function paceStart(
 	if (observed.voice.kind === "live") {
 		return { state: { kind: "lead", since: observed.now }, action: { kind: "begin" } };
 	}
-	if (observed.now - state.since <= recordingMs("voiceStart")) {
+	if (!lapsed("recording.voiceStart", state.since, observed.now)) {
 		return { state, action: NOTHING };
 	}
 	return failed(
-		`Voice did not go live within ${recordingMs("voiceStart") / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
+		`${new TimedOut("recording.voiceStart").message} Check that voice starts on this Archboard server, then record again.`,
 	);
 }
 
@@ -177,19 +177,19 @@ interface StepReading {
 function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const step = beat + 1;
 	const { waited } = reading;
-	if (!reading.landed && waited > recordingMs("speechStart")) {
+	if (!reading.landed && lapsed("recording.speechStart", 0, waited)) {
 		return failed(
 			`Step ${step} never finished arriving on screen. Check that the model still states the walkthrough and that step, then record again.`,
 		);
 	}
-	if (reading.spoken.length === 0 && waited > recordingMs("speechStart")) {
+	if (reading.spoken.length === 0 && lapsed("recording.speechStart", 0, waited)) {
 		return failed(
-			`The voice said nothing about step ${step} within ${recordingMs("speechStart") / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
+			`The voice said nothing about step ${step}. ${new TimedOut("recording.speechStart").message} Record again; if it keeps happening, check voice on this Archboard server.`,
 		);
 	}
-	return waited > recordingMs("stepMax")
+	return lapsed("recording.stepMax", 0, waited)
 		? failed(
-				`The voice was still explaining step ${step} after ${recordingMs("stepMax") / 60_000} minutes. Shorten that step, then record again.`,
+				`The voice was still explaining step ${step}. ${new TimedOut("recording.stepMax").message} Shorten that step, then record again.`,
 			)
 		: null;
 }
@@ -246,7 +246,7 @@ function paceStep(
 	const late = overdue(state.beat, reading);
 	if (late !== null) return late;
 	const quiet = quietSince(state, reading, observed);
-	if (place === null || quiet === null || observed.now - quiet < recordingMs("quiet")) {
+	if (place === null || quiet === null || observed.now < expiresAt("recording.quiet", quiet)) {
 		return { state: { ...state, landed: reading.landed, quietSince: quiet }, action: NOTHING };
 	}
 	return after(state.beat, place.of, observed);
@@ -263,10 +263,10 @@ function paceStep(
 function held(
 	state: Extract<PaceState, { since: number }>,
 	observed: PaceObservation,
-	hold: number,
+	hold: Span,
 	next: () => PaceTurn,
 ): PaceTurn {
-	return observed.now - state.since < hold ? { state, action: NOTHING } : next();
+	return observed.now < expiresAt(hold, state.since) ? { state, action: NOTHING } : next();
 }
 
 /**
@@ -281,8 +281,8 @@ function paceLive(
 ): PaceTurn {
 	if (state.kind === "step") return paceStep(state, observed);
 	if (state.kind === "lead")
-		return held(state, observed, recordingMs("lead"), () => showing(0, observed));
-	return held(state, observed, recordingMs("tail"), () => ({
+		return held(state, observed, "recording.lead", () => showing(0, observed));
+	return held(state, observed, "recording.tail", () => ({
 		state: { kind: "done" },
 		action: { kind: "finish" },
 	}));

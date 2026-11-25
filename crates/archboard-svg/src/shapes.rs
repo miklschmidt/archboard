@@ -4,15 +4,50 @@
 
 use archboard_scene::js;
 use archboard_scene::names::word;
-use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
+use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape, Stroke as Outline};
 
 use crate::css::paint;
 use crate::definitions::{Names, marker_id};
 use crate::path::{Spelling, path_data};
-use crate::xml::{Attributes, empty};
+use crate::xml::{Attributes, Spelt, empty};
 
 /// The class of everything a viewer shows only round what is selected.
 pub(crate) const HALO_CLASS: &str = "ab-halo";
+
+/// What SVG draws where an attribute is absent. A scene states every value, and
+/// a stated value that equals its attribute's initial one is not written: the
+/// reader draws the same without it. The stylesheet's selectors on a written
+/// value (`path[stroke-width="…"]`) must not name an initial one.
+const INITIAL: [(&str, &str); 12] = [
+    ("rx", "0"),
+    ("cx", "0"),
+    ("cy", "0"),
+    ("offset", "0"),
+    ("stop-opacity", "1"),
+    ("fill-opacity", "1"),
+    ("stroke-width", "1"),
+    ("stroke-opacity", "1"),
+    ("stroke-linecap", "butt"),
+    ("stroke-linejoin", "miter"),
+    ("stroke-dashoffset", "0"),
+    ("opacity", "1"),
+];
+
+/// An attribute set to a value the scene states, unless that is the initial one.
+pub(crate) fn stated<'a>(
+    out: &'a mut Attributes,
+    name: &'static str,
+    value: impl Spelt,
+) -> &'a mut Attributes {
+    let value = value.spelt();
+    if INITIAL
+        .iter()
+        .any(|(attribute, initial)| *attribute == name && *initial == value)
+    {
+        return out;
+    }
+    out.set(name, value)
+}
 
 /// How a glow is spelt: a stroke this share of its breadth, blurred by this
 /// share of it, so it fades out about where a viewer's glow does.
@@ -107,13 +142,12 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
             out.set("x", rect.x)
                 .set("y", rect.y)
                 .set("width", rect.width)
-                .set("height", rect.height)
-                .maybe("rx", *radius);
+                .set("height", rect.height);
+            stated(out, "rx", *radius);
         }
         Geometry::Circle { centre, radius } => {
-            if let Some(centre) = centre {
-                out.set("cx", centre.x).set("cy", centre.y);
-            }
+            stated(out, "cx", centre.x);
+            stated(out, "cy", centre.y);
             out.set("r", *radius);
         }
         Geometry::Line { from, to } => {
@@ -137,9 +171,45 @@ pub(crate) fn listed(numbers: &[f64]) -> String {
         .join(" ")
 }
 
+/// One attribute of a shape's stroke.
+fn outline_key(outline: &Outline, share: f64, key: Key, out: &mut Attributes) {
+    match key {
+        Stroke => {
+            out.set("stroke", paint(&outline.paint));
+        }
+        Width => {
+            stated(out, "stroke-width", outline.width * share);
+        }
+        Opacity => {
+            stated(out, "stroke-opacity", outline.opacity);
+        }
+        Cap => {
+            stated(out, "stroke-linecap", word(&outline.cap));
+        }
+        Join => {
+            stated(out, "stroke-linejoin", word(&outline.join));
+        }
+        Dash if !outline.dashes.is_empty() => {
+            out.set("stroke-dasharray", listed(&outline.dashes));
+        }
+        Offset => {
+            stated(out, "stroke-dashoffset", outline.dash_offset);
+        }
+        _ => {}
+    }
+}
+
+/// How much of its breadth a shape's stroke is written: a glow's share, else all of it.
+fn glow_share(purpose: Purpose) -> f64 {
+    if purpose == Purpose::Glow {
+        GLOW_SPELLING.0
+    } else {
+        1.0
+    }
+}
+
 /// One attribute of a shape, when the shape has it.
 fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut Attributes) {
-    let stroke = shape.stroke.as_ref();
     match key {
         Class => {
             out.set("class", HALO_CLASS);
@@ -151,57 +221,15 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             out.maybe("marker-end", shape.marker.as_ref().map(url));
         }
         Fill => {
-            out.maybe("fill", shape.fill.as_ref().map(paint));
+            out.set("fill", paint(&shape.fill));
         }
         FillOpacity => {
-            out.maybe("fill-opacity", shape.fill_opacity);
+            stated(out, "fill-opacity", shape.fill_opacity);
         }
-        Stroke => {
-            out.maybe("stroke", stroke.map(|stroke| paint(&stroke.paint)));
-        }
-        Width => {
-            let share = if shape.purpose == Purpose::Glow {
-                GLOW_SPELLING.0
-            } else {
-                1.0
-            };
-            out.maybe(
-                "stroke-width",
-                stroke
-                    .and_then(|stroke| stroke.width)
-                    .map(|width| width * share),
-            );
-        }
-        Opacity => {
-            out.maybe("stroke-opacity", stroke.and_then(|stroke| stroke.opacity));
-        }
-        Cap => {
-            out.maybe(
-                "stroke-linecap",
-                stroke.and_then(|stroke| stroke.cap).map(|cap| word(&cap)),
-            );
-        }
-        Join => {
-            out.maybe(
-                "stroke-linejoin",
-                stroke
-                    .and_then(|stroke| stroke.join)
-                    .map(|join| word(&join)),
-            );
-        }
-        Dash => {
-            out.maybe(
-                "stroke-dasharray",
-                stroke
-                    .filter(|stroke| !stroke.dashes.is_empty())
-                    .map(|stroke| listed(&stroke.dashes)),
-            );
-        }
-        Offset => {
-            out.maybe(
-                "stroke-dashoffset",
-                stroke.and_then(|stroke| stroke.dash_offset),
-            );
+        Stroke | Width | Opacity | Cap | Join | Dash | Offset => {
+            if let Some(outline) = &shape.stroke {
+                outline_key(outline, glow_share(shape.purpose), key, out);
+            }
         }
         Pointer => {
             out.maybe(
@@ -227,8 +255,8 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
         Soft => {
             out.maybe(
                 "filter",
-                stroke
-                    .and_then(|stroke| stroke.width)
+                (shape.stroke.as_ref())
+                    .map(|stroke| stroke.width)
                     .filter(|_| shape.purpose == Purpose::Glow)
                     .map(|width| format!("blur({}px)", js::number(width * GLOW_SPELLING.1))),
             );
@@ -279,4 +307,26 @@ pub(crate) fn write_shape(shape: &Shape, names: &Names, arrowhead: Spelling, out
         Geometry::Path { .. } => "path",
     };
     empty(name, &attributes, out);
+}
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::paint::design::far_line_widths;
+
+    use super::stated;
+    use crate::xml::Attributes;
+
+    #[test]
+    fn a_far_view_rule_names_only_widths_that_are_written() {
+        for (near, _) in far_line_widths() {
+            let mut out = Attributes::new();
+            stated(&mut out, "stroke-width", near);
+            let mut written = String::new();
+            out.write(&mut written);
+            assert!(
+                written.contains("stroke-width"),
+                "a line of width {near} would be written without it, and the far view's rule would miss it"
+            );
+        }
+    }
 }

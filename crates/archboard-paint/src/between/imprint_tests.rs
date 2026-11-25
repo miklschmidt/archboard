@@ -18,9 +18,7 @@ fn mutation(start: f64, end: f64) -> Scene {
         ..0,
         [(Purpose::Glow, 16.0), (Purpose::Imprint, 3.6)].map(|(purpose, width)| {
             Item::Shape(
-                Shape::new(purpose, stripe.clone())
-                    .unfilled()
-                    .stroked(Stroke::new(Token::Border, width)),
+                Shape::new(purpose, stripe.clone()).stroked(Stroke::new(Token::Border, width)),
             )
         }),
     );

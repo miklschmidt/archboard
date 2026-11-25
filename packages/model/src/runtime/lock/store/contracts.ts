@@ -42,8 +42,8 @@ interface LockRequest {
 		reason?: string;
 		claimed?: boolean;
 	}>;
-	/** Bounded wait; zero asks once. Human gesture holds use a shorter cap. */
-	readonly waitMs?: number;
+	/** False asks once; otherwise the request waits out a holder within the declared wait. */
+	readonly waits?: false;
 	/** Lease duration, distinct from a claim's campaign deadline. */
 	readonly leaseMs?: number;
 	/**
@@ -91,7 +91,8 @@ interface ClaimEntry {
 	model: string;
 	holder: LockHolder;
 	expires: number;
-	timer: ReturnType<typeof setInterval> | null;
+	/** Stops renewing the lease under the claim, while it is renewed. */
+	timer: (() => void) | null;
 }
 
 /**

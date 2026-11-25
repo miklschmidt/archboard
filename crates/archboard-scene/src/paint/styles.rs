@@ -181,7 +181,7 @@ pub fn effect_look(effect: LineEffect) -> EffectLook {
 /// A stroke at a share of its width.
 pub(super) fn thinned(stroke: &Stroke, share: f64) -> Stroke {
     Stroke {
-        width: stroke.width.map(|width| width * share),
+        width: stroke.width * share,
         ..stroke.clone()
     }
 }
@@ -289,11 +289,8 @@ impl<'p> Styles<'p> {
     }
 
     /// The stroke of the ring round whatever the person has selected.
-    pub(super) fn ring(&self, width: Option<f64>) -> Stroke {
-        Stroke {
-            width,
-            ..Stroke::plain(&self.palette.selection)
-        }
+    pub(super) fn ring(&self, width: f64) -> Stroke {
+        Stroke::new(&self.palette.selection, width)
     }
 
     /// A shape drawn as the ring round whatever the person has selected:
@@ -304,10 +301,10 @@ impl<'p> Styles<'p> {
                 paint: (&self.palette.selection).into(),
                 ..stroke
             },
-            None => self.ring(None),
+            None => self.ring(1.0),
         };
         Shape {
-            fill: Some(Paint::None),
+            fill: Paint::None,
             stroke: Some(stroke),
             ..shape
         }

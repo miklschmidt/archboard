@@ -36,14 +36,15 @@ const CROSSED = orderedFixture({
 });
 
 /**
- * The caps of the black cutouts of every mask in a drawing.
+ * The caps of the black cutouts of every mask in a drawing. A cutout that names no cap has
+ * SVG's initial one, butt, which the writer leaves out.
  * @param svg The drawing.
  * @returns The caps, mask by mask.
  */
 function capsOf(svg: string): string[][] {
 	return [...svg.matchAll(/<mask id="[^"]+"[^>]*>([\s\S]*?)<\/mask>/gu)].map((mask) =>
 		[...mask[1]!.matchAll(/<path [^>]*stroke(?:="|:)black[^>]*>/gu)].map(
-			(path) => /stroke-linecap="(\w+)"/u.exec(path[0])?.[1] ?? "none",
+			(path) => /stroke-linecap="(\w+)"/u.exec(path[0])?.[1] ?? "butt",
 		),
 	);
 }

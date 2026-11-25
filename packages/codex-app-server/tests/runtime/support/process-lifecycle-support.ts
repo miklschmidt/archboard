@@ -1,52 +1,58 @@
 import type { ChildProcessByStdio } from "node:child_process";
-import { expect } from "bun:test";
+import { expect, jest } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import { processGroupPollMs } from "@archboard/timing";
+/**
+ * The reviewed Codex shutdown durations, which timing's tests pin, as the test numbers these
+ * cases measure the fake clock against.
+ */
+const REVIEWED_SHUTDOWN_MS = Object.freeze({
+	stdinEofGrace: 1000,
+	termGrace: 5000,
+	groupFreeze: 500,
+	composedShutdown: 10_000,
+});
 
 const MICROTASK_HOPS = 16;
-const FREEZE_POLLS = 4;
+/**
+ * The most a freeze takes past the TERM grace: two agreeing censuses a few short polls apart. A
+ * test number, not the product's.
+ */
+const FREEZE_WINDOW_MS = 100;
+/** Real time a real process is given to act on a signal between two driven timers. */
+const PROCESS_EVENT_MS = 10;
 
 type FakeChild = ChildProcessByStdio<PassThrough, PassThrough, PassThrough>;
-type TestTimer = ReturnType<typeof setTimeout>;
 type GroupStatus = "owned" | "quiescent" | "reused" | "unproven";
 
 interface ManualScheduler {
+	/** Time since the scheduler started, on the fake clock. */
 	readonly now: () => number;
-	readonly schedule: (callback: () => void, delayMs: number) => TestTimer;
-	readonly cancel: (timer: TestTimer) => void;
+	/** Run something on the fake clock. */
+	readonly schedule: (callback: () => void, delayMs: number) => void;
+	/** Move the fake clock to the next timer and run it. */
 	readonly runNext: () => boolean;
 }
 
+/**
+ * Put the ambient timers on Bun's fake clock. Each test file restores real timers after each test.
+ * @returns The fake clock, read from where it started.
+ */
 function manualScheduler(): ManualScheduler {
-	let time = 0;
-	let sequence = 0;
-	const timers = new Map<
-		TestTimer,
-		{ readonly at: number; readonly order: number; readonly callback: () => void }
-	>();
-	const schedule = (callback: () => void, delayMs: number): TestTimer => {
-		const timer = {} as TestTimer;
-		timers.set(timer, { at: time + delayMs, order: sequence++, callback });
-		return timer;
-	};
-	const cancel = (timer: TestTimer): void => {
-		timers.delete(timer);
-	};
-	const runNext = (): boolean => {
-		const next = [...timers.entries()].toSorted(
-			([, left], [, right]) => left.at - right.at || left.order - right.order,
-		)[0];
-		if (!next) {
-			return false;
-		}
-		timers.delete(next[0]);
-		time = next[1].at;
-		next[1].callback();
-		return true;
-	};
-	return Object.freeze({ now: () => time, schedule, cancel, runNext });
+	jest.useFakeTimers();
+	const start = Date.now();
+	return Object.freeze({
+		now: () => Date.now() - start,
+		schedule: (callback: () => void, delayMs: number) => {
+			setTimeout(callback, delayMs);
+		},
+		runNext: () => {
+			if (jest.getTimerCount() === 0) return false;
+			jest.advanceTimersToNextTimer();
+			return true;
+		},
+	});
 }
 
 function fakeChild(pid: number, onKill: () => void): FakeChild {
@@ -138,9 +144,6 @@ function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 				}
 			},
 		},
-		now: clock.now,
-		schedule: clock.schedule,
-		cancel: clock.cancel,
 	};
 	return Object.freeze({
 		clock,
@@ -199,9 +202,9 @@ async function driveManual<T>(
 		}
 		clock.runNext();
 		if (options.yieldToProcessEvents) {
-			// A real process needs real time to act on a signal: every driven poll
-			// gives it the product's own poll interval, not one event-loop turn.
-			await Bun.sleep(processGroupPollMs());
+			// A real process needs real time to act on a signal, and its events a turn of the loop.
+			Bun.sleepSync(PROCESS_EVENT_MS);
+			await new Promise((resolve) => setImmediate(resolve));
 		}
 	}
 	return promise;
@@ -210,7 +213,14 @@ async function driveManual<T>(
 /** KILL waits for the TERM grace, then for the freeze's few polls and no longer. */
 function expectKillAfterGrace(killedAtMs: number, graceMs: number): void {
 	expect(killedAtMs).toBeGreaterThanOrEqual(graceMs);
-	expect(killedAtMs).toBeLessThanOrEqual(graceMs + FREEZE_POLLS * processGroupPollMs());
+	expect(killedAtMs).toBeLessThanOrEqual(graceMs + FREEZE_WINDOW_MS);
 }
 
-export { type ManualScheduler, manualScheduler, fakeLifecycle, driveManual, expectKillAfterGrace };
+export {
+	type ManualScheduler,
+	manualScheduler,
+	fakeLifecycle,
+	driveManual,
+	expectKillAfterGrace,
+	REVIEWED_SHUTDOWN_MS,
+};

@@ -58,12 +58,12 @@ interface Place {
 const N = String.raw`(-?[\d.]+)`;
 
 /**
- * A move and a scale, as an attribute or a stylesheet property writes it.
+ * A move and a scale, as an attribute or a stylesheet property writes it. A scale of 1 is left out.
  * @param unit "px" in a property, nothing in an attribute.
  * @returns The pattern, with the move and the scale as groups.
  */
 function placePattern(unit: "" | "px"): string {
-	return String.raw`translate\(${N}${unit},${N}${unit}\) scale\(${N}\)`;
+	return String.raw`translate\(${N}${unit},${N}${unit}\)(?: scale\(${N}\))?`;
 }
 
 /**
@@ -73,7 +73,11 @@ function placePattern(unit: "" | "px"): string {
  * @returns The place.
  */
 function placeOf(found: RegExpExecArray, from: number): Place {
-	return { x: Number(found[from]), y: Number(found[from + 1]), scale: Number(found[from + 2]) };
+	return {
+		x: Number(found[from]),
+		y: Number(found[from + 1]),
+		scale: Number(found[from + 2] ?? 1),
+	};
 }
 
 const CHIP = new RegExp(

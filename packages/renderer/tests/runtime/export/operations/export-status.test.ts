@@ -57,7 +57,7 @@ test("the status line of a lens stands above the picture, which moves down whole
 	expect(band).toBeGreaterThan(0);
 	expect(status!.y).toBeLessThan(band);
 	expect(paintedBody(stated.svg)).toContain(
-		`<g transform="translate(0 ${band})">${paintedBody(plain.svg)}</g>`,
+		`<g transform="translate(0,${band})">${paintedBody(plain.svg)}</g>`,
 	);
 });
 
@@ -66,7 +66,7 @@ test("a title stands above the status line", async () => {
 	const title = slotted(svg, "export-title")!;
 	// The status line stands in the page the title moved down.
 	const band = Number(
-		/<g transform="translate\(0 ([\d.]+)\)"><g data-slot="export-status">/u.exec(svg)![1],
+		/<g transform="translate\(0,([\d.]+)\)"><g data-slot="export-status">/u.exec(svg)![1],
 	);
 	const status = slotted(svg, "export-status")!;
 	expect(title.y).toBeLessThan(band + status.y);

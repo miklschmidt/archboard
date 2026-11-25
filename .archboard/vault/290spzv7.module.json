@@ -1,5 +1,4 @@
 {
-  "outgoing": [],
   "order": 3000,
   "name": "Canvas drawing",
   "kind": "function",
@@ -14,5 +13,15 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#290spzv7",
-  "parent": "vKEsyHFk#NFwqWgrm"
+  "parent": "vKEsyHFk#NFwqWgrm",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "the SVG its parity tests hold the canvas to",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#CPgBdjsI",
+      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+    }
+  ]
 }

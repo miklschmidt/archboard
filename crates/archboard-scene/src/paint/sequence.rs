@@ -167,7 +167,7 @@ fn paint_column(
         },
     )
     .stroked(Stroke {
-        dash_offset: Some(LIFELINE_DASH_OFFSET),
+        dash_offset: LIFELINE_DASH_OFFSET,
         ..Stroke::new(&palette.edge, 1.0).dashed(&LIFELINE_DASH)
     });
     let bars = activation_boxes(column);
@@ -178,7 +178,7 @@ fn paint_column(
             purpose: Purpose::Halo,
             ..styles.halo(Shape {
                 stroke: lifeline.stroke.map(|stroke| Stroke {
-                    width: Some(LIT_LIFELINE_WIDTH),
+                    width: LIT_LIFELINE_WIDTH,
                     ..stroke
                 }),
                 ..lifeline
@@ -189,13 +189,11 @@ fn paint_column(
         bars.iter()
             .map(|bar| slab(*bar, &look, palette, None, None)),
     );
-    parts.extend(bars.iter().map(|bar| {
-        shape(styles.halo(Shape::rect(
-            Purpose::Halo,
-            boxed(*bar),
-            Some(ACTIVATION_RADIUS),
-        )))
-    }));
+    parts.extend(
+        bars.iter().map(|bar| {
+            shape(styles.halo(Shape::rect(Purpose::Halo, boxed(*bar), ACTIVATION_RADIUS)))
+        }),
+    );
     vec![crate::scene::Item::Group(Group {
         opacity: ghost_opacity(standing),
         ..Group::new(Role::Lifeline, lines(parts)).drawing(subject(
@@ -221,7 +219,7 @@ fn head_shade(layout: &SequenceFlow, standing: Option<Standing>, palette: &Palet
             width: floor.width,
             height: card.height + HEAD_REACH + SHADOW_REACH,
         }),
-        None,
+        0.0,
     );
     let face = if standing == Some(Standing::Removed) {
         ghost_face(plate.clone(), palette)

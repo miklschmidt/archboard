@@ -305,7 +305,9 @@ mod tests {
 
     use super::paint;
     use crate::request::{PaintRequest, Standing};
-    use crate::scene::{Colour, Item, Motion, Paint, Role, Scene, Subject, SubjectKind, Token};
+    use crate::scene::{
+        Colour, Item, Motion, Paint, Role, Scene, Subject, SubjectKind, Token, every,
+    };
 
     /// The sort of role a group plays, its facts aside.
     fn sort(role: &Role) -> std::mem::Discriminant<Role> {
@@ -343,20 +345,6 @@ mod tests {
     const EDGE: &str = r#"{"edge": {"id": "ab", "from": "a", "to": "b", "kind": "calls", "emphasis": "normal", "traffic": {"speed": 80, "volume": 1}},
         "curve": {"from": {"x": 100, "y": 60}, "segments": [{"kind": "line", "to": {"x": 100, "y": 200}}]}}"#;
 
-    /// Every item of a scene, depth first.
-    fn every(items: &[Item]) -> Vec<&Item> {
-        let mut all = Vec::new();
-        for item in items {
-            all.push(item);
-            match item {
-                Item::Group(group) => all.extend(every(&group.items)),
-                Item::Viewport(viewport) => all.extend(every(&viewport.items)),
-                _ => {}
-            }
-        }
-        all
-    }
-
     /// The scene of the test picture.
     fn painted() -> Scene {
         painted_with(REQUEST)
@@ -371,11 +359,11 @@ mod tests {
 
     /// How many shapes are filled with the slab edge colour, and how many shadows are laid.
     fn edges_and_shadows(scene: &Scene) -> (usize, usize) {
-        let items = every(&scene.body);
+        let items: Vec<&Item> = every(&scene.body).collect();
         let edge = Paint::from(Colour::from(Token::SlabEdge));
         let edges = items
             .iter()
-            .filter(|item| matches!(item, Item::Shape(shape) if shape.fill.as_ref() == Some(&edge)))
+            .filter(|item| matches!(item, Item::Shape(shape) if shape.fill == edge))
             .count();
         let shadows = items
             .iter()
@@ -405,7 +393,7 @@ mod tests {
     #[test]
     fn each_group_names_its_subject_and_role() {
         let scene = painted();
-        let items = every(&scene.body);
+        let items: Vec<&Item> = every(&scene.body).collect();
         let drawn = |kind: SubjectKind, id: &str| -> Vec<(&Role, Subject)> {
             items
                 .iter()
@@ -453,7 +441,7 @@ mod tests {
     #[test]
     fn traffic_is_data_the_painter_does_not_animate() {
         let scene = painted();
-        let items = every(&scene.body);
+        let items: Vec<&Item> = every(&scene.body).collect();
         let traffic: Vec<_> = items
             .iter()
             .filter_map(|item| match item {

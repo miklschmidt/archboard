@@ -10,7 +10,6 @@ const NOTICE_ACTIONS = Object.freeze({
 	settings: "settings",
 	reloadFrontend: "reload-frontend",
 	retryReading: "retry-reading",
-	retryListing: "retry-listing",
 	dismissPresentation: "dismiss-presentation",
 });
 
@@ -62,7 +61,8 @@ function readingNotice(paneId: string, trouble: ReadingTrouble): ShellNotice {
 const LISTING_NOTICE_ID = "listing";
 
 /**
- * The navigator could not list the repositories. Its Retry reads the listing again.
+ * The navigator could not list the repositories. The page tries again on its own, and the
+ * notice goes when the listing comes.
  * @param failure What failed, in words.
  * @returns The notice.
  */
@@ -72,7 +72,7 @@ function listingNotice(failure: string): ShellNotice {
 		title: "The navigator cannot list everything",
 		description: failure,
 		tone: "destructive",
-		actions: [{ kind: "select", id: NOTICE_ACTIONS.retryListing, label: "Retry" }],
+		actions: [],
 	};
 }
 

@@ -40,7 +40,6 @@ fn headed_line() -> Vec<Item> {
             },
         ],
     )
-    .unfilled()
     .stroked(Stroke::new(Token::Border, 2.0));
     line.marker = Some(head.clone());
     vec![

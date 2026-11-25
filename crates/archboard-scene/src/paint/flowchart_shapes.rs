@@ -248,9 +248,9 @@ fn jump_letter(end: JumpEnd, rect: Rect, words: &[String], fill: &Colour) -> Ite
 /// One stop of the gold.
 fn gold(offset: f64, token: Token) -> Stop {
     Stop {
-        offset: Some(offset),
+        offset,
         colour: token.into(),
-        opacity: None,
+        opacity: 1.0,
     }
 }
 
@@ -337,8 +337,7 @@ pub(super) fn ring(
             Purpose::Ring,
             polygon_path(&inset(outline, by), js::js_max(0.0, radius - by)),
         )
-        .unfilled()
-        .stroked(Styles::of(palette).ring(Some(HALO_WIDTH))),
+        .stroked(Styles::of(palette).ring(HALO_WIDTH)),
     )
 }
 

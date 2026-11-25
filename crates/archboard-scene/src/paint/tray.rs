@@ -299,14 +299,13 @@ fn raised_tab(
     let mark = match (standing, ink_of(standing, palette)) {
         (Some(standing), Some(ink)) => shape(
             solid(well.face())
-                .unfilled()
                 .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing))),
         ),
         _ => Items::new(),
     };
     lines(vec![
         shape(solid(well.face()).filled(&look.tab)),
-        shape(solid(well.line()).unfilled().stroked(line)),
+        shape(solid(well.line()).stroked(line)),
         mark,
     ])
 }

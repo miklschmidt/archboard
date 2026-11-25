@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { claimMs, modelLockMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
+import { observeLockTimers } from "#tests/runtime/support/lock-timers.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 const originalWarn = logger().warn;
@@ -12,20 +13,10 @@ const models = new Set<string>();
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 
-async function advanceLockTime(ms: number): Promise<void> {
-	let elapsed = 0;
-	while (elapsed < ms) {
-		const step = Math.min(modelLockMs("poll"), ms - elapsed);
-		jest.advanceTimersByTime(step);
-		await Promise.resolve();
-		await Promise.resolve();
-		elapsed += step;
-	}
-}
-
 test("claims keep one hold, renew, expire, and report both lapsed takeovers once", async () => {
 	jest.useFakeTimers();
 	try {
+		using timers = observeLockTimers();
 		const model = "claimed";
 		models.add(model);
 		const first = await lock.claimModel({
@@ -40,7 +31,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			reason: "redrawing the payment path",
 		});
 		const claimedRefusal = await lock
-			.holdModel({ vault, model, holder: agent("claimed-rival"), waitMs: 0 })
+			.holdModel({ vault, model, holder: agent("claimed-rival"), waits: false })
 			.catch((error: unknown) => error);
 		expect(claimedRefusal).toBeInstanceOf(lock.ModelHeldError);
 		expect((claimedRefusal as Error).message).toContain(
@@ -52,10 +43,10 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			const writer = lock.claimWriterId(vault, model);
 			expect(writer).toBe(first.claim.holder.id);
 			expect(
-				await lock.withLease({ vault, model, holder: agent(writer!), waitMs: 0 }, () => index),
+				await lock.withLease({ vault, model, holder: agent(writer!), waits: false }, () => index),
 			).toBe(index);
 			const rival = await lock
-				.holdModel({ vault, model, holder: agent(`rival-${index}`), waitMs: 0 })
+				.holdModel({ vault, model, holder: agent(`rival-${index}`), waits: false })
 				.catch((error: unknown) => error);
 			if (!(rival instanceof lock.ModelHeldError)) {
 				gaps += 1;
@@ -74,7 +65,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		expect(extended.claim.holder.reason).toBe("now the queues");
 
 		const camera = await lock
-			.holdModel({ vault, model, holder: human("camera"), waitMs: 0, revokeClaim: false })
+			.holdModel({ vault, model, holder: human("camera"), waits: false, revokeClaim: false })
 			.catch((error: unknown) => error);
 		expect(camera).toBeInstanceOf(lock.ModelHeldError);
 		expect(lock.claimOn(vault, model)).not.toBeNull();
@@ -82,10 +73,10 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			vault,
 			model,
 			holder: human("user"),
-			waitMs: 0,
+			waits: false,
 			revokeClaim: true,
 		});
-		await advanceLockTime(modelLockMs("stealGuard"));
+		jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
 		const takeover = await takeoverRequest;
 		expect(takeover.holder.id).toBe("user");
 		expect(lock.claimOn(vault, model)).toBeNull();
@@ -112,11 +103,11 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				vault,
 				model: lapsed,
 				holder: human("user"),
-				waitMs: 0,
+				waits: false,
 				revokeClaim: true,
 			});
 			if (mode === "expired") {
-				await advanceLockTime(modelLockMs("stealGuard"));
+				jest.advanceTimersByTime(timers.delay("modelLock.stealGuard"));
 			}
 			const taken = await lapsedTakeover;
 			expect(taken.holder.id).toBe("user");
@@ -137,26 +128,32 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			reason: "reading",
 			forMs: 60_000,
 		});
-		jest.advanceTimersByTime(modelLockMs("lease") + 250);
+		jest.advanceTimersByTime(ms("modelLock.lease") + 250);
 		expect(lock.modelLockState(vault, idle)?.id).toBe(idleClaim.claim.holder.id);
 		expect(lock.modelLockState(vault, idle)?.since).toBe(idleClaim.claim.holder.since);
 		expect(lock.releaseClaim(vault, idle)).not.toBeNull();
 
 		const brief = "brief";
 		models.add(brief);
-		await lock.claimModel({ vault, model: brief, reason: "a moment", forMs: claimMs("lease") });
-		jest.advanceTimersByTime(claimMs("lease"));
+		const { claim } = await lock.claimModel({
+			vault,
+			model: brief,
+			reason: "a moment",
+			forMs: ms("claim.lease"),
+		});
+		jest.advanceTimersByTime(Date.parse(claim.expires) - Date.now() - 1);
+		expect(lock.claimOn(vault, brief)?.holder.id).toBe(claim.holder.id);
+		jest.advanceTimersByTime(1);
 		expect(lock.modelLockState(vault, brief)).toBeNull();
 		expect(lock.claimOn(vault, brief)).toBeNull();
 		expect(lock.releaseClaim(vault, brief)).toBeNull();
 
 		const plain = "plain";
 		models.add(plain);
-		await lock.holdModel({ vault, model: plain, holder: agent("one-write"), waitMs: 0 });
+		await lock.holdModel({ vault, model: plain, holder: agent("one-write"), waits: false });
 		const refusal = lock
-			.holdModel({ vault, model: plain, holder: human("user"), waitMs: 100, revokeClaim: true })
+			.holdModel({ vault, model: plain, holder: human("user"), revokeClaim: true })
 			.catch((error: unknown) => error);
-		await advanceLockTime(100);
 		const plainRefusal = await refusal;
 		expect(plainRefusal).toBeInstanceOf(lock.ModelHeldError);
 		expect(lock.takeClaimRevocation(vault, plain)).toBeNull();

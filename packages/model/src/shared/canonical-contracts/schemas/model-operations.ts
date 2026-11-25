@@ -17,6 +17,7 @@ import {
 	RecordedFlowChangeSchema,
 } from "#shared/canonical-contracts/schemas/model-flows.ts";
 import { z } from "zod";
+import { repositoryListingSchema } from "@archboard/workspace/repositories";
 import { LineEffectSchema } from "#shared/schemas/semantic-policy.ts";
 import { retiredCallAdvice } from "#shared/schemas/built-in-vocabulary.ts";
 import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitives.ts";
@@ -353,15 +354,21 @@ type ArchitectureClaimList = z.infer<typeof ArchitectureClaimListSchema>;
 type ArchitectureClaimResult = z.infer<typeof ArchitectureClaimResultSchema>;
 type ArchitectureRecoveryResult = z.infer<typeof ArchitectureRecoveryResultSchema>;
 type ArchitectureEvent = z.infer<typeof ArchitectureEventSchema>;
-// One socket of a tab follows every vault the tab reads, because each stream of its own would
-// hold one of the six connections a browser allows a server over HTTP/1.1.
-const ArchitectureFeedRequestSchema = z.strictObject({
-	type: z.enum(["subscribe", "unsubscribe"]),
-	vault: z.string(),
-});
+// One socket of a tab follows every vault the tab reads, and the repositories of the machine,
+// because each stream of its own would hold one of the six connections a browser allows a server
+// over HTTP/1.1.
+const FeedChangeSchema = z.enum(["subscribe", "unsubscribe"]);
+const ArchitectureFeedRequestSchema = z.union([
+	z.strictObject({ type: FeedChangeSchema, vault: z.string() }),
+	z.strictObject({ type: FeedChangeSchema, topic: z.literal("repositories") }),
+]);
 const ArchitectureFeedFrameSchema = z.union([
 	ArchitectureEventSchema,
 	z.strictObject({ type: z.literal("architecture_unavailable"), vault: z.string() }),
+	repositoryListingSchema()
+		.omit({ success: true })
+		.extend({ type: z.literal("repositories") })
+		.strict(),
 ]);
 type ArchitectureFeedFrame = z.infer<typeof ArchitectureFeedFrameSchema>;
 export {

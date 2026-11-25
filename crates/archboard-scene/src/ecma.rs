@@ -72,6 +72,12 @@ pub(crate) fn split_spaces(text: &str) -> Vec<&str> {
     pieces
 }
 
+/// Where a value falls within one period from zero: ECMAScript's remainder,
+/// moved up by the period where it is negative.
+pub(crate) fn within(value: f64, period: f64) -> f64 {
+    ((value % period) + period) % period
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

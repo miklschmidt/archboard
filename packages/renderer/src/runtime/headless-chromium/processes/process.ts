@@ -11,7 +11,7 @@ import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "@archboard/process/codex-group";
-import { processGroupPollMs } from "@archboard/timing";
+import { pollUntil, TimedOut } from "@archboard/timing";
 
 import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
 
@@ -173,39 +173,6 @@ function spawnChromium(
 }
 
 /**
- * Ask a question every few milliseconds until it has an answer or the
- * deadline passes.
- * @param probe The question; null means not yet.
- * @param deadline When to give up, as a timestamp.
- * @param failure What to say when giving up.
- * @returns The first non-null answer.
- */
-function pollUntil<T>(
-	probe: () => Promise<T | null>,
-	deadline: number,
-	failure: string,
-): Promise<T> {
-	return new Promise<T>((resolvePoll, rejectPoll) => {
-		/** Ask once, and either answer, give up or ask again later. */
-		const tick = async (): Promise<void> => {
-			try {
-				const answer = await probe();
-				if (answer !== null) {
-					resolvePoll(answer);
-				} else if (Date.now() > deadline) {
-					rejectPoll(new Error(failure));
-				} else {
-					setTimeout(() => void tick(), processGroupPollMs());
-				}
-			} catch (error) {
-				rejectPoll(error);
-			}
-		};
-		void tick();
-	});
-}
-
-/**
  * The port Chromium wrote to its profile once it listened, or null before.
  * @param tempRoot The session-owned temporary directory.
  * @returns The port, or null.
@@ -244,32 +211,25 @@ async function browserSocketUrl(
 }
 
 /**
- * Wait for the leader and every runnable helper to exit within a deadline.
+ * Wait for the leader and every runnable helper to exit, within one phase of stopping.
  * @param child The group leader.
  * @param group The recorded process group identity.
- * @param timeoutMs How long to wait.
  * @returns Whether the whole group is gone.
  */
-async function groupExitsWithin(
+async function groupExits(
 	child: ChromiumProcess,
 	group: CodexProcessGroupIdentity,
-	timeoutMs: number,
 ): Promise<boolean> {
 	try {
-		await pollUntil(
-			() =>
-				Promise.resolve(
-					(child.exitCode !== null || child.signalCode !== null) &&
-						processGroups.inspect(group) === "quiescent"
-						? true
-						: null,
-				),
-			Date.now() + timeoutMs,
-			"Chromium's process group did not exit.",
+		return await pollUntil("chromium.groupExit", () =>
+			(child.exitCode !== null || child.signalCode !== null) &&
+			processGroups.inspect(group) === "quiescent"
+				? true
+				: undefined,
 		);
-		return true;
-	} catch {
-		return false;
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
 }
 
@@ -277,18 +237,16 @@ async function groupExitsWithin(
  * Stop the whole process group and prove no runnable helper remains.
  * @param child The leader.
  * @param group The recorded process group identity.
- * @param timeoutMs How long each signal may take.
  * @returns Whether the group exited.
  */
 async function stopProcessGroup(
 	child: ChromiumProcess,
 	group: CodexProcessGroupIdentity,
-	timeoutMs: number,
 ): Promise<boolean> {
 	processGroups.signal(group, "SIGTERM");
-	if (await groupExitsWithin(child, group, timeoutMs)) return true;
+	if (await groupExits(child, group)) return true;
 	processGroups.signal(group, "SIGKILL");
-	return groupExitsWithin(child, group, timeoutMs);
+	return groupExits(child, group);
 }
 
 /**
@@ -314,7 +272,6 @@ export {
 	devToolsPortIn,
 	discoveredChromiumPath,
 	requireChromiumHost,
-	pollUntil,
 	removeTempRoot,
 	spawnChromium,
 	stopProcessGroup,

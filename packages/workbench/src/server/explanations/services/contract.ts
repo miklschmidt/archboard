@@ -33,7 +33,8 @@ type Entry = {
 	/** Wakes a delivery that waits for the turn Codex starts by itself. */
 	turnNamed?: () => void;
 	/** A pending report of text that arrives faster than a reader can read. */
-	announcing?: ReturnType<typeof setTimeout>;
+	/** Cancels the pending announcement of written text, while one waits. */
+	announcing?: () => void;
 	pending?: Promise<void>;
 	captureDirectory?: string;
 	retired?: true;

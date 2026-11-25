@@ -23,6 +23,13 @@ function picker() {
 	let failures = 0;
 	let dismissed = 0;
 	const deps: ShellActionDeps = {
+		/**
+		 * Read the fixture state.
+		 * @returns Never; the repositories are outside this test.
+		 */
+		get client() {
+			return unrelated();
+		},
 		setTheme: unrelated,
 		openSettings: unrelated,
 		readRepository: unrelated,
@@ -118,9 +125,6 @@ function picker() {
 			loading: false,
 			/** A successful model open invalidates its listing. */
 			refresh: (): void => {},
-			reload: unrelated,
-			reconnected: unrelated,
-			repositoriesChanged: unrelated,
 		},
 		notices: {
 			notices,

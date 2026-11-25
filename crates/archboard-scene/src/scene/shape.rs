@@ -83,6 +83,8 @@ pub enum Cap {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Join {
+    /// Pointed where the sides meet.
+    Miter,
     /// Rounded.
     Round,
 }
@@ -164,21 +166,17 @@ pub enum PathStep {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Geometry {
-    /// A box, its corners rounded by a radius when it has one.
+    /// A box, its corners rounded by a radius; square at zero.
     Rect {
         /// The box.
         rect: Rect,
         /// How round its corners are.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[ts(optional)]
-        radius: Option<f64>,
+        radius: f64,
     },
-    /// A circle round a centre; the origin when it states none.
+    /// A circle round a centre.
     Circle {
         /// Its centre.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[ts(optional)]
-        centre: Option<Point>,
+        centre: Point,
         /// Its radius.
         radius: f64,
     },
@@ -196,33 +194,23 @@ pub enum Geometry {
     },
 }
 
-/// How a shape's outline is stroked.
+/// How a shape's outline is stroked. Every value is stated.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Stroke {
     /// What it is stroked with.
     pub paint: Paint,
-    /// How thick; one unit when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub width: Option<f64>,
-    /// How solid, from 0 to 1; fully when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub opacity: Option<f64>,
-    /// How its open ends are drawn; cut square when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub cap: Option<Cap>,
-    /// How its corners are drawn; mitred when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub join: Option<Join>,
+    /// How thick.
+    pub width: f64,
+    /// How solid, from 0 to 1.
+    pub opacity: f64,
+    /// How its open ends are drawn.
+    pub cap: Cap,
+    /// How its corners are drawn.
+    pub join: Join,
     /// How it is broken: the lengths of each dash and each gap, in turn; solid when empty.
     pub dashes: Vec<f64>,
     /// How far into its dashes it starts.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub dash_offset: Option<f64>,
+    pub dash_offset: f64,
 }
 
 /// One shape: what it is, where it is, and how it is painted.
@@ -232,14 +220,10 @@ pub struct Shape {
     pub purpose: Purpose,
     /// Where it is.
     pub geometry: Geometry,
-    /// What fills it; black when it states none, as a mask reads it.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub fill: Option<Paint>,
-    /// How solid its fill is, from 0 to 1; fully when it states none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub fill_opacity: Option<f64>,
+    /// What fills it; nothing for [`Paint::None`].
+    pub fill: Paint,
+    /// How solid its fill is, from 0 to 1.
+    pub fill_opacity: f64,
     /// How its outline is stroked; not at all when it states none.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -265,13 +249,13 @@ pub struct Shape {
 }
 
 impl Shape {
-    /// A shape of some purpose and geometry, painted with nothing yet.
+    /// A shape of some purpose and geometry, unfilled and unstroked.
     pub fn new(purpose: Purpose, geometry: Geometry) -> Self {
         Shape {
             purpose,
             geometry,
-            fill: None,
-            fill_opacity: None,
+            fill: Paint::None,
+            fill_opacity: 1.0,
             stroke: None,
             pointer: None,
             clip: None,
@@ -281,8 +265,8 @@ impl Shape {
         }
     }
 
-    /// A box of some purpose, its corners rounded by a radius when it has one.
-    pub fn rect(purpose: Purpose, rect: Rect, radius: Option<f64>) -> Self {
+    /// A box of some purpose, its corners rounded by a radius; square at zero.
+    pub fn rect(purpose: Purpose, rect: Rect, radius: f64) -> Self {
         Shape::new(purpose, Geometry::Rect { rect, radius })
     }
 
@@ -294,14 +278,7 @@ impl Shape {
     /// The shape filled.
     #[must_use]
     pub fn filled(mut self, paint: impl Into<Paint>) -> Self {
-        self.fill = Some(paint.into());
-        self
-    }
-
-    /// The shape unfilled.
-    #[must_use]
-    pub fn unfilled(mut self) -> Self {
-        self.fill = Some(Paint::None);
+        self.fill = paint.into();
         self
     }
 
@@ -321,24 +298,16 @@ impl Shape {
 }
 
 impl Stroke {
-    /// A stroke in some paint, its width unstated.
-    pub fn plain(paint: impl Into<Paint>) -> Self {
-        Stroke {
-            paint: paint.into(),
-            width: None,
-            opacity: None,
-            cap: None,
-            join: None,
-            dashes: Vec::new(),
-            dash_offset: None,
-        }
-    }
-
-    /// A stroke in some paint, its width stated.
+    /// A solid, square-ended stroke in some paint, of some width.
     pub fn new(paint: impl Into<Paint>, width: f64) -> Self {
         Stroke {
-            width: Some(width),
-            ..Stroke::plain(paint)
+            paint: paint.into(),
+            width,
+            opacity: 1.0,
+            cap: Cap::Butt,
+            join: Join::Miter,
+            dashes: Vec::new(),
+            dash_offset: 0.0,
         }
     }
 
@@ -346,8 +315,8 @@ impl Stroke {
     #[must_use]
     pub fn rounded(self) -> Self {
         Stroke {
-            cap: Some(Cap::Round),
-            join: Some(Join::Round),
+            cap: Cap::Round,
+            join: Join::Round,
             ..self
         }
     }
@@ -355,19 +324,13 @@ impl Stroke {
     /// The stroke with its ends drawn one way.
     #[must_use]
     pub fn capped(self, cap: Cap) -> Self {
-        Stroke {
-            cap: Some(cap),
-            ..self
-        }
+        Stroke { cap, ..self }
     }
 
     /// The stroke at a strength.
     #[must_use]
     pub fn at(self, opacity: f64) -> Self {
-        Stroke {
-            opacity: Some(opacity),
-            ..self
-        }
+        Stroke { opacity, ..self }
     }
 
     /// The stroke broken into dashes.

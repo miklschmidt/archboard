@@ -18,10 +18,10 @@ import {
 	messageOf,
 	type HeadlessChromiumCleanup,
 } from "#runtime/headless-chromium/processes/errors.ts";
+import { ms, pollUntil, within } from "@archboard/timing";
 import {
 	browserSocketUrl,
 	devToolsPortIn,
-	pollUntil,
 	processGroups,
 	removeTempRoot,
 	requireChromiumHost,
@@ -37,10 +37,6 @@ interface HeadlessChromiumOptions {
 	readonly chromiumPath: string;
 	/** Flags of the caller's own, after the ones every caller needs. */
 	readonly extraArgs?: readonly string[];
-	/** How long Chromium may take to listen and accept the browser connection. */
-	readonly startupTimeoutMs: number;
-	/** How long each phase of stopping its process group may take. */
-	readonly cleanupTimeoutMs: number;
 	/** How the temporary root's name begins, which says who left one behind. */
 	readonly tempRootPrefix?: string;
 	/** Cancels startup. */
@@ -194,22 +190,14 @@ function exitedEarly(child: ChromiumProcess): Error | null {
 /**
  * Wait for Chromium to say which port it listens on.
  * @param spawned The process and its root.
- * @param deadline When to give up.
- * @param signal Cancels the wait.
+ * @param signal Ends the wait with Chromium's start.
  * @returns The port.
  */
-async function listeningPort(
-	spawned: Spawned,
-	deadline: number,
-	signal?: AbortSignal,
-): Promise<number> {
+async function listeningPort(spawned: Spawned, signal: AbortSignal): Promise<number> {
 	const port = await pollUntil(
-		() => {
-			signal?.throwIfAborted();
-			return Promise.resolve(exitedEarly(spawned.child) ?? devToolsPortIn(spawned.tempRoot));
-		},
-		deadline,
-		"Chromium did not open its DevTools port in time.",
+		"chromium.devToolsPort",
+		() => exitedEarly(spawned.child) ?? devToolsPortIn(spawned.tempRoot) ?? undefined,
+		{ signal },
 	);
 	if (typeof port !== "number") throw port;
 	return port;
@@ -219,11 +207,10 @@ async function listeningPort(
  * Stop the process group, if one was started, and say whether the leader
  * really exited.
  * @param owned What the session owns.
- * @param timeoutMs How long each signal may take.
  * @param errors Where to record a leader that stayed.
  * @returns Whether the process is gone.
  */
-async function stopChild(owned: Owned, timeoutMs: number, errors: string[]): Promise<boolean> {
+async function stopChild(owned: Owned, errors: string[]): Promise<boolean> {
 	const child = owned.child;
 	if (child === null) return true;
 	try {
@@ -231,7 +218,7 @@ async function stopChild(owned: Owned, timeoutMs: number, errors: string[]): Pro
 			child.kill("SIGKILL");
 			throw new Error("Chromium process group ownership could not be established.");
 		}
-		const gone = await stopProcessGroup(child, owned.group, timeoutMs);
+		const gone = await stopProcessGroup(child, owned.group);
 		if (!gone) errors.push(`Chromium group ${child.pid} did not exit after SIGKILL`);
 		return gone;
 	} catch (error) {
@@ -244,13 +231,12 @@ async function stopChild(owned: Owned, timeoutMs: number, errors: string[]): Pro
  * Close every connection, stop the process group, and remove the temporary
  * root once the group is gone; record every step that did not happen.
  * @param owned What the session owns.
- * @param timeoutMs How long each signal may take.
  * @returns What the teardown proved.
  */
-async function teardown(owned: Owned, timeoutMs: number): Promise<HeadlessChromiumCleanup> {
+async function teardown(owned: Owned): Promise<HeadlessChromiumCleanup> {
 	const errors: string[] = [];
 	for (const connection of owned.connections) connection.close();
-	const processGone = await stopChild(owned, timeoutMs, errors);
+	const processGone = await stopChild(owned, errors);
 	const tempRoot = owned.tempRoot;
 	const tempRootRemoved = processGone && (tempRoot === null || removeTempRoot(tempRoot, errors));
 	// Every step that did not happen recorded why, so no errors is clean.
@@ -333,12 +319,10 @@ class ChromiumSession implements HeadlessChromium {
 	 * A session exists only once launch has started Chromium and connected to it.
 	 * @param owned What it owns, which stop tears down.
 	 * @param listening Its process, root, port and browser connection.
-	 * @param cleanupTimeoutMs How long each phase of stopping may take.
 	 */
 	constructor(
 		readonly owned: Owned,
 		readonly listening: Listening,
-		readonly cleanupTimeoutMs: number,
 	) {}
 
 	get pid(): number {
@@ -408,7 +392,7 @@ class ChromiumSession implements HeadlessChromium {
 	 * @returns What the teardown proved.
 	 */
 	stop(): Promise<HeadlessChromiumCleanup> {
-		this.#stopPromise ??= teardown(this.owned, this.cleanupTimeoutMs);
+		this.#stopPromise ??= teardown(this.owned);
 		return this.#stopPromise;
 	}
 
@@ -527,16 +511,11 @@ function remaining(deadline: number): number {
 /**
  * What a start that failed part way throws, after its own teardown.
  * @param owned What the start acquired.
- * @param options What the caller settled.
  * @param error What failed.
  * @returns The failure to throw.
  */
-async function startupFailure(
-	owned: Owned,
-	options: HeadlessChromiumOptions,
-	error: unknown,
-): Promise<HeadlessChromiumError> {
-	const cleanup = await teardown(owned, options.cleanupTimeoutMs);
+async function startupFailure(owned: Owned, error: unknown): Promise<HeadlessChromiumError> {
+	const cleanup = await teardown(owned);
 	const tail = owned.outputTail.trim();
 	return new HeadlessChromiumError(
 		"unavailable",
@@ -565,16 +544,22 @@ async function launchHeadlessChromium(options: HeadlessChromiumOptions): Promise
 	};
 	try {
 		signal?.throwIfAborted();
-		const deadline = Date.now() + options.startupTimeoutMs;
 		const spawned = spawnInto(owned, options);
-		const port = await listeningPort(spawned, deadline, signal);
-		const socketUrl = await browserSocketUrl(port, remaining(deadline), signal);
-		const browser = await DevTools.connect(socketUrl, remaining(deadline), signal);
-		owned.connections.add(browser);
+		const listening = await within(
+			"chromium.start",
+			async (started) => {
+				const port = await listeningPort(spawned, started);
+				const socketUrl = await browserSocketUrl(port, ms("chromium.call"), started);
+				const browser = await DevTools.connect(socketUrl, ms("chromium.call"), started);
+				owned.connections.add(browser);
+				return { ...spawned, port, browser };
+			},
+			{ signal },
+		);
 		signal?.throwIfAborted();
-		return new ChromiumSession(owned, { ...spawned, port, browser }, options.cleanupTimeoutMs);
+		return new ChromiumSession(owned, listening);
 	} catch (error) {
-		throw await startupFailure(owned, options, error);
+		throw await startupFailure(owned, error);
 	}
 }
 

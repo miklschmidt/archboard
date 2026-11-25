@@ -10,30 +10,20 @@ import {
 	readProcessObservation,
 	type ProcessObservation,
 } from "#runtime/processes/observation.ts";
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
 
 type KillableProcess = Pick<Subprocess, "kill">;
 type CapturedMembers = Map<number, ProcessObservation>;
 
 /** Injectable process operations for deterministic cleanup-failure coverage. */
 interface GitGroupTerminationOperations {
-	readonly now: () => number;
-	readonly wait: (ms: number) => Promise<void>;
 	readonly members: (group: ProcessGroupIdentity) => readonly ProcessObservation[];
 	readonly signalGroup: (group: ProcessGroupIdentity, signal: NodeJS.Signals) => boolean;
 	readonly readProcess: (pid: number) => ProcessObservation | undefined;
 	readonly signalPid: (pid: number, signal: NodeJS.Signals) => void;
 }
 
-/** Production process observation, signalling, clock, and wait operations. */
+/** Production process observation and signalling operations. */
 const productionOperations: GitGroupTerminationOperations = {
-	now: Date.now,
-	/**
-	 * Wait for the next bounded group observation.
-	 * @param ms The polling interval.
-	 * @returns A promise settled after the interval.
-	 */
-	wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 	members: ownedProcessGroupMembers,
 	signalGroup: signalOwnedProcessGroup,
 	readProcess: readProcessObservation,
@@ -149,7 +139,7 @@ function recoverStoppedGroup(
  * Freeze the group (see awaitFrozenGroup), retaining every member seen for recovery.
  * @param group The exact group being frozen.
  * @param captured The member identities retained for error recovery.
- * @param operations The process observation, clock, and wait seam.
+ * @param operations The process observation and signalling seam.
  * @throws {Error} When the group does not freeze within its cleanup grace.
  */
 async function freezeGroup(
@@ -172,11 +162,8 @@ async function freezeGroup(
 			stop: () => {
 				operations.signalGroup(group, "SIGSTOP");
 			},
-			now: operations.now,
-			wait: operations.wait,
-			pollMs: gitMs("groupPoll"),
 		},
-		gitGroupCleanupDeadline(operations.now()),
+		"git.groupFreeze",
 	);
 	if (!frozen) {
 		throw new Error(`Process group ${group.group} did not stop within its cleanup grace.`);

@@ -190,14 +190,15 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
       "name": "A person chooses a checkout",
-      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there. Every tab then refreshes its repositories.",
+      "summary": "Seen from the panes and tabs: every tab that follows the repositories is sent the new listing, then each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw",
         "vKEsyHFk#CgXCbunb",
-        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
-        "vKEsyHFk/yejBBUFY#xsn0RvSi"
+        "vKEsyHFk#Sm3yVuE3",
+        "vKEsyHFk#guvtYApo",
+        "vKEsyHFk#dneK7oM5"
       ],
       "steps": [
         {
@@ -247,6 +248,42 @@
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                     "symbol": "chooseCheckoutRoute"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#mHhkz8Ii",
+                  "from": "vKEsyHFk#guvtYApo",
+                  "to": "vKEsyHFk#dneK7oM5",
+                  "label": "the listing, unless the mirror holds a newer one",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/feed-socket.ts",
+                    "symbol": "receive"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
+                  "from": "vKEsyHFk#Sm3yVuE3",
+                  "to": "vKEsyHFk#guvtYApo",
+                  "label": "repositories: the listing",
+                  "kind": "async",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/panes/connections/sockets/architecture-feed.ts",
+                    "symbol": "serveArchitectureFeed"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk#Sm3yVuE3",
+                  "label": "the listing, to every tab that follows",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                    "symbol": "publish"
                   }
                 },
                 {
@@ -320,30 +357,6 @@
                       ]
                     }
                   ]
-                },
-                {
-                  "id": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
-                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
-                  "label": "tell every tab",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "broadcastEverywhere"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
-                  "from": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
-                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                  "label": "repositories_changed",
-                  "kind": "async",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/panes/connections/state/pane-vaults.ts",
-                    "symbol": "broadcastEverywhere"
-                  }
                 },
                 {
                   "id": "vKEsyHFk/Oi6SBIAM#eEuiCZSD",

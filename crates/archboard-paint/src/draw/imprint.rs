@@ -37,7 +37,7 @@ impl<C: Canvas> Walk<'_, C> {
         };
         let ink = self.lit_colour(&stroke.paint, lit);
         let heart = ink.with_alpha(solid(
-            f64::from(ink.components[3]) * stroke.opacity.unwrap_or(1.0) * (1.0 + lit),
+            f64::from(ink.components[3]) * stroke.opacity * (1.0 + lit),
         ));
         let along = to - from;
         let centre = from.midpoint(to);
@@ -63,7 +63,7 @@ impl<C: Canvas> Walk<'_, C> {
         };
         let colour = self
             .lit_colour(&stroke.paint, lit)
-            .multiply_alpha(solid(stroke.opacity.unwrap_or(1.0)));
+            .multiply_alpha(solid(stroke.opacity));
         let mut fading = Gradient::new_linear(from, to);
         fading.stops = stops(FADE.map(|(offset, share)| (offset, colour.multiply_alpha(share))));
         fading.interpolation_alpha_space = InterpolationAlphaSpace::Unpremultiplied;
@@ -84,7 +84,7 @@ fn stripe(shape: &Shape) -> Option<(Point, Point, &Stroke, f64)> {
         Point::new(from.x, from.y),
         Point::new(to.x, to.y),
         stroke,
-        stroke.width.unwrap_or(1.0),
+        stroke.width,
     ))
 }
 

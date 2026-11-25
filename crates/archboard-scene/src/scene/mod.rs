@@ -3,11 +3,16 @@
 //! Each painter turns it into what a frontend shows; the SVG painter
 //! (`archboard-svg`) writes it as a document.
 //!
-//! A scene is items in the order they are drawn: groups ([`group`]), shapes
-//! ([`shape`]), runs of words, icons and viewports ([`text`]), definitions
-//! ([`definition`]) and trains of pulses ([`traffic`]). Colours name the
-//! page's tokens and the operations that mix them ([`colour`]); the frontend
-//! resolves them in its theme. The scene holds no interaction state: the
+//! A scene is items in the order they are drawn: groups ([`Group`]), shapes
+//! ([`Shape`]), runs of words, icons and viewports ([`Text`], [`Icon`],
+//! [`Viewport`]), definitions ([`Definition`]) and trains of pulses
+//! ([`TrafficMark`]). Colours name the page's tokens and the operations that
+//! mix them ([`Colour`]); the frontend resolves them in its theme. Every type
+//! has one path: `scene::` and its name. A scene states every value, so no
+//! reader knows a default: an `Option` in it is an absence (no stroke, no clip,
+//! no mask, no subject, a pointer left to the group around), never a default
+//! to fill in, and the SVG painter leaves out what SVG's own default says.
+//! The scene holds no interaction state: the
 //! light, the recede, the far view, the camera and the flight are each
 //! painter's own (ADR 0023).
 
@@ -16,12 +21,12 @@ use ts_rs::TS;
 
 use crate::drawing::ReadingDirection;
 
-pub mod colour;
-pub mod definition;
-pub mod group;
-pub mod shape;
-pub mod text;
-pub mod traffic;
+mod colour;
+mod definition;
+mod group;
+mod shape;
+mod text;
+mod traffic;
 
 pub use colour::{Colour, Paint, Token};
 pub use definition::{
@@ -33,7 +38,9 @@ pub use group::{
 };
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
 pub use text::{GlyphPlace, Icon, Text, Viewport};
-pub use traffic::{Motion, PulseLook, TrafficMark};
+pub use traffic::{
+    BeamGradient, BeamPiece, Frame, MaskLayer, Motion, PulseLook, Slide, TrafficMark,
+};
 
 /// One thing in a scene's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
@@ -58,6 +65,35 @@ pub enum Item {
     Traffic(TrafficMark),
     /// A line break between two things, where the document has one.
     Break,
+}
+
+/// Every item among some, those inside groups and viewports too: depth first,
+/// each one before what it holds. Which items hold items is known here only.
+pub fn every(items: &[Item]) -> impl Iterator<Item = &Item> {
+    let mut pending: Vec<&Item> = items.iter().rev().collect();
+    std::iter::from_fn(move || {
+        let item = pending.pop()?;
+        match item {
+            Item::Group(group) => pending.extend(group.items.iter().rev()),
+            Item::Viewport(viewport) => pending.extend(viewport.items.iter().rev()),
+            _ => {}
+        }
+        Some(item)
+    })
+}
+
+/// Visit a list of items and each list inside it, at any depth: a list is
+/// visited before the lists of the items it keeps, so a visit may take items
+/// out of its list or put new ones in.
+pub fn each_list(items: &mut Vec<Item>, visit: &mut dyn FnMut(&mut Vec<Item>)) {
+    visit(items);
+    for item in items {
+        match item {
+            Item::Group(group) => each_list(&mut group.items, visit),
+            Item::Viewport(viewport) => each_list(&mut viewport.items, visit),
+            _ => {}
+        }
+    }
 }
 
 /// One subject's box in the picture, in the units of the document.
@@ -168,4 +204,63 @@ pub struct PaintedDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub reading_direction: Option<ReadingDirection>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Group, Item, Role, Viewport, each_list, every};
+    use crate::geometry::Rect;
+
+    fn group(items: Vec<Item>) -> Item {
+        Item::Group(Group::new(Role::Marks, items))
+    }
+
+    fn viewport(items: Vec<Item>) -> Item {
+        let frame = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: 1.0,
+            height: 1.0,
+        };
+        Item::Viewport(Viewport {
+            frame,
+            view: frame,
+            items,
+        })
+    }
+
+    /// A group holding a viewport that holds a group, then a break, then a break
+    /// after the group: `g v g b b b`.
+    fn nested() -> Vec<Item> {
+        vec![
+            group(vec![viewport(vec![group(vec![Item::Break])]), Item::Break]),
+            Item::Break,
+        ]
+    }
+
+    fn name(item: &Item) -> char {
+        match item {
+            Item::Group(_) => 'g',
+            Item::Viewport(_) => 'v',
+            _ => 'b',
+        }
+    }
+
+    #[test]
+    fn every_goes_depth_first_through_groups_and_viewports_parents_first() {
+        let items = nested();
+        assert_eq!(every(&items).map(name).collect::<String>(), "gvgbbb");
+    }
+
+    #[test]
+    fn each_list_visits_every_list_and_what_a_visit_leaves_in_it() {
+        let mut items = nested();
+        let mut seen = 0;
+        each_list(&mut items, &mut |list| {
+            seen += 1;
+            list.retain(|item| !matches!(item, Item::Break));
+        });
+        assert_eq!(seen, 4, "the page's list and the three inside it");
+        assert_eq!(every(&items).map(name).collect::<String>(), "gvg");
+    }
 }

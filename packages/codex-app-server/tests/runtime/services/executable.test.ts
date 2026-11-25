@@ -14,7 +14,7 @@ import {
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
-import { codexSessionMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import { installation } from "@archboard/workspace/installation";
 
 /** What the pinned Codex binary prints for `--version`. */
@@ -53,6 +53,32 @@ function oversizedFixture(root: string): string {
 	);
 	chmodSync(executable, 0o700);
 	return executable;
+}
+
+function releasePackage(nodeModules: string): string {
+	const root = path.join(nodeModules, "@archboard", "cli-test");
+	fs.mkdirSync(root, { recursive: true });
+	return fs.realpathSync(root);
+}
+
+function nativeBinaryPath(...head: string[]): string {
+	return path.join(
+		path.sep,
+		...head,
+		"node_modules",
+		"@openai",
+		"codex-linux-x64",
+		"vendor",
+		"t",
+		"bin",
+		"codex",
+	);
+}
+
+function managedEnvironmentKeys(executable: string): string[] {
+	return Object.keys(nativeCodexEnvironment(executable)).filter((key) =>
+		key.startsWith("CODEX_MANAGED_BY_"),
+	);
 }
 
 describe("Codex executable ownership", () => {
@@ -178,7 +204,7 @@ describe("Codex executable ownership", () => {
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
 			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
-			expect(observedOptions?.["timeout"]).toBe(codexSessionMs("requestSettlement"));
+			expect(observedOptions?.["timeout"]).toBe(ms("codex.versionProof"));
 			expect(observedOptions?.["maxBuffer"]).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
 			expect(observedOptions?.["env"]).not.toHaveProperty("OPENAI_API_KEY");
 
@@ -212,12 +238,6 @@ describe("Codex executable ownership", () => {
 				fixture(bin, version, "codex");
 			}
 			return fs.realpathSync(packageRoot);
-		}
-
-		function releasePackage(nodeModules: string): string {
-			const root = path.join(nodeModules, "@archboard", "cli-test");
-			fs.mkdirSync(root, { recursive: true });
-			return fs.realpathSync(root);
 		}
 
 		function foundIn(layout: (base: string) => { root: string; codexModules: string }): void {
@@ -272,24 +292,10 @@ describe("Codex executable ownership", () => {
 	});
 
 	test("sets the managed environment for a native binary only, naming the package manager", () => {
-		const native = (...head: string[]): string =>
-			path.join(
-				path.sep,
-				...head,
-				"node_modules",
-				"@openai",
-				"codex-linux-x64",
-				"vendor",
-				"t",
-				"bin",
-				"codex",
-			);
-		const managed = (executable: string): string[] =>
-			Object.keys(nativeCodexEnvironment(executable)).filter((key) =>
-				key.startsWith("CODEX_MANAGED_BY_"),
-			);
-		expect(managed(native("home", ".bun", "install", "global"))).toEqual(["CODEX_MANAGED_BY_BUN"]);
-		expect(managed(native("project"))).toEqual(["CODEX_MANAGED_BY_NPM"]);
+		expect(managedEnvironmentKeys(nativeBinaryPath("home", ".bun", "install", "global"))).toEqual([
+			"CODEX_MANAGED_BY_BUN",
+		]);
+		expect(managedEnvironmentKeys(nativeBinaryPath("project"))).toEqual(["CODEX_MANAGED_BY_NPM"]);
 		expect(
 			nativeCodexEnvironment(
 				path.join(path.sep, "project", "node_modules", "@openai", "codex", "bin", "codex.js"),

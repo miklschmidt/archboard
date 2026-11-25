@@ -1,20 +1,4 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk#jY19Jvh2",
-      "order": 100,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "how long a Git call may run",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
-        "symbol": "gitMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    }
-  ],
   "order": 26500,
   "name": "Vault Git checkout",
   "kind": "module",
@@ -23,7 +7,23 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/clients/git-sync.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "schemaVersion": 2,
-  "id": "vKEsyHFk#IvTUZ8Hk"
+  "id": "vKEsyHFk#IvTUZ8Hk",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "how long a Git call may run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
+        "symbol": "ms"
+      },
+      "id": "vKEsyHFk#jY19Jvh2",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ]
 }

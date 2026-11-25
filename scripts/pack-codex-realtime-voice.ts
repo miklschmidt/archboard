@@ -113,6 +113,14 @@ await build({
 	),
 	format: "esm",
 	platform: "node",
+	// The package names only Codex's and Git's waits, so it carries only their declarations. They
+	// sit beside the timing package's public entry.
+	alias: {
+		"#shared/constants/waits.ts": path.join(
+			path.dirname(fileURLToPath(import.meta.resolve("@archboard/timing"))),
+			"published-waits.ts",
+		),
+	},
 	// The runtime imports its reviewed manifests and instruction texts `with { type: "text" }`, so
 	// the bundle inlines their exact text. The package imports no JSON as data.
 	loader: { ".json": "text", ".txt": "text" },

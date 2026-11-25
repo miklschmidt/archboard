@@ -1,15 +1,24 @@
+import type { QueryClient } from "@tanstack/react-query";
 import {
 	architectureFeedFrameSchema,
+	type architectureFeedRequestSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
-import { paneMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
+import type { z } from "zod";
 
-/** What one vault's feed hears from the socket. */
-interface FeedFollower {
-	readonly event: (event: ArchitectureEvent) => void;
+/** The listing of the repositories of this machine, as one frame carries it. */
+type RepositoriesFrame = Extract<ArchitectureFeedFrame, { type: "repositories" }>;
+
+/** What hears one topic of the socket: a vault's events, or the repositories of the machine. */
+interface FeedFollower<Heard> {
+	readonly event: (heard: Heard) => void;
 	readonly lost: () => void;
 }
+
+/** What the socket asks the server to send it. */
+type FeedRequest = z.infer<ReturnType<typeof architectureFeedRequestSchema>>;
 
 /**
  * Decode one frame at the network boundary.
@@ -27,48 +36,82 @@ function decodedFrame(data: unknown): ArchitectureFeedFrame | null {
 
 /**
  * The one socket of a tab that carries architecture events for every vault it
- * reads. A browser allows a server six HTTP/1.1 connections, so a stream for
- * each repository in the navigator would leave no request able to start.
- * @returns How a vault's feed follows and stops following its vault.
+ * reads, and the repositories of the machine. A browser allows a server six
+ * HTTP/1.1 connections, so a stream for each repository in the navigator would
+ * leave no request able to start.
+ * @returns How a vault's feed and the repositories follow and stop following.
  */
 function createFeedSocket() {
-	const followers = new Map<string, FeedFollower>();
+	const followers = new Map<string, FeedFollower<ArchitectureEvent>>();
+	let machine: FeedFollower<RepositoriesFrame> | null = null;
 	let socket: WebSocket | null = null;
+	let retry: (() => void) | null = null;
+	/**
+	 * Every follower, of a vault or of the machine.
+	 * @returns Them.
+	 */
+	function everyone(): Pick<FeedFollower<unknown>, "lost">[] {
+		return machine === null ? [...followers.values()] : [...followers.values(), machine];
+	}
 	/**
 	 * Ask the server for one change, when the socket can carry it. A socket that
 	 * is still opening subscribes every follower when it opens.
-	 * @param type What to change.
-	 * @param vault The vault.
+	 * @param request The subscription change.
 	 */
-	function tell(type: "subscribe" | "unsubscribe", vault: string): void {
-		if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type, vault }));
+	function tell(request: FeedRequest): void {
+		if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(request));
 	}
 	/**
-	 * Route one frame to the feed of its vault. A frame that makes no sense says
-	 * nothing about which vault it is for, so every feed stops trusting its reading.
+	 * Route one frame to its follower. A frame that makes no sense says nothing
+	 * about what it is for, so every follower stops trusting what it holds.
 	 * @param message The socket message.
 	 */
 	function receive(message: MessageEvent<unknown>): void {
 		const frame = decodedFrame(message.data);
-		if (frame === null) for (const follower of followers.values()) follower.lost();
-		else if (frame.type === "architecture_unavailable") followers.get(frame.vault)?.lost();
-		else followers.get(frame.vault)?.event(frame);
+		if (frame === null) for (const follower of everyone()) follower.lost();
+		else if (frame.type === "repositories") machine?.event(frame);
+		else toVault(frame);
 	}
-	/** Open the socket while anything follows a vault, and open it again after it drops. */
+	/**
+	 * Route a frame of one vault to the feed of that vault.
+	 * @param frame The frame.
+	 */
+	function toVault(frame: Exclude<ArchitectureFeedFrame, RepositoriesFrame>): void {
+		const follower = followers.get(frame.vault);
+		if (frame.type === "architecture_unavailable") follower?.lost();
+		else follower?.event(frame);
+	}
+	/** Open the socket while anything follows, and open it again after it drops. */
 	function connect(): void {
-		if (socket !== null || followers.size === 0) return;
+		if (socket !== null || everyone().length === 0) return;
+		retry?.();
+		retry = null;
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 		const opening = new WebSocket(`${protocol}//${window.location.host}/api/architecture/events`);
 		socket = opening;
 		opening.addEventListener("open", () => {
-			for (const vault of followers.keys()) tell("subscribe", vault);
+			if (socket !== opening) return;
+			for (const vault of followers.keys()) tell({ type: "subscribe", vault });
+			if (machine !== null) tell({ type: "subscribe", topic: "repositories" });
 		});
-		opening.addEventListener("message", receive);
+		opening.addEventListener("message", (message) => {
+			if (socket === opening) receive(message);
+		});
 		opening.addEventListener("close", () => {
+			if (socket !== opening) return;
 			socket = null;
-			for (const follower of followers.values()) follower.lost();
-			setTimeout(connect, paneMs("socketReconnect"));
+			retry = after("pane.socketReconnect", connect);
+			for (const follower of everyone()) follower.lost();
 		});
+	}
+	/** Close the socket once nothing follows. */
+	function release(): void {
+		if (everyone().length > 0) return;
+		retry?.();
+		retry = null;
+		const closing = socket;
+		socket = null;
+		closing?.close(1000);
 	}
 	return {
 		/**
@@ -77,17 +120,50 @@ function createFeedSocket() {
 		 * @param follower What hears its events.
 		 * @returns The function that stops following it.
 		 */
-		follow(vault: string, follower: FeedFollower): () => void {
+		follow(vault: string, follower: FeedFollower<ArchitectureEvent>): () => void {
 			followers.set(vault, follower);
 			connect();
-			tell("subscribe", vault);
+			tell({ type: "subscribe", vault });
 			return () => {
 				followers.delete(vault);
-				tell("unsubscribe", vault);
-				if (followers.size === 0) socket?.close(1000);
+				tell({ type: "unsubscribe", vault });
+				release();
+			};
+		},
+		/**
+		 * Follow the repositories of the machine. The server sends the listing when the socket
+		 * subscribes, again after every reconnect, and whenever it changes.
+		 * @param follower What hears each listing.
+		 * @returns The function that stops following them.
+		 */
+		followRepositories(follower: FeedFollower<RepositoriesFrame>): () => void {
+			machine = follower;
+			connect();
+			tell({ type: "subscribe", topic: "repositories" });
+			return () => {
+				machine = null;
+				tell({ type: "unsubscribe", topic: "repositories" });
+				release();
 			};
 		},
 	};
 }
 
-export { createFeedSocket };
+/** One socket per query cache, shared by every vault it reads and by its repositories. */
+const sockets = new WeakMap<QueryClient, ReturnType<typeof createFeedSocket>>();
+
+/**
+ * The feed socket of a tab, made when something first follows through it.
+ * @param client The tab's query cache.
+ * @returns Its socket.
+ */
+function feedSocket(client: QueryClient): ReturnType<typeof createFeedSocket> {
+	let socket = sockets.get(client);
+	if (socket === undefined) {
+		socket = createFeedSocket();
+		sockets.set(client, socket);
+	}
+	return socket;
+}
+
+export { feedSocket };

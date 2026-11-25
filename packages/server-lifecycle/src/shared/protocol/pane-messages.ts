@@ -29,9 +29,6 @@ type WebSocketMessageType =
 	// the pane asks for the drawing itself (ADR 0023).
 	| "pane_place"
 	| "pane_model"
-	// The repositories of this machine changed: a checkout was chosen. Keyless
-	// and sent to every tab, because the navigator of each lists every one.
-	| "repositories_changed"
 	// Canonical model activity across every explicit vault (ADR 0022 and ADR 0068).
 	// Every pane receives the snapshot, independently of its displayed reading.
 	| "agent_activity"

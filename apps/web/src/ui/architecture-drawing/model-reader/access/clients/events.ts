@@ -1,6 +1,6 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
 import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/model/contract";
-import { createFeedSocket } from "#ui/architecture-drawing/model-reader/access/clients/feed-socket.ts";
+import { feedSocket } from "#ui/architecture-drawing/model-reader/access/clients/feed-socket.ts";
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
@@ -19,8 +19,6 @@ interface ArchitectureFeed {
 
 /** One feed per vault and query cache, shared by panes. */
 const feeds = new WeakMap<QueryClient, Map<string, ReturnType<typeof createFeed>>>();
-/** One event connection per query cache, shared by every vault it reads. */
-const sockets = new WeakMap<QueryClient, ReturnType<typeof createFeedSocket>>();
 
 /**
  * Find the live update owner without creating another architecture cache.
@@ -34,14 +32,9 @@ function architectureFeed(client: QueryClient, vault: string) {
 		byVault = new Map();
 		feeds.set(client, byVault);
 	}
-	let socket = sockets.get(client);
-	if (socket === undefined) {
-		socket = createFeedSocket();
-		sockets.set(client, socket);
-	}
 	let feed = byVault.get(vault);
 	if (feed === undefined) {
-		feed = createFeed(client, vault, socket);
+		feed = createFeed(client, vault, feedSocket(client));
 		byVault.set(vault, feed);
 	}
 	return feed;
@@ -54,11 +47,7 @@ function architectureFeed(client: QueryClient, vault: string) {
  * @param socket The connection of this query cache.
  * @returns A shared external store that stops following its vault when nobody reads it.
  */
-function createFeed(
-	client: QueryClient,
-	vault: string,
-	socket: ReturnType<typeof createFeedSocket>,
-) {
+function createFeed(client: QueryClient, vault: string, socket: ReturnType<typeof feedSocket>) {
 	const listeners = new Set<() => void>();
 	let state: ArchitectureFeed = { connection: "connecting", failure: null };
 	let stopFollowing: (() => void) | null = null;

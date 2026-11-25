@@ -149,9 +149,9 @@ pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
 /// A shape this much visible, under whatever visibility it states.
 fn dim(mut shape: Shape, visible: f64) -> Shape {
     if visible < 1.0 {
-        shape.fill_opacity = Some(shape.fill_opacity.unwrap_or(1.0) * visible);
+        shape.fill_opacity *= visible;
         if let Some(stroke) = &mut shape.stroke {
-            stroke.opacity = Some(stroke.opacity.unwrap_or(1.0) * visible);
+            stroke.opacity *= visible;
         }
     }
     shape
@@ -260,7 +260,7 @@ impl Cuts {
             mask.map_or_else(Vec::new, |mask| {
                 mask.shapes
                     .iter()
-                    .filter(|shape| shape.fill != Some(white()))
+                    .filter(|shape| shape.fill != white())
                     .cloned()
                     .collect()
             })

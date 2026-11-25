@@ -107,7 +107,7 @@ test("application timeout force-reaps a real process group before stop resolves"
 			resources: [
 				{
 					name: "real-process-group",
-					stopGraceMs: 25,
+					stopGrace: "server.httpStopGrace",
 					stop: async () => {
 						process.kill(-group, "SIGTERM");
 						await exited;

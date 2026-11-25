@@ -1,7 +1,7 @@
 // What the shell reads again on its own: the clocks a person reads at a glance,
 // and how long the browser keeps what the server answered.
 
-import { durations } from "#shared/constants/durations.ts";
+import { handed, span } from "#shared/constants/uses.ts";
 
 /**
  * Time passing, as the shell says it (TASK-302).
@@ -16,67 +16,35 @@ import { durations } from "#shared/constants/durations.ts";
  * or a long test run is not called stuck, short enough that a person glancing
  * back learns it before they would have given up on it.
  */
-const SHELL_CLOCK_MS = durations({
+const SHELL_CLOCK = {
 	/** Time to read an informational toast before it leaves the canvas. */
-	notice: 6000,
+	"shell.notice": handed(6000),
 	/** How often the navigator re-reads how long ago each agent spoke. */
-	ageTick: 5000,
+	"shell.ageTick": handed(5000),
 	/** How often the agent dock counts a running turn's seconds. */
-	elapsedTick: 1000,
+	"shell.elapsedTick": handed(1000),
 	/** How long a running turn reports nothing new before the agent dock says it is quiet. */
-	quiet: 120_000,
-});
+	"shell.quiet": span(120_000),
+};
 
 /** What the browser keeps of the server's answers (TASK-167). */
-const MODEL_CACHE_MS = durations({
-	/**
-	 * How long the model listing stays fresh. The listing is small and every
-	 * event that can change it invalidates it by name, so this window is only the
-	 * floor under a burst of them. It is the one thing read again when the tab
-	 * comes back to the foreground, since nothing announces that the vault gained
-	 * a note. A model a pane holds is drawn from that pane and never read here.
-	 */
-	listingStale: 30_000,
+const MODEL_CACHE = {
 	/**
 	 * How long an answer nobody reads any more stays in the cache. It pulls
 	 * against the tab's memory rather than the server: it is what lets a model
 	 * come back showing its last preview instead of an empty card.
 	 */
-	gc: 5 * 60_000,
+	"modelCache.gc": handed(5 * 60_000),
 	/** Notice vault/configuration edits promptly without scanning the whole vault on every frame. */
-	vaultCheck: 5_000,
-	/**
-	 * How often a page that waits for a repository reads the repositories again. It has no pane
-	 * yet, so no socket says that a command in a terminal registered one, and the person watching
-	 * it expects the row soon after the command ends. Only that page asks, and the read is small.
-	 */
-	startListing: 2_000,
+	"modelCache.vaultCheck": handed(5_000),
 	/**
 	 * How long a read that met a write waits before it reads again. A write holds the model for
 	 * the moment it lands, about 20 ms, and a read in that moment is refused as busy. The reader
-	 * keeps its picture and asks again, up to MODEL_LOCK_MS.waitCap in all, as an agent that
+	 * keeps its picture and asks again, up to `modelLock.wait` in all, as an agent that
 	 * waits for a model does. A quarter second is soon enough that the written model follows the
 	 * write at once, and few enough reads that a model held past the cap costs about twenty.
 	 */
-	busyRetry: 250,
-});
+	"modelCache.busyRetry": handed(250),
+};
 
-/**
- * One duration of the shell's clock.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function shellClockMs(key: keyof typeof SHELL_CLOCK_MS): number {
-	return SHELL_CLOCK_MS[key];
-}
-
-/**
- * One duration of the model cache.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function modelCacheMs(key: keyof typeof MODEL_CACHE_MS): number {
-	return MODEL_CACHE_MS[key];
-}
-
-export { shellClockMs, modelCacheMs };
+export { MODEL_CACHE, SHELL_CLOCK };

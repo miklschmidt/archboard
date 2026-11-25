@@ -4,19 +4,21 @@
 // The navigator lists every repository identity with a known checkout that has a
 // vault, and every untracked vault, each with the models of its chosen
 // checkout's vault. The registry is the one account of that, and every pane
-// follows it: when it changes, a pane in the vault of a checkout that is not
-// chosen moves to the chosen one, keeping its model, every other pane hears the
-// name its repository goes by now, and every tab is told to read the list again.
-// A pane whose model the new checkout has not got says so, because the model it
-// asks for is not there.
+// follows it: when the registry changes, a pane in the vault of a checkout that
+// is not chosen moves to the chosen one, keeping its model, and every other pane
+// hears the name its repository goes by now. A pane whose model the new checkout
+// has not got says so, because the model it asks for is not there.
 //
 // The registry is one file that every server on the machine reads. This server
 // changes it from the navigator's menu and from `browser show` in a checkout
 // that is not chosen, and follows that change at once. A command changes it
 // without any server (`repo use`, `repo add`, `repo forget`, and the first
 // command in a checkout), and another checkout's server changes it when a show
-// there chooses. So the server watches the file and follows every change it
-// did not follow already, whoever made it.
+// there chooses. So the server watches the file. The listing also reads the
+// disk, and a checkout or a vault can come or go with the registry unchanged, so
+// while a tab follows the repositories the server looks again on a slow tick.
+// Either way it compares the listing with the one it published last and sends
+// a different listing to every tab that follows the repositories.
 
 import { agentActivity } from "#server/wiring/server-owners.ts";
 import fs from "fs";
@@ -38,11 +40,14 @@ import {
 	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
-import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
 import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { vaultDirectory } from "@archboard/workspace/vault";
 import type { z } from "zod";
-import { checkoutChoiceSchema } from "@archboard/workspace/repositories";
+import {
+	checkoutChoiceSchema,
+	type repositoryListingSchema,
+} from "@archboard/workspace/repositories";
+import { every } from "@archboard/timing";
 
 /**
  * The repositories, as the navigator lists them.
@@ -50,7 +55,7 @@ import { checkoutChoiceSchema } from "@archboard/workspace/repositories";
  * @param res Its response.
  */
 function repositoriesRoute(_req: Request, res: Response): void {
-	res.json({ success: true, repositories: listRepositories() });
+	res.json(refresh());
 }
 
 /**
@@ -72,8 +77,8 @@ function chooseCheckoutRoute(req: Request, res: Response): void {
 	// Followed even when the checkout was chosen already: a person who chooses
 	// it again from the menu is asking for what it reads, and a pane that a
 	// change the server never heard of left in another checkout follows too.
-	followRegistry();
-	res.json({ success: true, repository, root });
+	// The answer is the listing, so the page that chose has it without a frame.
+	res.json(followRegistry());
 }
 
 /**
@@ -133,16 +138,30 @@ function statedChoice(
 	return { repository, root };
 }
 
-/** What the registry file held when the panes last followed it, or null when there was none. */
-let followedRegistry: string | null = null;
+/** The listing as this server publishes it. */
+type Listing = z.infer<ReturnType<typeof repositoryListingSchema>>;
+
+/** The server process whose listings share one revision sequence. */
+const instance = crypto.randomUUID();
+
+/** What this server last published, and its text, which a new look is compared with. */
+let published: { readonly listing: Listing; readonly text: string } | null = null;
+
+/** Every tab that follows the repositories, by what sends it the listing. */
+const followers = new Set<(listing: Listing) => void>();
+
+/** The slow look at the disk, while a tab follows the repositories. */
+let recheck: (() => void) | null = null;
 
 /** The watch of the registry file's directory, while there is one. */
 let registryWatcher: fs.FSWatcher | null = null;
 
+/** The registry contents that panes last followed, independent of what the navigator can list. */
+let followedRegistry: string | null = null;
+
 /**
- * The registry file as it is now, compared and never parsed: the panes follow
- * what `listRegistry` reads from it.
- * @returns Its text, or null when there is no file.
+ * Read the registry contents to recognise changes that affect pane placement.
+ * @returns The contents, or null when the file is missing or unreadable.
  */
 function registryText(): string | null {
 	try {
@@ -152,22 +171,43 @@ function registryText(): string | null {
 	}
 }
 
-/** Tell the activity tracker which vaults a connected pane hears about. */
-function registerReadableVaults(): void {
-	agentActivity.register(listRepositories().flatMap((entry) => entry.vault ?? []));
+/**
+ * Send a changed listing to the tabs that follow it.
+ * @param repositories The current list.
+ * @param text The serialized list used to recognize changes.
+ * @returns The listing as published.
+ */
+function publish(repositories: Listing["repositories"], text: string): Listing {
+	const revision = (published?.listing.revision ?? -1) + 1;
+	const listing: Listing = { success: true, instance, revision, repositories };
+	agentActivity.register(repositories.flatMap((entry) => entry.vault ?? []));
+	published = { listing, text };
+	for (const send of followers) send(listing);
+	return listing;
 }
 
 /**
- * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
- * the vault of a checkout that is not chosen, including one that is gone, moves
- * to the vault of the chosen checkout, keeping its model, and its model is read
- * again there. Every other pane is told where it is again, with the name its
- * repository goes by now, which a forgotten checkout or a renamed untracked
- * vault changes. Then every tab is told to read the list of repositories again.
+ * Follow changes in pane placement and publish changes to the listing.
+ * @param chosenHere Whether this server made a choice whose panes must follow.
+ * @returns The current listing.
  */
-function followRegistry(): void {
-	followedRegistry = registryText();
-	registerReadableVaults();
+function refresh(chosenHere = false): Listing {
+	const repositories = listRepositories();
+	const text = JSON.stringify(repositories);
+	const cached = published?.text === text ? published.listing : undefined;
+	followPanes(chosenHere || cached === undefined);
+	return cached ?? publish(repositories, text);
+}
+
+/**
+ * Bring every pane in line with the registry (ADR 0050). A pane in the vault of
+ * an unchosen checkout moves to the chosen vault, keeping its model. Every other
+ * pane hears its repository name, even if the navigator has no entry for it.
+ * @param placementMayHaveChanged Whether a listing or a local choice can affect pane placement.
+ */
+function followPanes(placementMayHaveChanged: boolean): void {
+	const registry = registryText();
+	if (!placementMayHaveChanged && registry === followedRegistry) return;
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of panesWithVaults()) {
 		const { home, repository } = placeOfVault(vault);
@@ -177,7 +217,49 @@ function followRegistry(): void {
 			movePane(clientId, home, repository);
 		}
 	}
-	broadcastEverywhere({ type: "repositories_changed" });
+	followedRegistry = registry;
+}
+
+/**
+ * Follow a checkout choice from this server and return the listing it produces.
+ * @returns The listing as published.
+ */
+function followRegistry(): Listing {
+	return refresh(true);
+}
+
+/**
+ * Look again from a watch or a tick, where a failure has no caller to answer.
+ * @param why What made the server look.
+ */
+function lookAgainFor(why: string): void {
+	try {
+		refresh();
+	} catch (error) {
+		logger().warn(`Cannot list the repositories of this machine after ${why}`, { error });
+	}
+}
+
+/**
+ * Send a tab the listing now, and every listing that differs from then on. While any tab
+ * follows, the server looks at the disk again on a slow tick. A look that fails sends the
+ * listing published last, or nothing until a look succeeds.
+ * @param send What sends the tab one listing.
+ * @returns The function that stops following.
+ */
+function followRepositories(send: (listing: Listing) => void): () => void {
+	lookAgainFor("a tab followed the repositories");
+	followers.add(send);
+	if (published !== null) send(published.listing);
+	if (recheck === null) {
+		recheck = every("pane.repositoryRecheck", () => lookAgainFor("a recheck"));
+	}
+	return () => {
+		followers.delete(send);
+		if (followers.size > 0 || recheck === null) return;
+		recheck();
+		recheck = null;
+	};
 }
 
 type CapturedArchitecture = NonNullable<ReturnType<typeof semanticPaneContextFor>>["architecture"];
@@ -276,33 +358,28 @@ function movePane(clientId: string, to: string, repository: string | null): void
 }
 
 /**
- * Follow the registry file whenever it changes and the panes have not followed
- * what it holds now. The directory is watched, because a write replaces the
- * file with a new one. A change this server made and followed already reads
- * the same as what the panes followed, so it is not followed twice.
+ * Look at the repositories again whenever the registry file changes. The
+ * directory is watched, because a write replaces the file with a new one. A
+ * change this server made and followed already need only check the listing.
  */
 function watchRegistry(): void {
 	if (registryWatcher !== null) {
 		return;
 	}
 	const file = path.resolve(registryPath());
-	followedRegistry = registryText();
-	registerReadableVaults();
+	refresh();
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {
-			if ((name !== null && name !== path.basename(file)) || registryText() === followedRegistry) {
-				return;
-			}
-			logger().info(`The checkout registry ${file} changed, and the panes follow it`);
-			followRegistry();
+			if (name !== null && name !== path.basename(file)) return;
+			lookAgainFor(`a change of the checkout registry ${file}`);
 		});
 		registryWatcher.on("error", (error) => {
 			logger().warn(`Stopped watching the checkout registry ${file}`, { error });
 		});
 	} catch (error) {
 		logger().warn(
-			`Cannot watch the checkout registry ${file}, so the panes follow only the changes this server makes`,
+			`Cannot watch the checkout registry ${file}. The server still checks it while a tab follows the repositories.`,
 			{ error },
 		);
 	}
@@ -326,4 +403,10 @@ function mountRepositoryRoutes(app: Express): void {
 	app.put("/api/repositories/chosen", createBrowserOriginGuard("mutation"), chooseCheckoutRoute);
 }
 
-export { followRegistry, mountRepositoryRoutes, unwatchRegistry, watchRegistry };
+export {
+	followRegistry,
+	followRepositories,
+	mountRepositoryRoutes,
+	unwatchRegistry,
+	watchRegistry,
+};

@@ -2,10 +2,10 @@
 // not the motion they wait out. What these pull against is the hand itself, so
 // each is judged by how it feels under a wheel, a drag or a pointer at rest.
 
-import { durations } from "#shared/constants/durations.ts";
+import { handed, motion } from "#shared/constants/uses.ts";
 
 /** The durations of exploring a model, in milliseconds. */
-const EXPLORING_MS = durations({
+const EXPLORING = {
 	/**
 	 * How long the camera takes to cover most of the way to where a wheel or a
 	 * key asked it to go: it covers 63 percent of what is left in this time, and
@@ -19,9 +19,9 @@ const EXPLORING_MS = durations({
 	 * A pinch has no ease (TASK-405). The picture follows the fingers at once, as
 	 * it follows a drag.
 	 */
-	cameraEase: 80,
+	"exploring.cameraEase": motion(80),
 	/** The short ease of a keyed move or a fit, which the painter gives the camera. */
-	cameraSettle: 100,
+	"exploring.cameraSettle": motion(100),
 	/**
 	 * The longest one frame of a zoom or an ease counts for. A frame that comes
 	 * late, after the tab was hidden or the page stalled, moves the camera by no
@@ -35,7 +35,7 @@ const EXPLORING_MS = durations({
 	 * go of it (TASK-403), because a picture that carries on alone moves the part
 	 * the reader aimed at out from under them.
 	 */
-	cameraFrameLongest: 64,
+	"exploring.cameraFrameLongest": motion(64),
 	/**
 	 * How long a hand must have left the camera alone before the camera is at
 	 * rest. At rest the picture is drawn sharp at its new size, the far view
@@ -47,14 +47,14 @@ const EXPLORING_MS = durations({
 	 * wakes up between two turns of one zoom. Past about 600 ms the picture stays
 	 * soft and a model the reader has let go of looks stalled.
 	 */
-	cameraRest: 400,
+	"exploring.cameraRest": handed(400),
 	/**
 	 * How long the camera glides to the whole model when the fit key is pressed.
-	 * Shorter than a walkthrough step (`PRESENTATION_MS.step`) because the reader
+	 * Shorter than a walkthrough step (`presentation.step`) because the reader
 	 * asked for it and is waiting; long enough that the path, which pulls back to
 	 * cross a long distance, can be followed.
 	 */
-	cameraFit: 520,
+	"exploring.cameraFit": motion(520),
 	/**
 	 * How long the pointer rests on a part before the picture lights what it is
 	 * wired to; once something is lit, the next part lights at once.
@@ -65,7 +65,7 @@ const EXPLORING_MS = durations({
 	 * well under a tip's delay (`subjectTip`), so the light comes
 	 * first and the tip, when it opens, finds the connections already lit.
 	 */
-	lightingDwell: 110,
+	"exploring.lightingDwell": handed(110),
 	/**
 	 * How long the pointer rests on a card, a container's header or a label before
 	 * the picture says more about it; once one tip is open, the next opens at once.
@@ -73,7 +73,7 @@ const EXPLORING_MS = durations({
 	 * everything it passes on its way; longer and resting on a card to read it
 	 * feels ignored.
 	 */
-	subjectTip: 450,
+	"exploring.subjectTip": handed(450),
 	/**
 	 * How long the light stays after the pointer leaves a part for the empty
 	 * picture, so crossing the gap between two cards, or a line's thin width, does
@@ -82,17 +82,17 @@ const EXPLORING_MS = durations({
 	 * Pulls against the pointer leaving for good: longer than about 300 ms and
 	 * the picture seems to hold on to a part it was never asked about.
 	 */
-	lightingGrace: 160,
+	"exploring.lightingGrace": handed(160),
 	/**
 	 * How long what the picture does not light takes to recede, and to come back.
 	 *
 	 * Pulls against the pointer: shorter than about 100 ms and the picture
 	 * flickers as the pointer crosses parts, longer than about 250 ms and a part
 	 * seems to be lit after the pointer has moved on. Shorter than a presented
-	 * step's veil (`PRESENTATION_MS.step`) because a poke is asked of the picture
+	 * step's veil (`presentation.step`) because a poke is asked of the picture
 	 * by a hand that is waiting for the answer.
 	 */
-	lightingFade: 160,
+	"exploring.lightingFade": motion(160),
 	/**
 	 * The shortest and the longest a relationship takes to be drawn on when it
 	 * lights; between them a line takes as long as its length asks for.
@@ -101,8 +101,8 @@ const EXPLORING_MS = durations({
 	 * 180 ms is a flash, not a direction, and a long one drawn in more than
 	 * about half a second makes the answer to a poke wait for its slowest line.
 	 */
-	sweepShortest: 180,
-	sweepLongest: 520,
+	"exploring.sweepShortest": motion(180),
+	"exploring.sweepLongest": motion(520),
 	/**
 	 * How long each further hop of a trace waits for the one before it, so that
 	 * what a part reaches lights outward from it, nearest first.
@@ -111,17 +111,17 @@ const EXPLORING_MS = durations({
 	 * flash and say nothing of how far each is; longer than about 160 ms and a
 	 * trace of five hops makes the reader wait most of a second for its answer.
 	 */
-	reachHop: 110,
+	"exploring.reachHop": motion(110),
 	/**
 	 * How long the camera takes to bring into view a part picked out from
 	 * somewhere other than the picture.
 	 *
 	 * Pulls against the pick: the reader chose the part and is waiting to see
-	 * it, so it is shorter than a walkthrough step (`PRESENTATION_MS.step`); and
+	 * it, so it is shorter than a walkthrough step (`presentation.step`); and
 	 * long enough that the move reads as a glide to the part and not a cut that
 	 * leaves the reader to find where the model went.
 	 */
-	reveal: 480,
+	"exploring.reveal": motion(480),
 	/**
 	 * How long the flight into a card's model, or back out of it, takes.
 	 *
@@ -129,10 +129,10 @@ const EXPLORING_MS = durations({
 	 * a card to the size of the pane, often more than ten times, and the eye needs
 	 * a few frames at each size to see that it is the same model; under about half
 	 * a second that reads as a cut with a smear, and over a second the reader waits
-	 * on a picture they already chose. A walkthrough step (`PRESENTATION_MS.step`)
+	 * on a picture they already chose. A walkthrough step (`presentation.step`)
 	 * is longer because it also carries the reader across the model.
 	 */
-	dive: 720,
+	"exploring.dive": motion(720),
 	/**
 	 * How long the page waits for the picture of a model it is about to fly into
 	 * before it opens the model the plain way. Every model's picture is drawn ahead
@@ -142,26 +142,7 @@ const EXPLORING_MS = durations({
 	 * picture that is not to hand within a moment is not worth a flight that
 	 * starts late.
 	 */
-	divePrefetch: 140,
-});
+	"exploring.divePrefetch": handed(140),
+};
 
-/**
- * One duration of exploring a model.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function exploringMs(key: keyof typeof EXPLORING_MS): number {
-	return EXPLORING_MS[key];
-}
-
-/**
- * How long a part that a trace reaches waits before it lights: one hop's wait
- * for each hop beyond the first.
- * @param hops How many hops away the part is, 1 for a direct neighbour.
- * @returns The wait, in milliseconds.
- */
-function reachHopDelayMs(hops: number): number {
-	return (hops - 1) * EXPLORING_MS.reachHop;
-}
-
-export { exploringMs, reachHopDelayMs };
+export { EXPLORING };

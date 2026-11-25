@@ -1,11 +1,5 @@
-import { useEffect, useMemo } from "react";
-import {
-	useQueries,
-	useQuery,
-	useQueryClient,
-	type QueryClient,
-	type UseQueryResult,
-} from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo } from "react";
+import { useQueries, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { architectureFeed } from "#ui/architecture-drawing/model-reader/access/clients/events.ts";
 import {
@@ -13,10 +7,7 @@ import {
 	architectureSummaryQuery,
 	type ModelSummary,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
-import {
-	invalidateRepositories,
-	repositoriesQuery,
-} from "#ui/panes/model-catalog/clients/queries.ts";
+import { useRepositories } from "#ui/panes/model-catalog/hooks/use-repositories.ts";
 
 /** One repository and its current architecture authority. */
 interface RepositoryModel {
@@ -33,31 +24,6 @@ interface ModelCatalog {
 	readonly error: string | null;
 	readonly loading: boolean;
 	readonly refresh: () => void;
-	readonly reload: () => void;
-	readonly reconnected: () => void;
-	readonly repositoriesChanged: () => void;
-}
-
-/**
- * Refresh architecture through its sole query owner.
- * @param client The shared query cache.
- * @returns Stable catalogue invalidation actions.
- */
-function catalogCommands(client: QueryClient) {
-	/** Refresh every known canonical model. */
-	function refresh(): void {
-		void invalidateModelQueries(client);
-	}
-	/** Refresh repository locations. A vault that this adds starts its own feed. */
-	function reload(): void {
-		void invalidateRepositories(client);
-	}
-	return {
-		refresh,
-		reload,
-		reconnected: reload,
-		repositoriesChanged: reload,
-	};
 }
 
 /**
@@ -102,9 +68,9 @@ function visible(failure: ModelSummary["failure"]): string | null {
  */
 function useModelCatalog(): ModelCatalog {
 	const client = useQueryClient();
-	const listed = useQuery(repositoriesQuery());
-	const commands = useMemo(() => catalogCommands(client), [client]);
-	const entries = listed.data?.repositories;
+	const listed = useRepositories();
+	const refresh = useCallback((): void => void invalidateModelQueries(client), [client]);
+	const entries = listed.repositories;
 	const readable = useMemo(
 		() => (entries ?? []).flatMap((entry) => (entry.vault === null ? [] : [entry.vault])),
 		[entries],
@@ -143,13 +109,8 @@ function useModelCatalog(): ModelCatalog {
 		[entries, readable, models],
 	);
 	return useMemo(
-		() => ({
-			repositories,
-			error: listed.error?.message ?? null,
-			loading: listed.isPending,
-			...commands,
-		}),
-		[repositories, listed.error, listed.isPending, commands],
+		() => ({ repositories, error: listed.error, loading: listed.loading, refresh }),
+		[repositories, listed.error, listed.loading, refresh],
 	);
 }
 

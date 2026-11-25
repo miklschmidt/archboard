@@ -196,17 +196,15 @@ mod tests {
     use crate::paint::Node;
     use crate::paint::palette::Palette;
     use crate::request::{NodeAppearance, Standing};
-    use crate::scene::{Item, Paint, Purpose, Shape};
+    use crate::scene::{Item, Paint, Purpose, Shape, every};
     use crate::sizes::{TAB_PADDING, TAB_SHOULDER};
 
     /// Shapes in a frame, without the scene's grouping and line breaks.
     fn shapes(items: &[Item]) -> Vec<&Shape> {
-        items
-            .iter()
-            .flat_map(|item| match item {
-                Item::Shape(shape) => vec![shape],
-                Item::Group(group) => shapes(&group.items),
-                _ => Vec::new(),
+        every(items)
+            .filter_map(|item| match item {
+                Item::Shape(shape) => Some(shape),
+                _ => None,
             })
             .collect()
     }
@@ -277,12 +275,9 @@ mod tests {
             &appearance,
         );
         let removed_shapes = shapes(&removed);
-        assert!(
-            removed_shapes
-                .iter()
-                .any(|shape| shape.fill == Some(Paint::from(&palette.slab_face))
-                    && shape.fill_opacity == Some(0.5))
-        );
+        assert!(removed_shapes.iter().any(
+            |shape| shape.fill == Paint::from(&palette.slab_face) && shape.fill_opacity == 0.5
+        ));
         assert!(removed_shapes.iter().any(|shape| {
             shape.purpose == Purpose::Solid
                 && shape.stroke.as_ref().is_some_and(|stroke| {
@@ -290,10 +285,6 @@ mod tests {
                         && !stroke.dashes.is_empty()
                 })
         }));
-        assert!(
-            shapes(&plain)
-                .iter()
-                .all(|shape| shape.fill_opacity.is_none())
-        );
+        assert!(shapes(&plain).iter().all(|shape| shape.fill_opacity == 1.0));
     }
 }

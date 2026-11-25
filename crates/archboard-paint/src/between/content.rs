@@ -8,7 +8,7 @@
 //! title beside it is not disturbed.
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform};
+use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform, each_list};
 
 /// Whether a group of a card is one a move parks until it lands.
 pub(super) fn is_parked(group: &Group) -> bool {
@@ -21,14 +21,9 @@ pub(super) fn is_parked(group: &Group) -> bool {
 /// where they land, so a mark stands at its new place while the lines, the
 /// cards and the labels are still on their way.
 pub(super) fn unpark(items: &mut Vec<Item>) {
-    items.retain(|item| !matches!(item, Item::Group(group) if is_parked(group)));
-    for item in items {
-        match item {
-            Item::Group(group) => unpark(&mut group.items),
-            Item::Viewport(viewport) => unpark(&mut viewport.items),
-            _ => {}
-        }
-    }
+    each_list(items, &mut |list| {
+        list.retain(|item| !matches!(item, Item::Group(group) if is_parked(group)));
+    });
 }
 
 /// Take out what a move parks from inside each subject, where a shadow that the
@@ -116,7 +111,7 @@ fn unplaced_geometry(geometry: &Geometry) -> Geometry {
             radius: *radius,
         },
         Geometry::Circle { radius, .. } => Geometry::Circle {
-            centre: None,
+            centre: ORIGIN,
             radius: *radius,
         },
         Geometry::Line { .. } => Geometry::Line {
@@ -135,14 +130,15 @@ pub(super) fn look(shape: &Shape) -> Shape {
     }
 }
 
-/// A move with where it goes taken out.
-const STILL: Transform = Transform::translate(0.0, 0.0);
-
 /// The role of a group with the places it names taken out.
 fn unplaced_role(role: &Role) -> Role {
     match role {
-        Role::Chip { .. } => Role::Chip { far: STILL },
-        Role::Words { .. } => Role::Words { away: STILL },
+        Role::Chip { .. } => Role::Chip {
+            far: Transform::translate(0.0, 0.0),
+        },
+        Role::Words { .. } => Role::Words {
+            away: Transform::translate(0.0, 0.0),
+        },
         other => other.clone(),
     }
 }
@@ -152,7 +148,7 @@ fn signature(item: &Item) -> Item {
     match item {
         Item::Group(group) => Item::Group(Group {
             role: unplaced_role(&group.role),
-            transform: None,
+            transform: Transform::translate(0.0, 0.0),
             items: group.items.iter().map(signature).collect(),
             ..group.clone()
         }),

@@ -4,7 +4,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createSemanticRasterizer } from "#runtime/rasterizer/services/rasterizer.ts";
 import { listProcessGroupObservations } from "@archboard/process/observation";
-import { gitMs, processGroupPollMs } from "@archboard/timing";
+
+/**
+ * The CLI's grace after an interrupt, as a test budget: a cancelled or stopped startup must leave
+ * nothing running well within it. A test number beside the product's, which the test cannot read.
+ */
+const TEST_INTERRUPT_CLEANUP_MS = 9000;
+/** The pause between two looks for the startup fixture's evidence. */
+const TEST_POLL_MS = 10;
 
 // Startup cancellation needs a process that never opens DevTools. The fake
 // records its real pid/profile so the test can prove the interrupted owner
@@ -28,10 +35,10 @@ describe("rasterizer startup ownership", () => {
 				.catch((error: unknown) => error);
 			let pid: number | undefined;
 			try {
-				const startedDeadline = Date.now() + gitMs("cliInterruptCleanup");
+				const startedDeadline = Date.now() + TEST_INTERRUPT_CLEANUP_MS;
 				while (!existsSync(evidence)) {
 					if (Date.now() > startedDeadline) throw new Error("The startup fixture did not start.");
-					await Bun.sleep(processGroupPollMs());
+					await Bun.sleep(TEST_POLL_MS);
 				}
 				const [pidText, profileRoot] = readFileSync(evidence, "utf8").trim().split("\n");
 				pid = Number(pidText);
@@ -40,7 +47,7 @@ describe("rasterizer startup ownership", () => {
 				else await rasterizer.stop();
 				expect(await capture).toBeInstanceOf(Error);
 				expect((await rasterizer.stop()).clean).toBe(true);
-				expect(performance.now() - began).toBeLessThan(gitMs("cliInterruptCleanup"));
+				expect(performance.now() - began).toBeLessThan(TEST_INTERRUPT_CLEANUP_MS);
 				expect(
 					listProcessGroupObservations(pid).filter((member) => member.state !== "zombie"),
 				).toEqual([]);

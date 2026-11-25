@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { pictureMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 
 /**
  * Tell when a wait has lasted long enough to name.
@@ -10,8 +10,7 @@ function useSlowWait(waitingFor: string | null): boolean {
 	const [slow, setSlow] = useState<string | null>(null);
 	useEffect(() => {
 		if (waitingFor === null) return undefined;
-		const timer = setTimeout(() => setSlow(waitingFor), pictureMs("waitNotice"));
-		return () => clearTimeout(timer);
+		return after("picture.waitNotice", () => setSlow(waitingFor));
 	}, [waitingFor]);
 	return waitingFor !== null && slow === waitingFor;
 }

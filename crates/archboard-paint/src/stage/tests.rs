@@ -24,7 +24,7 @@ fn tray() -> Vec<Item> {
         width: 40.0,
         height: 40.0,
     };
-    let plate = Shape::rect(Purpose::Plate, body, None);
+    let plate = Shape::rect(Purpose::Plate, body, 0.0);
     vec![Item::Group(
         Group::new(Role::Frame(None), vec![Item::Shape(plate)]).drawing(Subject {
             kind: SubjectKind::Region,

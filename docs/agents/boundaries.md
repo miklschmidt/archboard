@@ -173,13 +173,14 @@ holds files only. When it grows past about 12 files, split its behavior into sub
   package either. A `./testing` export holds a fixture that tests of two packages share. Its file
   lives in `src/`, and only a test can import it.
 
-The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
-grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
-`MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
-pulls against written beside it. The groups stay inside: a caller asks the owner's function for one
-duration by its key, such as `paneMs("report")`. A computation that callers would repeat from a
-group is one function of the package, such as the Codex restart backoff `codexRestartDelayMs` or
-the deadline `codexApprovalExpiresAt(nowMs)`, and callers call it.
+The first package is `timing` (`@archboard/timing`). It holds every product duration and does the
+waiting with it. Each duration is declared once, with its use and what it pulls against, in the file
+of the subsystem that owns it, and the relations between durations are data that one test checks.
+A caller names a duration only at the operation of its use: `within` bounds work, `pollUntil` looks
+again until a condition holds, `after` and `every` run something later or at a cadence, `expiresAt`
+and `lapsed` measure a span from a stamp, and `backoff` spaces retries. `ms` reads a number only for
+a duration handed to another owner and for a motion. A timeout throws `TimedOut`, worded alike for
+every wait, and never proves that the work stopped.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and

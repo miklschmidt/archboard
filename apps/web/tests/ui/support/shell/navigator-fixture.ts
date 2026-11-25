@@ -178,7 +178,6 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		chooseCheckout: (repository, checkout) => {
 			asked.chosen.push(`${repository}|${checkout}`);
 		},
-		refreshModels: ignore,
 		selectPane: ignore,
 		addPane: ignore,
 		closePane: ignore,
