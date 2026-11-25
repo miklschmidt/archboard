@@ -39,7 +39,8 @@ Pick `kind` from the vault's active `nodeKinds`.
 
 Use `external` only for systems, services, or packages outside this repository's ownership boundary.
 Leave an `external` module unbound except for vendored code inside a checkout Archboard reads.
-When `check code` measures a bound `external` module or a part inside one, it reports depth counts and suppresses depth and unused-export findings for that module; other checks still apply.
+When `check code` measures a bound `external` module or a part inside one, it reports depth counts and skips the general module-depth and unused-export findings.
+Other checks, including Terraform-specific module findings, still apply.
 Model an owned adapter, client wrapper, or port as an internal module and draw its relationship to the `external` target.
 
 Use `groups` for cross-cutting concerns that span containment boundaries (for example a feature slice, compliance boundary, or runtime tier).
@@ -91,7 +92,7 @@ Choose the kind by the mechanism at the two named ends:
 | `spawn`      | Starts the target as a process.                                                                      |
 | `render`     | Places the target's component in its output.                                                         |
 | `storage`    | Reads or writes through a store's own interface: files, SQL, keys or objects.                        |
-| `dependency` | Declares a requirement and runs nothing of the target: a type-only import, a package or a build.     |
+| `dependency` | Declares a requirement, such as a type-only import, a package or a build.                            |
 
 Take the most specific contract that the source relies on.
 When none of these says how a relationship travels, consider a kind of the vault's own.
