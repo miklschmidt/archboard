@@ -1,6 +1,6 @@
 # Upgrade an old vault
 
-A vault in the old format reads, and every write refuses with `UPGRADE_REQUIRED`: its relationships state no effect, or still have the retired kind `call`.
+A vault in the old format remains readable. `model edit` refuses it with `UPGRADE_REQUIRED` because the policy or relationships use an older format for kinds and effects.
 The upgrade gives each relationship a kind and an effect read from the code, and keeps every id and every effect already stated.
 
 ## Write the inventory
