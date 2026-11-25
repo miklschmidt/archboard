@@ -15,14 +15,16 @@ mod cards;
 mod far;
 mod flow_frame;
 mod labels;
+mod tabs;
 
-#[cfg(test)]
-pub(crate) use cards::TAB_NEAR;
-pub use cards::{CardWords, measure_node};
-pub(crate) use cards::{door_far_runs, tab_far, tab_runs, tag_end, tag_top};
+pub use cards::{CardWords, fit_card, measure_node};
+pub(crate) use cards::{tag_end, tag_top};
 pub(crate) use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
 pub use labels::{measure_label, message_lines, narrow_label, note_lines};
+#[cfg(test)]
+pub(crate) use tabs::TAB_NEAR;
+pub(crate) use tabs::{door_far_runs, tab_far, tab_runs};
 
 /// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or
 /// 500. A weight the files do not hold is the regular face.

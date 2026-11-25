@@ -6,16 +6,15 @@ use archboard_text::Paragraph;
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
 use crate::js::{js_max, js_min};
 use crate::measure::far::far_name_width;
+use crate::measure::tabs::{door, one_line};
 use crate::measure::{keep_tail, paragraph, width};
 use crate::request::GroupTag;
 use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
-    CARD_PATH_FONT, CARD_THICKNESS, CARD_TITLE_FONT, DOOR_ARROW_ROOM, DOOR_FAR_ICON, DOOR_HEIGHT,
-    DOOR_ICON, DOOR_PADDING, DRILL_MARK_ROOM, ICON_CHIP_SIZE, NAME_CAP, PARENT_TITLE_SIZE,
+    CARD_PATH_FONT, CARD_THICKNESS, CARD_TITLE_FONT, DRILL_MARK_ROOM, ICON_CHIP_SIZE, NAME_CAP,
     PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_GAP, PART_PATH_LINE, PART_PATH_SIZE, PART_TITLE_LINE,
-    PART_TITLE_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_FAR_DROP, TAB_FAR_MOST, TAB_FAR_NAME,
-    TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
-    TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
+    PART_TITLE_SIZE, TAB_SHOULDER, TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_INSET, TAG_PADDING, TAG_SIZE,
+    TOGGLE_ROOM,
 };
 
 /// A face, a size, the room a line takes and what the line is.
@@ -72,12 +71,12 @@ pub struct CardWords<'a> {
 
 impl CardWords<'_> {
     /// The room the drill mark keeps beside the name.
-    fn marked(&self) -> f64 {
+    pub(super) fn marked(&self) -> f64 {
         if self.drills { DRILL_MARK_ROOM } else { 0.0 }
     }
 
     /// The room a control keeps at the end of a door or a tab.
-    fn toggled(&self) -> f64 {
+    pub(super) fn toggled(&self) -> f64 {
         if self.toggle.is_some() {
             TOGGLE_ROOM
         } else {
@@ -137,129 +136,7 @@ pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -
         most: CARD_MOST,
         height: CARD_HEIGHT,
     };
-    slab(node, words, size, TITLE)
-}
-
-/// Where a tab's words stand on its one line: their baseline and sizes.
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct TabLine {
-    /// Where its name starts.
-    pub left: f64,
-    /// The baseline its name and path share.
-    pub baseline: f64,
-    pub name: f64,
-    pub path: f64,
-    /// How far along its line a path may run.
-    pub most: f64,
-}
-
-/// A tab's line as the picture draws it near.
-pub(crate) const TAB_NEAR: TabLine = TabLine {
-    left: TAB_PADDING + TAB_CHIP + TAB_ICON_GAP,
-    baseline: 23.0,
-    name: PARENT_TITLE_SIZE,
-    path: PART_PATH_SIZE,
-    most: TAB_MOST,
-};
-
-/// A tab's line from far away, in a picture that lands near.
-pub(crate) const TAB_FAR: TabLine = TabLine {
-    left: TAB_PADDING + TAB_FAR_CHIP + TAB_ICON_GAP,
-    baseline: 25.0,
-    name: TAB_FAR_NAME,
-    path: TAB_FAR_PATH,
-    most: TAB_MOST,
-};
-
-/// A tab's line from far away at its picture's far scale: as large as its picture's
-/// cards, in the height of a tab and the room of its frame.
-pub(crate) fn tab_far(name: &str, scale: f64, room: f64) -> TabLine {
-    let wide = width(name, TITLE.font, TAB_FAR_NAME);
-    let held = (room - TAB_FAR.left - TAB_PADDING) / wide * TAB_FAR_NAME;
-    let size = js_min(PART_TITLE_SIZE * scale, js_min(TAB_FAR_MOST, held));
-    let size = js_max(TAB_FAR_NAME, size);
-    TabLine {
-        baseline: TAB_FAR.baseline + (size - TAB_FAR_NAME) * TAB_FAR_DROP,
-        name: size,
-        path: TAB_FAR_PATH * size / TAB_FAR_NAME,
-        most: js_min(TAB_MOST, room),
-        ..TAB_FAR
-    }
-}
-
-/// A door's line as the picture draws it near.
-const DOOR_NEAR: TabLine = TabLine {
-    left: DOOR_PADDING + DOOR_ICON + TAB_ICON_GAP - 2.0,
-    baseline: 22.0,
-    name: PARENT_TITLE_SIZE,
-    path: PART_PATH_SIZE,
-    most: TAB_MOST,
-};
-
-/// A door's line as the picture draws it from far away.
-const DOOR_FAR: TabLine = TabLine {
-    left: DOOR_PADDING + DOOR_FAR_ICON + TAB_ICON_GAP - 2.0,
-    baseline: 24.0,
-    name: TAB_FAR_NAME,
-    path: TAB_FAR_PATH,
-    most: TAB_MOST,
-};
-
-/// A tab's name and path on its one line. A name is never cut, and a path keeps its tail.
-pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<TextRun> {
-    let set = |text: String, x: f64, size: f64, style: Style| TextRun {
-        width: width(&text, style.font, size),
-        text,
-        x,
-        y: line.baseline,
-        font: style.font,
-        font_size: size,
-        role: style.role,
-    };
-    let title = set(name.to_owned(), line.left, line.name, TITLE);
-    let start = line.left + title.width + TAB_PATH_GAP;
-    let room = line.most - start;
-    let shown = path.map(|path| keep_tail(path, PATH.font, line.path, room));
-    let path = shown.map(|text| set(text, start, line.path, PATH));
-    std::iter::once(title).chain(path).collect()
-}
-
-/// A door's name on its one line, as the picture draws it from far away.
-pub(crate) fn door_far_runs(name: &str) -> Vec<TextRun> {
-    tab_runs(DOOR_FAR, name, None)
-}
-
-/// A door: its name on one line, as wide as the name from far away, with its arrow.
-fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
-    let far = door_far_runs(words.name);
-    let end = far.last().map_or(0.0, |run| run.x + run.width);
-    MeasuredNode {
-        node,
-        width: end + DOOR_ARROW_ROOM + words.toggled(),
-        height: DOOR_HEIGHT,
-        header_height: 0.0,
-        runs: tab_runs(DOOR_NEAR, words.name, None),
-        headers: None,
-    }
-}
-
-/// A frame's edge tab: one line with its name and code path. It is as wide as
-/// its words from far away, and its frame keeps a shoulder beside it. Its
-/// responsibility stays out of the picture.
-fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
-    let near = tab_runs(TAB_NEAR, words.name, words.path);
-    let far = tab_runs(TAB_FAR, words.name, words.path);
-    let end_of = |runs: &[TextRun]| runs.last().map_or(0.0, |run| run.x + run.width);
-    let room = words.marked() + words.toggled();
-    let width = js_max(end_of(&near), end_of(&far)) + TAB_PADDING + room + beside;
-    MeasuredNode {
-        node,
-        width,
-        height: TAB_HEIGHT,
-        header_height: TAB_HEIGHT,
-        runs: near,
-        headers: None,
-    }
+    slab(node, words, size)
 }
 
 /// How wide a row of tags stands at a scale of its near size.
@@ -326,16 +203,12 @@ pub(crate) fn path_runs(path: &str, room: f64, x: f64, baseline: f64, size: f64)
     dim.into_iter().chain(bright).collect()
 }
 
-/// A card's slab: its name and responsibility inside the card's padding, beside its
-/// type chip, and its code path at its foot, as far from its foot as its name's
-/// capitals stand from its top. The tags stand on the name's row.
-fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> MeasuredNode<N> {
+/// A card's slab at its least box: as wide as its words ask, within `size`.
+fn slab<N>(node: N, words: &CardWords<'_>, size: Size) -> MeasuredNode<N> {
     let padding = ARCHITECTURE_CARD_PADDING;
     let left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
     let marked = words.marked();
-    let names: Vec<&str> = words.tags.iter().map(|tag| tag.name.as_str()).collect();
-    let tags = tags_width(&names, 1.0);
-    let title = paragraph(words.name, title_style.font, title_style.size);
+    let title = paragraph(words.name, TITLE.font, TITLE.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let far = far_name_width(words.name);
     let name = title.natural_width() + marked;
@@ -349,30 +222,69 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     };
     // Tags stand on the name's row and the card widens for them, so the name
     // keeps the room it has without them.
-    let beside = tags_beside(tags);
     let width = js_max(
         plain,
-        left + js_min(name, plain - left - padding) + beside + padding,
+        left + js_min(name, plain - left - padding) + beside(words) + padding,
     );
+    stand(node, words, (&title, &note), width, size.height)
+}
+
+/// The room a card's tags take beside its name.
+fn beside(words: &CardWords<'_>) -> f64 {
+    let names: Vec<&str> = words.tags.iter().map(|tag| tag.name.as_str()).collect();
+    tags_beside(tags_width(&names, 1.0))
+}
+
+/// A card's words in the box the layout gave it: wrapped at its width, where
+/// its least box stands them, and its path at its foot. A layout can widen a
+/// card or make it taller than its least box. The words stay where they stand,
+/// so the far view, whose words start at the chip, keeps its room.
+pub fn fit_card<N>(node: N, words: &CardWords<'_>, width: f64, height: f64) -> MeasuredNode<N> {
+    let title = paragraph(words.name, TITLE.font, TITLE.size);
+    let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
+    let least = stand(node, words, (&title, &note), width, CARD_HEIGHT);
+    let grown = height - least.height;
+    let at_foot = |run: &TextRun| matches!(run.role, TextRole::Folder | TextRole::File);
+    MeasuredNode {
+        height,
+        runs: (least.runs.into_iter())
+            .map(|run| TextRun {
+                y: run.y + if at_foot(&run) { grown } else { 0.0 },
+                ..run
+            })
+            .collect(),
+        ..least
+    }
+}
+
+/// A card's slab at a width, at least as tall as `least`: its name and
+/// responsibility inside the card's padding, beside its type chip, and its code
+/// path at its foot, as far from its foot as its name's capitals stand from its
+/// top. The tags stand on the name's row.
+fn stand<N>(
+    node: N,
+    words: &CardWords<'_>,
+    (title, note): (&Paragraph, &Paragraph),
+    width: f64,
+    least: f64,
+) -> MeasuredNode<N> {
+    let padding = ARCHITECTURE_CARD_PADDING;
+    let left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
+    let marked = words.marked();
+    let beside = beside(words);
     let available = width - left - padding;
-    let titles = runs_for(
-        &title,
-        title_style,
-        available - marked - beside,
-        left,
-        padding,
-    );
-    let titled = padding + titles.len() as f64 * title_style.line;
+    let titles = runs_for(title, TITLE, available - marked - beside, left, padding);
+    let titled = padding + titles.len() as f64 * TITLE.line;
     let note_top = titled + ARCHITECTURE_NOTE_GAP;
-    let notes = runs_for(&note, NOTE, available, left, note_top);
+    let notes = runs_for(note, NOTE, available, left, note_top);
     let told = if notes.is_empty() {
         titled
     } else {
         note_top + notes.len() as f64 * NOTE.line
     };
-    let foot = cap_margin(title_style) + CARD_THICKNESS;
+    let foot = cap_margin(TITLE) + CARD_THICKNESS;
     let height = js_max(
-        size.height,
+        least,
         match words.path {
             Some(_) => told + PART_PATH_GAP + PATH.size + foot,
             None => told + padding,
@@ -415,7 +327,9 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::measure::tabs::{TAB_FAR, tab_runs};
     use crate::request::PaletteColor;
+    use crate::sizes::{TAB_HEIGHT, TAB_PADDING};
 
     fn card(path: Option<&str>) -> MeasuredNode<()> {
         tagged(path, "Run checks", &[])
@@ -452,6 +366,42 @@ mod tests {
         let above = name.y - name.font_size * NAME_CAP;
         let below = bound.height - CARD_THICKNESS - path.y;
         assert!((above - below).abs() < 1e-9, "{above} {below}");
+    }
+
+    #[test]
+    fn a_card_the_layout_widens_and_raises_wraps_at_its_width_and_keeps_its_words_in_place() {
+        let words = |path| CardWords {
+            name: "Packages",
+            responsibility: Some(
+                "The workspace packages that the apps, the server and the CLI share: \
+                 the model, the renderer, the workbench and their support",
+            ),
+            path,
+            tags: &[],
+            drills: false,
+            door: false,
+            toggle: None,
+        };
+        let notes = |card: &MeasuredNode<()>| -> Vec<f64> {
+            (card.runs.iter())
+                .filter(|run| run.role == TextRole::Note)
+                .map(|run| run.y)
+                .collect()
+        };
+        let pathed = words(Some("packages"));
+        let least = measure_node((), &pathed, false);
+        let fitted = fit_card((), &pathed, 560.0, least.height + 40.0);
+        assert!(notes(&fitted).len() < notes(&least).len());
+        let right = 560.0 - ARCHITECTURE_CARD_PADDING;
+        assert!(fitted.runs.iter().all(|run| run.x + run.width <= right));
+        let path = fitted.runs.last().expect("a path");
+        assert_eq!(path.y, least.runs.last().expect("a path").y + 40.0);
+
+        let plain = words(None);
+        let least = measure_node((), &plain, false);
+        let wide = fit_card((), &plain, 560.0, least.height);
+        let tall = fit_card((), &plain, 560.0, least.height + 40.0);
+        assert_eq!(tall.runs[0].y, wide.runs[0].y);
     }
 
     #[test]
