@@ -72,8 +72,10 @@ function useModelExplanation(
 	const referenceSubject = subject ?? undefined;
 	const comparisonRevision = model.comparison?.revision.digest;
 	const display = useReadingDisplay(vault, model, filters, presentation);
+	// A temporary flow is not in the vault: report the canonical reading under it, explain nothing.
+	const temporary = presentation?.ephemeralFlow !== undefined;
 	const capture = useMemo(() => {
-		const mode = diagramGrammarSchema().safeParse(grammar);
+		const mode = diagramGrammarSchema().safeParse(temporary ? "architecture" : grammar);
 		if (!mode.success || !readsVaultOnDisk(model)) return null;
 		return {
 			vault,
@@ -92,7 +94,7 @@ function useModelExplanation(
 					(kind) => !filters.hideKinds.includes(kind),
 				),
 				grammar: mode.data,
-				flow: flow ?? undefined,
+				flow: temporary ? undefined : (flow ?? undefined),
 				referenceSubject,
 			},
 		};
@@ -106,6 +108,7 @@ function useModelExplanation(
 		filters,
 		grammar,
 		flow,
+		temporary,
 		referenceSubject,
 		source,
 		comparisonRevision,
@@ -115,7 +118,7 @@ function useModelExplanation(
 	const invoke = host?.invoke;
 	const act = useCallback(
 		(action: Action): void => {
-			if (capture === null) return;
+			if (capture === null || temporary) return;
 			const {
 				vault: actualVault,
 				selection: selectedReading,
@@ -127,9 +130,9 @@ function useModelExplanation(
 				request: { ...request, action, actionId: crypto.randomUUID() },
 			});
 		},
-		[capture, invoke],
+		[capture, temporary, invoke],
 	);
-	return { act, unavailable: host === null || host.pending || capture === null };
+	return { act, unavailable: host === null || host.pending || capture === null || temporary };
 }
 
 /**
