@@ -143,9 +143,8 @@ Fetched checkpoints appear in `model checkpoints`.
 Archive order never selects current architecture or proposal ancestry.
 
 `ARCHIVE_NOT_PORTABLE` rejects checkpoints that contain machine-local source repository paths.
-Publication cannot redact immutable metadata.
-Keep those checkpoints local and use portable repository identities for future history.
-Use [export](#export-and-restore-a-model) for a complete portable backup.
+Publication and `model export` cannot redact immutable metadata.
+Keep those checkpoints local. Because each new checkpoint keeps the existing archive tip as its parent, a portable repository identity on a later checkpoint does not make that archive publishable or exportable; use portable repository identities from the start for future archives.
 
 ## Reopen and recover
 
