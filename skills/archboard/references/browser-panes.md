@@ -94,6 +94,7 @@ EOF
 - Uses the same `NewFlowSchema` shape (`name`, optional `summary`, `participants`, `steps` with messages, decisions, and loops) as `model edit`.
 - `participants` matching canonical modules inherit their real module IDs and cards; actors not in the model are drawn as transient participants for that session only.
 - `--grammar` defaults to `flowchart` for temporary flows (`sequence` is also accepted; `architecture` is refused).
+- `browser panes` names it in `display.ephemeralFlow`, while `architecture.reading` keeps the canonical reading beneath it. `model explain` and `--keep` therefore read that canonical reading, and a later show drops the temporary flow.
 - Never mutates `.archboard/vault` or takes claims. The browser shows a `Temporary flowchart` / `Temporary sequence` bar with a `Back to architecture` button. Save it via a claimed `model edit` only if the user explicitly asks.
 
 ## Server route and pane reports
