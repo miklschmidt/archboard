@@ -39,7 +39,7 @@ Pick `kind` from the vault's active `nodeKinds`.
 
 Use `external` only for systems, services, or packages outside this repository's ownership boundary.
 Leave an `external` module unbound except for vendored code inside a checkout Archboard reads.
-When `check code` can measure a bound `external` module, it reports depth counts and suppresses export and shallow-module findings.
+When `check code` measures a bound `external` module or a part inside one, it reports depth counts and suppresses depth and unused-export findings for that module; other checks still apply.
 Model an owned adapter, client wrapper, or port as an internal module and draw its relationship to the `external` target.
 
 Use `groups` for cross-cutting concerns that span containment boundaries (for example a feature slice, compliance boundary, or runtime tier).
@@ -51,7 +51,7 @@ Set `groups` explicitly on each member. Canonical module files store the IDs onc
 Bind every owned, implemented module to the code that implements its responsibility using `repo`, `path`, and optional `symbol`.
 Choose the binding granularity to match what the module owns:
 
-- Bind a root module or code container to the directory that holds its files, or to the entry file that stands for that folder (such as `index.ts`, `__init__.py`, or `mod.rs`), so `check code` can measure its interface and module depth (`MODULE_SHALLOW` and export findings; see [module depth](design-lens.md#module-depth)).
+- Bind a code container to the directory that holds its parts so the containment check can see their shared ownership. A leaf module can bind a directory or a recognized entry file such as `index.ts`, `__init__.py`, or `mod.rs` so `check code` can measure its interface and depth (`MODULE_SHALLOW` and export findings; see [module depth](design-lens.md#module-depth)).
 - Bind a narrower part to a specific file or `symbol` when it owns one implementation inside a larger module.
 - When `check code` reads a non-entry file or symbol binding, a measured module in the same model state and checkout whose directory contains that file covers it; otherwise `check code` skips depth measurement for that part with `binding-not-a-module`.
 
@@ -139,7 +139,8 @@ Judge every kind by its operation, as these examples do:
 | A function that formats the bytes that it is given                | `sync`       | `compute`  |
 | A task started to refresh an index, left to run                   | `async`      | `mutation` |
 | A component that places a child component with no mount behavior  | `render`     | `compute`  |
-| An event publication or a queue submission                        | `event`      | `mutation` |
+| An event publication                                              | `event`      | `mutation` |
+| A queue submission                                                | `queue`      | `mutation` |
 | A read of retained events that consumes none                      | `event`      | `query`    |
 | A short-lived process that lays out the graph that it is given    | `spawn`      | `compute`  |
 | A Git command that reads a ref                                    | `spawn`      | `query`    |

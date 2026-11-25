@@ -19,12 +19,14 @@ A reading selects what you see without copying architecture.
 
 ## Choose the work
 
-Before the first architecture operation, read [canonical models](references/canonical-models.md) for discovery, reads, writes, and history.
+Before the first architecture operation, read [canonical models](references/canonical-models.md) for reads, claims, edits, flows, proposals, and rendering.
 For `LEGACY_AUTHORITY` or requested migration, follow [legacy migration](references/legacy-migration.md).
 `UPGRADE_REQUIRED` means the vault needs [an upgrade](references/upgrade.md) before you can edit the live model.
 Before describing implemented architecture or editing a model, read [authoring](references/authoring.md) for bindings, relationships, and flows.
 Before preparing a request, read [schemas](references/schemas.md).
 
+For checkpoints, recovery, private archives, remote publication, historical corrections, or portable export/import, read [history](references/history.md).
+For steering a browser pane or answering a pointed screen question, read [browser panes](references/browser-panes.md).
 For design decisions or refactors, read [the design lens](references/design-lens.md).
 For `improve-codebase-architecture`, follow [the integration workflow](references/design-lens.md#integrate-with-improve-codebase-architecture).
 For narrative authoring, playback, or recording, read [canonical walkthroughs](references/canonical-walkthroughs.md).

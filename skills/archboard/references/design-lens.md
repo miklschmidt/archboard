@@ -92,7 +92,6 @@ If the head adopted that current state, because its current state differs from t
 If the vault's repository resolves the head, the command reads the vault as that head holds it, so `--state` names a proposal of that branch.
 `--model-at checkout` reads the vault on disk instead, for a proposal that you edit and did not commit to the head.
 `vaultRead` names the vault that the command read: `{"at":"checkout"}`, or `{"at":"ref"}` with the ref and its commit.
-In the browser, Measures shows the same answer in `What this branch changed`.
 With a proposal, it reports:
 
 - `namedAndChanged`: Branch changes that the proposal names.

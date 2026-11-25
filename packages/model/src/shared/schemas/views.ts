@@ -185,7 +185,7 @@ const SemanticFlowSchema = z
 		name: DisplayNameSchema,
 		summary: DescriptionSchema.optional().meta({
 			description:
-				"One or two sentences explaining what the exchange does and why it matters. Required on newly authored flows and checked on current architecture.",
+				"One or two sentences explaining what the exchange does and why it matters. Required when authoring or changing a flow. Retained flows may have no summary.",
 		}),
 		participants: z.array(SemanticIdSchema).min(1).meta({
 			description: "Ordered module IDs drawn left-to-right as sequence columns.",

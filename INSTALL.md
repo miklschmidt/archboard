@@ -480,7 +480,7 @@ A checkpoint preserves exact architecture inputs and metadata in the independent
 It changes neither source HEAD nor the source index.
 A checkpoint does not adopt architecture or retain source-code objects automatically.
 
-Use [canonical history](skills/archboard/references/canonical-models.md#retain-an-exact-local-reading) before sharing or recording a reading.
+Use [canonical history](skills/archboard/references/history.md#retain-an-exact-local-reading) before sharing or recording a reading.
 Retain the complete required dependency history.
 Configure an explicit remote and archive ref through `model publication-configure` before publication.
 Use `model publish` to transfer that history and `model fetch` to recover unavailable checkpoints.

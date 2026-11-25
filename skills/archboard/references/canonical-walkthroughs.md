@@ -73,26 +73,14 @@ Keep the returned model for playback. Restart explicitly to use later architectu
 
 A checkpoint pins both narrative and playback model.
 `--shared` requires an exact retained target.
-Before sharing or recording, use [history retention and publication](canonical-models.md#retain-an-exact-local-reading).
+Before sharing or recording, use [history retention and publication](history.md#retain-an-exact-local-reading).
 
 Recording uses local voice and rendering, and requires every beat to be available before voice starts.
 The recording artifact keeps one exact model and narrative for offline replay, separately from authored inputs.
 Replay needs its talk directory and voice file.
 It reads no mutable model, starts no live voice session, and recreates no writer.
 Saved talks stay exact history.
-
-Voice reads the narrative source separately from its target.
-Before starting, the pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision`.
-Narration waits for server acceptance and matching source and target revisions.
-Narrate stays unavailable while the picture draws.
-
 A narrative can target a checkpoint older than its own definition.
-Accepted captures stay complete for later beats despite file changes.
-If source or target changes or becomes unavailable, reopen the walkthrough before retrying narration.
-
-Live narration requests the first beat by pane and walkthrough, without a pane key.
-Live narration and recording wait until an available beat reaches the pane.
-Leaving the walkthrough stops narration.
 
 ## Write each beat
 

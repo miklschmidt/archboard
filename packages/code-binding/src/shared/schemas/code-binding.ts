@@ -23,11 +23,10 @@ const CodeBindingSchema = z
 				"Optional qualified definition name in `path`, or an infrastructure or Nix declaration address. Omit to bind the whole file or directory.",
 		}),
 		branch: NonemptyString.optional().meta({
-			description: "Optional Git branch where the bound code was confirmed.",
+			description: "Read the bound code from this Git branch when `commit` is absent.",
 		}),
 		commit: NonemptyString.optional().meta({
-			description:
-				"Optional Git commit SHA where the bound code was confirmed. It takes precedence over `branch`.",
+			description: "Read the bound code at this Git commit. It takes precedence over `branch`.",
 		}),
 		confirmedAt: NonemptyString.optional().meta({
 			description: "Optional timestamp when the binding was last confirmed against source.",
@@ -50,7 +49,7 @@ const CodeAnchorSchema = z
 			description: "Repository identity holding the cited file.",
 		}),
 		path: NonemptyString.meta({
-			description: "Repository-relative path to the file containing the cited symbol.",
+			description: "Repository-relative path to the file that defines or uses the cited symbol.",
 		}),
 		symbol: NonemptyString.meta({
 			description:

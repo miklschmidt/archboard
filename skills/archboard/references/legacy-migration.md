@@ -165,27 +165,6 @@ HTTP uses `/api/architecture/model?vault=<vault>&preview=Shop` and requires an e
 Reads save no model, checkpoint, plan, timestamp, or current designation.
 For active canonical authoring, complete [installation](#install-an-approved-preview).
 
-## Inspect previews in the browser
-
-Open `/?modelA=Shop&previewA=Shop`, adding `repoA` for another registered repository.
-Use ordinary navigation, selection, filters, flow modes, and code actions.
-The source disclosure shows both fingerprints, original coverage, and proposed state mappings.
-Reload and history preserve origin, scope, and flow. Code actions preserve origin and follow the selected binding.
-A planning-only preview shows no implemented modules.
-
-If source changes, Refresh refuses until the plan matches again.
-Browser reads normalize legacy schemas in memory without changing original bytes.
-
-Original histories stay separate, even with equal draft names.
-The coverage notice names the original board, not a historical repository-wide model.
-State evidence shows lifecycle reasons, corrections, baselines, conflicts, and blocked ancestry.
-The browser authors no mapping or migration.
-
-Retained previews offer Original files with exact text or lossless base64 for unsupported UTF-8.
-Only the selected file is decoded.
-If originals cannot form a model, the browser keeps evidence and recovery instructions instead of drawing empty Current.
-An absent mapping plan stays explicit.
-
 ## Preserve original history
 
 A legacy state covers one original board, not the whole historical repository.
@@ -238,7 +217,7 @@ archboard model retain --migration Shop --expected-plan <plan-digest-or-none> --
 
 Retention preserves exact bytes, old schemas, unresolved documents, conflict bases, and the saved plan.
 It changes no originals, current model, source HEAD, or index.
-If retention fails, follow the [retry and recovery rules](canonical-models.md#retry-and-recover-operations).
+If retention fails, follow the [retry and recovery rules](history.md#retry-and-recover-operations).
 A changed source or plan refuses a new retention request.
 Read retained originals without consulting live files:
 
@@ -333,14 +312,6 @@ Retained local references keep their checkpoint and paired original state.
 Unpinned external history stays unavailable even if a matching current model exists.
 Complete original checkpoints retain every derived reading's source through installation.
 
-In the browser, Bookmarks and Former addresses open these readings.
-The address keeps `bookmarkA` or `legacyAddressA` through reload and history.
-Scope, focus, or grammar changes resume ordinary exploration. Filters preserve exact bookmark membership.
-Walkthroughs plays converted narratives with the availability and capture rules above.
-
-Retained previews keep `checkpointA` with the original state or address, even after live originals disappear.
-Following a reference keeps returned origin, state, and checkpoint and replaces the source bookmark or former address.
-
 ## Install an approved preview
 
 Install only when the owner explicitly authorizes migration.
@@ -350,7 +321,7 @@ Give every converted current or draft beat an explicit original view.
 Historical and shelved originals retain their bytes and unavailable-beat diagnostics.
 
 `migrationPreview.installation` supplies complete destination and checkout fingerprints.
-For a vault outside source Git, initialize [private history](canonical-models.md#initialize-private-history) before requesting installation intent.
+For a vault outside source Git, initialize [private history](history.md#initialize-private-history) before requesting installation intent.
 Copy all revision objects and file lists without changing origin, source, plan revision, or candidate revision:
 
 ```bash
@@ -360,7 +331,7 @@ archboard model migrate --input migration-request.json -C /path/to/checkout
 ```
 
 Installation retains exact originals and choices before removing live copies.
-If installation fails, follow the shared [retry and recovery rules](canonical-models.md#retry-and-recover-operations).
+If installation fails, follow the shared [retry and recovery rules](history.md#retry-and-recover-operations).
 For a changed request, use a fresh preview and operation identity.
 Converted proposals retain predecessor, baseline, reason, and original checkpoint in `proposal.migration`.
 Planning-only subjects stay proposed. Current has one canonical representation after completion.

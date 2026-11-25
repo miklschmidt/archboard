@@ -4,7 +4,7 @@ title: Teach consumer agents how to author a codebase model
 status: Done
 assignee: []
 created_date: '2026-11-25T17:43:00Z'
-updated_date: '2026-11-25T17:56:00Z'
+updated_date: '2026-11-25T18:07:00Z'
 labels: []
 dependencies: []
 ordinal: 1169000
@@ -29,6 +29,8 @@ Consumer agents still lack practical end-to-end guidance for authoring a codebas
 
 <!-- SECTION:NOTES:BEGIN -->
 Re-applied and verified all consumer authoring skill updates, Zod schema descriptions, record-format test prose-annotation fix, and first-map.mdx updates on docs/consumer-model-authoring branched from origin/main (v0.6.0).
+
+Audited all skills/archboard/references/ files: stripped human-UI browser instructions (including Explore in the browser and Inspect previews in the browser) and split rare history/archive/export operations into references/history.md and live browser-pane/explanation commands into references/browser-panes.md; folded in all verified Sol Round 1 boundary refinements.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
