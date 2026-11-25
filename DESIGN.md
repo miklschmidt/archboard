@@ -760,10 +760,11 @@ only that row and hides the other rows of its section. There is no mode to enter
 first, because a control that only appears on request reads as missing. Rows that the active lens
 hides stand dimmed in two columns under `Hidden by <lens>`, with no eye, because turning one on
 would contradict the lens. Under `Line marks`, in two columns with no switch, stand the marks that
-no reader hides: `More emphasis`, `Illustrated traffic` and the comparison standings. While a kind
-or an effect is hidden, the key `Show all` stands at the right end of the `Relationships` row, 24px
-high and drawn as `Trace back` is. It selects All relationships and clears both lists in one press,
-and needs no count, because every hidden row stays in the list.
+no reader hides: `More emphasis`, `Illustrated traffic` and the comparison standings. If the
+reading leaves out a line or the reader hides a kind or effect, `Show all` appears at the right
+end of the `Relationships` row. The key is 24px high and looks like `Trace back`. It selects
+All relationships and clears both lists in one press. The count of omitted lines stays above the
+picture.
 
 The rows come from the whole scope, not from what the picture draws now, and each list keeps
 the order of the policy. So hiding a row moves no row, and the legend keeps its height. A
