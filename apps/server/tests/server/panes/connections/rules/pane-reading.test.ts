@@ -329,6 +329,18 @@ describe("pane-reading resolution", () => {
 				steps: [{ kind: "sync", from: "Gateway", to: "Auth Server", label: "Check" }],
 			},
 		});
+		const sameActor = resolvePaneReading(model, {
+			ephemeralFlow: {
+				name: "Login",
+				participants: ["User", "USER", "Gateway"],
+				steps: [{ kind: "sync", from: "user", to: "Gateway", label: "Open" }],
+			},
+		});
+		expect(sameActor.ok).toBe(true);
+		if (sameActor.ok)
+			expect(sameActor.reading.resolvedEphemeralFlow?.syntheticParticipants).toEqual([
+				{ id: "eph#p1", name: "User" },
+			]);
 		expect(ambiguous.ok).toBe(false);
 		if (!ambiguous.ok) expect(ambiguous.error.code).toBe("MODULE_AMBIGUOUS");
 	});

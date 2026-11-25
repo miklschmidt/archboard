@@ -58,6 +58,7 @@ function resolveEphemeralFlow(
 		const matched = resolveModule(trimmed);
 		// A name several modules share is a refusal, never a made-up actor in their place.
 		if (!matched.ok && matched.error.code === "MODULE_AMBIGUOUS") return matched;
+		const declared = lookup.get(trimmed) ?? lookup.get(trimmed.toLowerCase());
 		let id: string;
 		if (matched.ok) {
 			id = matched.id;
@@ -67,8 +68,8 @@ function resolveEphemeralFlow(
 				lookup.set(mod.name, id);
 				lookup.set(mod.name.toLowerCase(), id);
 			}
-		} else if (lookup.has(trimmed)) {
-			id = lookup.get(trimmed)!;
+		} else if (declared !== undefined) {
+			id = declared;
 		} else {
 			syntheticCounter += 1;
 			id = `${prefix}#p${syntheticCounter}`;
