@@ -82,6 +82,9 @@ It reads no mutable model, starts no live voice session, and recreates no writer
 Saved talks stay exact history.
 A narrative can target a checkpoint older than its own definition.
 
+To steer a live walkthrough, follow [browser panes](browser-panes.md#navigate-a-local-agent-pane).
+The pane keeps separate revisions for the narrative source and its target. If either changes or becomes unavailable before narration starts, reopen the walkthrough before retrying.
+
 ## Write each beat
 
 Make one point per beat.

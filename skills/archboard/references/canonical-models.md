@@ -353,8 +353,8 @@ For a broader example, use `examples/canonical-model/compact-proposal.changes.js
 The receipt identifies the allocated draft through `target` and `selectedState`.
 For siblings, use the same predecessor. For a child, use the selected draft as predecessor.
 
-For a planning root, start with `current:null`, no current modules or flows, and target state null.
-Claim the model and add all unbuilt subjects in the proposal batch.
+For a planning root, read the empty model with `manifest.current:null` and keep its complete `revision`.
+Use `target:{"model":"<manifest.id>","state":null}` in both the claim and edit. Claim the model ID and add the first subjects in the proposal batch.
 Archboard retains the empty baseline first.
 
 To edit a draft, claim its state ID, model, and affected existing subjects.
@@ -510,6 +510,7 @@ It names current, draft, historical, and shelved states. Completed entries inclu
 Reopen them by stable ID or unique current or former name.
 If retained state identities are ambiguous, use an exact checkpoint.
 Exact checkpoints keep their original lifecycle after later adoption or shelving.
+For an unavailable checkpoint, follow [history recovery](history.md#reopen-and-recover).
 
 The receipt's `selectedState` names the completed lifecycle.
 Its checkpoint keeps `lifecycle`, the final proposal, and the exact previous Current.

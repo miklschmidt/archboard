@@ -19,7 +19,7 @@ Tell the user which modules you combined and which code proved the match.
 
 Inspect the active vocabulary and registered checkouts before authoring.
 
-1. Run `archboard model config` and read `policy.nodeKinds`, `policy.relationshipKinds`, `policy.groups`, `policy.lenses`, and `policy.codeCheck` when present. The configuration file is `.archboard/config.yaml` inside the vault.
+1. Run `archboard model config` and read `policy.nodeKinds`, `policy.relationshipKinds`, `policy.groups`, `policy.lenses`, and `policy.codeCheck` when present. Use the returned `configurationFile` to locate the vault's `.archboard/config.yaml`.
 2. Run `archboard repo list` to confirm the repository identity (`repo`) for bindings and anchors. Register missing checkouts with `archboard repo add <directory>`.
 3. Read the repository layout, entry points, manifests, and key boundaries before naming modules.
 
@@ -160,7 +160,7 @@ Define it under `relationshipKinds` in the vault's configuration file with a nam
 
 ```yaml
 relationshipKinds:
-  workflow: { name: Workflow, color: lime, evidence: [call, configured-path] }
+  workflow: { name: Workflow, color: teal, evidence: [call, configured-path] }
 ```
 
 Its color is required, because the kind is the color of its lines.

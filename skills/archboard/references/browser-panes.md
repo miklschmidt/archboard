@@ -21,7 +21,8 @@ The `pane_model` message carries `{model,reading,revision,vault,repository}`.
 The result carries `{success,model,reading,revision,repository,checkout,paneId}` and `pane` with the resolved pane address.
 
 `browser panes` reports `panes[].architecture` and `tabSessionId` for explanation and narrative guards.
-Navigation can choose a checkout but cannot activate the tab's conversation.
+An agent show can change the machine's chosen checkout for that repository. If the result includes `chose`, tell the user which checkout was chosen and which it replaced.
+Navigation preserves the conversation shown in the tab.
 For narratives, read [canonical walkthroughs](canonical-walkthroughs.md).
 
 ## Temporary explanations
