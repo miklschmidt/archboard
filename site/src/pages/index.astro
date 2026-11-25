@@ -37,7 +37,7 @@ const website = {
 
 <Base
 	title="Archboard: understand the code your agents write"
-	description="Plan each change with your coding agent on a map of the system before it writes a line. Follow any feature into the code, and see every place where the map and the code disagree."
+	description="Architecture modeling for codebases built with coding agents. Plan structural changes in Git, trace flows to source symbols, and verify the model against real code."
 >
 	<script type="application/ld+json" slot="head" set:html={JSON.stringify(website)} />
 	<Nav />
@@ -48,47 +48,49 @@ const website = {
 		<Section id="understand" title="Follow a feature into the code">
 			<Fragment slot="lead">
 				<p>
-					Open the map your agent wrote. Go from the whole system into one service, follow a payment
-					message by message, and check each claim against the code.
+					Start from the root architecture and drill straight into individual services. Follow a
+					single request across modules, then check what the model claims against the code.
 				</p>
 			</Fragment>
 
-			<Feature title="Zoom from the system into a service" flip>
+			<Feature title="Drill from the system into a service" flip>
 				<p>
-					Open a module to see its parts and the connections that cross its boundary. Open a part to go
-					deeper. Breadcrumbs lead back through the same model, and nothing is copied on the way.
+					Open any module to inspect its internal parts and the calls crossing its boundary, then
+					open a part to go deeper. Breadcrumbs move back up the same tree, with every view derived
+					from a single set of module definitions.
 				</p>
-				<p>Select the Inventory service card to fly into it.</p>
+				<p>Select the Inventory service card to open it.</p>
 				<DrillDown slot="demo" />
 			</Feature>
 
-			<Feature title="Follow one request, step by step" wide>
+			<Feature title="Trace one request, step by step" wide>
 				<p>
-					Ask what happens as a shopper pays, and get every path: who calls whom, what comes back, which
-					branch runs when the card is declined, and which call retries until it lands. Your agent traces
-					each message to the code that sends it.
+					Model a checkout flow with every call, return, failure branch, and retry loop, each
+					anchored to the source symbol that sends it.
 				</p>
 				<p>
-					The architecture, the sequence and the flowchart are three readings of one model. They share
-					its module identities, so a proposal that changes an exchange shows which messages changed.
+					Architecture, sequence, and flowchart views all render from the same model and share
+					module identities. When a proposal alters a flow, the diff shows which messages changed.
 				</p>
 				<Grammars slot="demo" />
 			</Feature>
 
 			<EvidenceTabs />
 
-			<Feature title="Find the parts worth investigating" wide>
+			<Feature title="Spot shallow modules and coupling" wide>
 				<p>
-					Measures counts what each module exposes, what it hides and what it only passes through, and
-					reads Git history for the modules that change together. Sort by any column to see where to
-					read first.
+					Measures surfaces structural counts alongside Git history. Sort any column to find modules
+					with wide interfaces, pass-through entry points, or frequent co-changes.
 				</p>
 				<ul>
-					<li>Many entries over few hidden parts can point to a shallow module.</li>
-					<li>Unjoined counts modules that change together with no relationship between them.</li>
+					<li>High entry-point counts with few hidden parts flag potentially shallow modules.</li>
 					<li>
-						There is no score. The questions come from John Ousterhout's <em>A Philosophy of Software
-						Design</em>, and you and your agent read the code and judge.
+						Unjoined pairs highlight modules that change in the same commits despite having no
+						modeled relationship.
+					</li>
+					<li>
+						No composite score. The diagnostics follow John Ousterhout's <em>A Philosophy of
+						Software Design</em>, leaving the engineering call to you.
 					</li>
 				</ul>
 				<Measures slot="demo" />
@@ -98,108 +100,108 @@ const website = {
 		<Section id="talk" title="Talk to your architecture">
 			<Fragment slot="lead">
 				<p>
-					Press Talk and ask out loud. The Codex voice answers in real time, and it does more than
-					narrate. It reads the code, proposes a change to the architecture and builds it, like any
-					Codex agent.
+					Hit Talk and ask questions out loud while browsing the canvas. The real-time Codex voice
+					can inspect source files, draft architecture proposals, and run implementation work in
+					your checkout.
 				</p>
 				<p>
-					Behind the voice, a fast coordinator reads the architecture and decides what the voice says.
-					It hands sustained work to a full Codex thread in your checkout. That thread's approvals come
-					to the pane. When running a command needs only your yes or no, you can say it aloud.
+					A low-latency coordinator answers architectural questions directly and delegates heavy
+					work to a full Codex thread in your repo. Command approvals surface right in the pane, so
+					you can approve or reject them by voice.
 				</p>
 			</Fragment>
 			<div class="talk-stage" data-reveal>
 				<TalkRelay />
 				<p class="caption">
-					An example conversation about the example shop. In Archboard you speak, and the voice answers
-					aloud. Here the words play without sound.
+					Sample session on the example web shop. Live sessions use audio; this preview replays the
+					transcript silently.
 				</p>
 			</div>
 		</Section>
 
-		<Section id="plan" title="See the change before anyone builds it">
+		<Section id="plan" title="Diff the architecture before coding">
 			<Fragment slot="lead">
 				<p>
-					Plan before your agent writes a line. Ask for a change and you get a proposal, drawn against
-					what exists. New modules arrive green, changed ones orange, and removed ones stay on the page
-					as red ghosts.
+					Have your agent draft changes as a proposal against the live architecture. Additions show
+					in green, edits in orange, and removals in dashed red.
 				</p>
-				<p>Current architecture stays as it is until the proposal ships.</p>
+				<p>The current model stays untouched until the work ships and you adopt the proposal.</p>
 			</Fragment>
 
 			<div class="plan-stage" data-reveal>
 				<ProposalSwitch />
 				<p class="caption">
-					The example shop's Queued fulfilment proposal: checkout answers once the payment starts, and a
-					worker reserves the stock and sends the receipt. The counts are the answer of
-					<code>archboard model compare</code>.
+					The example web shop's Queued fulfilment proposal: checkout returns as soon as payment
+					starts, while a background worker reserves inventory and sends the receipt. Diff counts
+					come from <code>archboard model compare</code>.
 				</p>
 			</div>
 
 			<div class="sub-head" data-reveal>
-				<h3 class="display feature-title">Weigh competing options side by side</h3>
+				<h3 class="display feature-title">Compare options side by side</h3>
 				<p class="body">
-					Branch two drafts from one starting point and open them in two panes. Both compare against the
-					same root, and neither touches current architecture.
+					Branch two proposals from the same baseline and inspect them in split panes. Both diff
+					against the current architecture without modifying it.
 				</p>
 			</div>
 			<div class="options-wrap">
 				<CompetingOptions />
 			</div>
 
-			<Feature title="Hold the build to the plan">
+			<Feature title="Verify the branch against the plan">
 				<p>
-					When your agent builds the change, the footprint sets the branch against its proposal. It
-					reads the commits through each module's code binding and sorts every change into three lists.
+					Once implementation starts, the branch footprint maps your Git diff through each module's
+					code binding and compares it against the proposal.
 				</p>
 				<p>
-					Work outside the plan shows up before review, and so does planned work the branch has not
-					done yet.
+					Scope creep outside the proposal and planned modules left untouched both surface before
+					code review.
 				</p>
 				<Footprint slot="demo" />
 			</Feature>
 
-			<Feature title="Keep a record that remembers why" flip>
+			<Feature title="Keep decisions and exact history" flip>
 				<p>
-					When a proposal ships, your agent adopts it and records the reason. The architecture it
-					replaces stays available as an exact checkpoint, and a shelved proposal keeps its reason too.
+					Once a change ships, adopt the proposal with the reasoning behind it. The previous state
+					is preserved as an exact checkpoint, and shelved proposals keep their rationale too.
 				</p>
 				<p>
-					Retained history lives in a separate Git archive, published only when you choose. Module files,
-					flows, walkthroughs and active proposals stay in the repository for code review.
+					Historical checkpoints live in a separate Git archive that you publish explicitly, while
+					active modules, flows, proposals, and walkthroughs stay in the repo alongside source PRs.
 				</p>
 				<HistoryTimeline slot="demo" />
 			</Feature>
 		</Section>
 
-		<Section id="how" title="Nobody places a box">
+		<Section id="how" title="Zero manual layout">
 			<Fragment slot="lead">
 				<p>
-					Your agent describes the system: its services, stores and queues, what contains what, and how
-					they talk, in what order. Archboard handles the drawing. No file stores a box position or a
-					layout rule.
+					Your agent authors structured semantics: modules, containment, relationships, and request
+					flows. The renderer computes every position and route from that data, so no vault file
+					ever stores coordinates or layout overrides.
 				</p>
 				<p>
-					The agent that changes the code updates the model in the same task, and the code check shows
-					where the two disagree. A renderer fix redraws every reading, history included.
+					Architecture updates happen in the same agent task as the code change, and the code check
+					flags broken bindings or missing relationships. When the renderer improves, every view and
+					historical checkpoint redraws cleanly.
 				</p>
 			</Fragment>
 			<Pipeline />
 			<p class="caption engine" data-reveal>
-				One Rust core places the modules, routes the lines and shapes every word. The CLI and the browser
-				run the same core as WebAssembly, with the same bundled fonts, so a picture reads the same in the
-				app, in an SVG and in a PNG.
+				A single Rust layout and painting core compiles to WebAssembly for both the CLI and the
+				browser, using bundled fonts so interactive views and exported SVG or PNG files render
+				identically.
 			</p>
 
 			<Feature title="Agents work in plain sight">
 				<p>
-					An agent claims the subjects it plans to change. The shell marks the claimed model and each
-					claimed row with a pulsing dot, and the panel says Claimed on a selected subject. Each mark
-					names what the agent is doing.
+					Before editing, an agent claims the modules or states it intends to change. Active claims
+					show up directly in the sidebar and detail panel with a live status indicator and the
+					agent's current task.
 				</p>
 				<p>
-					A claim is status, so it asks nothing of you. Every write names the exact revision it read,
-					so the server refuses a stale write.
+					Claims are purely informational and require no action from you. Every write includes the
+					exact model revision it read, so the server rejects stale edits automatically.
 				</p>
 				<ClaimMarks slot="demo" />
 			</Feature>
@@ -207,8 +209,8 @@ const website = {
 			<div class="sub-head" data-reveal>
 				<h3 class="display feature-title">Archboard draws itself</h3>
 				<p class="body">
-					Archboard keeps its own architecture in its repository and changes it through proposals, with
-					the same commands a consumer uses.
+					Archboard models its own codebase inside its repository and evolves it through proposals
+					using the same CLI commands.
 				</p>
 			</div>
 			<div data-reveal>
@@ -216,31 +218,32 @@ const website = {
 			</div>
 		</Section>
 
-		<Section id="share" title="Share what your agent found">
+		<Section id="share" title="Share diagrams and walkthroughs">
 			<Fragment slot="lead">
 				<p>
-					Put a drawing in a design document, an ADR or a pull request, and it never goes stale. Or let
-					a walkthrough explain a change one step at a time.
+					Embed tracked SVGs and PNGs in design docs, ADRs, and pull requests, then regenerate
+					outdated renders from their recipes in one command. For complex changes, record a
+					step-by-step walkthrough.
 				</p>
 			</Fragment>
 
 			<DocsTiles />
 
 			<div class="sub-head" data-reveal>
-				<h3 class="display feature-title">Let the architecture explain itself</h3>
+				<h3 class="display feature-title">Walk reviewers through the change</h3>
 				<p class="body">
-					A walkthrough is an authored tour through readings. Press Narrate and the Codex voice explains
-					each step while the camera follows the selected parts. One command films the tour for a design
-					review or a pull request.
+					A walkthrough sequences views across the model to explain a subsystem or proposal. Hit
+					Narrate to have the Codex voice talk through each beat as the canvas highlights the
+					relevant modules, or render the whole tour to MP4 from the CLI for a pull request.
 				</p>
 			</div>
 			<div class="walk" data-reveal>
 				<WalkthroughPlayer />
 				<div class="walk-foot">
 					<p class="caption">
-						The example shop's own walkthrough, “How an order is placed today”. In Archboard the Codex
-						voice speaks each step. Here the
-						words play without sound. <a href={links.walkthroughs}>Hear a narrated pull-request video</a>.
+						The example web shop's walkthrough, “How an order is placed today”. Live playback
+						narrates each beat aloud via Codex; this preview runs muted.
+						<a href={links.walkthroughs}>Watch a narrated pull-request video</a>.
 					</p>
 					<pre class="walk-cmd mono" tabindex="0"><span class="ps">$</span> archboard model record --checkpoint &lt;id&gt; --walkthrough "Why checkout stops waiting" --out pr-128.mp4</pre>
 				</div>
@@ -250,9 +253,9 @@ const website = {
 		<Section id="compare" title="Where Archboard fits">
 			<Fragment slot="lead">
 				<p>
-					Most tools explain code after your agent wrote it. Archboard starts before the first line: your
-					agent plans the change on a map of what exists, you choose, and the map stays bound to the code
-					as it ships.
+					Code visualizers inspect code after the fact, and diagram tools drift away from the repo.
+					Archboard keeps one versioned model in Git so planning, review, and code checks all
+					operate on the same definitions.
 				</p>
 			</Fragment>
 			<CompareTable />

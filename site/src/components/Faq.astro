@@ -3,31 +3,31 @@
 const items = [
 	{
 		q: "Can I move a box?",
-		a: "No, and that is the point. If a picture says something wrong, fix the meaning and the renderer redraws it. If the meaning is right and the picture is not, that is a renderer bug, and the repair benefits every reading.",
+		a: "No. Vault files store architectural meaning, not coordinates. If a diagram misrepresents the system, fix the model and let the renderer lay it out again. If the model is right and the layout is poor, that is a renderer bug; fixing it improves every view and historical checkpoint automatically.",
 	},
 	{
 		q: "Does Archboard score my design?",
-		a: "No. Measures states how many entries a module has, what it hides and what changes with it. A count can look bad for a good reason. You and your agent read the code and judge.",
+		a: "No. Measures reports raw counts: entry points, hidden parts, pass-throughs, and Git co-change pairs. High numbers can have valid reasons, so Archboard surfaces the evidence and leaves the design call to you.",
 	},
 	{
 		q: "Which agents does it work with?",
-		a: "Any agent that can run a CLI can author the architecture model. archboard init installs the skills for Codex, and for Claude Code when it finds it. For the other agents that the skills CLI supports, run npx skills add miklschmidt/archboard -g. The agent in the browser, the voice, narration and recordings run on Codex, as Archboard's own private app-server with its own sign-in.",
+		a: "Any coding agent that can run a CLI can author and update the model. Running archboard init installs skills for Codex and, when detected, Claude Code; other agents can install them via npx skills add miklschmidt/archboard -g. The in-browser agent, voice chat, narration, and video recording use Codex through Archboard's private app-server sign-in.",
 	},
 	{
 		q: "Where does the architecture live?",
-		a: "A vault at .archboard/vault holds one model. Each .module.json file owns a module and its outgoing relationships. Separate files hold flows, active proposals and walkthroughs. Git tracks them. An independent archive keeps exact history and completed decisions.",
+		a: "Everything lives in .archboard/vault inside your repository. Each .module.json file defines one module and its outgoing relationships, alongside JSON files for flows, active proposals, and walkthroughs. Git tracks the active files with your code, while a separate Git archive retains checkpoints and past decisions.",
 	},
 	{
 		q: "Does the diagram stay in sync with the code?",
-		a: "Your agent updates the model in the same task as the code, and archboard check code catches the drift: it reports broken source evidence, missing dependencies between mapped modules, and boundaries that disagree with the code. Your agent reads that evidence and updates the model through an explicit proposal.",
+		a: "Your agent updates the model in the same task as the code change. Running archboard check code verifies bindings and anchors against source and infrastructure files, flagging broken references, reversed relationships, and unmodeled calls between mapped modules so the agent can reconcile them in a proposal.",
 	},
 	{
 		q: "Does my code leave my machine?",
-		a: "The model, the server and the rendering run on your machine. Your coding agent and the Codex voice run on their providers' models, and they receive what they read or what you tell them. Their providers' data policies apply.",
+		a: "The vault, local server, static analysis, and WebAssembly renderer all run locally. Your coding agent and Codex voice send only the files and prompts they read to their respective model providers, under those providers' data policies.",
 	},
 	{
 		q: "Is the traffic animation real traffic?",
-		a: "No. The agent marks which relationships carry the hot path, and the renderer animates them. It illustrates how a request flows. It is not a measurement.",
+		a: "No. Pulse animations illustrate authored request paths and relative volume; they are not live telemetry or production metrics.",
 	},
 	{
 		q: "Is it safe to run?",
@@ -35,11 +35,11 @@ const items = [
 	},
 	{
 		q: "Can I use it at work?",
-		a: "Yes, if you are an individual, or your organization has fewer than 50 people and under US$1,000,000 in annual revenue, and you do not offer Archboard as a hosted service. Other use needs another license. Each version becomes MIT-licensed four years after its first publication.",
+		a: "Yes, for individuals and organizations with fewer than 50 people and under US$1,000,000 in annual revenue, provided you do not offer Archboard as a hosted service. Other use requires a separate license. Each release converts to the MIT license four years after publication.",
 	},
 	{
 		q: "Is it stable?",
-		a: "Archboard is young and moves fast. Its interfaces change often. Install it from npm. It targets desktop browsers on Linux and macOS.",
+		a: "Archboard is under active development and its CLI and file formats still evolve. Install releases from npm; the UI targets desktop browsers on Linux and macOS.",
 	},
 ];
 ---

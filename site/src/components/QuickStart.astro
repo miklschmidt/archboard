@@ -15,14 +15,14 @@ archboard -C ~/archboard-example model import \\
 archboard start`;
 
 const prompts = [
-	["Draw how a request travels from the API to the database.", "a flow across modules bound to source"],
-	["Propose splitting billing out of the monolith and compare it with today.", "a proposal drawn against current architecture"],
-	["Give me two options for search, side by side.", "two competing drafts from one starting point"],
-	["Show me where this model disagrees with the code.", "findings with source evidence and warnings on the map"],
-	["Where does this design cost the most? Check the shallowest modules.", "the modules to read first, each checked against the code"],
-	["We shipped the queue. Adopt the proposal.", "the old architecture becomes history, with the reason"],
-	["Record a walkthrough of PR 128 for the reviewers and attach it.", "a narrated MP4 on the pull request"],
-	["Explain the checkout to a new hire, one step at a time.", "a newcomer's walkthrough you can narrate"],
+	["Model how a request travels from the API to the database.", "ordered flow across modules anchored to source"],
+	["Propose splitting billing out of the monolith and diff it against current.", "proposal overlaid on the live architecture"],
+	["Draft two architecture options for search, side by side.", "two competing proposals from the same baseline"],
+	["Check this model against the codebase.", "code-check findings with source evidence and warnings"],
+	["Find the shallowest modules and highest-coupling boundaries.", "interface and Git co-change counts from Measures"],
+	["We shipped the queue. Adopt the proposal.", "promotes the proposal to current and checkpoints the old state"],
+	["Record a walkthrough of PR 128 for the reviewers and attach it.", "narrated MP4 attached to the pull request"],
+	["Build an onboarding walkthrough of checkout.", "step-by-step tour ready for live narration"],
 ];
 ---
 
@@ -31,29 +31,29 @@ const prompts = [
 		<div class="step" data-reveal>
 			<h3 class="h3">Map your own code</h3>
 			<p class="body small">
-				Install Archboard, then run <code>archboard init</code> in the repository that you want
-				mapped. It installs the skills for Codex, and for Claude Code when it finds it. It makes the
-				vault, and it starts your agent to set up the language servers. The agent shows you its plan
-				before it changes anything.
+				Install Archboard, then run <code>archboard init</code> inside your repository.
+				Initialization installs agent skills for Codex (and Claude Code if detected), creates the
+				vault, and starts your agent to configure language servers, showing its plan before
+				modifying anything.
 			</p>
 			<InstallCommands id="quick-install" then={["archboard init"]} />
 			<p class="body small">
-				You need Linux on x64 or arm64, or macOS on Apple silicon, with Git. Agent, voice,
-				narration and recordings need a Codex sign-in, from the agent dock.
-				<a href={links.install}>INSTALL.md</a> covers vault discovery, code bindings and language
+				Requires Git on Linux (x64/arm64) or macOS (Apple silicon). The in-browser agent, voice
+				chat, narration, and video recordings require signing in to Codex from the agent dock. See
+				<a href={links.install}>INSTALL.md</a> for vault discovery, code bindings, and language
 				servers.
 			</p>
 		</div>
 		<div class="step" data-reveal style="--reveal-delay: 120">
 			<div class="step-head">
-				<h3 class="h3">Try the example shop</h3>
+				<h3 class="h3">Try the example web shop</h3>
 				<CopyButton text={tryIt} />
 			</div>
-			<p class="body small">After the install, load the example shop and start the server.</p>
+			<p class="body small">Once installed, import the sample web-shop vault and start the local server.</p>
 			<pre class="block" tabindex="0"><code>{tryIt}</code></pre>
 			<p class="body small">
-				Then open <code>http://archboard.localhost:4242/?modelA=Shop</code> to explore the modules, proposals,
-				history and walkthroughs.
+				Open <code>http://archboard.localhost:4242/?modelA=Shop</code> to browse its modules,
+				proposals, history, and walkthroughs.
 			</p>
 		</div>
 	</div>
