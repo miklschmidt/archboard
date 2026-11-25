@@ -134,7 +134,7 @@ const ArchitectureManifestSchema = z
 const OwnedRelationshipSchema = SemanticEdgeSchema.omit({ id: true, from: true, to: true }).extend({
 	id: QualifiedSubjectIdSchema,
 	to: QualifiedSubjectIdSchema.meta({
-		description: "Qualified ID of the target module that receives or answers this relationship.",
+		description: "Qualified ID of the target module.",
 	}),
 });
 /**

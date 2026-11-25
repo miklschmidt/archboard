@@ -69,7 +69,7 @@ const EvidenceKindSchema = z.enum([
 /** What an operation does at its target (ADR 0094). */
 const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]).meta({
 	description:
-		"What an operation does at its target. A `mutation` can change state or have an external effect. A `query` reads held or fetched state. A `compute` depends only on inputs from the caller. Current module files require an effect for each relationship. A `dependency` may omit it to record a declared requirement.",
+		"What an operation does at its target. A `mutation` can change state or have an external effect. A `query` reads held or fetched state. A `compute` depends only on inputs from the caller. Current module files require an effect for each relationship except a `dependency` that only declares a requirement.",
 });
 /**
  * What a line's dash and head say it does: its effect, or `declared` for a

@@ -31,7 +31,7 @@ const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME).meta({
 /** A concise explanation of what a node is for; the renderer wraps its lines. */
 const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY).meta({
 	description:
-		"Short statement of what the module is responsible for, drawn on its card (max 200 characters).",
+		"Short statement of what the module is responsible for (max 200 characters). The renderer can show it on the module's card.",
 });
 
 /**

@@ -47,7 +47,7 @@ const EdgeTrafficSchema = z
 	.object({
 		speed: z.number().finite().positive().default(DEFAULT_TRAFFIC_SPEED).meta({
 			description:
-				"Requested pulse speed in diagram units per second. The renderer scales it and enforces a minimum.",
+				"Requested pulse speed in diagram units per second. The renderer scales it and clamps it to a minimum and maximum.",
 		}),
 		volume: z.number().finite().positive().default(DEFAULT_TRAFFIC_VOLUME).meta({
 			description:
