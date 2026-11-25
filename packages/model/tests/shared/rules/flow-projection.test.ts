@@ -44,9 +44,9 @@ describe("projectFlow synthetic participants", () => {
 			},
 			[{ id: "eph#p1", name: "Returning User" }],
 		);
-		expect(projected.content.nodes.map((node) => [node.id, node.name])).toEqual([
-			["eph#p1", "Returning User"],
-			["Shop#auth", "Auth"],
+		expect(projected.content.nodes.map((node) => [node.id, node.name, node.kind])).toEqual([
+			["eph#p1", "Returning User", "external"],
+			["Shop#auth", "Auth", "service"],
 		]);
 		expect(projected.content.flows).toHaveLength(1);
 		expect(projected.depicted.nodes.map((node) => node.id)).toEqual(["Shop#auth"]);

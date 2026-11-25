@@ -23,19 +23,18 @@ function projectFlow(
 	const byId = new Map<string, SemanticNode>(
 		architecture.depicted.nodes.map((module) => [module.id, module]),
 	);
-	if (syntheticParticipants !== undefined && syntheticParticipants.length > 0) {
-		const fallbackKind = architecture.depicted.nodes[0]?.kind ?? "service";
-		syntheticParticipants.forEach((participant, index) => {
-			if (!byId.has(participant.id)) {
-				byId.set(participant.id, {
-					id: participant.id,
-					order: architecture.depicted.nodes.length + index,
-					name: participant.name,
-					kind: fallbackKind,
-				});
-			}
-		});
-	}
+	// A transient participant stands outside the model, so it reads as `external`, never as
+	// whatever kind the model's first module happens to have.
+	syntheticParticipants?.forEach((participant, index) => {
+		if (!byId.has(participant.id)) {
+			byId.set(participant.id, {
+				id: participant.id,
+				order: architecture.depicted.nodes.length + index,
+				name: participant.name,
+				kind: "external",
+			});
+		}
+	});
 	const nodes = depicted.participants.flatMap((id) => byId.get(id) ?? []);
 	return {
 		...architecture,
