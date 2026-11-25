@@ -77,7 +77,7 @@ fn offsets(
     edge: usize,
     points: &[Point],
     source: bool,
-    peers: &[Peer<'_>],
+    peers: &[Peer],
 ) -> Vec<f64> {
     let mut offsets = OFFSETS.map(|by| if source { by } else { -by }).to_vec();
     let (at, next) = end(points, source);
@@ -86,7 +86,7 @@ fn offsets(
     let position = if horizontal { at.y } else { at.x };
     offsets.extend([lo - position, hi - position]);
     for peer in peers {
-        for by in peer.offsets(points, source) {
+        for by in peer.offsets(points, source).into_iter().flatten() {
             offsets.extend([by + peer.apart, by - peer.apart]);
         }
     }
@@ -97,38 +97,42 @@ fn offsets(
 
 /// A placed route that ends on one subject with an end of a line: the only kind of route that
 /// the line's ends can conflict with.
-pub(super) struct Peer<'a> {
-    line: &'a PlacedLine,
+#[derive(Clone, Copy)]
+pub(super) struct Peer {
+    ends: [(Point, Point); 2],
     /// How far apart the two lines' ends stand at the least: a lane, and each cable's half.
     apart: f64,
     /// For each of the line's ends, which walls its port must keep clear of at each peer end.
     walls: [[Option<WallPair>; 2]; 2],
 }
-impl Peer<'_> {
-    fn offsets(&self, points: &[Point], source: bool) -> impl Iterator<Item = f64> {
-        [true, false]
-            .into_iter()
-            .zip(self.walls[usize::from(!source)])
-            .filter_map(move |(os, walls)| {
-                walls?.offset(end(points, source), end(&self.line.points, os))
-            })
+impl Peer {
+    fn offsets(&self, points: &[Point], source: bool) -> [Option<f64>; 2] {
+        let mine = end(points, source);
+        let row = self.walls[usize::from(!source)];
+        [
+            row[0].and_then(|w| w.offset(mine, self.ends[0])),
+            row[1].and_then(|w| w.offset(mine, self.ends[1])),
+        ]
     }
 
     fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
-        self.offsets(points, source)
-            .any(|by| by.abs() < self.apart - 1e-6)
+        let mine = end(points, source);
+        let row = self.walls[usize::from(!source)];
+        let limit = self.apart - 1e-6;
+        row[0]
+            .and_then(|w| w.offset(mine, self.ends[0]))
+            .is_some_and(|by| by.abs() < limit)
+            || row[1]
+                .and_then(|w| w.offset(mine, self.ends[1]))
+                .is_some_and(|by| by.abs() < limit)
     }
 
     pub(super) fn conflicts(&self, points: &[Point]) -> bool {
-        [true, false]
-            .into_iter()
-            .any(|source| self.conflicts_at(points, source))
+        self.conflicts_at(points, true) || self.conflicts_at(points, false)
     }
-}
 
-impl<'a> Peer<'a> {
     /// A placed route as a peer of a line, if it is one.
-    pub(super) fn of(model: &Model<'_>, edge: usize, line: &'a PlacedLine) -> Option<Self> {
+    pub(super) fn of(model: &Model<'_>, edge: usize, line: &PlacedLine) -> Option<Self> {
         let other = model.edge_index[line.id.as_str()];
         if edge == other {
             return None;
@@ -152,7 +156,7 @@ impl<'a> Peer<'a> {
             })
         });
         walls.iter().flatten().any(Option::is_some).then_some(Self {
-            line,
+            ends: [end(&line.points, true), end(&line.points, false)],
             apart: APART + model.reach(edge) + model.reach(other),
             walls,
         })
@@ -160,7 +164,7 @@ impl<'a> Peer<'a> {
 }
 
 /// The peers of a line among some placed routes, in their order.
-pub(super) fn peers<'a>(model: &Model<'_>, routes: &'a [PlacedLine], edge: usize) -> Vec<Peer<'a>> {
+pub(super) fn peers(model: &Model<'_>, routes: &[PlacedLine], edge: usize) -> Vec<Peer> {
     (routes.iter())
         .filter_map(|line| Peer::of(model, edge, line))
         .collect()
@@ -171,25 +175,37 @@ pub(super) fn alternatives(
     model: &Model<'_>,
     shape: &Shape,
     line: &PlacedLine,
-    peers: &[Peer<'_>],
+    peers: &[Peer],
 ) -> Vec<PlacedLine> {
     let edge = model.edge_index[line.id.as_str()];
     let mut paths = Paths::new(line.points.clone());
-    for source in [true, false] {
-        if !peers
-            .iter()
-            .any(|peer| peer.conflicts_at(&line.points, source))
-        {
-            continue;
-        }
-        let offsets = offsets(model, shape, edge, &line.points, source, peers);
-        for at in 0..paths.all.len() {
-            for &offset in &offsets {
-                if let Some(path) = slide(model, shape, edge, &paths.all[at], source, offset) {
-                    paths.add(path);
-                }
-            }
-        }
+    let source_conflict = peers
+        .iter()
+        .any(|peer| peer.conflicts_at(&line.points, true));
+    let target_conflict = peers
+        .iter()
+        .any(|peer| peer.conflicts_at(&line.points, false));
+    if source_conflict {
+        expand_side(
+            model,
+            shape,
+            edge,
+            &line.points,
+            peers,
+            (true, false),
+            &mut paths,
+        );
+    }
+    if target_conflict {
+        expand_side(
+            model,
+            shape,
+            edge,
+            &line.points,
+            peers,
+            (false, source_conflict),
+            &mut paths,
+        );
     }
     let movement = |points: &[Point]| {
         [true, false]
@@ -250,6 +266,49 @@ impl Paths {
     }
 }
 
+fn expand_side(
+    model: &Model<'_>,
+    shape: &Shape,
+    edge: usize,
+    base: &[Point],
+    peers: &[Peer],
+    (source, filter_source): (bool, bool),
+    paths: &mut Paths,
+) {
+    let offsets = offsets(model, shape, edge, base, source, peers);
+    for at in 0..paths.all.len() {
+        // Only disjoint end runs guarantee that a target slide leaves the source port alone.
+        if filter_source
+            && paths.all[at].len() > 3
+            && peers
+                .iter()
+                .any(|peer| peer.conflicts_at(&paths.all[at], true))
+        {
+            continue;
+        }
+        for &offset in &offsets {
+            if let Some(path) = slide(model, shape, edge, &paths.all[at], source, offset) {
+                paths.add(path);
+            }
+        }
+    }
+}
+
+fn fits_wall(
+    model: &Model<'_>,
+    shape: &Shape,
+    edge: usize,
+    points: &[Point],
+    source: bool,
+    horizontal: bool,
+    offset: f64,
+) -> bool {
+    let (at, _) = end(points, source);
+    let moved = (if horizontal { at.y } else { at.x }) + offset;
+    let (lo, hi) = wall_span(model, shape, edge, source, horizontal);
+    moved >= lo && moved <= hi
+}
+
 fn slide(
     model: &Model<'_>,
     shape: &Shape,
@@ -260,6 +319,12 @@ fn slide(
 ) -> Option<Vec<Point>> {
     let (at, next) = end(points, source);
     let horizontal = at.y == next.y;
+    if !fits_wall(model, shape, edge, points, source, horizontal, offset) {
+        return None;
+    }
+    if points.len() == 2 && !fits_wall(model, shape, edge, points, !source, horizontal, offset) {
+        return None;
+    }
     let mut path = points.to_vec();
     let count = path.len();
     let run = if source {
@@ -274,16 +339,7 @@ fn slide(
             point.x += offset;
         }
     }
-    let inside = [true, false]
-        .into_iter()
-        .filter(|&end| end == source || points.len() == 2)
-        .all(|end_source| {
-            let (at, _) = end(&path, end_source);
-            let (lo, hi) = wall_span(model, shape, edge, end_source, horizontal);
-            let position = if horizontal { at.y } else { at.x };
-            position >= lo && position <= hi
-        });
-    inside.then_some(path)
+    Some(path)
 }
 
 fn wall_span(
@@ -307,6 +363,80 @@ fn wall_span(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        blocks::assembly::{Placed, PlacedCard},
+        geometry::Rect,
+    };
+
+    #[test]
+    fn sliding_the_target_of_a_one_bend_route_can_clear_both_ports() {
+        let graph = serde_json::from_value(serde_json::json!({
+            "id": "root", "children": [
+                {"id": "a", "width": 0, "height": 100},
+                {"id": "b", "width": 300, "height": 60},
+                {"id": "c", "width": 60, "height": 80},
+                {"id": "d", "width": 60, "height": 80}
+            ], "edges": [
+                {"id": "ab", "sources": ["a"], "targets": ["b"]},
+                {"id": "ac", "sources": ["a"], "targets": ["c"]},
+                {"id": "bd", "sources": ["b"], "targets": ["d"]}
+            ]
+        }))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let line = |id: &str, points: &[(f64, f64)]| PlacedLine {
+            id: id.into(),
+            label: None,
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+        };
+        let drawing = Placed {
+            width: 530.0,
+            height: 570.0,
+            cards: vec![
+                card("a", 200.0, 140.0, 0.0, 100.0),
+                card("b", 100.0, 310.0, 300.0, 60.0),
+                card("c", 440.0, 130.0, 60.0, 80.0),
+                card("d", 130.0, 470.0, 60.0, 80.0),
+            ],
+            edges: vec![
+                line("ac", &[(200.0, 167.0), (440.0, 167.0)]),
+                line("bd", &[(160.0, 370.0), (160.0, 470.0)]),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        };
+        let shape = super::super::fixed::placement(&model, drawing).unwrap();
+        let topology = super::super::topology::Topology::new(&model);
+        let edge = model.edge_index["ab"];
+        let base = line("ab", &[(200.0, 180.0), (160.0, 180.0), (160.0, 310.0)]);
+        let expected = line("ab", &[(200.0, 180.0), (380.0, 180.0), (380.0, 310.0)]);
+        assert!(super::super::fixed::feasible(
+            &model,
+            &topology,
+            edge,
+            &shape,
+            &expected.points
+        ));
+        let peers = peers(&model, &shape.routes, edge);
+        assert!(
+            alternatives(&model, &shape, &base, &peers)
+                .iter()
+                .any(|line| line.points == expected.points)
+        );
+    }
 
     #[test]
     fn centred_cable_ports_keep_their_places_despite_rounding() {

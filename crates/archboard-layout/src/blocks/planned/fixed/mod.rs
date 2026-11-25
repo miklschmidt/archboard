@@ -236,13 +236,14 @@ pub(super) struct Meeting<'a> {
     /// How far the line's ink reaches to either side of its route.
     half: f64,
     junctions: super::channel::Junctions<'a>,
+    pieces: std::cell::RefCell<Vec<super::junctions::Piece>>,
 }
 
 /// One placed route of a meeting.
 struct Met<'a> {
     edge: usize,
     line: &'a PlacedLine,
-    peer: Option<super::port_spacing::Peer<'a>>,
+    peer: Option<super::port_spacing::Peer>,
     /// The route's box, a point wider each way.
     reach: Rect,
     /// The route's words, with the room a line keeps from them.
@@ -273,45 +274,80 @@ impl<'a> Meeting<'a> {
             routes: routes.iter().map(met).collect(),
             half: model.reach(edge),
             junctions: super::channel::Junctions::new(model, topology, edge, routes),
+            pieces: std::cell::RefCell::new(Vec::new()),
         }
     }
 
-    /// The lines of the placed routes that a candidate route of the line cannot stand beside:
-    /// its ends stand too close to theirs, its ink or words cover their words, or the two
-    /// meet in a junction that does not read.
-    pub(super) fn blocking(&self, line: &PlacedLine) -> impl Iterator<Item = usize> {
+    fn compatible(
+        &self,
+        at: usize,
+        old: &Met<'_>,
+        line: &PlacedLine,
+        (reach, envelope, kept): (Rect, super::junctions::Envelope, Option<Rect>),
+        pieces: &mut Vec<super::junctions::Piece>,
+    ) -> bool {
+        if old.peer.is_some_and(|peer| peer.conflicts(&line.points)) {
+            return false;
+        }
+        if kept.is_some_and(|r| crosses_box(&old.line.points, inflate(r, old.half)))
+            || old
+                .kept
+                .is_some_and(|r| crosses_box(&line.points, inflate(r, self.half)))
+            || (line.label.zip(old.line.label)).is_some_and(|(a, b)| overlap(inflate(a, 8.0), b))
+        {
+            return false;
+        }
+        !overlap(reach, old.reach)
+            || self
+                .junctions
+                .shares_with(at, &line.points, envelope, pieces)
+    }
+
+    /// The blocking placed routes of a candidate, when there are between one and `limit` of them
+    /// and none is in `locked`. Stops as soon as a locked blocker or more than `limit` blockers
+    /// are found.
+    pub(super) fn blocking_within(
+        &self,
+        line: &PlacedLine,
+        locked: &[usize],
+        limit: usize,
+    ) -> Option<Vec<usize>> {
         let reach = inflate(bounds(&line.points), 1.0 + self.half);
         let envelope = super::junctions::Envelope::new(&line.points);
-        let compatible = move |at: usize, old: &Met<'_>| {
-            if (old.peer.as_ref()).is_some_and(|peer| peer.conflicts(&line.points)) {
-                return false;
+        let kept = line.label.map(|r| inflate(r, 12.01));
+        let mut pieces = self.pieces.borrow_mut();
+        pieces.clear();
+        let mut bad = Vec::new();
+        for (at, old) in self.routes.iter().enumerate() {
+            if !self.compatible(at, old, line, (reach, envelope, kept), &mut pieces) {
+                if locked.contains(&old.edge) || bad.len() == limit {
+                    return None;
+                }
+                bad.push(old.edge);
             }
-            let kept = line.label.map(|r| inflate(r, 12.01));
-            if kept.is_some_and(|r| crosses_box(&old.line.points, inflate(r, old.half)))
-                || old
-                    .kept
-                    .is_some_and(|r| crosses_box(&line.points, inflate(r, self.half)))
-                || (line.label.zip(old.line.label))
-                    .is_some_and(|(a, b)| overlap(inflate(a, 8.0), b))
-            {
-                return false;
-            }
-            !overlap(reach, old.reach) || self.junctions.shares(at, &line.points, envelope)
-        };
-        (self.routes.iter().enumerate())
-            .filter(move |&(at, old)| !compatible(at, old))
-            .map(|(_, old)| old.edge)
+        }
+        (!bad.is_empty()).then_some(bad)
     }
 }
 
 fn bounds(path: &[Point]) -> Rect {
-    let x = path.iter().map(|p| p.x).fold(f64::INFINITY, f64::min);
-    let y = path.iter().map(|p| p.y).fold(f64::INFINITY, f64::min);
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = (
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    );
+    for p in path {
+        min_x = min_x.min(p.x);
+        min_y = min_y.min(p.y);
+        max_x = max_x.max(p.x);
+        max_y = max_y.max(p.y);
+    }
     Rect {
-        x,
-        y,
-        width: path.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max) - x,
-        height: path.iter().map(|p| p.y).fold(f64::NEG_INFINITY, f64::max) - y,
+        x: min_x,
+        y: min_y,
+        width: max_x - min_x,
+        height: max_y - min_y,
     }
 }
 
@@ -326,21 +362,35 @@ pub(super) fn route_cost(path: &[Point]) -> f64 {
 /// bend, so an end leaves the centre to save a way round, never to save a few units.
 const OFF_CENTRE: f64 = 200.0;
 
-/// How a candidate route of a line ranks: a route that meets a door from behind last, then its
-/// length, each end off its centred port as costly as `OFF_CENTRE`, and the page it takes.
-pub(super) fn route_rank(
-    (model, shape, edge): (&Model<'_>, &Shape, usize),
+/// Ranks candidate routes of one line, caching its endpoint boxes and centred ports across all
+/// candidates so each wall is priced at most once per line.
+pub(super) struct RouteRanker<'a, 'g> {
+    ports: super::ports::EdgePorts<'a, 'g>,
     bounds: Rect,
-    path: &[Point],
-) -> (bool, u64, u64) {
-    let behind = !super::ports::faces_far_end(model, shape, edge, path);
-    let off = super::ports::off_centre(model, shape, edge, path) as f64;
-    let page = page_cost(bounds, path).to_bits();
-    let route = (route_cost(path) + OFF_CENTRE * off).to_bits();
-    if model.edges.len() <= super::REFINEMENT_LIMIT {
-        (behind, route, page)
-    } else {
-        (behind, page, route)
+    small: bool,
+}
+
+impl<'a, 'g> RouteRanker<'a, 'g> {
+    pub(super) fn new(model: &'a Model<'g>, shape: &'a Shape, edge: usize, bounds: Rect) -> Self {
+        Self {
+            ports: super::ports::EdgePorts::new(model, shape, edge),
+            bounds,
+            small: model.edges.len() <= super::REFINEMENT_LIMIT,
+        }
+    }
+
+    /// How a candidate route of the line ranks: a route that meets a door from behind last, then
+    /// its length, each end off its centred port as costly as `OFF_CENTRE`, and the page it takes.
+    pub(super) fn rank(&mut self, path: &[Point]) -> (bool, u64, u64) {
+        let behind = !self.ports.faces_far_end(path);
+        let off = self.ports.off_centre(path) as f64;
+        let page = page_cost(self.bounds, path).to_bits();
+        let route = (route_cost(path) + OFF_CENTRE * off).to_bits();
+        if self.small {
+            (behind, route, page)
+        } else {
+            (behind, page, route)
+        }
     }
 }
 
@@ -451,7 +501,8 @@ fn candidates(
         if choices.is_empty() {
             return Err(blocked(model, &[edge]));
         }
-        choices.sort_by_cached_key(|line| route_rank((model, shape, edge), bounds, &line.points));
+        let mut ranker = RouteRanker::new(model, shape, edge, bounds);
+        choices.sort_by_cached_key(|line| ranker.rank(&line.points));
         candidates.push(choices);
     }
     Ok(candidates)

@@ -4,56 +4,152 @@
 //! out's; and a move through a card laid out as the region round it takes the lines that run
 //! straight on through it.
 
+use std::rc::Rc;
+
+use rustc_hash::FxHashSet;
+
 use crate::ecma::{abs, to_fixed};
 use crate::lanes::chains::{ChainId, Kind, Router};
 use crate::lanes::channels::{End, NetId};
-use crate::lanes::jogs::{Kept, Place, Reach, STRAIGHT, step, too_short};
-use crate::lanes::scene::Map;
+use crate::lanes::jogs::{Kept, MoveCache, Place, Reach, STRAIGHT, step, too_short};
+
+/// A two-decimal fixed-point key bijective with `to_fixed(value, 2)`, avoiding float formatting
+/// outside exact half-centi tie boundaries.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+enum FixedKey {
+    Centis(i64, bool),
+    Other(String),
+}
+
+/// Keep the scaled magnitude below 2^52, where multiplication cannot round past a
+/// half-hundredth. The cutoff is an exact half-hundredth that rounds up, so no rounded
+/// hundredth straddles the two key variants.
+const EXACT_CENTIS: f64 = 1e13 + 0.125;
+
+impl FixedKey {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "bounded by EXACT_CENTIS, so centis fit comfortably in i64"
+    )]
+    fn of(value: f64) -> Self {
+        if !value.is_finite() || value.abs() >= EXACT_CENTIS {
+            return Self::Other(to_fixed(value, 2));
+        }
+        let negative = value < 0.0;
+        let mag = value.abs();
+        let scaled = mag * 100.0;
+        let floor = scaled.floor();
+        let frac = scaled - floor;
+        if (frac - 0.5).abs() > 1e-6 {
+            let rounded = if frac > 0.5 { floor + 1.0 } else { floor };
+            return Self::Centis(rounded as i64, negative);
+        }
+        let formatted = to_fixed(mag, 2);
+        let centis: i64 = formatted
+            .bytes()
+            .filter(|&b| b != b'.')
+            .fold(0_i64, |acc, b| acc * 10 + i64::from(b - b'0'));
+        Self::Centis(centis, negative)
+    }
+}
+
+/// Identifies one card step by outgoing line, channel, and incoming port offset on the card.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(super) struct CardStepKey {
+    edge: Rc<str>,
+    channel: usize,
+    offset: FixedKey,
+}
 
 impl Router<'_> {
-    /// The nets among some that end on a card below, by that card, in order.
-    fn cards_below(&self, nets: &[NetId]) -> Map<Option<usize>, Vec<NetId>> {
-        let mut into: Map<Option<usize>, Vec<NetId>> = Map::default();
+    /// For every card item index, the `bottom_x` of nets that enter it from above.
+    fn card_entries_by_item(&self, nets: &[NetId]) -> Vec<Vec<f64>> {
+        let mut into: Vec<Vec<f64>> = vec![Vec::new(); self.scene.items.len()];
         for &net in nets {
             let one = self.net(net);
+            if one.wall.is_some() {
+                continue;
+            }
             let bottom = self.station(one.bottom);
-            if one.wall.is_none() && bottom.kind == Kind::Card {
-                into.entry(bottom.item.map(|item| item.0))
-                    .or_default()
-                    .push(net);
+            if bottom.kind == Kind::Card
+                && let Some(item) = bottom.item
+            {
+                into[item.0].push(one.bottom_x);
             }
         }
         into
     }
 
-    /// A key for every card step among some nets, to tell a new one from an old one: where the
-    /// line in stands on its card, so a card that slides with both its lines keeps its steps.
-    pub(super) fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
-        let into = self.cards_below(nets);
-        let mut keys = Vec::new();
-        for &net in nets {
-            let one = self.net(net);
-            let top = self.station(one.top);
-            if one.wall.is_some() || top.kind != Kind::Card {
-                continue;
-            }
-            for &other in into
-                .get(&top.item.map(|item| item.0))
-                .map_or(&[][..], Vec::as_slice)
-            {
-                let bottom_x = self.net(other).bottom_x;
-                if too_short(bottom_x, one.top_x) {
-                    let card = top.item.map_or(0.0, |item| self.scene.item(item).bx.x);
-                    keys.push(format!(
-                        "{}|{}|{}",
-                        one.edge,
-                        one.channel,
-                        to_fixed(bottom_x - card, 2)
-                    ));
+    /// Visit every card step key produced by one outgoing net on a card.
+    fn visit_net_card_steps(
+        &self,
+        net: NetId,
+        into: &[Vec<f64>],
+        visit: &mut impl FnMut(CardStepKey) -> bool,
+    ) -> bool {
+        let one = self.net(net);
+        let top = self.station(one.top);
+        let Some(item) = top
+            .item
+            .filter(|_| one.wall.is_none() && top.kind == Kind::Card)
+        else {
+            return true;
+        };
+        let card = self.scene.item(item).bx.x;
+        for &bottom_x in &into[item.0] {
+            if too_short(bottom_x, one.top_x) {
+                let key = CardStepKey {
+                    edge: Rc::clone(&one.edge),
+                    channel: one.channel,
+                    offset: FixedKey::of(bottom_x - card),
+                };
+                if !visit(key) {
+                    return false;
                 }
             }
         }
+        true
+    }
+
+    /// Visit every card step key among `nets`, stopping early if `visit` returns `false`.
+    fn visit_card_step_keys(
+        &self,
+        nets: &[NetId],
+        mut visit: impl FnMut(CardStepKey) -> bool,
+    ) -> bool {
+        let into = self.card_entries_by_item(nets);
+        nets.iter()
+            .all(|&net| self.visit_net_card_steps(net, &into, &mut visit))
+    }
+
+    /// A key for every card step among some nets, to tell a new one from an old one: where the
+    /// line in stands on its card, so a card that slides with both its lines keeps its steps.
+    #[cfg(test)]
+    pub(super) fn card_step_keys(&self, nets: &[NetId]) -> Vec<CardStepKey> {
+        let mut keys = Vec::new();
+        self.visit_card_step_keys(nets, |key| {
+            keys.push(key);
+            true
+        });
         keys
+    }
+
+    /// Populate `keys` with the card step keys currently present among `nets`, reusing its buffer.
+    pub(super) fn fill_card_step_set(&self, nets: &[NetId], keys: &mut FxHashSet<CardStepKey>) {
+        keys.clear();
+        self.visit_card_step_keys(nets, |key| {
+            keys.insert(key);
+            true
+        });
+    }
+
+    /// Whether every card step currently present among `nets` was already in `before`.
+    pub(super) fn card_steps_subset(
+        &self,
+        nets: &[NetId],
+        before: &FxHashSet<CardStepKey>,
+    ) -> bool {
+        self.visit_card_step_keys(nets, |key| before.contains(&key))
     }
 
     /// The lines that run straight on through a card laid out as the region
@@ -144,9 +240,9 @@ impl Router<'_> {
         chains: &[ChainId],
         routes: &[Vec<NetId>],
         nets: &[NetId],
-        into: Place,
-        out_of: Place,
+        (into, out_of): (Place, Place),
         kept: Kept<'_>,
+        (cache, kept_before): (&mut MoveCache, &mut Option<f64>),
     ) -> bool {
         let (in_net, out_net) = (
             routes[into.route][into.index],
@@ -160,11 +256,11 @@ impl Router<'_> {
             self.card_side(routes, into, End::Bottom),
         );
         let x = self.net(in_net).bottom_x;
-        if self.move_kept(chains, nets, &out, x, kept) {
+        if self.move_kept(chains, nets, &out, x, kept, (cache, kept_before)) {
             return true;
         }
         let x = self.net(out_net).top_x;
-        self.move_kept(chains, nets, &inward, x, kept)
+        self.move_kept(chains, nets, &inward, x, kept, (cache, kept_before))
     }
 }
 
@@ -194,6 +290,30 @@ mod tests {
             track: 0,
             trunk: None,
             wall: None,
+        }
+    }
+
+    #[test]
+    fn an_offset_key_is_equal_exactly_where_its_two_decimals_are() {
+        for (one, other) in [
+            (0.0, -0.0),
+            (0.004, 0.0),
+            (-0.004, -0.001),
+            (1.005, 1.004_999_9),
+            (1e13, 1e13_f64.next_down()),
+            (-1e13, -1e13_f64.next_down()),
+            (EXACT_CENTIS, EXACT_CENTIS.next_down()),
+            (EXACT_CENTIS, EXACT_CENTIS.next_up()),
+            (5e13 + 0.125, 5e13 + 0.117_187_5),
+            (-5e13 - 0.125, -5e13 - 0.117_187_5),
+            (0.004, -0.004),
+            (0.125, 0.135),
+        ] {
+            assert_eq!(
+                FixedKey::of(one) == FixedKey::of(other),
+                to_fixed(one, 2) == to_fixed(other, 2),
+                "{one} and {other}",
+            );
         }
     }
 

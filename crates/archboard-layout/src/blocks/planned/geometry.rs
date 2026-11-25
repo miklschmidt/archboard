@@ -9,18 +9,32 @@ pub(super) fn clean(points: Vec<Point>) -> Vec<Point> {
     out
 }
 
+fn push_clean(out: &mut Vec<Point>, point: Point) {
+    if out.last() == Some(&point) {
+        return;
+    }
+    while out.len() >= 2 && collinear(out[out.len() - 2], out[out.len() - 1], point) {
+        out.pop();
+    }
+    out.push(point);
+}
+
 /// Reuse a candidate buffer while preserving the same normalization order.
 pub(super) fn clean_into(points: impl IntoIterator<Item = Point>, out: &mut Vec<Point>) {
     out.clear();
     for point in points {
-        if out.last() == Some(&point) {
-            continue;
-        }
-        while out.len() >= 2 && collinear(out[out.len() - 2], out[out.len() - 1], point) {
-            out.pop();
-        }
-        out.push(point);
+        push_clean(out, point);
     }
+}
+
+/// Normalize `[first, ..middle, last]` into `out` without chaining iterators.
+pub(super) fn clean_with_ends(first: Point, middle: &[Point], last: Point, out: &mut Vec<Point>) {
+    out.clear();
+    out.push(first);
+    for &point in middle {
+        push_clean(out, point);
+    }
+    push_clean(out, last);
 }
 
 fn collinear(a: Point, b: Point, c: Point) -> bool {

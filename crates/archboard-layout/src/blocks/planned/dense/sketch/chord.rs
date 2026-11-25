@@ -53,14 +53,28 @@ impl Chord {
     /// turn of each chord to the line's still end made once.
     pub(in crate::blocks::planned::dense) fn crossings(&self, past: &Past) -> usize {
         let moving = if past.source { self.from } else { self.to };
-        (past.chords.iter())
-            .filter(|(other, side)| {
-                self.meets(other)
-                    && turn(self.from, self.to, other.from) * turn(self.from, self.to, other.to)
-                        < 0.0
-                    && side * turn(other.from, other.to, moving) < 0.0
-            })
-            .count()
+        let (px, py) = (self.from.x, self.from.y);
+        let (dx, dy) = (self.to.x - px, self.to.y - py);
+        let mut count = 0;
+        for item in &past.chords {
+            if !self.meets(&item.chord) {
+                continue;
+            }
+            let v1 = dx * (item.chord.from.y - py) - dy * (item.chord.from.x - px);
+            let v2 = dx * (item.chord.to.y - py) - dy * (item.chord.to.x - px);
+            if !((v1 >= 1e-3 && v2 <= -1e-3) || (v1 <= -1e-3 && v2 >= 1e-3)) {
+                continue;
+            }
+            let vm =
+                item.dx * (moving.y - item.chord.from.y) - item.dy * (moving.x - item.chord.from.x);
+            let opposite = if item.positive {
+                vm <= -1e-3
+            } else {
+                vm >= 1e-3
+            };
+            count += usize::from(opposite);
+        }
+        count
     }
 }
 
@@ -74,11 +88,20 @@ fn turn(p: Point, q: Point, r: Point) -> f64 {
     }
 }
 
+/// One precomputed fixed chord in `Past`: its endpoints/span, its direction vector, and whether
+/// the still end stood on its positive side.
+struct PastChord {
+    chord: Chord,
+    dx: f64,
+    dy: f64,
+    positive: bool,
+}
+
 /// Some fixed chords that a line can cross while only one of its ends moves, each with the side
 /// that the line's still end stands on from it. The still end stands on no side of a chord that
 /// ends on its box, and the line crosses no such chord.
 pub(in crate::blocks::planned::dense) struct Past {
-    chords: Vec<(Chord, f64)>,
+    chords: Vec<PastChord>,
     /// Whether the line's source is the end that moves.
     source: bool,
 }
@@ -93,9 +116,20 @@ impl Scene {
     ) -> Past {
         let Line { from, to, .. } = self.lines[line];
         let still = centre(self.boxes[if from == moving { to } else { from }]);
-        let sides = (fixed.iter()).map(|&chord| (chord, turn(chord.from, chord.to, still)));
+        let chords = fixed
+            .iter()
+            .filter_map(|&chord| {
+                let side = turn(chord.from, chord.to, still);
+                (side != 0.0).then_some(PastChord {
+                    chord,
+                    dx: chord.to.x - chord.from.x,
+                    dy: chord.to.y - chord.from.y,
+                    positive: side > 0.0,
+                })
+            })
+            .collect();
         Past {
-            chords: sides.filter(|&(_, side)| side != 0.0).collect(),
+            chords,
             source: from == moving,
         }
     }

@@ -58,10 +58,9 @@ function repositoryReadings() {
 }
 
 /**
- * Local first layouts keep three times the 1 s render budget (TASK-377).
- * Hosted CI recorded 45.3 s layouts, so both rendering limits allow 60 s
- * there (TASK-451). CI measures completion on a shared runner. The local
- * bound still catches a layout grown several times slower.
+ * Local first layouts allow three times the 1 s render budget (TASK-377).
+ * If this benchmark runs with CI=true, both limits allow 60 s. Hosted
+ * runners recorded first layouts up to 45.3 s (TASK-451).
  */
 const HOSTED_RENDER_TIMEOUT_MS = 60_000;
 const LOADED_LAYOUT_BOUND_MS = process.env["CI"] === "true" ? HOSTED_RENDER_TIMEOUT_MS : 3 * 1000;

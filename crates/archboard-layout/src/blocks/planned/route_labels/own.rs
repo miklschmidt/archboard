@@ -1,6 +1,6 @@
 //! A relationship's own route: its words ride one stretch and stand clear of the rest.
 
-use super::{Span, StrokeIndex, clear};
+use super::{Span, StrokeView, clear};
 use crate::blocks::planned::{junctions::Piece, label_space::Labels, model::Model, shape::Shape};
 use crate::geometry::{Point, Rect, inflate};
 
@@ -104,7 +104,7 @@ pub(super) fn keeps(
     shape: &Shape,
     own: Own<'_>,
     at: Rect,
-    strokes: &StrokeIndex,
+    strokes: StrokeView<'_>,
     labels: &Labels,
 ) -> bool {
     !shape.trunk.is_empty()

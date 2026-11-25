@@ -47,6 +47,41 @@ fn graph() -> Node {
             {"id":"ac","sources":["a"],"targets":["c"]}]}))
     .unwrap()
 }
+
+#[test]
+fn overlay_visits_strokes_in_the_rebuilt_index_order() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let mut shape = drawing(&[
+        (
+            "ab",
+            &[(20.0, 30.0), (90.0, 30.0), (90.0, 60.0), (70.0, 60.0)],
+        ),
+        (
+            "ac",
+            &[(20.0, 45.0), (80.0, 45.0), (80.0, 30.0), (30.0, 30.0)],
+        ),
+    ]);
+    let candidate = shape.routes.pop().unwrap();
+    let base = StrokeIndex::new(&model, &shape);
+    let edge = model.edge_index["ac"];
+    let overlay = base.overlay(&model, edge, &candidate.points);
+    shape.routes.push(candidate);
+    let rebuilt = StrokeIndex::new(&model, &shape);
+    let bounds = shape.scopes[&0].bounds;
+    let touching = |view: StrokeView<'_>, except| {
+        let mut boxes = Vec::new();
+        view.touching(except, bounds, |rect| boxes.push(rect));
+        boxes
+    };
+    for except in [usize::MAX, edge, model.edge_index["ab"]] {
+        assert_eq!(
+            touching(overlay.view(), except),
+            touching(rebuilt.view(), except)
+        );
+    }
+}
+
 #[test]
 fn words_use_the_longest_private_run_after_the_fan_splits() {
     let graph = graph();
@@ -94,6 +129,26 @@ fn blocked_midpoints_use_the_nearest_clear_private_spot_without_rerouting() {
     assert!((label.x - 116.01).abs() < 1e-6);
     assert_eq!(label.y, 488.0);
     assert_eq!(shape.routes[0].points, path);
+}
+
+#[test]
+fn a_reverse_span_prefers_the_first_interval_when_distances_round_equal() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let shape = drawing(&[("ac", &[(500.0, 450.0), (500.0, 550.0)])]);
+    let path = [Point { x: 900.0, y: 500.0 }, Point { x: 100.0, y: 500.0 }];
+    let own = Own::new(model.edge_index["ab"], &path);
+    // At this accumulated route length, both clear intervals give the same distance.
+    let span = Span {
+        a: path[0],
+        b: path[1],
+        before: 2.0_f64.powi(63),
+    };
+    let plate = Plate::of(&model, own, false).unwrap();
+    let strokes = StrokeIndex::new(&model, &shape);
+    let labels = super::super::label_space::Labels::default();
+    let label = nearest(&[span], plate, &shape, own, strokes.view(), &labels).unwrap();
+    assert!(label.x + label.width < 500.0);
 }
 
 #[test]

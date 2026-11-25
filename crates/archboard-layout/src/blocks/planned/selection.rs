@@ -399,7 +399,7 @@ pub(super) struct Fit<'a, 'g> {
     pub(super) shape: &'a Shape,
     pub(super) edge: usize,
     /// The placed routes that end on one subject with an end of the line.
-    peers: OnceCell<Vec<Peer<'a>>>,
+    peers: OnceCell<Vec<Peer>>,
     /// The guard of the shape's corridors, without its words, which a fit places again.
     probe: OnceCell<Probe<'a, 'g>>,
     junctions: OnceCell<Junctions<'a>>,
@@ -476,7 +476,7 @@ impl<'a, 'g> Fit<'a, 'g> {
         let mut next = shape.without_labels();
         next.routes.push(line.clone());
         let indices: Vec<_> = seating.indices().chain([edge]).collect();
-        super::route_labels::seated(model, &mut next, &indices, &strokes)?;
+        super::route_labels::seated(model, &mut next, &indices, strokes.view())?;
         Some(next)
     }
 }

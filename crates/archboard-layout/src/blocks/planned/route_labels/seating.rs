@@ -1,6 +1,6 @@
 //! The words of a shape's placed routes, ready for one more route at a time.
 
-use super::{StrokeIndex, available, clear, slot_index};
+use super::{StrokeIndex, StrokeOverlay, available, clear, slot_index};
 use crate::{
     blocks::{
         assembly::PlacedLine,
@@ -42,7 +42,7 @@ impl<'a> Seating<'a> {
                 let edge = *model.edge_index.get(line.id.as_str())?;
                 let need = match line.label {
                     _ if model.edges[edge].label().is_none() => Need::Never,
-                    Some(at) if clear(&bare, edge, at, &strokes, labels) => Need::Covered(at),
+                    Some(at) if clear(&bare, edge, at, strokes.view(), labels) => Need::Covered(at),
                     _ => Need::Always,
                 };
                 Some((line, edge, need))
@@ -60,30 +60,30 @@ impl<'a> Seating<'a> {
         self.lines.iter().map(|&(_, edge, _)| edge)
     }
 
-    /// `available` for the placed routes and one more route of a line, with the index of the
-    /// ink of them all, which `seated` takes next.
+    /// `available` for the placed routes and one more route of a line, returning a zero-clone
+    /// stroke overlay that `seated` takes next.
     pub(in crate::blocks::planned) fn admit(
         &self,
         model: &Model<'_>,
         edge: usize,
         line: &PlacedLine,
-    ) -> Option<StrokeIndex> {
-        let strokes = self.strokes.with(model, edge, &line.points);
+    ) -> Option<StrokeOverlay<'_>> {
+        // The candidate's own strokes carry `edge` and are ignored by queries for `edge`, so test
+        // the candidate itself against the base index first before checking placed routes.
+        available(model, &self.bare, [(line, edge)], self.strokes.view())?;
+        let overlay = self.strokes.overlay(model, edge, &line.points);
+        let view = overlay.view();
         let labels = &Labels::default();
         for &(placed, other, need) in &self.lines {
             let covered = match need {
                 Need::Never => false,
                 Need::Always => true,
-                Need::Covered(words) => {
-                    let words = inflate(words, 12.01);
-                    StrokeIndex::path_crosses(model, (edge, &line.points), other, words)
-                }
+                Need::Covered(words) => overlay.extra_crosses(other, inflate(words, 12.01)),
             };
             if covered {
-                slot_index(model, other, &self.bare, &placed.points, &strokes, labels)?;
+                slot_index(model, other, &self.bare, &placed.points, view, labels)?;
             }
         }
-        available(model, &self.bare, [(line, edge)], &strokes)?;
-        Some(strokes)
+        Some(overlay)
     }
 }

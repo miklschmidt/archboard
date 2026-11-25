@@ -18,7 +18,6 @@ use crate::ecma::{abs, js_max, js_min};
 use crate::lanes::buses::Buses;
 use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId};
-use crate::lanes::knots::{knots_in, knotted_lines};
 use crate::lanes::ports::gathered;
 use crate::lanes::route::{Routed, SceneLine, route_once};
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
@@ -27,6 +26,9 @@ use crate::lanes::side_runs::{
     CLEAR, Run, at_face, bends, meets, met, runs_of, through, turns, worse,
 };
 use crate::lanes::spacing::Rim;
+
+mod search;
+pub(crate) use search::route_with_sides;
 
 /// The ends of lines that land on a card's side: each line's key, and the end of its route, top
 /// to bottom, that does.
@@ -39,11 +41,10 @@ const SIDE_MARGIN: f64 = CARD_RADIUS;
 /// How many candidate ends a block tries on their sides, each with a routing of its own.
 const TRIED: usize = 16;
 
-/// A routed block: each line's points, the ends that could land on a side, the side ends that
-/// could not, and how many lines cross and bend.
+/// A routed block: each line's points, the side ends that could not land, and how many lines
+/// cross and bend.
 pub(crate) struct Routing {
     pub routes: Map<String, Vec<Point>>,
-    pub candidates: Sided,
     pub refused: Sided,
     pub crossings: usize,
     pub bends: usize,
@@ -98,106 +99,6 @@ pub(crate) struct Choice {
     pub buses: Buses,
     /// The lines that run on their own, in no trunk.
     pub loose: Set<String>,
-}
-
-/// Route a Lanes block, with the buses that cross no more lines gathered, the lines that tie a
-/// knot on a run of their own where that unties it, and the ends that read
-/// better on a card's side landed there: each candidate in turn, kept when the block, routed
-/// again with it and those kept before it, crosses no more lines and bends no more, and for a
-/// side, bends less.
-pub(crate) fn route_with_sides(
-    scene: &mut Placement,
-    lines: &[SceneLine<'_>],
-    spacing: (f64, f64),
-    rim: Option<Rim>,
-    reserve: bool,
-) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
-    let fresh = scene.clone();
-    let kept = Choice::default();
-    let best = route_once(scene, lines, spacing, rim, (reserve, true), &kept)?;
-    let drawn = scene.clone();
-    let mut search = Search {
-        scene,
-        fresh,
-        lines,
-        spacing,
-        rim,
-        reserve,
-        kept,
-        best,
-        drawn,
-    };
-    for bus in search.best.buses.clone() {
-        search.try_with(
-            |choice| choice.buses.insert(bus),
-            |again, best| again.crossings <= best.crossings && again.bends <= best.bends,
-        );
-    }
-    // A line whose turn ties a knot runs on its own where that unties more knots than it ties.
-    for line in knotted_lines(&search.best.routes).into_iter().take(TRIED) {
-        search.try_with(
-            |choice| choice.loose.insert(line),
-            |again, best| {
-                knots_in(&again.routes) < knots_in(&best.routes)
-                    && again.crossings <= best.crossings
-            },
-        );
-    }
-    for candidate in search.best.candidates.clone().into_iter().take(TRIED) {
-        search.try_with(
-            |choice| choice.sided.insert(candidate),
-            |again, best| {
-                again.refused.is_empty()
-                    && again.crossings <= best.crossings
-                    && again.bends < best.bends
-            },
-        );
-    }
-    *search.scene = search.drawn;
-    Ok(search.best.routes)
-}
-
-/// A search over a Lanes block's routings: the choice kept so far, its routing and its scene.
-struct Search<'s, 'l, 'e> {
-    scene: &'s mut Placement,
-    fresh: Placement,
-    lines: &'l [SceneLine<'e>],
-    spacing: (f64, f64),
-    rim: Option<Rim>,
-    reserve: bool,
-    kept: Choice,
-    best: Routing,
-    drawn: Placement,
-}
-
-impl Search<'_, '_, '_> {
-    /// Route the block again with one change to the kept choice, and keep the change where the
-    /// new routing reads `better` than the best so far. A change whose routing needs a card made
-    /// wider is not kept: the widths it asks for belong to a choice the block does not take.
-    fn try_with(
-        &mut self,
-        change: impl FnOnce(&mut Choice) -> bool,
-        better: impl FnOnce(&Routing, &Routing) -> bool,
-    ) {
-        let mut trying = self.kept.clone();
-        change(&mut trying);
-        *self.scene = self.fresh.clone();
-        let Ok(again) = route_once(
-            self.scene,
-            self.lines,
-            self.spacing,
-            self.rim,
-            (self.reserve, true),
-            &trying,
-        ) else {
-            return;
-        };
-        if better(&again, &self.best) {
-            self.kept = trying;
-            self.best = again;
-            self.drawn = self.scene.clone();
-        }
-    }
 }
 
 /// The net of a route at one of its ends, top to bottom.
@@ -560,6 +461,15 @@ impl Router<'_> {
         points
     }
 
+    /// The side-port candidates of a finished Lanes routing.
+    pub(crate) fn find_side_candidates(&self, routed: &Map<String, Routed>, left: f64) -> Sided {
+        if self.bus && self.sided.is_empty() {
+            self.uncrossed(self.side_candidates(routed), routed, left)
+        } else {
+            Sided::default()
+        }
+    }
+
     /// Every line's points, from its source to its target, with its side ends landed, and what
     /// the next routing needs to know.
     pub(crate) fn drawn(&self, routed: &Map<String, Routed>, left: f64) -> Routing {
@@ -573,11 +483,6 @@ impl Router<'_> {
             routes.insert(line.0.clone(), points);
         }
         refused.extend(crossed_near(&landed, &routes));
-        let candidates = if self.bus && self.sided.is_empty() {
-            self.uncrossed(self.side_candidates(routed), routed, left)
-        } else {
-            Sided::default()
-        };
         let (crossings, bends) = if self.bus {
             let lines: Vec<_> = routes.values().map(|points| turns(points)).collect();
             (
@@ -589,7 +494,6 @@ impl Router<'_> {
         };
         Routing {
             routes,
-            candidates,
             refused,
             crossings,
             bends,

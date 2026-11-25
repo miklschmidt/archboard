@@ -10,15 +10,16 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
-use crate::lanes::buses::{Buses, gather};
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chain_kind};
 use crate::lanes::channels::{End, Net, NetId};
-use crate::lanes::jogs::nothing;
-use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
+use crate::lanes::scene::{ItemId, Map, Placement, centre_x};
 pub(crate) use crate::lanes::sides::route_scene;
 use crate::lanes::sides::{Choice, Routing};
 use crate::lanes::spacing::Rim;
 use crate::placed::PlacedEdge;
+
+mod prepared;
+pub(crate) use prepared::{Prepared, RouterSnapshot};
 
 /// Space kept around the drawing.
 pub(crate) const PAGE_MARGIN: f64 = 24.0;
@@ -509,82 +510,15 @@ fn routed_of(
 pub(crate) fn route_once(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
-    (margin, top): (f64, f64),
+    spacing: (f64, f64),
     rim: Option<Rim>,
     (reserve, bus): (bool, bool),
     choice: &Choice,
 ) -> Result<Routing, Map<ItemId, f64>> {
-    let mut track = Router::new(scene);
-    track.bus = bus;
-    let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
-    let chains: Map<String, ChainId> = inner
-        .iter()
-        .map(|line| (line.id.clone(), track.chain_of(line.placed)))
-        .collect();
-    // A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
-    let movable: Vec<ChainId> = inner
-        .iter()
-        .filter(|line| line.enters.is_none() && line.leaves.is_none())
-        .map(|line| chains[&line.id])
-        .collect();
-    let all: Vec<ChainId> = chains.values().copied().collect();
-    track.straighten_lanes(&all);
-    let kinds: Vec<(ChainId, Rc<str>)> = inner
-        .iter()
-        .map(|line| {
-            let chain = chains[&line.id];
-            (
-                chain,
-                chain_kind(&line.kind, track.chain(chain).upward).into(),
-            )
-        })
-        .collect();
-    track.relay_laps(&kinds, &movable);
-    track.straighten_through_labels(&all);
-    let routed = routed_of(&mut track, lines, &inner, &chains);
-    track.mark_sided(&choice.sided, &routed);
-    track.mark_loose(&choice.loose, &routed);
-    let nets: Vec<NetId> = routed
-        .values()
-        .flat_map(|route| route.nets.iter().copied())
-        .collect();
-    let routes: Vec<Vec<NetId>> = routed.values().map(|route| route.nets.clone()).collect();
-    track.bundle_trunks(&nets);
-    let crowded = track.required_port_widths(&nets);
-    if reserve && !crowded.is_empty() {
-        return Err(crowded);
-    }
-    track.assign_ports(&nets);
-    track.slide_labels(&nets);
-    if track.unstrand_lanes(&all) {
-        track.follow_lanes(&nets);
-    }
-    track.assign_ports(&nets);
-    track.pull_onto_ports(&all, &routes, &nets);
-    track.close_jogs(&all, &routes, &nothing);
-    for route in &routes {
-        track.settle_straights(route);
-    }
-    for line in &inner {
-        let nets = routed[&line.id].nets.clone();
-        track.turn_to_wall(line, &nets, routed[&line.id].upward);
-    }
-    track.part_and_close(&all, &routes);
-    let rising: Set<NetId> = routed
-        .values()
-        .filter(|route| route.upward)
-        .map(|route| route.nets[0])
-        .collect();
-    let buses = if bus {
-        gather(&mut track, (&inner, &routed, &chains), &choice.buses)
-    } else {
-        Buses::default()
-    };
-    track.follow_sided();
-    track.space_bands(&nets, &rising, top, rim);
-    let mut routing = track.drawn(&routed, margin);
-    routing.buses = buses;
-    Ok(routing)
+    let prepared = Prepared::new(scene, lines, bus);
+    let post_trunks = prepared.post_trunks(&choice.loose);
+    let pre_gather = prepared.pre_gather(scene, &post_trunks, reserve, choice)?;
+    Ok(prepared.finish(scene, &pre_gather, spacing, rim, choice).0)
 }
 
 #[cfg(test)]

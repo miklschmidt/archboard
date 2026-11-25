@@ -3,15 +3,18 @@
 use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::blocks::assembly::PlacedLine;
 use crate::constants::{BEND_RADIUS, STRAIGHT_RUN, STRAND, approach_of, fans_at_bend};
 use crate::geometry::{Point, Rect, inflate};
 
-use super::geometry::{contains, intersection, length, meets_itself};
+use super::geometry::{contains, length, meets_itself};
 use super::model::Model;
 use super::ports::port;
 use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
+
+mod junction;
+use junction::Junction;
+pub(super) use junction::{Junctions, shared_fragment, shared_junction};
 
 /// The option a line carries when it draws an arrowhead at both ends.
 pub(super) const TWO_WAY: &str = "archboard.relationship.two-way";
@@ -106,6 +109,9 @@ pub(super) struct Probe<'a, 'g> {
     /// Whether the guard keeps the line off the words of the shape and on its own words.
     words: bool,
     junctions: Option<Vec<Junction<'a>>>,
+    /// Scratch buffer holding the current candidate's inked pieces, populated lazily once per
+    /// candidate across all junction and fan obstacle checks.
+    pieces: RefCell<Vec<super::junctions::Piece>>,
     /// The line that refused the last candidate. Candidates of one search share their ends,
     /// so it most likely refuses the next one too, and it is tested first.
     blocker: std::cell::Cell<usize>,
@@ -173,20 +179,26 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .filter(|line| line.id != model.edges[index].id)
                 .map(|line| Junction::new(model, topology, index, line))
                 .collect(),
+            pieces: RefCell::new(Vec::new()),
             blocker: std::cell::Cell::new(0),
         }
     }
     pub(super) fn refusal(&self, points: &[Point]) -> Option<&'static str> {
-        let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
-        let (from, to) = model.ends[index];
+        let (from, to) = self.model.ends[self.index];
         if let Some(reason) = basic(
-            (points, model.ink(index)),
-            shape.endpoints[&from],
-            shape.endpoints[&to],
+            (points, self.model.ink(self.index)),
+            self.shape.endpoints[&from],
+            self.shape.endpoints[&to],
             self.bounds,
         ) {
             return Some(reason);
         }
+        self.refusal_checked(points)
+    }
+
+    /// `refusal` for a candidate already verified with `basic_ok`.
+    pub(super) fn refusal_checked(&self, points: &[Point]) -> Option<&'static str> {
+        let (model, topology, index, shape) = (self.model, self.topology, self.index, self.shape);
         if (self.words.then(|| shape.labels.get(&index)).flatten())
             .is_some_and(|&label| !label_run(points, label))
         {
@@ -197,32 +209,37 @@ impl<'a, 'g> Probe<'a, 'g> {
         let Some(pairs) = self.junctions.as_ref() else {
             return Some("junction");
         };
+        let mut pieces = self.pieces.borrow_mut();
+        pieces.clear();
         let first = self.blocker.get();
-        let refuses = |pair: &Junction<'_>| !pair.clear(points, bounds);
-        if pairs.get(first).is_some_and(refuses) {
+        if pairs
+            .get(first)
+            .is_some_and(|pair| !pair.clear(points, bounds, &mut pieces))
+        {
             return Some("junction");
         }
-        if let Some(at) =
-            (pairs.iter().enumerate()).position(|(at, pair)| at != first && refuses(pair))
+        if let Some(at) = (pairs.iter().enumerate())
+            .position(|(at, pair)| at != first && !pair.clear(points, bounds, &mut pieces))
         {
             self.blocker.set(at);
             return Some("junction");
         }
         let refusal = if let Some(fan) = &self.fan {
-            super::junctions::pieces(points, model.ink(index))
-                .into_iter()
-                .find_map(|piece| {
-                    let obstacles = if piece.ink() > self.body.half {
-                        fan
-                    } else {
-                        &self.body
-                    };
-                    let ends = piece.ends();
-                    obstacles.refusal(&ends).or_else(|| {
-                        (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
-                            .then_some("wall lane")
-                    })
+            if pieces.is_empty() {
+                super::junctions::pieces_into(points, model.ink(index), &mut pieces);
+            }
+            pieces.iter().find_map(|piece| {
+                let obstacles = if piece.ink() > self.body.half {
+                    fan
+                } else {
+                    &self.body
+                };
+                let ends = piece.ends();
+                obstacles.refusal(&ends).or_else(|| {
+                    (piece.ink() > self.body.half && hugs_wall(shape, &ends, piece.ink()))
+                        .then_some("wall lane")
                 })
+            })
         } else {
             self.body.refusal(points)
         };
@@ -264,150 +281,6 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
                 && pair[0].y.min(pair[1].y) <= label.y - 16.0
                 && pair[0].y.max(pair[1].y) >= label.y + label.height + 16.0
     })
-}
-
-struct Junction<'a> {
-    line: &'a PlacedLine,
-    /// How far a candidate's ink reaches along its body and at its cards (`Model::ink`).
-    ours: (f64, f64),
-    /// The line's straight pieces, each with its ink (`junctions::pieces`).
-    theirs: Vec<super::junctions::Piece>,
-    /// How much further than two lone lines' the two lines' ink reaches between them at the most.
-    most: f64,
-    bounds: super::junctions::Envelope,
-    shared: bool,
-    /// Whether the two share their source, and their target.
-    ends: [bool; 2],
-    /// Whether the two share their source and either draws an arrowhead there, and whether
-    /// they share their target.
-    arrows: [bool; 2],
-}
-impl<'a> Junction<'a> {
-    fn new(
-        model: &Model<'_>,
-        topology: &Topology,
-        index: usize,
-        line: &'a PlacedLine,
-    ) -> Option<Self> {
-        let &other = model.edge_index.get(line.id.as_str())?;
-        let source = model.ends[index].0 == model.ends[other].0;
-        let target = model.ends[index].1 == model.ends[other].1;
-        let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
-        Some(Self {
-            line,
-            ours: model.ink(index),
-            theirs: super::junctions::pieces(&line.points, model.ink(other)),
-            most: model.reach(index) + model.reach(other),
-            bounds: super::junctions::Envelope::new(&line.points),
-            shared: topology.memberships[index]
-                .iter()
-                .flatten()
-                .any(|fan| topology.memberships[other].contains(&Some(*fan))),
-            ends: [source, target],
-            arrows: [source && (two_way(index) || two_way(other)), target],
-        })
-    }
-    fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
-        bounds.apart_by(self.bounds, self.most)
-            || ((!self.shared
-                || super::junctions::sharing(
-                    points,
-                    &self.line.points,
-                    self.ends[0],
-                    self.ends[1],
-                ) && super::junctions::readable(
-                    points,
-                    &self.line.points,
-                    self.arrows[0],
-                    self.arrows[1],
-                ))
-                && super::junctions::ordered_pieces(
-                    &super::junctions::pieces(points, self.ours),
-                    (self.bounds, &self.theirs),
-                    self.shared,
-                ))
-    }
-}
-/// The junctions of one line's candidates with every placed route, each route indexed once.
-pub(super) struct Junctions<'a> {
-    /// The junction with each placed route, if the route is a line of the model.
-    pairs: Vec<Option<Junction<'a>>>,
-    /// The route that refused the last candidate, tested first.
-    blocker: std::cell::Cell<usize>,
-}
-impl<'a> Junctions<'a> {
-    pub(super) fn new(
-        model: &Model<'_>,
-        topology: &Topology,
-        index: usize,
-        routes: &'a [PlacedLine],
-    ) -> Self {
-        Self {
-            pairs: (routes.iter())
-                .map(|line| Junction::new(model, topology, index, line))
-                .collect(),
-            blocker: std::cell::Cell::new(0),
-        }
-    }
-    /// Whether a candidate keeps `shared_junction` with every placed route.
-    pub(super) fn clear(&self, points: &[Point]) -> bool {
-        let bounds = super::junctions::Envelope::new(points);
-        let first = self.blocker.get();
-        let refuses = |at: usize| !self.shares(at, points, bounds);
-        if first < self.pairs.len() && refuses(first) {
-            return false;
-        }
-        if let Some(at) = (0..self.pairs.len()).position(|at| at != first && refuses(at)) {
-            self.blocker.set(at);
-            return false;
-        }
-        true
-    }
-    /// `shared_junction` of a candidate, whose envelope is `bounds`, with the placed route at
-    /// `at`.
-    pub(super) fn shares(
-        &self,
-        at: usize,
-        points: &[Point],
-        bounds: super::junctions::Envelope,
-    ) -> bool {
-        self.pairs[at]
-            .as_ref()
-            .is_some_and(|pair| pair.clear(points, bounds))
-    }
-}
-
-pub(super) fn shared_junction(
-    model: &Model<'_>,
-    topology: &Topology,
-    index: usize,
-    points: &[Point],
-    line: &PlacedLine,
-) -> bool {
-    let bounds = super::junctions::Envelope::new(points);
-    // A line far from this one clears it whatever their fans and ends.
-    let spread = model.reach(index)
-        + (model.edge_index.get(line.id.as_str())).map_or(0.0, |&other| model.reach(other));
-    if bounds.apart_by(super::junctions::Envelope::new(&line.points), spread) {
-        return model.edge_index.contains_key(line.id.as_str());
-    }
-    Junction::new(model, topology, index, line).is_some_and(|pair| pair.clear(points, bounds))
-}
-
-pub(super) fn shared_fragment(
-    model: &Model<'_>,
-    edge: usize,
-    points: &[Point],
-    line: &PlacedLine,
-) -> bool {
-    if !intersection(points, &line.points).0 {
-        return true;
-    }
-    let Some(&other) = model.edge_index.get(line.id.as_str()) else {
-        return false;
-    };
-    model.treatments[edge] == model.treatments[other]
-        && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
 /// How many times its direct way a route may run, past the long detour's length: a
@@ -486,12 +359,8 @@ pub(super) fn tails(model: &Model<'_>, index: usize, shape: &Shape) -> Vec<Vec<P
         .collect()
 }
 
-pub(super) fn attached(at: Point, next: Point, bounds: Rect) -> bool {
-    attached_by(at, next, bounds, 0.0)
-}
-
-/// `attached` for a line whose ink reaches `half` to either side: a cable's every strand ends on
-/// the wall, so its middle stands half its width in from each end of the wall.
+/// Whether a line whose ink reaches `half` to either side starts cleanly on a wall of `bounds`:
+/// a cable's every strand ends on the wall, so its middle stands half its width in from each end.
 fn attached_by(at: Point, next: Point, bounds: Rect, half: f64) -> bool {
     let near = |a: f64, b: f64| (a - b).abs() < 0.1;
     if at.x == next.x {
@@ -548,7 +417,46 @@ fn hugs_wall(shape: &Shape, points: &[Point], half: f64) -> bool {
         })
 }
 
-fn basic(
+fn in_bounds(points: &[Point], bounds: Rect) -> bool {
+    points.iter().all(|point| {
+        contains(
+            bounds,
+            Rect {
+                x: point.x,
+                y: point.y,
+                width: 0.0,
+                height: 0.0,
+            },
+        )
+    })
+}
+
+/// Fast boolean equivalent of `basic(...).is_none()`, ordered cheapest and most selective first.
+pub(super) fn basic_ok(
+    (points, ink): (&[Point], (f64, f64)),
+    source: Rect,
+    target: Rect,
+    bounds: Rect,
+) -> bool {
+    points.len() >= 2
+        && in_bounds(points, bounds)
+        && !super::reading::runs_beyond(points, DETOUR_LIMIT)
+        && approaches(points, ink)
+        && turns_clear(points, ink)
+        && points
+            .windows(2)
+            .all(|p| p[0].x == p[1].x || p[0].y == p[1].y)
+        && attached_by(points[0], points[1], source, ink.1)
+        && attached_by(
+            points[points.len() - 1],
+            points[points.len() - 2],
+            target,
+            ink.1,
+        )
+        && !meets_itself(points)
+}
+
+pub(super) fn basic(
     (points, ink): (&[Point], (f64, f64)),
     source: Rect,
     target: Rect,
@@ -580,17 +488,7 @@ fn basic(
     if super::reading::runs_beyond(points, DETOUR_LIMIT) {
         return Some("detour");
     }
-    if !points.iter().all(|point| {
-        contains(
-            bounds,
-            Rect {
-                x: point.x,
-                y: point.y,
-                width: 0.0,
-                height: 0.0,
-            },
-        )
-    }) {
+    if !in_bounds(points, bounds) {
         return Some("bounds");
     }
     None

@@ -121,17 +121,26 @@ fn slot(
     };
     // Where the far ends of a kind's lines stand along the wall, on average.
     let bearing = |kind: &str, lines: &[usize], far: fn(&Model<'_>, usize) -> usize| {
-        let ats: Vec<f64> = (lines.iter())
-            .filter(|&&line| model.treatments[line] == kind)
-            .map(|&line| along(far(model, line)))
-            .collect();
-        ats.iter().sum::<f64>() / ats.len().max(1) as f64
+        let mut sum = 0.0;
+        let mut count = 0usize;
+        for &line in lines {
+            if model.treatments[line] == kind {
+                sum += along(far(model, line));
+                count += 1;
+            }
+        }
+        sum / count.max(1) as f64
     };
-    let by_bearing = |kinds: &mut Vec<&str>,
-                      lines: &[usize],
-                      far: fn(&Model<'_>, usize) -> usize| {
-        kinds.sort_by(|one, other| bearing(one, lines, far).total_cmp(&bearing(other, lines, far)));
-    };
+    let by_bearing =
+        |kinds: &mut Vec<&str>, lines: &[usize], far: fn(&Model<'_>, usize) -> usize| {
+            let mut keyed: Vec<(&str, f64)> = kinds
+                .iter()
+                .map(|&kind| (kind, bearing(kind, lines, far)))
+                .collect();
+            keyed.sort_by(|one, other| one.1.total_cmp(&other.1));
+            kinds.clear();
+            kinds.extend(keyed.into_iter().map(|(kind, _)| kind));
+        };
     by_bearing(&mut heads, incoming, |model, line| model.ends[line].0);
     by_bearing(&mut tails, outgoing, |model, line| model.ends[line].1);
     let mut widths = widths_of(model, incoming, &heads);
@@ -190,23 +199,92 @@ fn centred(at: Rect, index: usize, widths: &[f64]) -> Point {
     }
 }
 
-/// How many of a route's two ends stand off the centred port of the wall they end on.
-pub(super) fn off_centre(model: &Model<'_>, shape: &Shape, edge: usize, points: &[Point]) -> usize {
-    let (from, to) = model.ends[edge];
-    let last = points.len() - 1;
-    [
-        (true, from, points[0], points[1]),
-        (false, to, points[last], points[last - 1]),
-    ]
-    .into_iter()
-    .filter(|&(source, endpoint, at, next)| {
-        let side = wall_of(shape.endpoints[&endpoint], at, next);
-        let centred = side.and_then(|side| port(model, edge, source, side, shape));
-        !centred.is_some_and(|port| {
-            (port.attachment.x - at.x).abs() + (port.attachment.y - at.y).abs() < 0.5
-        })
-    })
-    .count()
+/// The index of a face in a four-wall lookup table.
+fn side_index(side: Side) -> usize {
+    match side {
+        Side::Top => 0,
+        Side::Right => 1,
+        Side::Bottom => 2,
+        Side::Left => 3,
+    }
+}
+
+/// A lazily cached centred port attachment on one wall.
+#[derive(Clone, Copy)]
+enum CachedPort {
+    Unknown,
+    None,
+    At(Point),
+}
+
+/// The endpoints and lazily cached centred port attachments of one line, reused across all
+/// candidate routes ranked for that line.
+pub(super) struct EdgePorts<'a, 'g> {
+    model: &'a Model<'g>,
+    shape: &'a Shape,
+    edge: usize,
+    ends: [(Rect, Point, bool); 2],
+    centred: [[CachedPort; 4]; 2],
+}
+
+impl<'a, 'g> EdgePorts<'a, 'g> {
+    pub(super) fn new(model: &'a Model<'g>, shape: &'a Shape, edge: usize) -> Self {
+        let (from, to) = model.ends[edge];
+        let info = |endpoint: usize| {
+            let at = shape.endpoints[&endpoint];
+            (at, center(at), model.endpoints[endpoint].door)
+        };
+        Self {
+            model,
+            shape,
+            edge,
+            ends: [info(from), info(to)],
+            centred: [[CachedPort::Unknown; 4]; 2],
+        }
+    }
+
+    /// Whether one end of a route stands off the centred port of the wall it ends on.
+    fn end_off_centre(&mut self, source: bool, at: Point, next: Point) -> bool {
+        let end_idx = usize::from(!source);
+        let Some(side) = wall_of(self.ends[end_idx].0, at, next) else {
+            return true;
+        };
+        let slot = &mut self.centred[end_idx][side_index(side)];
+        let cached = match *slot {
+            CachedPort::Unknown => {
+                let computed = match port(self.model, self.edge, source, side, self.shape) {
+                    Some(p) => CachedPort::At(p.attachment),
+                    None => CachedPort::None,
+                };
+                *slot = computed;
+                computed
+            }
+            known => known,
+        };
+        !matches!(
+            cached,
+            CachedPort::At(p) if (p.x - at.x).abs() + (p.y - at.y).abs() < 0.5
+        )
+    }
+
+    /// How many of a route's two ends stand off the centred port of the wall they end on.
+    pub(super) fn off_centre(&mut self, points: &[Point]) -> usize {
+        let last = points.len() - 1;
+        usize::from(self.end_off_centre(true, points[0], points[1]))
+            + usize::from(self.end_off_centre(false, points[last], points[last - 1]))
+    }
+
+    /// Whether a line meets each door it joins on a side that faces the line's far end. A line
+    /// that met a door on another side would loop round the door, or reach it from behind.
+    pub(super) fn faces_far_end(&self, points: &[Point]) -> bool {
+        let last = points.len() - 1;
+        let [
+            (from_box, from_center, from_door),
+            (to_box, to_center, to_door),
+        ] = self.ends;
+        (!from_door || facing(from_box, to_center, points[0], points[1]))
+            && (!to_door || facing(to_box, from_center, points[last], points[last - 1]))
+    }
 }
 
 /// The wall of a box that a route's end leaves from toward its next point.
@@ -223,32 +301,6 @@ fn wall_of(at: Rect, end: Point, next: Point) -> Option<Side> {
     } else {
         None
     }
-}
-
-/// Whether a line meets each door it joins on a side that faces the line's far end. A line
-/// that met a door on another side would loop round the door, or reach it from behind.
-pub(super) fn faces_far_end(
-    model: &Model<'_>,
-    shape: &Shape,
-    edge: usize,
-    points: &[Point],
-) -> bool {
-    let (from, to) = model.ends[edge];
-    let last = points.len() - 1;
-    [
-        (from, to, points[0], points[1]),
-        (to, from, points[last], points[last - 1]),
-    ]
-    .into_iter()
-    .all(|(at, far, attachment, next)| {
-        !model.endpoints[at].door
-            || facing(
-                shape.endpoints[&at],
-                center(shape.endpoints[&far]),
-                attachment,
-                next,
-            )
-    })
 }
 
 /// Whether a line that leaves a box from one point toward the next heads for a far point.

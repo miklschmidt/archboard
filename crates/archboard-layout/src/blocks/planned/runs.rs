@@ -268,29 +268,68 @@ fn ordered_end(frozen: &Frozen, pieces: impl Iterator<Item = usize>, source: boo
 /// The final drawing still passes the complete freeze before emission.
 pub(super) fn accepts(model: &Model<'_>, lines: &[PlacedLine], next: &PlacedLine) -> bool {
     let edge = model.edge_index[next.id.as_str()];
+    let mut strokes = Vec::new();
     next.points.windows(2).all(|pair| {
         let horizontal = pair[0].y == pair[1].y;
-        let coordinate = |p: Point| if horizontal { p.x } else { p.y };
-        let (start, end) = (coordinate(pair[0]), coordinate(pair[1]));
-        let (low, high) = (start.min(end), start.max(end));
-        let mut strokes = Vec::new();
-        for line in lines {
-            for other in line
-                .points
-                .windows(2)
-                .filter(|other| same_axis(pair, other, horizontal))
-            {
-                let (a, b) = (coordinate(other[0]), coordinate(other[1]));
-                strokes.push((
-                    model.edge_index[line.id.as_str()],
-                    a.min(b),
-                    a.max(b),
-                    a < b,
-                ));
-            }
+        let (start, end) = if horizontal {
+            (pair[0].x, pair[1].x)
+        } else {
+            (pair[0].y, pair[1].y)
+        };
+        let (low, high, forward) = (start.min(end), start.max(end), start < end);
+        strokes.clear();
+        if !collect_overlapping(
+            model,
+            lines,
+            pair,
+            (horizontal, low, high, forward),
+            &mut strokes,
+        ) {
+            return false;
         }
-        accepts_spans(model, edge, (low, high, start < end), &strokes)
+        strokes.is_empty() || accepts_spans(model, edge, (low, high, forward), &strokes)
     })
+}
+
+fn overlap_span(
+    pair: &[Point],
+    other: &[Point],
+    (horizontal, low, high): (bool, f64, f64),
+) -> Option<(f64, f64, bool)> {
+    if !same_axis(pair, other, horizontal) {
+        return None;
+    }
+    let (a, b) = if horizontal {
+        (other[0].x, other[1].x)
+    } else {
+        (other[0].y, other[1].y)
+    };
+    let (lo, hi) = (a.min(b), a.max(b));
+    (lo.max(low) < hi.min(high)).then_some((lo, hi, a < b))
+}
+
+fn collect_overlapping(
+    model: &Model<'_>,
+    lines: &[PlacedLine],
+    pair: &[Point],
+    (horizontal, low, high, forward): (bool, f64, f64, bool),
+    strokes: &mut Vec<(usize, f64, f64, bool)>,
+) -> bool {
+    for line in lines {
+        let mut other_edge = None;
+        for other in line.points.windows(2) {
+            let Some((lo, hi, other_forward)) = overlap_span(pair, other, (horizontal, low, high))
+            else {
+                continue;
+            };
+            if other_forward != forward {
+                return false;
+            }
+            let idx = *other_edge.get_or_insert_with(|| model.edge_index[line.id.as_str()]);
+            strokes.push((idx, lo, hi, other_forward));
+        }
+    }
+    true
 }
 fn same_axis(one: &[Point], other: &[Point], horizontal: bool) -> bool {
     if horizontal {
@@ -329,6 +368,29 @@ mod tests {
     use super::*;
     use crate::graph::Node;
     use serde_json::json;
+
+    #[test]
+    fn a_point_on_a_collinear_route_does_not_make_an_opposing_run() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a"},{"id":"b"},{"id":"x"},{"id":"y"}],
+            "edges":[{"id":"ax","sources":["a"],"targets":["x"]},
+                {"id":"by","sources":["b"],"targets":["y"]}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let at = |x| Point { x, y: 50.0 };
+        let line = PlacedLine {
+            id: "ax".into(),
+            points: vec![at(0.0), at(100.0)],
+            label: None,
+        };
+        let point = PlacedLine {
+            id: "by".into(),
+            points: vec![at(50.0), at(50.0)],
+            label: None,
+        };
+        assert!(accepts(&model, std::slice::from_ref(&point), &line));
+        assert!(accepts(&model, std::slice::from_ref(&line), &point));
+    }
 
     #[test]
     fn three_collinear_routes_need_one_common_endpoint_for_the_entire_trunk() {
