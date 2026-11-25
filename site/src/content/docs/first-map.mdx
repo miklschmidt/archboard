@@ -45,8 +45,8 @@ Start with the top-level responsibilities a new engineer needs to learn first ra
 ```text title="Ask your agent" wrap
 Map this repository with Archboard. Start with the five to nine root modules that a new
 engineer must know: what each one is responsible for, and the relationships between them.
-Bind each module to the directory or the symbol that implements it, and mark systems that
-we do not own as external. Then run archboard check and fix what it finds.
+Bind each owned module to the code that implements it. Mark systems outside our ownership
+as external. Then run archboard check and fix what it finds.
 ```
 
 Watch the model update in your browser while the agent works. Run `archboard status` to print the local server URL, open it, and pick your repository. Open panes show what the agent is currently claiming and why, and the agent can focus a pane on the module it is discussing. If no browser tab is open, `browser show` opens the model in your default browser:
@@ -79,11 +79,12 @@ archboard check
 
 ### What makes a good map
 
-- **Read the active vocabulary first.** Run `archboard model config` to see the vault's configured module kinds, relationship kinds, groups, lenses, and code-check rules.
-- **Bind modules to their owning code.** Bind root modules and containers to their directory or entry file (such as `index.ts`, `__init__.py`, or `mod.rs`) so code inspection can measure their interfaces and depth, and bind smaller parts to a specific file or symbol when needed.
-- **Reserve `external` for unowned systems.** Mark third-party services or unowned packages `external` and leave them unbound, except for vendored code inside a checkout Archboard reads.
-- **Match kind and effect to the mechanism.** Pick each relationship's `kind` by how it travels (`sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, `dependency`, or a vault-added kind) and its `effect` (`mutation`, `query`, or `compute`, omitting `effect` on a declared-only `dependency`). The active vault policy controls which code or configuration evidence proves each kind: by default, `sync`, `async`, and `render` expect a runtime call, while `dependency` also accepts imports and build requirements.
-- **Draw call direction, not call order.** Point each relationship from caller to callee. If one module calls two other modules in turn, draw two edges from the caller rather than a chain between the callees, and keep return values inside sequence flows.
+- Run [`archboard model config`](../reference/cli/model/#model-config) to see the vault's active module kinds, relationship kinds, groups, lenses, and code-check rules.
+- Bind each root code module or code container to its directory or entry file. Files such as `index.ts`, `__init__.py`, and `mod.rs` stand for their directories when the code check measures module interfaces and depth. Bind a smaller part to its file or symbol when that part owns a specific implementation.
+- Mark systems, services, or packages outside the repository's ownership boundary `external`. Leave them unbound unless Archboard can read their vendored code in a checkout.
+- Choose a relationship's `kind` by how it travels. The built-in kinds are `sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, and `dependency`. A vault can add its own kinds. Choose the `effect` by what the target does. Use `mutation` for a possible side effect, `query` for a read of held or fetched state, and `compute` for work based only on the inputs. Omit the effect for a `dependency` that only declares a requirement.
+- The vault's policy tells [`archboard check code`](../reference/cli/check/#check-code) what evidence each kind accepts. By default, `sync`, `async`, and `render` accept `call` evidence, which includes runtime uses such as a value read or component render. `dependency` accepts `call`, `configured-path`, `import`, and `build-dependency` evidence.
+- Draw relationships from source to target, such as from a caller to its callee or a producer to a queue. If one module calls two others in turn, draw both relationships from that module. Record the order of calls and any returns in a sequence flow.
 
 ## 3. Document three flows
 
