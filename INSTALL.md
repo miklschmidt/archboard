@@ -304,7 +304,8 @@ do not want this, set `ARCHBOARD_NO_AUTOSTART=1`. `archboard start` starts the
 server in both cases. The server uses the environment of the command that
 started it.
 
-The server of a clone listens on <http://127.0.0.1:3000>. A release server
+The server of a clone listens on <http://127.0.0.1:3000> in its main checkout.
+A linked worktree uses its own port between 10000 and 19999. A release server
 listens on <http://archboard.localhost:4242>. To use another address, set
 `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
@@ -366,7 +367,7 @@ archboard model init --name Payments --operation-id initialize-payments --writer
 For a vault outside a source repository, run `model archive-init` before authoring or retention.
 Follow [the consumer skill](skills/archboard/SKILL.md) for claims, proposal creation, comparison, and explicit adoption.
 Use `check code --state <proposal-id>` for source evidence.
-Make sure that `archboard check code` reports no `language-server-missing` for the languages of the repository.
+Review that result for `language-server-missing` on the code the proposal binds.
 Use `check embeds` for tracked rendered artifacts.
 
 ## 7. Run the check as a gate
@@ -480,7 +481,7 @@ A checkpoint preserves exact architecture inputs and metadata in the independent
 It changes neither source HEAD nor the source index.
 A checkpoint does not adopt architecture or retain source-code objects automatically.
 
-Use [canonical history](skills/archboard/references/canonical-models.md#retain-an-exact-local-reading) before sharing or recording a reading.
+Use [canonical history](skills/archboard/references/history.md#retain-an-exact-local-reading) before sharing or recording a reading.
 Retain the complete required dependency history.
 Configure an explicit remote and archive ref through `model publication-configure` before publication.
 Use `model publish` to transfer that history and `model fetch` to recover unavailable checkpoints.

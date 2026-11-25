@@ -35,7 +35,8 @@ Comparisons retain separate selected and comparison revisions.
 Checkpoints retain exact architecture without selecting current.
 An author uses complete revisions, explicit claims, public intents, and configured Git signing.
 
-The author never patches live architecture files directly.
+The author changes model documents through the canonical CLI.
+When the scenario declares `config-untouched`, require an exact match between the vault configuration bytes before and after the run.
 Only explicit requests authorize adoption or migration.
 A legacy refusal requires inventory, owner identity choices, preview, and explicit installation.
 Names and bindings do not establish shared identity.
@@ -48,25 +49,25 @@ It authors no architecture.
 
 ## What the skill adds unprompted
 
-Use the installed skill catalogue when the source establishes a feature.
-Judge the same stable feature keys across retained reports.
+Use the **Source evidence catalogue** in the candidate skill's `SKILL.md` to find the expected evidence for each feature the source establishes.
+Follow its authoring reference for the details. Use these same row keys across retained reports.
 
-| Row            | Canonical evidence                                                |
-| -------------- | ----------------------------------------------------------------- |
-| `external`     | Mark a module outside the described ownership boundary.           |
-| `binding`      | Bind a module to the source that implements its responsibility.   |
-| `containment`  | State parent identities without a fixed level.                    |
-| `relationship` | Author each relationship on its source module.                    |
-| `traffic`      | State meaningful effective traffic properties.                    |
-| `emphasis`     | Mark the main exchange when it helps the reading.                 |
-| `repeat`       | Record repeated exchanges on authored steps.                      |
-| `note`         | Attach relevant evidence or constraints to a step.                |
-| `groups`       | Apply configured group identities.                                |
-| `flow`         | Author an independent collection and complete exchange.           |
-| `view`         | Select a content-free reading or imported bookmark.               |
-| `walkthrough`  | Author ordered beats with exact reading targets.                  |
-| `drillDown`    | Follow an explicit model reference or recursive module scope.     |
-| `description`  | Explain responsibilities and significant architectural decisions. |
+| Row            |
+| -------------- |
+| `external`     |
+| `binding`      |
+| `containment`  |
+| `relationship` |
+| `traffic`      |
+| `emphasis`     |
+| `repeat`       |
+| `note`         |
+| `groups`       |
+| `flow`         |
+| `view`         |
+| `walkthrough`  |
+| `drillDown`    |
+| `description`  |
 
 ## What the run inherited
 

@@ -5,6 +5,7 @@ Before preparing a request, print its schema with the installed archboard CLI.
 The CLI renders them from its own validation, so they match the program that reads and writes the vault.
 Neither command needs a server or a vault. Do not copy the schemas into the repository.
 Use [canonical models](canonical-models.md) for operations and semantic rules beyond JSON structure.
+Use [authoring](authoring.md#map-a-codebase-from-scratch) to inspect the active policy and choose kinds, effects, bindings, and flows.
 
 | Name               | Use                                                     |
 | ------------------ | ------------------------------------------------------- |

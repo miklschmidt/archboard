@@ -66,13 +66,11 @@ const EvidenceKindSchema = z.enum([
 	"build-dependency",
 	"provisioning",
 ]);
-/**
- * What a relationship does at its target: it changes state or has an effect
- * outside the caller (`mutation`), it reads held or fetched state (`query`), or
- * its answer follows from what it hands over alone (`compute`). The kind says
- * how a relationship travels and the effect what it does (TASK-663).
- */
-const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]);
+/** What an operation does at its target (ADR 0094). */
+const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]).meta({
+	description:
+		"What an operation does at its target. A `mutation` can change state or have an external effect. A `query` reads held or fetched state. A `compute` depends only on inputs from the caller. Current module files require an effect for each relationship except a `dependency` that only declares a requirement.",
+});
 /**
  * What a line's dash and head say it does: its effect, or `declared` for a
  * dependency that states none. A reader hides relationships by these tokens.
@@ -90,7 +88,7 @@ const EvidenceListSchema = z
 	.meta({
 		uniqueItems: true,
 		description:
-			"The evidence kinds that prove a relationship of this kind to `archboard check code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
+			"The evidence kinds `archboard check code` accepts for this relationship kind (ADR 0046). If the list is absent, every evidence kind is accepted. The check still reports calls on dependencies.",
 	});
 /**
  * One relationship kind as a vault writes it. The kind is the color of its
@@ -204,10 +202,17 @@ function vocabularyShape<Kinds extends z.ZodType>(
 		nodeKinds: z
 			.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
 			.refine((values) => Object.keys(values).length > 0, "Define at least one node kind")
-			.meta({ minProperties: 1 }),
+			.meta({
+				minProperties: 1,
+				description:
+					"Module kinds available in this vault, keyed by stable ID with display name, RemixIcon name, and optional palette color.",
+			}),
 		relationshipKinds,
 		/** Groups nodes may belong to, by stable id. None by default. */
-		groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
+		groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}).meta({
+			description:
+				"Cross-cutting groups modules may belong to, keyed by stable ID with display name and required palette color. None by default.",
+		}),
 		codeCheck: CodeCheckPolicySchema.optional().meta({
 			description:
 				"What the code check fails on beyond its warnings, and the level of each module-depth finding. Without it, every module-depth finding keeps its built-in level and no gate is on.",

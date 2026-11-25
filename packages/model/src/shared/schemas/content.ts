@@ -19,7 +19,9 @@ import { z } from "zod";
 const MAX_EDGE_LABEL = 60;
 
 /** Author-controlled position among the nodes or relationships of one variant. */
-const SubjectOrderSchema = z.int().nonnegative();
+const SubjectOrderSchema = z.int().nonnegative().meta({
+	description: "Non-negative integer controlling sibling presentation order within a model state.",
+});
 
 /**
  * Effective traffic speed when an author enables traffic without stating one,
@@ -33,7 +35,9 @@ const DEFAULT_TRAFFIC_SPEED = 80;
 const DEFAULT_TRAFFIC_VOLUME = 1;
 
 /** What one relationship carries, stated once for both spellings of an edge. */
-const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL);
+const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL).meta({
+	description: "Short phrase naming what the relationship carries or asks for (max 60 characters).",
+});
 
 /**
  * Illustration-only traffic on a relationship. Presence enables motion;
@@ -41,10 +45,19 @@ const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL);
  */
 const EdgeTrafficSchema = z
 	.object({
-		speed: z.number().finite().positive().default(DEFAULT_TRAFFIC_SPEED),
-		volume: z.number().finite().positive().default(DEFAULT_TRAFFIC_VOLUME),
+		speed: z.number().finite().positive().default(DEFAULT_TRAFFIC_SPEED).meta({
+			description:
+				"Requested pulse speed in diagram units per second. The renderer scales it and clamps it to a minimum and maximum.",
+		}),
+		volume: z.number().finite().positive().default(DEFAULT_TRAFFIC_VOLUME).meta({
+			description:
+				"Requested pulses per second. The renderer adjusts the spacing to fit the line and keep pulses apart.",
+		}),
 	})
-	.strict();
+	.strict()
+	.meta({
+		description: "Adds a stream of illustrative pulses to the relationship in animated views.",
+	});
 type EdgeTraffic = z.infer<typeof EdgeTrafficSchema>;
 
 /**

@@ -6,23 +6,23 @@ description: Build an initial architecture model, three sequence flows, and an o
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 
-Coding agents lose their understanding of a codebase when a session ends. This guide walks through creating a persistent architecture model in about two hours, pairing a coding agent with an engineer who knows the system.
+Coding agents lose their understanding of a codebase when a session ends. This guide walks through creating a persistent architecture model by pairing a coding agent with an engineer who knows the system.
 
 ## Prerequisites
 
 - A local clone of a repository your team owns.
 - Archboard installed (see [Install and set up](../install/)).
 - Codex or Claude Code on your `PATH` to read the codebase and write the model.
-- A Codex sign-in, required only for voice narration and video recording in step 4.
+- An Archboard Codex sign-in if you use the browser agent dock, narration, or video recording.
 - An engineer who knows the system and can verify the agent's output. The agent extracts structure from code, and the engineer validates boundaries and intent.
 
-| Step                                | Time   | Output                                            |
-| ----------------------------------- | ------ | ------------------------------------------------- |
-| 1. Initialize the repository        | 15 min | Vault, skills, and language servers configured    |
-| 2. Draw the first map               | 40 min | Root modules bound to source code                 |
-| 3. Document three flows             | 30 min | Three sequence diagrams backed by source anchors  |
-| 4. Create an onboarding walkthrough | 20 min | Narrated walkthrough and optional video recording |
-| 5. Decide what fails CI             | 15 min | List of finding codes that block pull requests    |
+| Step                                | Output                                            |
+| ----------------------------------- | ------------------------------------------------- |
+| 1. Initialize the repository        | Vault, skills, and language servers configured    |
+| 2. Draw the first map               | Root modules bound to source code                 |
+| 3. Document three flows             | Three sequence diagrams backed by source anchors  |
+| 4. Create an onboarding walkthrough | Narrated walkthrough and optional video recording |
+| 5. Decide what fails CI             | List of finding codes that block pull requests    |
 
 ## 1. Initialize the repository
 
@@ -31,7 +31,7 @@ cd ~/Projects/payments-api
 archboard init
 ```
 
-`archboard init` installs the `archboard`, `archboard-pr`, `archboard-plan`, and `archboard-deepen` skills, creates the vault, and registers the checkout. It then launches your agent to configure language servers. Once the agent finishes, commit `.archboard`:
+`archboard init` sets up the `archboard`, `archboard-pr`, `archboard-plan`, and `archboard-deepen` skills. It creates a vault with an empty model and registers the checkout. In a terminal it asks whether to install the skills and which agent to launch for language-server setup. If an agent runs the command without a terminal, the output gives it the setup prompt. Once that setup is complete, commit `.archboard`.
 
 ```bash
 git add .archboard
@@ -43,17 +43,16 @@ git commit -m "docs(architecture): add the Archboard vault"
 Start with the top-level responsibilities a new engineer needs to learn first rather than mapping every file. Give your agent this prompt:
 
 ```text title="Ask your agent" wrap
-Map this repository with Archboard. Start with the five to nine root modules that a new
-engineer must know: what each one is responsible for, and the relationships between them.
-Bind each module to the directory or the symbol that implements it, and mark systems that
-we do not own as external. Then run archboard check and fix what it finds.
+Map this repository in an Archboard proposal. Start with the root modules a new engineer
+must know. Explain each one's responsibility and its relationships. Bind each owned module
+to the code that implements it, mark systems outside our ownership as external, and run
+the checks against the proposal. Give me the proposal ID so I can review the map.
 ```
 
-Watch the model update in your browser while the agent works. Run `archboard status` to print the local server URL, open it, and pick your repository. Open panes show what the agent is currently claiming and why, and the agent can focus a pane on the module it is discussing. If no browser tab is open, `browser show` opens the model in your default browser:
+Run `archboard start` and open the URL it reports. Select your repository, then select the draft in History. To open the draft at a specific module in pane A, pass the proposal ID and the module's name or ID.
 
 ```bash
-archboard status
-archboard browser show --module "<module>"
+archboard browser show --pane A --state "<proposal-id>" --module "<module>"
 ```
 
 Review the initial model with an engineer who knows the codebase. Check three things:
@@ -66,16 +65,27 @@ Review the initial model with an engineer who knows the codebase. Check three th
 
 </Steps>
 
-Run `archboard check` after each round. Every warning identifies the affected module or relationship along with the supporting file and line number:
+After each round, run the checks against the draft. The semantics and code checks read the selected proposal. The embeds check uses the recipes stored in tracked Archboard images.
 
 ```bash
-archboard check
+archboard check --state "<proposal-id>"
 ```
 
 <Aside type="tip" title="Start small">
 	Seven clear modules are more useful than forty granular ones. You can decompose any module into
 	child parts later, and the code check validates bindings at every level.
 </Aside>
+
+### What makes a good map
+
+- Run [`archboard model config`](../reference/cli/model/#model-config) to see the vault's active module kinds, relationship kinds, groups, lenses, and code-check rules.
+- Bind each code container to the directory that holds its parts. A leaf module can bind a directory or a recognized entry file such as `index.ts`, `__init__.py`, or `mod.rs` so the code check measures its interface and depth. Bind a smaller part to its file or symbol when that part owns a specific implementation.
+- Mark systems, services, or packages outside the repository's ownership boundary `external`. Leave them unbound unless Archboard can read their vendored code in a checkout.
+- Choose a relationship's `kind` by how it travels. The built-in kinds are `sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, and `dependency`. A vault can add its own kinds. Choose the `effect` by what the target does. Use `mutation` for a possible side effect, `query` for a read of held or fetched state, and `compute` for work based only on the inputs. Omit the effect for a `dependency` that only declares a requirement.
+- The vault's policy tells [`archboard check code`](../reference/cli/check/#check-code) what evidence each kind accepts. By default, `sync`, `async`, and `render` accept `call` evidence, which includes runtime uses such as a value read or component render. `dependency` accepts `call`, `configured-path`, `import`, and `build-dependency` evidence. When the check finds runtime use on a dependency, it reports [`DEPENDENCY_CALLED`](../reference/findings/#dependency-called) so you can describe the operation's kind and effect.
+- Draw relationships from source to target, such as from a caller to its callee or a producer to a queue. Use the parts that perform the work as endpoints when a module has parts. If one module calls two others in turn, draw both relationships from that module. Record the order of calls and any returns in a sequence flow.
+
+Once the map matches the implementation, ask your agent to adopt the proposal as Current. The following steps build on that state.
 
 ## 3. Document three flows
 
@@ -86,9 +96,10 @@ A flow records a single request, background job, or event as an ordered sequence
 - A background job or failure path that pages on-call engineers.
 
 ```text title="Ask your agent" wrap
-Add a flow for what happens when a customer pays, from the first request to the receipt.
-Back every message with the line of source that sends it, then read the source again for
-retries, fixed counts and calls that a module makes to itself.
+Add a flow named "Pay for an order" for what happens when a customer pays, from the first
+request to the receipt. Summarize what the flow does and why it matters.
+Anchor each source-backed message to the repository, file, and symbol that shows it.
+Read the source again for retries, fixed counts, and calls that a module makes to itself.
 ```
 
 Render each flow as a sequence diagram:
@@ -102,9 +113,9 @@ archboard model render --flow "Pay for an order" --grammar sequence --out docs/a
 A walkthrough steps through a series of readings (beats), each with a title and narrative. For onboarding, start with two modules, add more on each beat until the full path is visible, stop at the main failure point, and finish with the key takeaway.
 
 ```text title="Ask your agent" wrap
-I am new here. Make an Archboard walkthrough of what happens when a customer pays, in five
-or six beats. Start with two modules and add a few at each beat. Stop at the place where it
-fails most often, and end on the one thing I must remember.
+I am new here. Make an Archboard walkthrough named "How a customer pays" in five or six beats.
+Start with two modules and add a few at each beat. Stop at the place where it fails most often.
+End on the one thing I must remember.
 ```
 
 Open the walkthrough in the browser and click **Narrate** to play Codex voice narration for each beat. To export a video, save a checkpoint first, then record from that checkpoint. Pass the `revision.digest` from `archboard model read` to `--expect-revision`, and pass the checkpoint ID returned by `model retain` to `model record`:
@@ -125,8 +136,8 @@ archboard check
 
 Classify each finding code into one of three categories:
 
-- **Fail CI.** Block pull requests whenever this finding appears. [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn) and [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) are common first choices.
-- **Report only.** Show the finding on pull requests without failing the job by adding it to the check Action's [`allow-codes`](../reference/actions/#check-allow-codes) input.
+- **Fail CI.** The check Action blocks on warnings and semantic diagnostics by default. Warnings such as [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) can block pull requests.
+- **Report only.** Findings at information level already appear without failing the job. To report a warning or semantic diagnostic without failing the job, add its code to the check Action's [`allow-codes`](../reference/actions/#check-allow-codes) input.
 - **Fix the model.** The finding caught a real mismatch in the model. Fix it now.
 
 Save these decisions in the pull request that adds the vault or in your team docs:
