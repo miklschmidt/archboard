@@ -232,6 +232,15 @@ describe("pane-reading resolution", () => {
 		expect(merged.page).toBe("about");
 		expect(merged.onlyKinds).toEqual(["http"]);
 		expect(merged.hideKinds).toBeUndefined();
+		const narrowed = {
+			...current,
+			display: { ...current.display!, hideEffects: ["query" as const] },
+		};
+		const byEffect = mergeKeptReading({ keep: true, onlyEffects: ["mutation"] }, narrowed);
+		expect(byEffect.hideKinds).toEqual(["dependency"]);
+		expect(byEffect.hideEffects).toBeUndefined();
+		const byKind = mergeKeptReading({ keep: true, onlyKinds: ["http"] }, narrowed);
+		expect(byKind.hideEffects).toEqual(["query"]);
 	});
 
 	test("resolves an ephemeral flowchart with canonical and synthetic participants", () => {

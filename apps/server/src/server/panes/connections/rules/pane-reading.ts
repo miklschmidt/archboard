@@ -112,10 +112,16 @@ function mergeKeptReading(request: Reading, current: CapturedArchitecture | null
 		...(switchesFilters || current.reading.lens === undefined
 			? {}
 			: { lens: current.reading.lens }),
-		...(switchesFilters || incoming.hideKinds !== undefined || !disp?.hideKinds?.length
+		...(incoming.lens !== undefined ||
+		incoming.onlyKinds !== undefined ||
+		incoming.hideKinds !== undefined ||
+		!disp?.hideKinds?.length
 			? {}
 			: { hideKinds: disp.hideKinds }),
-		...(switchesFilters || incoming.hideEffects !== undefined || !disp?.hideEffects?.length
+		...(incoming.lens !== undefined ||
+		incoming.onlyEffects !== undefined ||
+		incoming.hideEffects !== undefined ||
+		!disp?.hideEffects?.length
 			? {}
 			: { hideEffects: disp.hideEffects }),
 		...(switchesBehavior || switchesStructural ? {} : { grammar: current.reading.grammar }),
