@@ -15,7 +15,7 @@ Support each fact with its subjects and source evidence. Leave the judgment to t
 | Which modules change often or together?        | `model locality`                                  |
 | Did the branch stay within its proposal?       | `model footprint --base <ref> --state <proposal>` |
 
-Each read accepts `--state`. `model inspect` also accepts `--checkpoint`.
+Each read accepts `--state` or an exact `--checkpoint`.
 Inspect and compare write prose to standard error and JSON to standard output.
 
 ## Interface
@@ -89,8 +89,8 @@ A footprint compares branch changes with modeled subjects.
 `model footprint --base <ref>` reads from the merge base to HEAD.
 `--head <ref>` selects another end. Without `--state`, the footprint reads the current state, and the result is `changed`.
 If the head adopted that current state, because its current state differs from the merge base's, the footprint reads it as a proposal against the merge base's current state. A proposal that a branch drafts and adopts before it merges stays the plan of that branch.
-If the vault's repository resolves the head, the command reads the vault as that head holds it, so `--state` names a proposal of that branch.
-`--model-at checkout` reads the vault on disk instead, for a proposal that you edit and did not commit to the head.
+If you pass `--head` and the vault's repository resolves it, the command reads the vault as that ref holds it. Use `--state` to select a proposal from that ref.
+Without `--head`, the command reads the vault on disk. Use `--model-at checkout` with `--head` to read a local proposal while comparing against that source ref.
 `vaultRead` names the vault that the command read: `{"at":"checkout"}`, or `{"at":"ref"}` with the ref and its commit.
 With a proposal, it reports:
 
@@ -133,7 +133,7 @@ A C function macro is a function, and a Swift struct is a class.
 `MODULE_SHALLOW` judges the module as a whole, and is a warning on every module.
 A vault that sets it to `information` with `codeCheck.rules` is in debt mode: `archboard check code --fail-shallow-modules` makes it a warning on the modules that the branch touched since its base, uncommitted changes included.
 The per-name warnings below fail the check on every module, as every warning does.
-`--base <ref>` names the base. Without it, the default base decides.
+`--base <ref>` names the base. The default is the branch that `origin/HEAD` points to, with `main` as the fallback.
 A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
 The vault policy's `codeCheck.rules` sets a module-depth code to `information` or `off` for the whole repository, and a code without a rule keeps its built-in level.
 A rule is the repository owner's decision, so leave the rules as they are and clear the finding at its seam.
