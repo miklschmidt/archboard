@@ -265,6 +265,43 @@ function apart(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly num
 }
 
 /**
+ * The point on a box nearest to a point.
+ * @param point The point.
+ * @param box The box: left, top, width and height.
+ * @returns The point on the box.
+ */
+function meetBox(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly number[]): Point {
+	return {
+		x: Math.min(x + width, Math.max(x, point.x)),
+		y: Math.min(y + height, Math.max(y, point.y)),
+	};
+}
+
+/**
+ * Extend one end of a route piece flush onto its card's box. The renderer trims painted strokes
+ * back to leave room for head and tail marks; the hero drops those marks and plugs each beam
+ * directly into its tile's side.
+ * @param piece The piece of the route holding that end.
+ * @param box The card's box.
+ * @param atEnd Whether to extend the end (`true`) or the start (`false`) of `piece`.
+ */
+function plugEnd(piece: Point[], box: readonly number[], atEnd: boolean): void {
+	const tip = atEnd ? piece.at(-1) : piece[0];
+	const prev = atEnd ? piece.at(-2) : piece[1];
+	if (!tip || !prev) return;
+	const edge = meetBox(tip, box);
+	if (Math.hypot(edge.x - tip.x, edge.y - tip.y) < 1e-4) return;
+	if (goesOn(prev, tip, edge)) {
+		if (atEnd) piece[piece.length - 1] = edge;
+		else piece[0] = edge;
+	} else if (atEnd) {
+		piece.push(edge);
+	} else {
+		piece.unshift(edge);
+	}
+}
+
+/**
  * Drop groups whose roles the hero draws itself (lines, junctions, traffic and shadows), walking
  * into nested groups such as the outer `move` group.
  * @param items The scene items.
@@ -325,11 +362,16 @@ async function hero() {
 		// A route runs from its source to its target, so its light travels the way the line points.
 		const first = pieces[0]?.[0];
 		const last = pieces.at(-1)?.at(-1);
+		const source = cards[from]?.box ?? [];
 		const target = cards[to]?.box ?? [];
 		if (first && last && apart(first, target) < apart(last, target)) {
 			pieces.reverse();
 			for (const piece of pieces) piece.reverse();
 		}
+		const firstPiece = pieces[0];
+		const lastPiece = pieces.at(-1);
+		if (firstPiece) plugEnd(firstPiece, source, false);
+		if (lastPiece) plugEnd(lastPiece, target, true);
 		const facts = (typeof group.role === "object" ? group.role.facts : undefined) as
 			| { appearance?: { color?: string; dash?: string } }
 			| undefined;
