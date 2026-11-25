@@ -1,7 +1,8 @@
 //! The picture, every container and every group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
-//! block into a cluster, so each block holds cards alone or blocks alone.
+//! block into a cluster, so each block holds cards alone or blocks alone, except
+//! in a Lanes drawing, which ranks those cards with the blocks (`nested.rs`).
 //! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
@@ -215,6 +216,10 @@ pub(crate) struct BlockTree {
     pub exits: Map<String, Side>,
     /// Whether this candidate compares all wraps and geometric packings.
     pub expanded: bool,
+    /// Whether this layout is a Lanes drawing, which Lanes lays out its own way: its cycles turn
+    /// the fewest lines, its page holds every line, and its parent ranks each container by its
+    /// ports (`fields.rs`). Blocks' own fallback keeps the Blocks way.
+    pub lanes: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
     pub(super) fanouts: Set<(BlockId, String)>,
@@ -227,6 +232,8 @@ pub(crate) struct BlockTree {
 pub(crate) struct Kept {
     /// Try the wider packing and axial frame approaches as a complete candidate.
     pub expanded: bool,
+    /// The layout is a Lanes drawing (`BlockTree::lanes`).
+    pub lanes: bool,
     /// The wall each port moves to, keyed by `exit_key` (`sides.rs`).
     pub exits: Map<String, Side>,
     /// The ports each block holds in an order on a face, keyed `block|face`.
@@ -312,6 +319,7 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             expanded: kept.expanded,
+            lanes: kept.lanes,
             feedback: Set::default(),
             fanouts: Set::default(),
             orders: kept.orders,

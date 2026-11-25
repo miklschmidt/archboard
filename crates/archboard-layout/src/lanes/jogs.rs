@@ -4,19 +4,21 @@
 //! lanes still reads as a kink in one line rather than a route, and is closed
 //! the same way. Each such step is closed by moving one of its ends onto the
 //! other's column where that end can move without crowding anything: a card's
-//! own port along its face, a run of lanes onto a free column, or a label box
-//! clear of the rest of its band. A move that would bend a line that ran
+//! own port along its face (in a Lanes drawing, whose ports stand centred, the
+//! card itself by no more than a kink), a run of lanes onto a free column, or a
+//! label box clear of the rest of its band. A move that would bend a line that ran
 //! straight on the moved station's other side is not made.
 //!
 //! Drawn as blocks, a step at a label of any width that turns its line back
 //! against its last step is closed the same way. A card a line enters on top
-//! and another leaves at the bottom a few points over is such a step too.
+//! and another leaves at the bottom a few points over is such a step too (`card_steps.rs`).
 //!
 //! A step no move can close is opened instead to the shortest step its two
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
-use crate::ecma::{abs, js_min, sign, to_fixed};
+use crate::ecma::{abs, js_min, sign};
+use crate::geometry::Rect;
 use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN};
 use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
@@ -92,7 +94,7 @@ pub(crate) fn kinked(track: &Router<'_>, net: NetId) -> bool {
 }
 
 /// Whether two x stand closer than a line's two bends can turn between, yet apart.
-fn too_short(one: f64, other: f64) -> bool {
+pub(super) fn too_short(one: f64, other: f64) -> bool {
     let gap = abs(one - other);
     gap > STRAIGHT && gap < 2.0 * BEND_RADIUS
 }
@@ -134,10 +136,17 @@ impl Router<'_> {
 
     /// Move a card's own port along its face to an x, when the port is no
     /// trunk's and clear of the face's corners and its
-    /// other ports.
+    /// other ports. A bus's ports stand centred on their face (`place_ports`) and never move
+    /// to close a jog: their card slides instead (`slide_card`).
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
         let item = self.station(station).item;
+        if self.sided.contains(&(net, end)) {
+            return false;
+        }
+        if self.bus {
+            return self.slide_card(nets, net, end, x);
+        }
         let half = self.net(net).reach();
         if self.shared_at(net, end).is_some() || !self.on_face(station, x, half) {
             return false;
@@ -151,6 +160,64 @@ impl Router<'_> {
             return false;
         }
         self.net_mut(net).set_x_at(end, x);
+        true
+    }
+
+    /// Slide a card along its band by a kink, so its centred port stands at an x: the card and
+    /// every line end on it, kept a lane clear of everything else on the band and half a lane
+    /// clear of the lines that pass it. It stays inside the placed block, whose x starts at zero
+    /// and whose right edge is the furthest right any box on it stands.
+    /// A card laid out as the region round it stays.
+    fn slide_card(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
+        let item = self.station(self.net(net).at(end)).item.expect("a card");
+        let one = *self.scene.item(item);
+        let shift = x - self.net(net).x_at(end);
+        if one.inset.is_some() || abs(shift) > KINK + STRAIGHT {
+            return false;
+        }
+        let moved = Rect {
+            x: one.bx.x + shift,
+            ..one.bx
+        };
+        // A lane apart from every other box on the band, and half a lane from a line passing it.
+        let apart = |low: f64, high: f64, gap: f64| {
+            high + gap <= moved.x || low >= moved.x + moved.width + gap
+        };
+        // Two doors, slivers a lane apart, stand a lane apart from middle to middle.
+        let sliver = |bx: &Rect| bx.width <= 2.0 * STRAIGHT + 1.0;
+        // The block's extent: from zero, or the furthest left any box stands, to the furthest
+        // right one does.
+        let right = (self.scene.items.iter())
+            .map(|item| item.bx.x + item.bx.width)
+            .fold(one.bx.x + one.bx.width, f64::max);
+        let clear = moved.x >= one.bx.x.min(0.0)
+            && moved.x + moved.width <= right
+            && (self.scene.cards.values().chain(self.scene.labels.values()))
+                .filter(|&&other| other != item && self.scene.item(other).band == one.band)
+                .map(|&other| self.scene.item(other).bx)
+                .all(|bx| {
+                    let gap = if sliver(&bx) && sliver(&one.bx) {
+                        LANE - bx.width
+                    } else {
+                        LANE
+                    };
+                    apart(bx.x, bx.x + bx.width, gap)
+                })
+            && self.lanes_by_band(nets)[one.band]
+                .iter()
+                .all(|&lane| apart(lane, lane, LANE / 2.0));
+        if !clear {
+            return false;
+        }
+        self.scene.item_mut(item).bx = moved;
+        for &other in nets {
+            for side in [End::Top, End::Bottom] {
+                if self.station(self.net(other).at(side)).item == Some(item) {
+                    let at = self.net(other).x_at(side);
+                    self.net_mut(other).set_x_at(side, at + shift);
+                }
+            }
+        }
         true
     }
 
@@ -199,7 +266,8 @@ impl Router<'_> {
         let mut boxes: Map<StationId, Item> = Map::default();
         for &station in stations {
             let one = self.station(station);
-            if one.kind == Kind::Label {
+            // A card slides too (`slide_card`).
+            if one.kind != Kind::Lane {
                 boxes.insert(station, *self.scene.item(one.item.expect("a box")));
             }
         }
@@ -245,49 +313,6 @@ impl Router<'_> {
                 }
             }
         }
-    }
-
-    /// The nets among some that end on a card below, by that card, in order.
-    fn cards_below(&self, nets: &[NetId]) -> Map<Option<usize>, Vec<NetId>> {
-        let mut into: Map<Option<usize>, Vec<NetId>> = Map::default();
-        for &net in nets {
-            let one = self.net(net);
-            let bottom = self.station(one.bottom);
-            if one.wall.is_none() && bottom.kind == Kind::Card {
-                into.entry(bottom.item.map(|item| item.0))
-                    .or_default()
-                    .push(net);
-            }
-        }
-        into
-    }
-
-    /// A key for every card step among some nets, to tell a new one from an old one.
-    fn card_step_keys(&self, nets: &[NetId]) -> Vec<String> {
-        let into = self.cards_below(nets);
-        let mut keys = Vec::new();
-        for &net in nets {
-            let one = self.net(net);
-            let top = self.station(one.top);
-            if one.wall.is_some() || top.kind != Kind::Card {
-                continue;
-            }
-            for &other in into
-                .get(&top.item.map(|item| item.0))
-                .map_or(&[][..], Vec::as_slice)
-            {
-                let bottom_x = self.net(other).bottom_x;
-                if too_short(bottom_x, one.top_x) {
-                    keys.push(format!(
-                        "{}|{}|{}",
-                        one.edge,
-                        one.channel,
-                        to_fixed(bottom_x, 2)
-                    ));
-                }
-            }
-        }
-        keys
     }
 
     /// Move one station onto a column: a run of lanes onto it where it is
@@ -386,7 +411,7 @@ impl Router<'_> {
     }
 
     /// Move some stations onto a column, where nothing the pass keeps grows.
-    fn move_kept(
+    pub(super) fn move_kept(
         &mut self,
         chains: &[ChainId],
         nets: &[NetId],
@@ -402,117 +427,6 @@ impl Router<'_> {
             better: Some(&better),
         };
         self.move_stretch(chains, nets, moved, x, keeping)
-    }
-
-    /// The lines that run straight on through a card laid out as the region
-    /// round it from where a stretch ends on it: each line that leaves its
-    /// other face at the same x, and the straight stretch beyond.
-    fn through_card(&self, routes: &[Vec<NetId>], last: Reach) -> Vec<Reach> {
-        let station = self.station(last.station);
-        if station.kind != Kind::Card
-            || self
-                .scene
-                .item(station.item.expect("a card"))
-                .inset
-                .is_none()
-        {
-            return Vec::new();
-        }
-        let beyond = last.end.other();
-        let x = self.net(last.net).x_at(last.end);
-        let mut through = Vec::new();
-        for (route, nets) in routes.iter().enumerate() {
-            for (index, &other) in nets.iter().enumerate() {
-                let one = self.net(other);
-                if self.station(one.at(beyond)).item == station.item
-                    && one.wall.is_none()
-                    && abs(one.x_at(beyond) - x) <= STRAIGHT
-                {
-                    through.extend(self.card_side(routes, Place { route, index }, beyond));
-                }
-            }
-        }
-        through
-    }
-
-    /// Every card a line enters on top and another leaves at the bottom, their
-    /// two ends a step too short to turn apart.
-    fn card_steps(&self, routes: &[Vec<NetId>]) -> Vec<(Place, Place)> {
-        let places: Vec<(Place, NetId)> = routes
-            .iter()
-            .enumerate()
-            .flat_map(|(route, nets)| {
-                nets.iter()
-                    .enumerate()
-                    .map(move |(index, &net)| (Place { route, index }, net))
-            })
-            .filter(|&(_, net)| self.net(net).wall.is_none())
-            .collect();
-        let into: Vec<&(Place, NetId)> = places
-            .iter()
-            .filter(|(_, net)| self.station(self.net(*net).bottom).kind == Kind::Card)
-            .collect();
-        let out_of: Vec<&(Place, NetId)> = places
-            .iter()
-            .filter(|(_, net)| self.station(self.net(*net).top).kind == Kind::Card)
-            .collect();
-        let mut steps = Vec::new();
-        for &&(one, one_net) in &into {
-            for &&(other, other_net) in &out_of {
-                let (a, b) = (self.net(one_net), self.net(other_net));
-                if self.station(b.top).item == self.station(a.bottom).item
-                    && too_short(b.top_x, a.bottom_x)
-                {
-                    steps.push((one, other));
-                }
-            }
-        }
-        steps
-    }
-
-    /// The end of a net at a card, and the straight stretch beyond it when the
-    /// net runs straight from the card.
-    fn card_side(&self, routes: &[Vec<NetId>], place: Place, end: End) -> Vec<Reach> {
-        let net = routes[place.route][place.index];
-        let mut side = vec![Reach {
-            station: self.net(net).at(end),
-            net,
-            end,
-        }];
-        if step(self, net) <= STRAIGHT {
-            side.extend(self.stretch_beyond(&routes[place.route], place.index, end.other()));
-        }
-        side
-    }
-
-    /// Close one card step: move the line out of the card, and the straight
-    /// stretch below it, onto the line in's column; else the line in onto the line out's.
-    fn close_card_step(
-        &mut self,
-        chains: &[ChainId],
-        routes: &[Vec<NetId>],
-        nets: &[NetId],
-        into: Place,
-        out_of: Place,
-        kept: Kept<'_>,
-    ) -> bool {
-        let (in_net, out_net) = (
-            routes[into.route][into.index],
-            routes[out_of.route][out_of.index],
-        );
-        if !too_short(self.net(in_net).bottom_x, self.net(out_net).top_x) {
-            return false;
-        }
-        let (out, inward) = (
-            self.card_side(routes, out_of, End::Top),
-            self.card_side(routes, into, End::Bottom),
-        );
-        let x = self.net(in_net).bottom_x;
-        if self.move_kept(chains, nets, &out, x, kept) {
-            return true;
-        }
-        let x = self.net(out_net).top_x;
-        self.move_kept(chains, nets, &inward, x, kept)
     }
 
     /// Close every step too short for its two bends that a move can close,
@@ -566,5 +480,79 @@ impl Router<'_> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lanes::chains::Station;
+    use crate::lanes::channels::Net;
+    use crate::lanes::scene::{Band, Placement};
+
+    /// A block of two bands: a card at `x` on the first, and a line from its bottom at its middle
+    /// down to a lane on the second, with a wider card on the second that sets the block's width.
+    fn block(x: f64) -> Placement {
+        let mut scene = Placement::default();
+        for (top, bottom) in [(0.0, 40.0), (100.0, 140.0)] {
+            scene.bands.push(Band {
+                top,
+                bottom,
+                new_top: top,
+                first_track: 0.0,
+            });
+        }
+        let card = scene.add(Item::new(
+            Rect {
+                x,
+                y: 0.0,
+                width: 100.0,
+                height: 40.0,
+            },
+            0,
+        ));
+        scene.cards.insert("card".to_owned(), card);
+        let wide = scene.add(Item::new(
+            Rect {
+                x: 0.0,
+                y: 100.0,
+                width: 300.0,
+                height: 40.0,
+            },
+            1,
+        ));
+        scene.cards.insert("wide".to_owned(), wide);
+        scene
+    }
+
+    /// Whether the card slides 16 to the right to stand its port over the line's lane.
+    fn slides(x: f64) -> bool {
+        let mut scene = block(x);
+        let card = scene.cards["card"];
+        let mut track = Router::new(&mut scene);
+        track.bus = true;
+        let middle = x + 50.0;
+        let top = track.add(Station::new(Kind::Card, 0, Some(card), middle));
+        let bottom = track.add(Station::new(Kind::Lane, 1, None, middle + 16.0));
+        track.nets.push(Net {
+            edge: "line".into(),
+            order: 0.0,
+            channel: 0,
+            kind: "call".into(),
+            top,
+            bottom,
+            top_x: middle,
+            bottom_x: middle + 16.0,
+            track: 0,
+            trunk: None,
+            wall: None,
+        });
+        track.slide_card(&[NetId(0)], NetId(0), End::Top, middle + 16.0)
+    }
+
+    #[test]
+    fn a_card_slides_only_while_it_stays_inside_its_block() {
+        assert!(slides(100.0), "a card with room to its right slides");
+        assert!(!slides(200.0), "a card at the block's right edge stays");
     }
 }

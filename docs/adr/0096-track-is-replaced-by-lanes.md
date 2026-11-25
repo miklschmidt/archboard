@@ -66,3 +66,75 @@ block, and no entry-point row or peer row is kept.
 
 Removing Track's code changed no Blocks drawing: 542 corpus drawings, a full native picture, and
 the layout fixtures, a fallback drawing among them, are byte-identical before and after.
+
+## Amendment: Lanes is an engine of its own (2026-11-23)
+
+The owner decided that Lanes has a bus look of its own, and that its pictures may differ from
+Blocks' fallback:
+
+> lanes is supposed to have a bus look.
+
+Lanes starts from the lanes' placement and applies its own placement and routing rules.
+Blocks keeps its planned and fallback drawings.
+
+- The cards beside a container are ranked with the container, so a caller stands above it and
+  what the container calls stands below. Blocks' fallback gathers them into a block of their own,
+  which wraps them into a grid above the container.
+- A cycle turns as few lines as a greedy order finds, so a bundle of many lines keeps its
+  direction and the one line against it turns. Blocks' fallback turns whichever line a
+  depth-first walk meets last.
+- The page holds every point of every line.
+- The parent ranks a container as a Graphviz record with one field per port in port order.
+  Each line aims at its port's field so that Graphviz can order the doors around the container.
+- The pass that pulls a line lapping the drawing back inside prices a crossing at 8 lanes, not
+  25: a line crossing a bus square reads at a glance, and a lap round the page does not.
+- Lanes folds no ranks into columns side by side: a line between folded columns could only
+  leave the bottom of one and enter the top of the other, round the page.
+- When a block has ports on its bottom, each wrapped row drops by one rank. This keeps a card
+  that connects to a bottom port from standing between rows.
+- The ends on each card face form one bus around the center, one lane apart. Their order follows
+  the lines that reach them. A narrow face can pack the ends closer. When a port and its lane
+  stand up to two lanes apart, the card or container door can slide to line up with the lane.
+  The card needs room on its row to move, and its ports keep their positions on the face.
+- A line end may land on a card's left or right face, and a line may come through a container's
+  side wall onto the card nearest that wall (the owner asked to try it on 2026-11-23, and both
+  advisors chose it over top and bottom faces alone, on the paired pictures). An end goes to a
+  side only where its line would otherwise leave the face just to turn and run on past the card,
+  and only where the picture then bends less, crosses no more lines, and no line crosses the end
+  within an arrowhead's length of the card; a wall entry also runs no longer and overlaps no
+  line. A line in a bus between two cards lands with the bus. The ends on one side face stand
+  centred a lane apart. Two places the owner named stay as they were: Agent CLI
+  to Vault repository, because moving its end off Agent CLI's bottom face re-centres the ends
+  there and bends another line, and the climb from Codex app-server, whose way up passes Vault
+  repository and leaves no clear run onto Agent CLI's side. A wall entry to a card closer to the
+  wall than an arrowhead's length draws the head across the wall: the advisors kept it, the tip
+  still touches the card, and a wider side inset for container frames is a follow-up.
+- A channel holds the runs that use it and the room they need to read apart.
+  On 2026-11-23 the owner asked "why we're wasting space here".
+  Each run takes its own lanes and keeps room for its own hand-offs.
+  Only lines of the same kind need hand-off room. The advisors chose to part lines sideways
+  where that frees the hand-off room.
+  A trunk and a run that crosses its branch stand at least two lanes apart so the hop clears the
+  join. Below its last track, a channel keeps room for an arrow's approach to a card.
+  A line into a container door keeps room for a hop below a join.
+- Lines between the same two cards the same way travel as one bus, a lane apart over where they
+  land, where that crosses and bends no more. A line whose turn ties a knot of join dots and hops
+  runs out of its trunk where that unties more knots than it ties and crosses no more lines: the
+  advisors chose giving each join its own place over drawing one dot for several. A line that
+  crosses a bus because its card stands on the far side of it keeps the route with the fewest
+  crossings; placement is the fix there.
+
+Tests hold the bus look, not equality with the fallback: no line words, the lines between two
+cards in one bundle a lane apart, the lines bound for one card landing together, cards ranked
+with the container they talk to and in the order of its ports, no lap round the README reading,
+and every line on its page.
+
+Inline containers were tried and withdrawn on 2026-11-23. The owner left the choice to the two
+advisors, who chose to keep each container a block of its own. Lanes drew every container as a
+Graphviz cluster of one picture-wide layout, with one routing. A cluster cannot hold the
+waypoints of a line that is not its own, so the cards round a container stood beside it on its
+ranks, and pages grew wide (Packages 13.2 to 18.8 megapixels, 26 laps round the outermost cards
+against 7). Ranking the picture flat and making each frame a rectangle afterwards grew wider
+still, or tangled when packed tight. Git keeps both at `b65bf07f29` and in the reverted commits.
+Callers then stand in a row above a container, the container reads as one block, and what it
+calls stands in a row below.

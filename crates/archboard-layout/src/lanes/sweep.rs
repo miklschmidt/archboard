@@ -122,14 +122,14 @@ pub(crate) fn block(free: &mut [bool], xs: &[f64], span: Span) {
 
 /// Each column's warped x in a channel: its x plus a crossing's worth for
 /// every other line's end left of it, each end counting half.
-pub(crate) fn warp(xs: &[f64], ends: &[f64]) -> Vec<f64> {
+pub(crate) fn warp(xs: &[f64], ends: &[f64], crossing: f64) -> Vec<f64> {
     let mut warped = vec![0.0; xs.len()];
     let mut passed = 0usize;
     for j in 0..xs.len() {
         while passed < ends.len() && ends[passed] < xs[j] {
             passed += 1;
         }
-        warped[j] = xs[j] + (CROSSING * passed as f64) / 2.0;
+        warped[j] = xs[j] + (crossing * passed as f64) / 2.0;
     }
     warped
 }

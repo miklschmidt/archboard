@@ -92,7 +92,9 @@ fn lay_cards(
         .ports
         .values()
         .any(|side| matches!(side, Side::Left | Side::Right));
-    let plan = if walled {
+    // A Lanes drawing folds no ranks: a line between two folded columns could only leave the
+    // bottom of one and enter the top of the other, round the page.
+    let plan = if walled || tree.lanes {
         None
     } else {
         fold_plan(tree.get(block), &whole, insets, &weighed(&whole))
@@ -185,6 +187,7 @@ fn lay_all(
         graph,
         Kept {
             expanded: way.expanded,
+            lanes: way.lanes,
             ..earlier.kept.clone()
         },
     )?;
@@ -275,11 +278,12 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The lanes' placement: every Lanes drawing, and a Blocks reading that no planned placement
-/// routes.
+/// The lanes' placement: every Lanes drawing, when `lanes` says so, and a Blocks reading that no
+/// planned placement routes.
 pub(super) fn place(
     graph: &Node,
     host: &mut dyn Graphviz,
+    lanes: bool,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
     let picture = lay_out(
@@ -287,6 +291,7 @@ pub(super) fn place(
         graph,
         &Way {
             expanded: false,
+            lanes,
             room: Vec::new(),
             extra: 0.0,
             complete_repair: false,
@@ -371,6 +376,7 @@ pub(super) fn candidates<'g>(
     let mut gv = Engine::new(host);
     let way = Way {
         expanded: false,
+        lanes: false,
         room: room.to_vec(),
         extra,
         complete_repair,
@@ -465,6 +471,8 @@ fn expanded_candidates(
 #[derive(Clone)]
 struct Way {
     expanded: bool,
+    /// The layout is a Lanes drawing (`BlockTree::lanes`).
+    lanes: bool,
     room: Vec<String>,
     extra: f64,
     complete_repair: bool,

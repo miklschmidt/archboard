@@ -1,0 +1,105 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.layout.engine": "lanes"
+	},
+	"children": [
+		{
+			"id": "vKEsyHFk#NFwqWgrm",
+			"width": 445.7,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.groups": "drawing",
+				"archboard.order-group": "[\"package\",\"Draws a typed scene on a canvas and works out every move from one picture to the next, as plain Rust with no DOM and no GPU of its own\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk#ttPYQNXo",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "0",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Holds one canvas's picture, how it is seen and everything that moves on it, and draws a frame of it for the time a host gives\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#290spzv7",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "1",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Walks a scene under its presentation and draws it on a Canvas, with the theme's palette, the glyph outlines and the CPU canvas on vello_cpu\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#UpjzNLKH",
+			"width": 340,
+			"height": 146.602,
+			"layoutOptions": {
+				"archboard.order": "3",
+				"archboard.groups": "drawing",
+				"archboard.order-group": "[\"package\",\"The Painter class that a page holds: one stage and the canvas its frames land on, painted by Vello on WebGPU, by Vello GPU on WebGL2 or by Vello on the CPU\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk#RaRMc6Gn",
+			"sources": ["vKEsyHFk#UpjzNLKH"],
+			"targets": ["vKEsyHFk#ttPYQNXo"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#RaRMc6Gn:label",
+					"text": "one stage for the canvas",
+					"width": 138.19000244140625,
+					"height": 31,
+					"narrow": {
+						"width": 83.65999984741211,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#oKYGWd42",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#290spzv7"],
+			"layoutOptions": {
+				"archboard.order": "2000",
+				"archboard.relationship.kind": "sync",
+				"archboard.relationship.effect": "mutation",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "sync",
+				"archboard.relationship.held-effect": "mutation"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#oKYGWd42:label",
+					"text": "draw each frame's items",
+					"width": 136.5,
+					"height": 31,
+					"narrow": {
+						"width": 83.75,
+						"height": 46
+					}
+				}
+			]
+		}
+	]
+}

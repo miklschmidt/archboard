@@ -1,0 +1,343 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": { "archboard.layout.engine": "lanes" },
+	"children": [
+		{
+			"id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+			"width": 237.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.door": "true",
+				"archboard.order-group": "11004"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "1",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Every duration, grouped by the subsystem that owns it, with what it pulls against\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+			"width": 340,
+			"height": 95.602,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Logs a line and shows a thrown value as text\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#Biz0M6Ld",
+			"width": 311.28,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "3",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Owns a child process group and ends it, and runs git in its own group\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#RfwX9gsx",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "10",
+						"archboard.order-group": "[\"module\",\"Runs supervised Git processes with exact input and optional untrimmed object output\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#R3jPedS8",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "11",
+						"archboard.order-group": "[\"module\",\"Starts a child in a process group of its own, observes it and ends the whole group\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#tdKalihR",
+			"width": 176.28,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "27000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+			"width": 129.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.groups": "packages writes",
+				"archboard.door": "true",
+				"archboard.order-group": "29000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+			"width": 154.1,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.groups": "drawing packages",
+				"archboard.door": "true",
+				"archboard.order-group": "30000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#vEVm326r",
+			"width": 243.9,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "9",
+				"archboard.groups": "child packages",
+				"archboard.door": "true",
+				"archboard.order-group": "32000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#doujM3ih",
+			"width": 220.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "33000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#LDqRcaY1",
+			"width": 117.75999999999999,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "7",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "37000"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk#MsDSuIFY",
+			"sources": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"targets": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"layoutOptions": {
+				"archboard.order": "20",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#MsDSuIFY:label",
+					"text": "list the files Git tracks",
+					"width": 123.37999725341797,
+					"height": 31,
+					"narrow": { "width": 74.63999938964844, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
+			"sources": ["vKEsyHFk#R3jPedS8"],
+			"targets": ["vKEsyHFk/vKEsyHFk#7nWcEvFx"],
+			"layoutOptions": {
+				"archboard.order": "22000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#H6GBSJO0:label",
+					"text": "error codes",
+					"width": 74.79999923706055,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+			"sources": ["vKEsyHFk#R3jPedS8"],
+			"targets": ["vKEsyHFk/vKEsyHFk#sZ4chHDX"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#7eSdILxB:label",
+					"text": "cleanup durations",
+					"width": 105.4000015258789,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#VqSf4PHA",
+			"sources": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"targets": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"layoutOptions": {
+				"archboard.order": "24000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#VqSf4PHA:label",
+					"text": "git in its own process group",
+					"width": 153.0500030517578,
+					"height": 31,
+					"narrow": { "width": 88.5, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
+			"sources": ["vKEsyHFk/vKEsyHFk#vEVm326r"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "43000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#f9xJZD6m:label",
+					"text": "own the Codex process group",
+					"width": 162.92999267578125,
+					"height": 31,
+					"narrow": { "width": 91.7300033569336, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+			"sources": ["vKEsyHFk/vKEsyHFk#OHywsFXm"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "44000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#NSENtfOa:label",
+					"text": "own the Chromium process group",
+					"width": 181.02000427246094,
+					"height": 31,
+					"narrow": { "width": 109.81999969482422, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
+			"sources": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "45000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#q7GKxqKL:label",
+					"text": "observe and stop the server process",
+					"width": 194.25,
+					"height": 31,
+					"narrow": { "width": 108.51000213623047, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
+			"sources": ["vKEsyHFk/vKEsyHFk#LDqRcaY1"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "46000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#VJXR3kbp:label",
+					"text": "own each evaluation process group",
+					"width": 189.3699951171875,
+					"height": 31,
+					"narrow": { "width": 118.16999816894531, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#zlSipRtX",
+			"sources": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"targets": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"layoutOptions": {
+				"archboard.order": "223000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#zlSipRtX:label",
+					"text": "from Architecture runtime API",
+					"width": 162.75999450683594,
+					"height": 31,
+					"narrow": { "width": 104.80000305175781, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#WjFwNiFy",
+			"sources": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "980150",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#WjFwNiFy:label",
+					"text": "whether a group still runs",
+					"width": 141.37000274658203,
+					"height": 31,
+					"narrow": { "width": 90.55999755859375, "height": 46 }
+				}
+			]
+		}
+	]
+}

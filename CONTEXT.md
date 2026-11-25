@@ -731,7 +731,7 @@ _Avoid_: engine (that is a layout engine), WASM module
 
 **Layout engine**:
 The part of the renderer core that places a picture's cards and routes its lines.
-Blocks is the default. Lanes is the alternative: it always uses Blocks' fallback placement and routes lines on lanes. The switch in the Settings dialog offers it, and a render asks for it with `--layout lanes` ([ADR 0064](docs/adr/0064-blocks-is-the-default-layout-engine.md), [ADR 0096](docs/adr/0096-track-is-replaced-by-lanes.md)).
+Blocks is the default. Lanes is the alternative: it never plans, and draws a bus: every line on a lane between rows of cards, the lines between two cards in one bundle, no line words. It starts from Blocks' fallback placement but may draw differently from it. The switch in the Settings dialog offers it, and a render asks for it with `--layout lanes` ([ADR 0064](docs/adr/0064-blocks-is-the-default-layout-engine.md), [ADR 0096](docs/adr/0096-track-is-replaced-by-lanes.md)).
 _Avoid_: renderer core, layout mode, Track (the engine Lanes replaced, [ADR 0096](docs/adr/0096-track-is-replaced-by-lanes.md); a saved `track` reads as `lanes`)
 
 **Dense placement**:

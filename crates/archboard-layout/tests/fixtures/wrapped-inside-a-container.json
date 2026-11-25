@@ -1,0 +1,294 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.layout.engine": "lanes"
+	},
+	"children": [
+		{
+			"id": "vKEsyHFk#C4dZpr3U",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.order-group": "[\"package\",\"Shapes a run of words into glyphs in the bundled faces and breaks a paragraph to a width\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk#9gGvxWHp",
+			"width": 236.02,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "9",
+				"archboard.door": "true",
+				"archboard.order-group": "40200"
+			}
+		},
+		{
+			"id": "vKEsyHFk#NFwqWgrm",
+			"width": 445.7,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.groups": "drawing",
+				"archboard.order-group": "[\"package\",\"Draws a typed scene on a canvas and works out every move from one picture to the next, as plain Rust with no DOM and no GPU of its own\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk#ttPYQNXo",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "0",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Holds one canvas's picture, how it is seen and everything that moves on it, and draws a frame of it for the time a host gives\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#9jix9Dsx",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "1",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Turns one scene into the next as a pure function of a progress value: it pairs groups by subject id and mixes their typed geometry, opacity and transforms\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#290spzv7",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "2",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Walks a scene under its presentation and draws it on a Canvas, with the theme's palette, the glyph outlines and the CPU canvas on vello_cpu\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#107AGlEf",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "3",
+						"archboard.groups": "drawing",
+						"archboard.order-group": "[\"function\",\"Answers what lies under a point from the scene, in the order the painter draws, under the rules of SVG pointer-events\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#UuRNEE2Z",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "6",
+						"archboard.order-group": "[\"function\",\"Keeps the outline of each glyph and icon a painter draws, each built once\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#HL9m7uSj",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "7",
+						"archboard.order-group": "[\"function\",\"Places the warning mark a viewer adds to each subject that the code check warns about\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#UpjzNLKH",
+			"width": 340,
+			"height": 146.602,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.groups": "drawing",
+				"archboard.order-group": "[\"package\",\"The Painter class that a page holds: one stage and the canvas its frames land on, painted by Vello on WebGPU, by Vello GPU on WebGL2 or by Vello on the CPU\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk#JLh2Mj0G",
+			"sources": ["vKEsyHFk#UuRNEE2Z"],
+			"targets": ["vKEsyHFk#C4dZpr3U"],
+			"layoutOptions": {
+				"archboard.order": "100",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#JLh2Mj0G:label",
+					"text": "the outline of a glyph",
+					"width": 121.05999755859375,
+					"height": 31,
+					"narrow": {
+						"width": 70.63999938964844,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#xalAnyTh",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#9jix9Dsx"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#xalAnyTh:label",
+					"text": "a whole picture's move, as a flight",
+					"width": 181.13999938964844,
+					"height": 31,
+					"narrow": {
+						"width": 101.12999725341797,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#RaRMc6Gn",
+			"sources": ["vKEsyHFk#UpjzNLKH"],
+			"targets": ["vKEsyHFk#ttPYQNXo"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#RaRMc6Gn:label",
+					"text": "one stage for the canvas",
+					"width": 138.19000244140625,
+					"height": 31,
+					"narrow": {
+						"width": 83.65999984741211,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#oKYGWd42",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#290spzv7"],
+			"layoutOptions": {
+				"archboard.order": "2000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#oKYGWd42:label",
+					"text": "draw each frame's items",
+					"width": 136.5,
+					"height": 31,
+					"narrow": {
+						"width": 83.75,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#HIuM9juy",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#107AGlEf"],
+			"layoutOptions": {
+				"archboard.order": "3000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#HIuM9juy:label",
+					"text": "what lies under a point",
+					"width": 128.93000030517578,
+					"height": 31,
+					"narrow": {
+						"width": 83.45000076293945,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#9MKtlnoC",
+			"sources": ["vKEsyHFk#HL9m7uSj"],
+			"targets": ["vKEsyHFk#9gGvxWHp"],
+			"layoutOptions": {
+				"archboard.order": "4000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#9MKtlnoC:label",
+					"text": "the warning mark\non a warned subject",
+					"width": 116.95999908447266,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#f9M5SCfi",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#HL9m7uSj"],
+			"layoutOptions": {
+				"archboard.order": "4100",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#f9M5SCfi:label",
+					"text": "where each warning mark stands",
+					"width": 178.30999755859375,
+					"height": 31,
+					"narrow": {
+						"width": 117.20999908447266,
+						"height": 46
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#5png0N2k",
+			"sources": ["vKEsyHFk#ttPYQNXo"],
+			"targets": ["vKEsyHFk#UuRNEE2Z"],
+			"layoutOptions": {
+				"archboard.order": "4200",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#5png0N2k:label",
+					"text": "the outlines it keeps\nfrom frame to frame",
+					"width": 116.02999877929688,
+					"height": 46
+				}
+			]
+		}
+	]
+}

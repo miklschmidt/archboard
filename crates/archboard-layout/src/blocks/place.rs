@@ -4,7 +4,12 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 use super::planned::{Routed, Split, Step};
-use crate::{Graphviz, graph::Node, json::J};
+use crate::{
+    Graphviz,
+    graph::{CABLE, Node},
+    json::J,
+    lanes::scene::Set,
+};
 
 /// The root option carrying the placed drawing.
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
@@ -76,26 +81,65 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         }
         return super::planned::solve_part(&graph, &part);
     }
-    // Lanes is Blocks' fallback: Blocks takes it for a reading that no placement gives every
-    // line a clear planned channel (TASK-624), and Lanes takes it always. The drawing settles
-    // its routes. It draws no line's words and keeps no room for them: the selection still
-    // names each line.
-    let planned = if lanes(&graph) {
-        None
-    } else {
-        hybrid(&graph, host)?
-    };
+    // Blocks falls back to the lanes' placement for a reading that no placement gives every
+    // line a clear planned channel (TASK-624), and Lanes takes it always, laid out its own way
+    // (`BlockTree::lanes`). The drawing settles its routes. It draws no line's words and keeps no
+    // room for them: the selection still names each line.
+    let lanes = lanes(&graph);
+    let planned = if lanes { None } else { hybrid(&graph, host)? };
     let (placed, frozen) = if let Some(placed) = planned {
         (placed, true)
     } else {
         let quiet = super::planned::without_words(&graph, |_| true);
-        (super::legacy::place(&quiet, host)?, false)
+        let mut placed = super::legacy::place(&quiet, host, lanes)?;
+        if lanes {
+            through_frame_walls(&mut placed, &quiet);
+        }
+        (placed, false)
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {
         told.push((BLOCKS_PLANNED, "true".to_owned()));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
+}
+
+/// Bring a Lanes picture's lines that read better through a container's wall in through it
+/// (`lanes::frame_sides`).
+fn through_frame_walls(placed: &mut super::assembly::Placed, graph: &Node) {
+    let cards: Vec<_> = placed.cards.iter().map(|card| card.bx).collect();
+    let frames: Vec<_> = (placed.frames.iter())
+        .map(|frame| (frame.bx, frame.depth))
+        .collect();
+    let mut lines: Vec<_> = placed
+        .edges
+        .iter()
+        .map(|edge| edge.points.clone())
+        .collect();
+    // Cables keep their face ports, whose approaches have room for the ribbon and its marks.
+    let cables: Set<&str> = graph
+        .edges
+        .iter()
+        .flatten()
+        .filter(|edge| edge.option(CABLE).is_some())
+        .map(|edge| edge.id.as_str())
+        .collect();
+    let candidates = placed
+        .edges
+        .iter()
+        .enumerate()
+        .filter_map(|(line, edge)| (!cables.contains(edge.id.as_str())).then_some(line));
+    crate::lanes::frame_sides::enter_by_frame_sides(
+        candidates,
+        &mut crate::lanes::frame_sides::Picture {
+            cards: &cards,
+            frames: &frames,
+            lines: &mut lines,
+        },
+    );
+    for (edge, points) in placed.edges.iter_mut().zip(lines) {
+        edge.points = points;
+    }
 }
 
 /// How the graph of a part of a split solve starts: the part, named first on its root.

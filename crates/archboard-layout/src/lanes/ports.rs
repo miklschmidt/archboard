@@ -2,7 +2,7 @@
 //! for over the other end of its line, the ports a face spreads and fans, and
 //! the x each net takes at both of its ends.
 
-use crate::ecma::{abs, js_max, max, min, or, sorted_by};
+use crate::ecma::{abs, js_max, js_min, max, min, or, sorted_by};
 use crate::geometry::Rect;
 use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN, TrunkId, port_reach, spread_along};
@@ -78,6 +78,48 @@ fn fanned(face: &Rect, wanted: &[f64]) -> Vec<f64> {
     asked
 }
 
+/// The ports of a face gathered into one group a lane apart, in the order asked, centred on the
+/// face's reach: a port leaves the middle only to make room for the others, never to stand nearer
+/// its line's other end. A group longer than the face packs closer, still centred.
+pub(crate) fn gathered((low, high): (f64, f64), count: usize) -> Vec<f64> {
+    gathered_at((low, high), count, f64::midpoint(low, high))
+}
+
+/// Gather a face's ports as close to its middle as its clear reach allows.
+fn gathered_at((low, high): (f64, f64), count: usize, middle: f64) -> Vec<f64> {
+    let gap = if count > 1 {
+        js_min(LANE, (high - low) / (count - 1) as f64)
+    } else {
+        0.0
+    };
+    let width = gap * count.saturating_sub(1) as f64;
+    let start = js_max(low, js_min(high - width, middle - width / 2.0));
+    (0..count).map(|at| start + at as f64 * gap).collect()
+}
+
+/// Gather the ports of cables about `middle` with up to a lane between their ribbons. A short
+/// reach compresses the gaps first. Ordinary lines, or ribbons too wide for the reach, gather
+/// as `gathered_at` does.
+fn gathered_ribbons((low, high): (f64, f64), half: &[f64], middle: f64) -> Option<Vec<f64>> {
+    let girth = 2.0 * half.iter().sum::<f64>();
+    let free = high - low - girth;
+    if girth == 0.0 || free < 0.0 {
+        return None;
+    }
+    let gap = js_min(LANE, free / half.len().saturating_sub(1).max(1) as f64);
+    let mut centres = Vec::with_capacity(half.len());
+    let mut at = half.first().copied().unwrap_or(0.0);
+    for (index, &one) in half.iter().enumerate() {
+        if index > 0 {
+            at += half[index - 1] + gap + one;
+        }
+        centres.push(at);
+    }
+    let width = at + half.last().copied().unwrap_or(0.0);
+    let start = js_max(low, js_min(high - width, middle - width / 2.0));
+    Some(centres.into_iter().map(|centre| start + centre).collect())
+}
+
 /// Spread two or more ports evenly over a stretch of a face, the last at its
 /// end and none at its start; a lone port is left where it asked.
 fn spread_over(asked: &mut [f64], ports: &[usize], start: f64, end: f64) {
@@ -128,9 +170,17 @@ impl Router<'_> {
                 ports.map(|request| 2.0 * request.half).sum::<f64>()
                     + count.saturating_sub(1) as f64 * LANE
             };
-            let width = 2.0 * PORT_MARGIN + span(End::Top).max(span(End::Bottom));
             let found = self.scene.item(item);
-            if width > card_face(found).width {
+            // Only ports on the caption side need room beside the caption in Lanes.
+            let face = card_face(found);
+            let caption = if !self.bus || requests.iter().any(|request| request.side == End::Bottom)
+            {
+                (found.bx.x + found.top_inset - face.x - PORT_MARGIN).max(0.0)
+            } else {
+                0.0
+            };
+            let width = 2.0 * PORT_MARGIN + span(End::Top).max(span(End::Bottom) + caption);
+            if width > face.width {
                 widths.insert(item, width + 2.0 * found.inset.unwrap_or(0.0));
             }
         }
@@ -139,7 +189,9 @@ impl Router<'_> {
 
     /// The port one end of a net asks for: its trunk's, the first time the trunk is met, or its own.
     fn request_of(&self, net: NetId, side: End, asked: &mut Set<TrunkId>) -> Option<PortRequest> {
-        if self.station(self.net(net).at(side)).kind != Kind::Card {
+        if self.station(self.net(net).at(side)).kind != Kind::Card
+            || self.sided.contains(&(net, side))
+        {
             return None;
         }
         let Some(shared) = self.shared_at(net, side) else {
@@ -193,15 +245,22 @@ impl Router<'_> {
             .first()
             .is_some_and(|request| request.side == End::Bottom);
         let (low, high) = self.face_reach(item, &face, fan);
-        let wanted = if fan { fanned(&face, &wanted) } else { wanted };
         let reach = (low.min(high), high);
-        let ports =
+        let ports = if self.bus {
+            let (left, right) = port_reach(&face);
+            let middle = f64::midpoint(left, right);
+            let half: Vec<f64> = ordered.iter().map(|request| request.half).collect();
+            gathered_ribbons(reach, &half, middle)
+                .unwrap_or_else(|| gathered_at(reach, wanted.len(), middle))
+        } else {
+            let wanted = if fan { fanned(&face, &wanted) } else { wanted };
             if self.one_point(Some(item)) || ordered.iter().all(|request| request.half == 0.0) {
                 spread_along(reach, &wanted)
             } else {
                 let half: Vec<f64> = ordered.iter().map(|request| request.half).collect();
                 spread_ribbons(reach, &wanted, &half)
-            };
+            }
+        };
         for (index, request) in ordered.iter().enumerate() {
             for &net in &request.nets {
                 self.net_mut(net).set_x_at(request.side, ports[index]);
@@ -239,6 +298,7 @@ impl Router<'_> {
                     .collect();
                 self.place_ports(item, &bottoms);
             }
+            self.follow_sided();
         }
     }
 }

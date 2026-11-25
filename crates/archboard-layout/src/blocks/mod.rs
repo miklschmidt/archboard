@@ -9,6 +9,7 @@ mod card_graph;
 mod card_layout;
 mod cycles;
 mod fanouts;
+mod fields;
 mod fold;
 mod fold_layout;
 mod headers;
