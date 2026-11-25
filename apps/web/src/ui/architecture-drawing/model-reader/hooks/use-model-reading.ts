@@ -36,6 +36,10 @@ function useModelReading(
 	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against, ref } =
 		location;
 	const locationKey = JSON.stringify([
+		location.model,
+		location.preview,
+		location.bookmark,
+		location.legacyAddress,
 		scope,
 		focus,
 		expand,
