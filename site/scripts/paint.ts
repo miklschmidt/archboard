@@ -266,40 +266,16 @@ function apart(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly num
 }
 
 /**
- * The point on a box nearest to a point.
+ * The nearest point in a box.
  * @param point The point.
  * @param box The box: left, top, width and height.
- * @returns The point on the box.
+ * @returns The point where the beam meets the box.
  */
 function meetBox(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly number[]): Point {
 	return {
 		x: Math.min(x + width, Math.max(x, point.x)),
 		y: Math.min(y + height, Math.max(y, point.y)),
 	};
-}
-
-/**
- * Extend one end of a route piece flush onto its card's box. The renderer trims painted strokes
- * back to leave room for head and tail marks; the hero drops those marks and plugs each beam
- * directly into its tile's side.
- * @param piece The piece of the route holding that end.
- * @param box The card's box.
- * @param atEnd Whether to extend the end (`true`) or the start (`false`) of `piece`.
- */
-function plugEnd(piece: Point[], box: readonly number[], atEnd: boolean): void {
-	const tip = atEnd ? piece.at(-1) : piece[0];
-	const prev = atEnd ? piece.at(-2) : piece[1];
-	if (!tip || !prev) return;
-	const edge = meetBox(tip, box);
-	if (Math.hypot(edge.x - tip.x, edge.y - tip.y) < 1e-4) return;
-	if (goesOn(prev, tip, edge)) {
-		if (atEnd) piece[piece.length - 1] = edge;
-		else piece[0] = edge;
-	} else if (atEnd) {
-		piece.push(edge);
-	} else {
-		piece.unshift(edge);
-	}
 }
 
 /**
@@ -378,22 +354,29 @@ async function hero() {
 		if (!edge) throw new Error(`The painting draws a line for ${id}, which the reading lacks.`);
 		const [from, to] = [card(edge.from), card(edge.to)];
 		if (from < 0 || to < 0) throw new Error(`The line ${id} does not join two cards.`);
-		const pieces = (group.items ?? [])
-			.filter((item) => item.item === "shape" && item.purpose === "line")
-			.flatMap((item) => flatten(item.geometry?.steps ?? []));
+		// The halo traces the full route to the card ports. The stroke stops short of its marks.
+		const steps = group.items?.find(
+			(item) => item.item === "shape" && item.purpose === "halo" && item.geometry?.kind === "path",
+		)?.geometry?.steps;
+		if (!steps) throw new Error(`The painting draws no route for ${id}.`);
+		const pieces = flatten(steps);
 		// A route runs from its source to its target, so its light travels the way the line points.
-		const first = pieces[0]?.[0];
-		const last = pieces.at(-1)?.at(-1);
-		const source = cards[from]?.box ?? [];
-		const target = cards[to]?.box ?? [];
-		if (first && last && apart(first, target) < apart(last, target)) {
-			pieces.reverse();
-			for (const piece of pieces) piece.reverse();
-		}
 		const firstPiece = pieces[0];
 		const lastPiece = pieces.at(-1);
-		if (firstPiece) plugEnd(firstPiece, source, false);
-		if (lastPiece) plugEnd(lastPiece, target, true);
+		const first = firstPiece?.[0];
+		const last = lastPiece?.at(-1);
+		if (firstPiece && lastPiece && first && last) {
+			const source = cards[from]?.box ?? [];
+			const target = cards[to]?.box ?? [];
+			const reversed = apart(first, target) < apart(last, target);
+			// The renderer leaves a small clearance at each port. Seat the beam on the tile.
+			firstPiece[0] = meetBox(first, reversed ? target : source);
+			lastPiece[lastPiece.length - 1] = meetBox(last, reversed ? source : target);
+			if (reversed) {
+				pieces.reverse();
+				for (const piece of pieces) piece.reverse();
+			}
+		}
 		const facts = (typeof group.role === "object" ? group.role.facts : undefined) as
 			| { appearance?: { color?: string; dash?: string } }
 			| undefined;
