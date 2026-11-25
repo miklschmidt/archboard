@@ -21,8 +21,8 @@ A reading selects what you see without copying architecture.
 
 Before the first architecture operation, read [canonical models](references/canonical-models.md) for discovery, reads, writes, and history.
 For `LEGACY_AUTHORITY` or requested migration, follow [legacy migration](references/legacy-migration.md).
-`UPGRADE_REQUIRED` means the vault is in the format from before effects: it reads, and every write is refused until [the upgrade](references/upgrade.md).
-Before describing implemented architecture or authoring changes, read [authoring](references/authoring.md) for codebase mapping, module kinds, bindings, relationship kinds and effects, evidence rules, containers, and flows.
+`UPGRADE_REQUIRED` means the vault needs [an upgrade](references/upgrade.md) before you can edit the live model.
+Before describing implemented architecture or editing a model, read [authoring](references/authoring.md) for bindings, relationships, and flows.
 Before preparing a request, read [schemas](references/schemas.md).
 
 For design decisions or refactors, read [the design lens](references/design-lens.md).
@@ -55,7 +55,7 @@ Compare its stable subjects with the intended change.
 Make sure that the requested scope, flow, and every narrative beat remain available.
 Run affected semantic, code, and embed inspection through `archboard check`.
 In an implementation loop, run `archboard check code --fail-shallow-modules` before you hand back, with `--base <branch below yours>` in a stack.
-It fails on every warning, and on a shallow module that your branch touched. Clear each finding as [module depth](references/design-lens.md#module-depth) says.
+It fails on warnings. If the policy sets `MODULE_SHALLOW` to `information`, the flag raises it to a warning for modules your branch touched. Clear each finding as [module depth](references/design-lens.md#module-depth) says.
 The vault's `codeCheck.rules` set the level of module-depth codes. When `SHALLOW_RULE_CONFLICT` refuses the flag, the vault turned `MODULE_SHALLOW` off: run it without the flag.
 Report concrete changes, refusals, unavailable source, and recovery work.
 Claim frontend acceptance, adoption, publication, or migration only after its operation succeeds.
@@ -69,13 +69,13 @@ Use each feature when the source or requested design establishes it.
 | `external`     | Mark a module outside the described ownership boundary, and leave it unbound except for vendored code in a checkout Archboard reads. |
 | `binding`      | Bind a module to the directory, entry file, or symbol that implements its responsibility.                                            |
 | `containment`  | State parent identities without a fixed level, and bind each code container to the directory that holds its parts.                   |
-| `relationship` | Author each relationship on its source module with its kind, effect (except effectless `dependency`), and an optional anchor.        |
+| `relationship` | Set the kind and effect on the source module, and cite evidence when useful. A declared-only `dependency` omits the effect.          |
 | `traffic`      | State meaningful illustrative traffic properties when ongoing volume or speed clarifies the reading.                                 |
 | `emphasis`     | Mark the main exchange `hero` or secondary lines `muted` sparingly when it helps the reading.                                        |
-| `repeat`       | Record fixed repeated exchanges on authored steps with `repeat`, not only in a note.                                                 |
+| `repeat`       | Set `repeat` on messages that run a fixed number of times.                                                                           |
 | `note`         | Attach relevant evidence, conditions, or constraints to a step.                                                                      |
 | `groups`       | Apply configured group identities explicitly from the vault policy.                                                                  |
-| `flow`         | Author a complete, described exchange in a collection with a summary and anchored steps.                                             |
+| `flow`         | Give each complete exchange a summary in its flow collection. Anchor messages to source where it exists.                             |
 | `view`         | Select a content-free reading or imported bookmark.                                                                                  |
 | `walkthrough`  | Author ordered beats with exact reading targets.                                                                                     |
 | `drillDown`    | Follow an explicit model reference or recursive module scope.                                                                        |

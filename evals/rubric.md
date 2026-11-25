@@ -48,25 +48,25 @@ It authors no architecture.
 
 ## What the skill adds unprompted
 
-Use the installed skill catalogue when the source establishes a feature.
-Judge the same stable feature keys across retained reports.
+Use the **Source evidence catalogue** in the candidate skill's `SKILL.md` to find the expected evidence for each feature the source establishes.
+Follow its authoring reference for the details. Use these same row keys across retained reports.
 
-| Row            | Canonical evidence                                                                                                                   |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `external`     | Mark a module outside the described ownership boundary, and leave it unbound except for vendored code in a checkout Archboard reads. |
-| `binding`      | Bind a module to the directory, entry file, or symbol that implements its responsibility.                                            |
-| `containment`  | State parent identities without a fixed level, and bind each code container to the directory that holds its parts.                   |
-| `relationship` | Author each relationship on its source module with its kind, effect (except effectless `dependency`), and an optional anchor.        |
-| `traffic`      | State meaningful illustrative traffic properties when ongoing volume or speed clarifies the reading.                                 |
-| `emphasis`     | Mark the main exchange `hero` or secondary lines `muted` sparingly when it helps the reading.                                        |
-| `repeat`       | Record fixed repeated exchanges on authored steps with `repeat`, not only in a note.                                                 |
-| `note`         | Attach relevant evidence, conditions, or constraints to a step.                                                                      |
-| `groups`       | Apply configured group identities explicitly from the vault policy.                                                                  |
-| `flow`         | Author an independent collection and complete exchange with a summary and anchored steps.                                            |
-| `view`         | Select a content-free reading or imported bookmark.                                                                                  |
-| `walkthrough`  | Author ordered beats with exact reading targets.                                                                                     |
-| `drillDown`    | Follow an explicit model reference or recursive module scope.                                                                        |
-| `description`  | Explain responsibilities and significant architectural decisions concisely.                                                          |
+| Row            |
+| -------------- |
+| `external`     |
+| `binding`      |
+| `containment`  |
+| `relationship` |
+| `traffic`      |
+| `emphasis`     |
+| `repeat`       |
+| `note`         |
+| `groups`       |
+| `flow`         |
+| `view`         |
+| `walkthrough`  |
+| `drillDown`    |
+| `description`  |
 
 ## What the run inherited
 
