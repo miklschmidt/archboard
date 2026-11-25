@@ -117,7 +117,11 @@ function arcCrowding(drawn: readonly DrawnArc[], marks: readonly Box[]): string[
 				const overlap = crosswiseOverlap(copies, crossed);
 				if (overlap !== undefined) {
 					const [a, b] = overlap;
-					found.push(`${a.id} and ${b.id} overlapping crosswise at ${cornerOf(a.box)}`);
+					const corner = cornerOf({
+						x0: Math.max(a.box.x0, b.box.x0),
+						y0: Math.max(a.box.y0, b.box.y0),
+					});
+					found.push(`${a.id} and ${b.id} overlapping crosswise at ${corner}`);
 				}
 				continue;
 			}
@@ -156,10 +160,10 @@ function crowdedJunctions(marks: readonly Box[], arcs: ArcCopies[]): string[] {
 
 /**
  * A box's low corner, for a drawing diagnostic.
- * @param box The bounds of the ink.
+ * @param box The box's low bounds.
  * @returns Its coordinates.
  */
-function cornerOf(box: Box): string {
+function cornerOf(box: Pick<Box, "x0" | "y0">): string {
 	return `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
 }
 
