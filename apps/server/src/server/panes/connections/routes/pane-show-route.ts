@@ -225,17 +225,13 @@ function showResolvedPane(
 }
 
 /**
- * Apply browser display settings (layout, theme, hover-light) in place without navigating or
- * requiring a vault.
- * @param req The HTTP request.
+ * Apply browser display settings (layout, theme, hover-light) in place without navigating. The
+ * settings belong to the browser, not to a model, so the vault the caller runs in does not narrow
+ * which pane they reach.
  * @param body The parsed request carrying only display settings.
  * @param res The HTTP response.
  */
-function applyDisplaySettingsOnly(
-	req: Request,
-	body: z.infer<typeof RequestSchema>,
-	res: Response,
-): void {
+function applyDisplaySettingsOnly(body: z.infer<typeof RequestSchema>, res: Response): void {
 	const settings = extractDisplaySettings(body.reading);
 	if (settings === undefined) {
 		res.status(400).json({
@@ -245,12 +241,7 @@ function applyDisplaySettingsOnly(
 		});
 		return;
 	}
-	const rawVault = queryString(req, "vault") ?? bodyOf(req)["vault"];
-	const vaultCheck = rawVault === undefined ? null : namedVault(rawVault);
-	const pane =
-		vaultCheck !== null && vaultCheck.ok
-			? showablePane(vaultCheck.vault, body.pane, res)
-			: settingsPane(body.pane, res);
+	const pane = settingsPane(body.pane, res);
 	if (pane === null) return;
 	if (!sendKeylessToPane(pane.clientId, { type: "pane_settings", ...settings })) {
 		res.status(503).json(noBrowserBody("Changing browser settings"));
@@ -354,7 +345,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	const body = parsed.data;
 	if (isSettingsOnlyRequest(body.reading)) {
-		applyDisplaySettingsOnly(req, body, res);
+		applyDisplaySettingsOnly(body, res);
 		return;
 	}
 	const named = namedVault(queryString(req, "vault") ?? bodyOf(req)["vault"]);
