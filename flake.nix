@@ -235,7 +235,7 @@
                 if [ "''${#TMPDIR}" -gt 50 ]; then
                   _ab_bad_tmp=1
                 else
-                  _ab_dir="$TMPDIR"
+                  _ab_dir=$(CDPATH="" cd -P -- "$TMPDIR" 2>/dev/null && pwd -P) || _ab_dir="$TMPDIR"
                   while [ -n "$_ab_dir" ]; do
                     if [ -e "$_ab_dir/.git" ]; then
                       _ab_bad_tmp=1
