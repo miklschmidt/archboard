@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
+      "order": 9000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "one per run, on its own port",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/server.ts",
+        "symbol": "startServer"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
+      "order": 46000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "own each evaluation process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/processes/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "to": "vKEsyHFk#R3jPedS8"
+    }
+  ],
   "order": 6000,
   "name": "Per-run server",
   "kind": "module",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/processes/server.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "one per run, on its own port",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-world/processes/server.ts",
-        "symbol": "startServer"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 46000,
-      "kind": "dependency",
-      "label": "own each evaluation process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/processes/process.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
-      "to": "vKEsyHFk#R3jPedS8"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

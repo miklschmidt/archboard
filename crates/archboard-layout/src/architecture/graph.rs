@@ -1,6 +1,5 @@
-//! The measured graph Track and Blocks lay out: semantic containment,
-//! measured sizes, and which children are entry points of the container around
-//! them. Each solve chooses ranks and attachment faces.
+//! The graph Blocks and Lanes lay out carries containment and measured sizes.
+//! Each solve chooses ranks and attachment faces.
 
 use std::collections::BTreeMap;
 
@@ -12,48 +11,15 @@ use indexmap::IndexMap;
 use super::content::{Content, Edge, Node};
 use super::measured::Measured;
 use crate::ecma;
-use crate::graph::{DOOR, GROUPS};
+use crate::graph::{CABLE, DOOR, EFFECT, GROUPS, HELD_EFFECT};
 use crate::json::J;
 
-/// The option marking a child a relationship from outside its container reaches (ADR 0044).
-const ENTRY_POINT: &str = "archboard.entry";
 /// The option carrying each width a container's header can take, as `[width, height]` rows.
 const HEADER_STEPS: &str = "archboard.header.steps";
 
 /// How each relationship stands when a picture is compared: every subject's
 /// standing, `unchanged` for one the comparison does not name.
 pub type Standings = BTreeMap<String, Standing>;
-
-/// The graph a solve lays out, in two parts: the root's own options, and
-/// what follows them, so a solve adds its options to the root alone.
-#[derive(Clone, Debug)]
-pub(crate) struct Graph {
-    /// The root's options.
-    pub(crate) options: Vec<(String, String)>,
-    /// The JSON of the root's children and relationships, `"children":…,"edges":…`.
-    body: String,
-}
-
-impl Graph {
-    /// The JSON of the graph with more root options after its own.
-    pub(crate) fn with_options(&self, more: &[(&str, String)]) -> String {
-        let options = self
-            .options
-            .iter()
-            .map(|(name, value)| (name.clone(), J::str(value)))
-            .chain(
-                more.iter()
-                    .map(|(name, value)| ((*name).to_owned(), J::str(value))),
-            )
-            .collect();
-        let mut out = String::from("{\"id\":\"architecture:root\",\"layoutOptions\":");
-        J::Obj(options).write(&mut out);
-        out.push(',');
-        out.push_str(&self.body);
-        out.push('}');
-        out
-    }
-}
 
 /// A number as `String(value)` spells it.
 fn text(value: f64) -> String {
@@ -81,16 +47,10 @@ fn header_options(measured: &MeasuredNode<NodeFacts>) -> Vec<(String, J)> {
 }
 
 /// One card or container, measured, before containment is assembled.
-fn node_of(node: &Node, measured: &MeasuredNode<NodeFacts>, order: f64, first: Option<bool>) -> J {
+fn node_of(node: &Node, measured: &MeasuredNode<NodeFacts>, order: f64) -> J {
     let mut options = vec![("archboard.order".to_owned(), J::Str(text(order)))];
     if !node.groups.is_empty() {
         options.push((GROUPS.to_owned(), J::str(&node.groups.join(" "))));
-    }
-    if let Some(first) = first {
-        options.push((
-            ENTRY_POINT.to_owned(),
-            J::str(if first { "true" } else { "false" }),
-        ));
     }
     if node.door.is_some() {
         options.push((DOOR.to_owned(), J::str("true")));
@@ -120,6 +80,9 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
         ("archboard.order".to_owned(), J::Str(text(edge.order))),
         ("archboard.relationship.kind".to_owned(), J::str(&edge.kind)),
     ];
+    if let Some(effect) = &edge.effect {
+        options.push((EFFECT.to_owned(), J::str(word(effect))));
+    }
     let emphasis = word(&edge.emphasis);
     options.push((
         "archboard.relationship.emphasis".to_owned(),
@@ -139,11 +102,35 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
     options
 }
 
-/// A relationship with its options and its measured label.
-fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, inline: bool) -> J {
+/// How one strand of a cable looks to the layout: what keeps lines apart (`trunk_kind`) and its
+/// held kind and effect.
+fn strand(edge: &Edge, measured: &Measured, standing: Option<&str>) -> String {
+    let held = measured.held_lines.get(&edge.id);
+    [
+        edge.kind.as_str(),
+        edge.effect.as_ref().map_or("", word),
+        standing.unwrap_or("unchanged"),
+        word(&edge.emphasis),
+        if edge.traffic.is_some() { "on" } else { "off" },
+        held.map_or("", |(kind, _)| kind.as_str()),
+        held.and_then(|(_, effect)| effect.as_ref())
+            .map_or("", word),
+    ]
+    .join("|")
+}
+
+/// A relationship with its options and its measured label; the line of a cable also names the
+/// strands it carries.
+fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, cable: Option<String>) -> J {
     let mut options = edge_options(edge, standing);
-    if !inline && let Some(kind) = measured.held_kinds.get(&edge.id) {
+    if let Some((kind, effect)) = measured.held_lines.get(&edge.id) {
         options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
+        if let Some(effect) = effect {
+            options.push((HELD_EFFECT.to_owned(), J::str(word(effect))));
+        }
+    }
+    if let Some(cable) = cable {
+        options.push((CABLE.to_owned(), J::Str(cable)));
     }
     let labels = measured
         .labels
@@ -261,17 +248,52 @@ fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
         .collect()
 }
 
-/// The graph of a picture: its nodes in their containers, and its relationships
-/// with their labels and options.
-///
-/// `inline` selects the retained Track input; Blocks also keeps the variant’s own overview kinds.
+/// The relationship that each other relationship between the same two ends rides with, by id:
+/// the layout routes one line from one part to another, the first in the picture's order, and
+/// the rest of them take its route. Relationships that stand differently in a comparison keep
+/// lines of their own, and Lanes lays out every relationship by itself.
+pub(crate) fn riders(
+    content: &Content,
+    standings: Option<&Standings>,
+    engine: super::Engine,
+) -> BTreeMap<String, String> {
+    if engine == super::Engine::Lanes {
+        return BTreeMap::new();
+    }
+    let ordered = ecma::sorted_by(&content.edges.iter().collect::<Vec<_>>(), |one, other| {
+        one.order - other.order
+    });
+    let standing = |edge: &Edge| {
+        standings
+            .and_then(|standings| standings.get(&edge.id))
+            .map(word)
+    };
+    let mut first: BTreeMap<(&str, &str, Option<&str>), &str> = BTreeMap::new();
+    let mut riders = BTreeMap::new();
+    for edge in ordered {
+        let ends = (edge.from.as_str(), edge.to.as_str(), standing(edge));
+        match first.get(&ends) {
+            Some(&leader) => {
+                riders.insert(edge.id.clone(), leader.to_owned());
+            }
+            None => {
+                first.insert(ends, edge.id.as_str());
+            }
+        }
+    }
+    riders
+}
+
+/// The graph of a picture, as the JSON a solve lays out: its nodes in their containers, and its relationships
+/// with their labels and options, each pair of ends joined once (`riders`).
+/// The variant's own overview kinds ride on each relationship that has one.
 pub(crate) fn compound_graph(
     content: &Content,
     measured: &Measured,
     standings: Option<&Standings>,
-    entries: &BTreeMap<String, bool>,
-    inline: bool,
-) -> Graph {
+    riders: &BTreeMap<String, String>,
+    engine: super::Engine,
+) -> String {
     let places = gathered_order(content);
     let by_id: BTreeMap<&str, &Node> = content
         .nodes
@@ -284,10 +306,7 @@ pub(crate) fn compound_graph(
         .filter_map(|(id, value)| {
             let node = by_id.get(id.as_str())?;
             let order = places.get(id.as_str()).copied().unwrap_or(node.order);
-            Some((
-                id.clone(),
-                node_of(node, value, order, entries.get(id).copied()),
-            ))
+            Some((id.clone(), node_of(node, value, order)))
         })
         .collect();
     let children = assembled(content, nodes);
@@ -295,20 +314,32 @@ pub(crate) fn compound_graph(
         one.order - other.order
     });
     let unchanged = "unchanged";
+    let standing =
+        |edge: &Edge| standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
+    let mut strands: BTreeMap<&str, Vec<String>> = BTreeMap::new();
+    for edge in &edges {
+        let leader = riders.get(&edge.id).unwrap_or(&edge.id);
+        (strands.entry(leader.as_str()).or_default()).push(strand(edge, measured, standing(edge)));
+    }
     let edges: Vec<J> = edges
         .iter()
+        .filter(|edge| !riders.contains_key(&edge.id))
         .map(|edge| {
-            let standing =
-                standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
-            edge_of(edge, measured, standing, inline)
+            let cable = (strands.get(edge.id.as_str()))
+                .filter(|strands| strands.len() > 1)
+                .map(|strands| strands.join(";"));
+            edge_of(edge, measured, standing(edge), cable)
         })
         .collect();
-    let mut body = String::from("\"children\":");
-    J::Arr(children).write(&mut body);
-    body.push_str(",\"edges\":");
-    J::Arr(edges).write(&mut body);
-    Graph {
-        options: Vec::new(),
-        body,
-    }
+    let options = match engine {
+        super::Engine::Blocks => "{}",
+        super::Engine::Lanes => "{\"archboard.layout.engine\":\"lanes\"}",
+    };
+    let mut graph =
+        format!("{{\"id\":\"architecture:root\",\"layoutOptions\":{options},\"children\":");
+    J::Arr(children).write(&mut graph);
+    graph.push_str(",\"edges\":");
+    J::Arr(edges).write(&mut graph);
+    graph.push('}');
+    graph
 }

@@ -1,14 +1,22 @@
 import { useCallback, useContext, useMemo } from "react";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { validateWorkspaceSearch } from "#ui/panes/reading-routing/rules/search.ts";
+import {
+	effectList,
+	searchValue,
+	validateWorkspaceSearch,
+} from "#ui/panes/reading-routing/rules/search.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
+import { allLens } from "@archboard/model/content";
+import { hiddenKinds as policyHiddenKinds, lineEffect } from "@archboard/model/policy";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
+/** The two lists of what a reader hid besides the lens. */
+type FilterField = "hideKinds" | "hideEffects";
 
 /** A reading to open: the vault at a ref or on disk, one of its states, and the module it opens. */
 interface ReadingTarget {
@@ -66,15 +74,19 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
+	const lens = search[`lens${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
+	const hiddenEffects = search[`hideEffects${paneId}`];
 	const expanded = search[`expand${paneId}`];
 	const file = nullableParameter(search[`file${paneId}`]);
 	const fileRepo = search[`fileRepo${paneId}`];
 	const filters = useMemo(
 		() => ({
+			lens,
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
+			hideEffects: effectList(hiddenEffects),
 		}),
-		[hiddenKinds],
+		[lens, hiddenKinds, hiddenEffects],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -123,7 +135,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							expand,
 							grammar,
 							flow: flow ?? undefined,
+							lens: filters.lens,
 							hideKinds: filters.hideKinds,
+							hideEffects: filters.hideEffects,
 							bookmark: undefined,
 						}),
 				...patch,
@@ -141,7 +155,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
+				lens: undefined,
 				hideKinds: undefined,
+				hideEffects: undefined,
 				subject: undefined,
 			});
 		},
@@ -165,7 +181,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
+				lens: undefined,
 				hideKinds: undefined,
+				hideEffects: undefined,
 				subject: undefined,
 				against: undefined,
 			});
@@ -196,7 +214,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: undefined,
 					focus: undefined,
 					expand: undefined,
+					lens: undefined,
 					hideKinds: undefined,
+					hideEffects: undefined,
 				},
 				false,
 				repository,
@@ -222,7 +242,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: reading.flow,
 					focus: reading.focus,
 					expand: reading.expand,
+					lens: reading.lens,
 					hideKinds: reading.hideKinds,
+					hideEffects: reading.hideEffects,
 				},
 				!push,
 				repository ?? undefined,
@@ -304,31 +326,45 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[explore],
 	);
-	const toggleFilter = useCallback(
-		(field: "hideKinds", id: string): void => {
-			userChanged?.("view");
-			const current = filters[field];
-			const next = current.includes(id)
-				? current.filter((value) => value !== id)
-				: [...current, id];
-			void navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
+	// The legend decides what a switch or a row's name hides; the address only holds the list.
+	const setHidden = useCallback(
+		(field: FilterField, ids: readonly string[]): void => {
+			explore({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
 		},
-		[filters, navigate, userChanged],
+		[explore],
 	);
-	const showAllKinds = useCallback((): void => {
-		userChanged?.("view");
-		void navigate({ hideKinds: undefined });
-	}, [navigate, userChanged]);
+	// A lens is a question of its own, so choosing one shows every kind and effect it selects.
+	const selectLens = useCallback(
+		(id: string): void => {
+			explore({ lens: id, hideKinds: undefined, hideEffects: undefined });
+		},
+		[explore],
+	);
+	const showAll = useCallback((): void => {
+		selectLens(allLens());
+	}, [selectLens]);
 	const reveal = useCallback(
-		(ids: readonly string[], kinds: readonly string[]): void => {
-			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
+		(
+			ids: readonly string[],
+			edges: readonly Parameters<typeof lineEffect>[0][],
+			widen: boolean,
+			policy: Model["policy"],
+		): void => {
+			const kinds = new Set(edges.map((edge) => edge.kind));
+			const effects = new Set(edges.map(lineEffect));
+			const hidden = policyHiddenKinds(filters.hideKinds, policy).filter(
+				(kind) => !kinds.has(kind),
+			);
+			const muted = filters.hideEffects.filter((effect) => !effects.has(effect));
 			explore({
 				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
+				...(widen ? { lens: allLens() } : {}),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
+				hideEffects: muted.length === 0 ? undefined : muted,
 			});
 		},
-		[filters.hideKinds, explore],
+		[filters.hideKinds, filters.hideEffects, explore],
 	);
 	const selectGrammar = useCallback(
 		(next: string): void => {
@@ -384,7 +420,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, userChanged],
 	);
 	const showWholeScope = useCallback((): void => {
-		explore({ focus: undefined, hideKinds: undefined });
+		explore({ focus: undefined, hideKinds: undefined, hideEffects: undefined, lens: undefined });
 	}, [explore]);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
@@ -425,8 +461,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		fileRepo,
 		showFile,
 		filters,
-		toggleFilter,
-		showAllKinds,
+		setHidden,
+		selectLens,
+		showAll,
 		reveal,
 		setFocus,
 		open,
@@ -460,7 +497,9 @@ function referenceAddress(reading: Model): ModelAddress {
 		against: undefined,
 		focus: referenceFocus(reading, location.subject),
 		expand: undefined,
+		lens: undefined,
 		hideKinds: undefined,
+		hideEffects: undefined,
 	};
 }
 
@@ -512,19 +551,7 @@ function nullableParameter(value: string | undefined): string | null {
 	return value ?? null;
 }
 
-/**
- * Reading fields serialize without making missing values into names.
- * @param value A field of the canonical address.
- * @returns Its search value, or absence.
- */
-function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefined {
-	if (value === null || value === undefined) return undefined;
-	if (typeof value === "string") return value;
-	// An empty list narrows nothing, and `focus=` would read back as one empty identity.
-	return value.length === 0 ? undefined : value.join(",");
-}
-
-export { useModelLocation, type FileTarget, type ReadingTarget };
+export { useModelLocation, type FileTarget, type FilterField, type ReadingTarget };
 
 /**
  * The address field of a resolved request's comparison.
@@ -554,11 +581,13 @@ function requestedGrammar(reading: PaneModelRequest["reading"]): ModelAddress["g
  */
 function bookmarkSearch(reading: Reading | undefined, paneId: string): Record<string, string> {
 	if (reading === undefined) return {};
+	// A bookmark keeps no lens: it was made of every relationship, so it opens through all.
 	const values = {
 		scope: reading.scope,
 		grammar: reading.grammar,
 		flow: reading.flow,
 		focus: reading.focus,
+		lens: allLens(),
 		hideKinds: reading.filters.relationships,
 	};
 	return Object.fromEntries(

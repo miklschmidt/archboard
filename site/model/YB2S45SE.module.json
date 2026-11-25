@@ -3,13 +3,14 @@
   "name": "Server",
   "kind": "service",
   "responsibility": "Serves live readings to every pane",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#YB2S45SE",
   "parent": "q9TUBeZT#cJMRcSvL",
   "outgoing": [
     {
       "order": 100,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "query",
       "label": "reads",
       "emphasis": "normal",
       "traffic": {
@@ -21,7 +22,8 @@
     },
     {
       "order": 110,
-      "kind": "call",
+      "kind": "async",
+      "effect": "compute",
       "label": "draws readings",
       "emphasis": "normal",
       "traffic": {
@@ -33,7 +35,8 @@
     },
     {
       "order": 130,
-      "kind": "http",
+      "kind": "stream",
+      "effect": "mutation",
       "label": "live readings",
       "emphasis": "normal",
       "traffic": {

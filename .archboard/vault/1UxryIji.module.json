@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 200,
   "name": "ECMAScript numbers",
   "kind": "function",
@@ -8,7 +9,6 @@
     "path": "crates/archboard-scene/src/js.rs"
   },
   "parent": "vKEsyHFk#9gGvxWHp",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#1UxryIji",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#1UxryIji"
 }

@@ -1,4 +1,99 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
+      "order": 1000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "owns listener",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "server"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+      "order": 12000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "start and stop",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "prepareCodexWorkbench"
+      },
+      "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "id": "vKEsyHFk#4Uvqzrek",
+      "order": 70045,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "start pane socket ownership",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "startWebSocketServer"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#RZ5ulVj7",
+      "order": 75000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "a stop waits for the admitted writes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "ServerApplicationBusyError"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "order": 79000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "watch the registry file while the server runs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "watchRegistry"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "id": "vKEsyHFk#EGELSMZa",
+      "order": 90000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "starts the usage sender",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#EbMc8PH2"
+    },
+    {
+      "id": "vKEsyHFk#25xiZ6jI",
+      "order": 1008050,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "log the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    }
+  ],
   "order": 2000,
   "name": "Application lifetime",
   "kind": "module",
@@ -7,7 +102,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
   "parent": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
   "documents": [
@@ -33,94 +128,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "owns listener",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "server"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
-      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
-    },
-    {
-      "order": 12000,
-      "kind": "dependency",
-      "label": "start and stop",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "prepareCodexWorkbench"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
-      "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 70045,
-      "kind": "call",
-      "label": "start pane socket ownership",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "startWebSocketServer"
-      },
-      "id": "vKEsyHFk#4Uvqzrek",
-      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
-    },
-    {
-      "order": 75000,
-      "kind": "call",
-      "label": "a stop waits for the admitted writes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "ServerApplicationBusyError"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#RZ5ulVj7",
-      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
-    },
-    {
-      "order": 79000,
-      "kind": "dependency",
-      "label": "watch the registry file while the server runs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "watchRegistry"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
-      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    },
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "starts the usage sender",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#EGELSMZa",
-      "to": "vKEsyHFk#EbMc8PH2"
-    },
-    {
-      "order": 1008050,
-      "kind": "call",
-      "label": "log the server",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "logger"
-      },
-      "id": "vKEsyHFk#25xiZ6jI",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

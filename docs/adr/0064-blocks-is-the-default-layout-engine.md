@@ -19,3 +19,8 @@ The host resolves it before calling the Rust core, which requires an explicit en
 The canvas, walkthroughs, and renders share it.
 An embed recipe that names no engine follows this default, under [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md).
 An explicit engine in a recipe stays explicit.
+
+Superseded in part (2026-11-22, TASK-672,
+[ADR 0096](0096-track-is-replaced-by-lanes.md)):
+Lanes replaces Track. `--layout` takes `blocks` or `lanes`, and Blocks stays the default.
+A saved `track` reads as Lanes.

@@ -4,25 +4,21 @@ import type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/
 import { drawingOf } from "#shared/compare/rules/drawing.ts";
 import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
-import { codePathOf } from "#shared/rules/code-path.ts";
-import {
-	expansions,
-	toggles,
-	withToggle,
-	type Toggle,
-	type Toggles,
-} from "#shared/rules/model-expansion.ts";
-import { containment, foldedScope } from "#shared/rules/module-fold.ts";
+import { cablePlates, type OverviewLine } from "#shared/rules/scope.ts";
+import { expansions, toggles } from "#shared/rules/model-expansion.ts";
+import { foldedScope } from "#shared/rules/module-fold.ts";
+import { drawingContent, type DrawnContent } from "#shared/rules/model-drawing.ts";
 import { drawnEnds, drawnLines, joinedLines, strandedCards } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
+import { allLens, readingLens, type ReadingLens } from "#shared/rules/lens.ts";
+import { hiddenKinds, lineEffect } from "#shared/schemas/built-in-vocabulary.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 /** What a reader chose of a reading, besides its scope and its focus. */
 type ModelFilters = Pick<
 	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "expand"
+	"hideKinds" | "hideEffects" | "expand" | "lens"
 > & {
 	/** Whether a live reader draws its picture, so that its doors and frames wear their controls. */
 	readonly controls?: boolean;
@@ -32,22 +28,14 @@ type Standing = Readonly<Record<string, ChangeKind>>;
 type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
-/** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
-type DrawnNode = Node & {
-	readonly codePath?: string;
-	readonly door?: DoorWay;
-	readonly toggle?: Toggle;
-};
-/** Where a door lies in the tree from the open module. */
-type DoorWay = "up" | "across" | "down";
-/** What a reading hands the renderer. */
-type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
-	nodes: DrawnNode[];
-	edges: DrawnEdge[];
-};
-
-/** What decides which lines a reading draws. */
-type LineChoices = Pick<ModelFilters, "hideKinds">;
+/**
+ * What decides which lines a reading draws: its lens, then the kinds and effects a reader hid
+ * besides, read as one test of a relationship.
+ */
+interface LineChoices {
+	readonly lens: ReadingLens;
+	readonly shown: (edge: Pick<Edge, "kind" | "effect">) => boolean;
+}
 /** What a scope draws besides its own frame, and whether its controls are drawn. */
 type ScopeChoices = LineChoices & {
 	readonly frames: readonly string[];
@@ -83,7 +71,7 @@ function modelContent(model: Model): VariantContent {
  * @param complete The complete depicted content.
  * @param scope The module to open, or null for repository roots.
  * @param standing The comparison status of each depicted relationship.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @returns The projected content and every relationship behind each line.
  */
 function projectScope(
@@ -107,20 +95,35 @@ function projectScope(
 		complete.nodes.map((node) => [node.id, visibleEndpoint(byId, node.id, boundary)]),
 	);
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
-	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	/**
 	 * Every line runs between the drawn ends of its relationship.
 	 * @param edge The relationship.
 	 * @returns Both drawn ends.
 	 */
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
+	/**
+	 * The lines some of the relationships draw, joined once when they are all of the previous.
+	 * @param edges The relationships.
+	 * @param previous The lines of a wider set of them.
+	 * @param wider How many relationships the wider set holds.
+	 * @returns The lines.
+	 */
+	const linesOf = (edges: readonly Edge[], previous: OverviewLine[], wider: number) =>
+		edges.length === wider
+			? previous
+			: drawnLines(complete, joinedLines(complete, edges, endsOf, open, standing), open);
 	const allConnections = joinedLines(complete, relevant, endsOf, open, standing);
 	const every = drawnLines(complete, allConnections, open);
-	// With no kind hidden, the reading draws every line, so it joins them only once.
-	const connections =
-		shown.length === relevant.length
-			? every
-			: drawnLines(complete, joinedLines(complete, shown, endsOf, open, standing), open);
+	const lensed = relevant.filter(choices.lens.draws);
+	const throughLens = linesOf(lensed, every, relevant.length);
+	const shown = lensed.filter(choices.shown);
+	const connections = cablePlates(
+		complete,
+		linesOf(shown, throughLens, lensed.length),
+		endsOf,
+		(line) => standing[line.id] ?? "unchanged",
+	);
+	// A card whose every line the lens or a hidden kind leaves out leaves the picture with them.
 	const stranded = strandedCards(every, connections, open);
 	const children = complete.nodes.filter(
 		({ id, parent }) =>
@@ -147,6 +150,8 @@ function projectScope(
 			return node === undefined ? [] : [node];
 		}),
 		missing: scope !== null && scoped === undefined,
+		lens: { id: choices.lens.id, name: choices.lens.name },
+		leftOut: every.length - connections.length,
 		inspection: interfaceOf(complete, scoped),
 		content: drawingContent(complete, visible, connections, {
 			parents: open,
@@ -161,7 +166,7 @@ function projectScope(
  * @param model The coherent model.
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
- * @param filters Hidden relationship kinds.
+ * @param filters The lens, and the relationship kinds and effects hidden besides.
  * @param reference The coherent comparison base, when available.
  * @param visibility Exact imported view membership, when the reading supplies it.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
@@ -183,24 +188,34 @@ function projectModel(
 		filters,
 	);
 	const frames = expanded.map(({ frame }) => frame);
-	const choices = { hideKinds: filters.hideKinds, frames, controls };
 	/**
-	 * Both sides of a comparison read the same opened scope.
+	 * Both sides of a comparison read the same opened scope through the same lens.
 	 * @param content The side to project.
+	 * @param lens The lens to read it through.
 	 * @returns That side's reading.
 	 */
-	const read = (content: VariantContent) =>
-		projectContent(content, opened, focus, standing, choices, visibility);
-	const projection = read(context.depicted);
+	const read = (content: VariantContent, lens: ReadingLens) =>
+		projectContent(
+			content,
+			opened,
+			focus,
+			standing,
+			{ lens, shown: filtered(model.policy, filters), frames, controls },
+			visibility,
+		);
+	const { projection, lens, emptyLens } = drawnThrough(model.policy, filters.lens, (through) =>
+		read(context.depicted, through),
+	);
 	return {
 		...projection,
+		emptyLens,
 		...context,
 		opened,
 		expanded,
 		unopened,
 		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
-		held: heldContent(reference, () => read(context.complete), projection.content),
+		held: heldContent(reference, () => read(context.complete, lens), projection.content),
 		inspection: interfaceOf(
 			context.complete,
 			context.complete.nodes.find((node) => node.id === opened),
@@ -208,6 +223,49 @@ function projectModel(
 		flow: null as ModelFlow | null,
 		content: projection.content,
 	};
+}
+
+/**
+ * Whether a relationship survives the kinds and effects a reader hid besides the lens. A
+ * relationship is out when its kind or its effect is hidden; `declared` is a dependency that
+ * states no effect, and `call` from before sync and async hides both.
+ * @param policy The policy in effect.
+ * @param filters What the reader hid.
+ * @returns The test.
+ */
+function filtered(
+	policy: Model["policy"],
+	filters: Pick<ModelFilters, "hideKinds" | "hideEffects">,
+): LineChoices["shown"] {
+	const kinds = new Set(hiddenKinds(filters.hideKinds, policy));
+	const effects = new Set(filters.hideEffects);
+	return (edge) => {
+		const effect = lineEffect(edge);
+		return !kinds.has(edge.kind) && (effect === undefined || !effects.has(effect));
+	};
+}
+
+/**
+ * The lens a picture draws through. The default lens gives way to every relationship where it
+ * would draw no line; a lens the reader named is a question, and an empty picture answers it.
+ * @param policy The policy in effect.
+ * @param id The lens the reading names, if any.
+ * @param read Reads the picture through a lens.
+ * @returns The reading, the lens it draws through, and the default that drew no line, if any.
+ */
+function drawnThrough<Reading extends { connections: readonly unknown[]; leftOut: number }>(
+	policy: Model["policy"],
+	id: string | undefined,
+	read: (lens: ReadingLens) => Reading,
+) {
+	const named = readingLens(policy, id);
+	const projection = read(named);
+	if (id !== undefined || projection.connections.length > 0 || projection.leftOut === 0)
+		return { projection, lens: named, emptyLens: undefined };
+	const lens = readingLens(policy, allLens());
+	const fallback = read(lens);
+	if (fallback.connections.length === 0) return { projection, lens: named, emptyLens: undefined };
+	return { projection: fallback, lens, emptyLens: { id: named.id, name: named.name } };
 }
 
 /**
@@ -287,7 +345,7 @@ function comparisonContent(model: Model, reference: Model | undefined) {
  * @param scope The recursive scope.
  * @param focus Explicit focused identities, or no focus.
  * @param standing Exact subject comparison states.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @param visibility Exact imported view membership, when present.
  * @returns The requested structural reading.
  */
@@ -311,7 +369,7 @@ function projectContent(
  * @param complete The complete architecture used for inspection.
  * @param scope The underlying recursive location.
  * @param standing The existing comparison classification.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @param visibility Explicit modules and relationships in the original view.
  * @returns The same projection contract with only the requested picture narrowed.
  */
@@ -329,16 +387,23 @@ function projectVisible(
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
 	const connections = drawnLines(
 		complete,
-		allConnections.filter(({ line }) => !choices.hideKinds?.includes(line.kind)),
+		allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
 		visible,
+	);
+	const drawn = cablePlates(
+		complete,
+		connections,
+		(edge) => [edge.from, edge.to],
+		(line) => standing[line.id] ?? "unchanged",
 	);
 	return {
 		...projectScope(complete, scope, standing, choices),
+		leftOut: drawnLines(complete, allConnections, visible).length - connections.length,
 		children: complete.nodes.filter((node) => visible.has(node.id)),
 		context: [],
 		connections,
 		allConnections,
-		content: drawingContent(complete, visible, connections, { parents: visible, doors: [] }),
+		content: drawingContent(complete, visible, drawn, { parents: visible, doors: [] }),
 	};
 }
 
@@ -360,7 +425,7 @@ function withLinesOf(content: DrawnContent, depicted: DrawnContent): DrawnConten
  * @param scope The underlying recursive scope.
  * @param focus The captured subject identities, including missing identities.
  * @param standing The comparison status of depicted subjects.
- * @param choices Hidden relationship kinds, and whether every line stays drawn.
+ * @param choices The lens, and the kinds hidden besides.
  * @returns The focused reading and required endpoint context.
  */
 function projectFocused(
@@ -400,9 +465,15 @@ function projectFocused(
 	 * @returns Both drawn ends.
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
+	const shown = relevant.filter((edge) => choices.lens.draws(edge) && choices.shown(edge));
+	const allConnections = joinedLines(complete, relevant, ends, openSelf, standing);
 	const joined = joinedLines(complete, shown, ends, openSelf, standing);
-	const connections = drawnLines(complete, joined, open);
+	const connections = cablePlates(
+		complete,
+		drawnLines(complete, joined, open),
+		ends,
+		(line) => standing[line.id] ?? "unchanged",
+	);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
 	const visible = new Set([...anchors, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));
@@ -412,7 +483,7 @@ function projectFocused(
 		missingFocus: focus.filter((id) => !known.has(id)),
 		complete,
 		connections,
-		allConnections: joinedLines(complete, relevant, ends, openSelf, standing),
+		allConnections,
 		children,
 		context,
 		trail:
@@ -422,6 +493,8 @@ function projectFocused(
 						.toReversed()
 						.flatMap((id) => byId.get(id) ?? []),
 		missing: false,
+		lens: { id: choices.lens.id, name: choices.lens.name },
+		leftOut: drawnLines(complete, allConnections, open).length - connections.length,
 		inspection: interfaceOf(complete, byId.get(scope ?? "")),
 		content: drawingContent(complete, visible, connections, {
 			parents: anchors,
@@ -453,93 +526,6 @@ function focusEndpoint(
 	if (focus.inside.has(id))
 		return ancestors(nodes, id).find((ancestor) => focus.anchors.has(ancestor)) ?? id;
 	return visibleEndpoint(nodes, id, focus.open);
-}
-
-/**
- * Keep only drawing fields and containment that this reading explicitly opens.
- * A door is a card with a name only (rule 5).
- * @param complete The full model content.
- * @param visible Modules present in this reading.
- * @param connections Its projected lines.
- * @param framing What the picture nests, and which of its cards are doors.
- * @param framing.parents Containers whose visible children remain nested.
- * @param framing.doors The modules outside the reading that a line reaches. One that holds parts is a door, and one with none has nothing to open, so it stands as its card.
- * @param framing.toggles What a door and a frame offer a live reader, if one draws the picture.
- * @returns Renderer content without private evidence or file metadata.
- */
-function drawingContent(
-	complete: VariantContent,
-	visible: ReadonlySet<string>,
-	connections: readonly OverviewLine[],
-	framing: { parents: ReadonlySet<string>; doors: readonly Node[]; toggles?: Toggles | undefined },
-): DrawnContent {
-	const doors = new Set(framing.doors.map((node) => node.id));
-	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
-	const [open] = framing.parents;
-	const childrenOf = containment(complete);
-	return {
-		nodes: complete.nodes
-			.filter((node) => visible.has(node.id))
-			.map((node) => {
-				const { description: _description, binding: _binding, ...drawn } = node;
-				const card = withToggle(
-					doors.has(node.id) && childrenOf.has(node.id)
-						? nameOnly(drawn, doorWay(byId, node.id, open))
-						: withCodePath(drawn, node, childrenOf),
-					framing.toggles,
-				);
-				if (node.parent !== undefined && framing.parents.has(node.parent)) return card;
-				const { parent: _parent, ...unframed } = card;
-				return unframed;
-			}),
-		edges: connections.map((connection) => {
-			const { anchor: _anchor, description: _description, ...line } = connection.line;
-			return line;
-		}),
-		flows: [],
-		walkthroughs: [],
-	};
-}
-
-/**
- * A door says only what it is called, and which way it lies.
- * @param card The drawn module.
- * @param door Which way it lies from the open module.
- * @returns The card without its responsibility.
- */
-function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
-	const { responsibility: _responsibility, ...named } = card;
-	return { ...named, door };
-}
-
-/**
- * Where a door lies in the tree from the open module.
- * @param byId Every module by its identity.
- * @param door The door's module.
- * @param open The open module, if the reading has one.
- * @returns Whether it lies higher, level or deeper.
- */
-function doorWay(byId: ReadonlyMap<string, Node>, door: string, open: string | undefined): DoorWay {
-	const levels =
-		open === undefined ? 0 : ancestors(byId, door).length - ancestors(byId, open).length;
-	if (levels === 0) return "across";
-	return levels < 0 ? "up" : "down";
-}
-
-/**
- * A part shows where its code lives (rule 8).
- * @param card The drawn module.
- * @param node The authored module.
- * @param childrenOf The containment index.
- * @returns The card with its path row, when it has one.
- */
-function withCodePath(
-	card: DrawnNode,
-	node: Node,
-	childrenOf: ReadonlyMap<string, readonly Node[]>,
-): DrawnNode {
-	const codePath = codePathOf(node, childrenOf);
-	return codePath === undefined ? card : { ...card, codePath };
 }
 
 /**

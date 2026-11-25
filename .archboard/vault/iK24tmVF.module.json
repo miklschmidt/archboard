@@ -1,20 +1,10 @@
 {
-  "order": 960240,
-  "name": "Drawing settlement",
-  "kind": "function",
-  "responsibility": "States the graph, runs the engine that the render names and settles one drawing",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-layout/src/architecture/mod.rs",
-    "symbol": "draw"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#iK24tmVF",
-  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
   "outgoing": [
     {
+      "id": "vKEsyHFk/gbyqW4H3#qJrkH2Qg",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "round the routed polylines",
       "emphasis": "normal",
       "anchor": {
@@ -22,12 +12,13 @@
         "path": "crates/archboard-layout/src/architecture/drawn.rs",
         "symbol": "curve_through"
       },
-      "id": "vKEsyHFk/gbyqW4H3#qJrkH2Qg",
       "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
     },
     {
+      "id": "vKEsyHFk/OjRLKb74#notKnIIz",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "compute",
       "label": "one solve, with its nesting",
       "emphasis": "hero",
       "traffic": {
@@ -37,14 +28,15 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-layout/src/architecture/mod.rs",
-        "symbol": "placed_blocks"
+        "symbol": "draw"
       },
-      "id": "vKEsyHFk/OjRLKb74#notKnIIz",
       "to": "vKEsyHFk/OjRLKb74#oycxx6G2"
     },
     {
+      "id": "vKEsyHFk/OjRLKb74#lbUaPzWc",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "compute",
       "label": "state the graph",
       "emphasis": "normal",
       "traffic": {
@@ -56,8 +48,19 @@
         "path": "crates/archboard-layout/src/architecture/mod.rs",
         "symbol": "compound_graph"
       },
-      "id": "vKEsyHFk/OjRLKb74#lbUaPzWc",
       "to": "vKEsyHFk/OjRLKb74#ZRFUJrjD"
     }
-  ]
+  ],
+  "order": 960240,
+  "name": "Drawing settlement",
+  "kind": "function",
+  "responsibility": "States the graph, runs the engine that the render names and settles one drawing",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout/src/architecture/mod.rs",
+    "symbol": "draw"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#iK24tmVF",
+  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ"
 }

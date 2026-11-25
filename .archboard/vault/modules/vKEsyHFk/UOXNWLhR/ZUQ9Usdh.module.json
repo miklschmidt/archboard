@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
+      "order": 73000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "what the last pass found on the version drawn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-code-findings.ts",
+        "symbol": "codeFindingsQuery"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "id": "vKEsyHFk#4msTmvFC",
+      "order": 80000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "mark the warnings on the drawn picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
+        "symbol": "markCodeWarnings"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA"
+    }
+  ],
   "order": 39000,
   "name": "Mark code warnings",
   "kind": "module",
@@ -9,35 +39,7 @@
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
     "symbol": "useCodeMarks"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#ZUQ9Usdh",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 73000,
-      "kind": "call",
-      "label": "what the last pass found on the version drawn",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-code-findings.ts",
-        "symbol": "codeFindingsQuery"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
-      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
-    },
-    {
-      "order": 80000,
-      "kind": "dependency",
-      "label": "mark the warnings on the drawn picture",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
-        "symbol": "markCodeWarnings"
-      },
-      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-      "id": "vKEsyHFk#4msTmvFC"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

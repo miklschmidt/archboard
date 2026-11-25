@@ -36,7 +36,8 @@ TASK-278 records the experiment and the measured adoption results.
 
 Superseded (2026-09-27,
 [ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md)): ADR 0040
-removes the Graphviz engine, and Track and Blocks lay out every board. Graphviz
+removed the Graphviz engine in favor of Track and Blocks.
+[ADR 0096](0096-track-is-replaced-by-lanes.md) replaced Track with Lanes. Graphviz
 still places their cards. libavoid still routes Blocks' trunks.
 
 Superseded in part (2026-10-25, TASK-520.02,

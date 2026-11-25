@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 49000,
   "name": "Voice link capture",
   "kind": "module",
@@ -7,7 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/voice-session/rules/binding.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#gYvouMDV",
   "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC",
   "documents": [
@@ -23,6 +24,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

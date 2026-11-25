@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#QC680uQD",
+      "order": 1000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "installs the CLI and runs proposals, read and footprint",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "actions/pull-request/run.ts",
+        "symbol": "reportOn"
+      },
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ],
   "order": 5200,
   "name": "Pull-request Action",
   "kind": "package",
@@ -8,21 +24,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "actions/pull-request"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#mAh7CmuS",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "installs the CLI and runs proposals, read and footprint",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "actions/pull-request/run.ts",
-        "symbol": "reportOn"
-      },
-      "id": "vKEsyHFk#QC680uQD",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#mAh7CmuS"
 }

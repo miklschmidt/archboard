@@ -147,6 +147,12 @@ const ArchitectureModelSchema = z
 		migrationPreview: MigrationPreviewSchema.optional(),
 		migration: InstalledMigrationSchema.optional(),
 		policy: SemanticPolicySchema,
+		/**
+		 * Why this live vault opens read-only: it is in the old format, and every
+		 * write is refused until it is upgraded (TASK-663). Absent on a vault in
+		 * the current format and on retained history, which is read-only anyway.
+		 */
+		readOnly: ModelDiagnosticSchema.optional(),
 		modules: z.array(ArchitectureModuleSchema.extend({ file: z.string() })),
 		collections: z.array(FlowCollectionSchema.extend({ file: z.string() })),
 		walkthroughs: z.array(WalkthroughSchema.extend({ file: z.string() })).default([]),
@@ -241,6 +247,9 @@ const ArchitectureModelFailureSchema = z
 	.object({
 		success: z.literal(false),
 		code: z.enum([
+			"UPGRADE_REQUIRED",
+			"UPGRADE_NOT_NEEDED",
+			"INVENTORY_INCOMPLETE",
 			"WALKTHROUGH_NOT_FOUND",
 			"BOOKMARK_NOT_FOUND",
 			"BOOKMARK_AMBIGUOUS",
@@ -265,6 +274,7 @@ const ArchitectureModelFailureSchema = z
 			"MODEL_CHANGED",
 			"LEGACY_AUTHORITY",
 			"MODULE_NOT_FOUND",
+			"LENS_NOT_FOUND",
 			"FLOW_REQUIRED",
 			"FLOW_NOT_FOUND",
 			"FLOW_AMBIGUOUS",
@@ -277,6 +287,7 @@ const ArchitectureModelFailureSchema = z
 			"REFERENCE_UNAVAILABLE",
 			"ARCHIVE_NOT_INITIALIZED",
 			"ARCHIVE_UNREADABLE",
+			"ARCHIVE_NEWER",
 			"ARCHIVE_IN_USE",
 			"ARCHITECTURE_UNAVAILABLE",
 			"CHECKPOINT_INVALID",

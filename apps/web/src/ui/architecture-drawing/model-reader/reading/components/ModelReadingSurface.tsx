@@ -7,6 +7,7 @@ import {
 	type ReactNode,
 } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
+import { readingLens } from "@archboard/model/content";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
@@ -136,10 +137,16 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		() => ({ ready: accepted.ready, presentation: null }),
 		[accepted.ready],
 	);
+	// An agent is told the lens the picture is drawn through, which is all where the default drew none.
+	const drawnLens = shown.projection.lens.id;
+	const captured = useMemo(
+		() => ({ ...shown.reading, filters: { ...shown.reading.filters, lens: drawnLens } }),
+		[shown.reading, drawnLens],
+	);
 	const explanation = useModelExplanation(
 		vault,
 		shown.model,
-		shown.reading,
+		captured,
 		accepted.selected,
 		reporting,
 	);
@@ -150,14 +157,16 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		[reader, behavioralIds, explanation, menu],
 	);
 	const revealSelection = useCallback((): void => {
-		const kinds = model.relationships
-			.filter((edge) => selection.ids.has(edge.id))
-			.map((edge) => edge.kind);
+		const edges = model.relationships.filter((edge) => selection.ids.has(edge.id));
+		const lens = readingLens(model.policy, drawnLens);
+		// A relationship that the lens leaves out shows through the lens of every relationship.
 		reveal(
 			[...selection.ids].filter((id) => !behavioralIds.has(id)),
-			kinds,
+			edges,
+			!edges.every(lens.draws),
+			model.policy,
 		);
-	}, [model.relationships, selection.ids, reveal, behavioralIds]);
+	}, [model.relationships, model.policy, drawnLens, selection.ids, reveal, behavioralIds]);
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	const subjectMenu = useSubjectMenu(reader);
 	useReaderKeys(reader.onMove);

@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
+      "order": 18000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the vault an untracked holder keeps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/repo-registry.ts",
+        "symbol": "vaultHolder"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#VqSf4PHA",
+      "order": 24000,
+      "kind": "async",
+      "effect": "query",
+      "label": "git in its own process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/clients/git.ts",
+        "symbol": "git"
+      },
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    },
+    {
+      "id": "vKEsyHFk#LfkZEor0",
+      "order": 70058,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "read registry fields",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/registry-file.ts",
+        "symbol": "stringAt"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    }
+  ],
   "order": 26000,
   "name": "Checkout registry",
   "kind": "module",
@@ -7,7 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/store/repo-registry.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#nLp2hILd",
   "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "documents": [
@@ -29,47 +73,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 18000,
-      "kind": "call",
-      "label": "the vault an untracked holder keeps",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/store/repo-registry.ts",
-        "symbol": "vaultHolder"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 24000,
-      "kind": "dependency",
-      "label": "git in its own process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/clients/git.ts",
-        "symbol": "git"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#VqSf4PHA",
-      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
-    },
-    {
-      "order": 70058,
-      "kind": "call",
-      "label": "read registry fields",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/store/registry-file.ts",
-        "symbol": "stringAt"
-      },
-      "id": "vKEsyHFk#LfkZEor0",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

@@ -4,10 +4,11 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use archboard_layout::{LineLook, Node};
+use archboard_layout::{Edge, LineLook, Node};
 use archboard_scene::paint::design::fallback_icon;
+use archboard_scene::paint::effect_look;
 use archboard_scene::request::{
-    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance,
+    Arrowhead, Dash, DrillDirection, Effect, GroupTag, LineAppearance, LineEffect, NodeAppearance,
 };
 
 use crate::request::Policy;
@@ -77,73 +78,104 @@ pub(crate) fn node_appearances(
         .collect()
 }
 
-/// The kind a joined line wears when its relationships differ
-/// (`MIXED_KIND` in `@archboard/model/views`). No vocabulary name holds a space.
-const MIXED_KIND: &str = "mixed kinds";
+/// The quiet in-process kind, the most common one, whose labels say only what
+/// they carry: an unprefixed label means sync, so its kind never rests on its
+/// colour alone.
+const SYNC: &str = "sync";
 
-/// How a line reads: a flow's step dashed with an open head in the neutral
-/// ink, never mistaken for a relationship of any kind; a line of mixed kinds in
-/// the neutral ink, in a dash no kind can wear; a relationship in its kind's
-/// look, or solid with a filled head for a kind the policy lacks.
-pub(crate) fn line_appearance(kind: &str, policy: &Policy, step: bool) -> LineAppearance {
+/// The one kind whose relationships may state no effect (`EFFECTLESS_KIND` in
+/// `@archboard/model/policy`): a declared requirement.
+const DEPENDENCY: &str = "dependency";
+
+/// Whether the policy records how each kind is dashed: a reading from before
+/// relationships stated their effect, which keeps its recorded look (ADR 0065).
+fn recorded(policy: &Policy) -> bool {
+    policy
+        .relationship_kinds
+        .values()
+        .any(|look| look.dash.is_some())
+}
+
+/// How a line reads. A flow's step is dashed with an open head in the neutral
+/// ink, never mistaken for a relationship of any kind. A relationship wears its
+/// kind's ink and uses the body and end marks of its effect (`effect_look`).
+/// A reading from before effects draws each kind as its policy recorded it.
+pub(crate) fn line_appearance(
+    kind: &str,
+    effect: Option<Effect>,
+    policy: &Policy,
+    step: bool,
+) -> LineAppearance {
     if step {
         return LineAppearance {
             name: "Step".to_owned(),
             color: None,
             dash: Dash::Dashed,
             arrowhead: Arrowhead::Open,
+            effect: None,
         };
     }
-    if kind == MIXED_KIND {
+    let look = policy.relationship_kinds.get(kind);
+    let name = look.map_or_else(|| kind.to_owned(), |look| look.name.clone());
+    let color = look.and_then(|look| look.color);
+    if recorded(policy) {
         return LineAppearance {
-            name: "Mixed kinds".to_owned(),
-            color: None,
-            dash: Dash::Mixed,
-            arrowhead: Arrowhead::Filled,
+            name,
+            color,
+            dash: look.and_then(|look| look.dash).unwrap_or(Dash::Solid),
+            arrowhead: look
+                .and_then(|look| look.arrowhead)
+                .unwrap_or(Arrowhead::Filled),
+            effect: None,
         };
     }
-    policy.relationship_kinds.get(kind).map_or_else(
-        || LineAppearance {
-            name: kind.to_owned(),
-            color: None,
-            dash: Dash::Solid,
-            arrowhead: Arrowhead::Filled,
-        },
-        |look| LineAppearance {
-            name: look.name.clone(),
-            color: look.color,
-            dash: look.dash,
-            arrowhead: look.arrowhead,
-        },
-    )
+    let effect = effect
+        .map(LineEffect::from)
+        .or_else(|| (kind == DEPENDENCY).then_some(LineEffect::Declared));
+    let (dash, arrowhead) = effect
+        .map(effect_look)
+        .map_or((Dash::Solid, Arrowhead::Filled), |look| {
+            (look.dash, look.head)
+        });
+    LineAppearance {
+        name,
+        color,
+        dash,
+        arrowhead,
+        effect,
+    }
 }
 
 /// How a line is drawn, as its appearance says.
-pub(crate) fn line_look(kind: &str, policy: &Policy, step: bool) -> LineLook {
+pub(crate) fn line_look(edge: &Edge, policy: &Policy, step: bool) -> LineLook {
     let LineAppearance {
         dash, arrowhead, ..
-    } = line_appearance(kind, policy, step);
+    } = line_appearance(&edge.kind, edge.effect, policy, step);
     LineLook { dash, arrowhead }
+}
+
+/// The words a line's label carries: a coloured line names its kind before
+/// what its relationship carries, so its kind never rests on colour alone. A
+/// sync line, a neutral line, a step and a reading from before effects say
+/// only their own.
+pub(crate) fn label_words(edge: &Edge, policy: &Policy, step: bool) -> Option<String> {
+    let own = edge.label.as_deref().filter(|words| !words.is_empty());
+    let kind = policy
+        .relationship_kinds
+        .get(&edge.kind)
+        .filter(|look| !step && look.color.is_some() && edge.kind != SYNC && !recorded(policy))
+        .map(|look| look.name.as_str());
+    match (kind, own) {
+        (Some(kind), Some(own)) => Some(format!("{kind} · {own}")),
+        (Some(kind), None) => Some(kind.to_owned()),
+        (None, own) => own.map(str::to_owned),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{MIXED_KIND, drill_direction, line_appearance};
-    use crate::request::Policy;
-    use archboard_scene::request::{Dash, DrillDirection};
-
-    #[test]
-    fn a_line_of_mixed_kinds_wears_a_dash_no_kind_can_choose_in_the_neutral_ink() {
-        let policy: Policy = serde_json::from_value(serde_json::json!({
-            "levels": [],
-            "nodeKinds": {},
-            "relationshipKinds": {},
-        }))
-        .expect("a policy");
-        let line = line_appearance(MIXED_KIND, &policy, false);
-        assert_eq!(line.dash, Dash::Mixed);
-        assert_eq!(line.color, None);
-    }
+    use super::drill_direction;
+    use archboard_scene::request::DrillDirection;
 
     #[test]
     fn says_which_way_the_picture_a_part_opens_lies() {

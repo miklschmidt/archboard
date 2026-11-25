@@ -12,7 +12,7 @@ use super::super::crowding::{
 };
 use super::super::drawn_lines::{Axis, Run, along, on_run};
 use super::super::hops::{
-    Bulge, Hop, crest_along, crest_margin, flipped, hop_fits, hump, passes_beneath,
+    Bulge, Hop, crest_along, crest_margin, flipped, hop_fits, hump, passage_beneath,
 };
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 use super::{LEAST_ROOM, Rise, Settling, at_on};
@@ -262,12 +262,13 @@ impl Settling<'_> {
                 };
                 if !standing.crossings.iter().all(|&crossing| {
                     let beneath = &self.scene.runs[self.sides(standing.cluster, crossing).1.drawer];
-                    passes_beneath(
+                    passage_beneath(
                         &self.scene.runs,
                         beneath,
                         self.crossings[crossing].point,
                         bulge,
                     )
+                    .is_clear()
                 }) {
                     return None;
                 }
@@ -301,7 +302,7 @@ impl Settling<'_> {
 
     /// What a look at the drawing finds with some standing hops, by their
     /// index, taken down.
-    fn without<T>(&mut self, hops: &[usize], look: impl FnOnce(&Self) -> T) -> T {
+    pub(super) fn without<T>(&mut self, hops: &[usize], look: impl FnOnce(&Self) -> T) -> T {
         if hops.is_empty() {
             return look(self);
         }
@@ -458,7 +459,7 @@ impl Settling<'_> {
 
     /// Take standing hops down, by their index, so a crest grown from them
     /// stands in their place.
-    fn unstand(&mut self, hops: &[usize]) {
+    pub(super) fn unstand(&mut self, hops: &[usize]) {
         let mut stood: Vec<Rise> = Vec::new();
         let mut standing: Vec<Hop> = Vec::new();
         let pairs = std::mem::take(&mut self.stood)

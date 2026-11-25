@@ -179,6 +179,55 @@ test("a relationship source transfer preserves identity and metadata across file
 	});
 });
 
+test("a write is refused at the relationship and field that state no effect, and only a dependency may omit it", async () => {
+	const { vault } = fixture();
+	const worker = readFileSync(join(vault, "worker.module.json"));
+	let input = await batch(vault, ["Shop", "Shop#Worker", "Shop#Gateway"]);
+	const add = (relationship: { kind: string; effect?: "mutation" }) =>
+		editArchitectureModule(vault, {
+			...input,
+			changes: [
+				{
+					type: "add-relationship",
+					source: "Shop#Worker",
+					relationship: { to: "Shop#Gateway", order: 4, ...relationship },
+				},
+			],
+		});
+	await expect(add({ kind: "call", effect: "mutation" })).rejects.toThrow(
+		/The kind call is gone: use sync .* or async/u,
+	);
+	const refused = await add({ kind: "sync" });
+	if (refused.success) throw new Error("A sync call without an effect was written");
+	expect(refused.diagnostics).toEqual([
+		expect.objectContaining({
+			file: "worker.module.json",
+			path: "outgoing.0.effect",
+			subjects: [expect.stringMatching(/^Shop#/u)],
+		}),
+	]);
+	expect(readFileSync(join(vault, "worker.module.json"))).toEqual(worker);
+	expect(await add({ kind: "dependency" })).toMatchObject({ success: true });
+	let current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const declared = current.relationships.find((value) => value.from === "Shop#Worker")!;
+	expect(declared.effect).toBeUndefined();
+	const { releaseArchitectureClaim } = await import("@archboard/model/store-write");
+	await releaseArchitectureClaim(vault, { claim: input.claim, writer: input.writer });
+	input = await batch(vault, ["Shop", "Shop#Worker", "Shop#Gateway", declared.id]);
+	const retyped = await editArchitectureModule(vault, {
+		...input,
+		changes: [{ type: "edit-relationship", subject: declared.id, set: { kind: "sync" } }],
+	});
+	if (retyped.success) throw new Error("A dependency became a call without an effect");
+	expect(retyped.diagnostics).toEqual([
+		expect.objectContaining({ path: "outgoing.0.effect", subjects: [declared.id] }),
+	]);
+	current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(current.relationships.find((value) => value.id === declared.id)?.kind).toBe("dependency");
+});
+
 test("relationship additions, field edits and removals preserve order and reserve retired identities", async () => {
 	const { vault } = fixture();
 	let input = await batch(vault, ["Shop", "Shop#Worker", "Shop#Gateway"]);
@@ -189,7 +238,13 @@ test("relationship additions, field edits and removals preserve order and reserv
 				{
 					type: "add-relationship",
 					source: "Shop#Worker",
-					relationship: { to: "Public API", kind: "call", order: 4, label: "Notify" },
+					relationship: {
+						to: "Public API",
+						kind: "sync",
+						effect: "mutation",
+						order: 4,
+						label: "Notify",
+					},
 				},
 			],
 		}),
@@ -220,7 +275,8 @@ test("relationship additions, field edits and removals preserve order and reserv
 		id: edge.id,
 		from: "Shop#Worker",
 		to: "Shop#Gateway",
-		kind: "call",
+		kind: "sync",
+		effect: "mutation",
 		emphasis: "normal",
 		order: 1,
 		description: "Emits a notification",
@@ -369,7 +425,7 @@ test("a batch can reference its new module before its addition without exposing 
 			{
 				type: "add-relationship",
 				source: "Shop#Handler",
-				relationship: { to: "Cache", kind: "call", order: 3 },
+				relationship: { to: "Cache", kind: "sync", effect: "query", order: 3 },
 			},
 			{ type: "edit-module", subject: "Shop#Handler", set: { parent: "Cache" } },
 			{ type: "add-module", module: { name: "Cache", kind: "service", order: 5 } },

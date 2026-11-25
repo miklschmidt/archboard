@@ -1,6 +1,5 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -99,12 +98,11 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  * @param standing What the caller says, when it says anything.
  * @returns The rendered architecture.
  */
-function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
+function drawn(standing?: StatedStandings): Promise<RenderedDiagram> {
 	return renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content: PROPOSAL,
 		standing,
-		layout,
 	});
 }
 
@@ -126,32 +124,7 @@ describe("a picture nobody stated a standing for", () => {
 		}
 	});
 
-	test("keeps this Track fixture's cards stable with comparison marks", async () => {
-		const shared = orderedFixture({
-			...PROPOSAL,
-			edges: [
-				...PROPOSAL.edges,
-				{ id: "e6", from: "gw", to: "legacy", kind: "call", order: 6000 },
-			].map((edge) => Object.assign({}, edge, { emphasis: "normal" })),
-		});
-		const plain = arrangementOf(
-			await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content: shared,
-				layout: "track",
-			}),
-		);
-		const compared = arrangementOf(
-			await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content: shared,
-				layout: "track",
-				standing: STANDING,
-			}),
-		);
-		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
-		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
-
+	test("keeps a sequence's arrangement stable with comparison marks", async () => {
 		const sequence = arrangementOf(await drawnSequence());
 		const comparedSequence = arrangementOf(await drawnSequence(SEQUENCE_STANDING));
 		expect(comparedSequence).toEqual(sequence);
@@ -286,24 +259,21 @@ describe("a stated standing on an architecture", () => {
 		expect(withoutColour(words)).not.toBe(withoutColour(unmarked));
 	});
 
-	test.each(layoutEngineSchema().options)(
-		"one picture draws its standings in each theme's own ink (%s)",
-		async (layout) => {
-			const rendered = await drawn(STANDING, layout);
-			for (const standing of ["added", "removed", "changed"]) {
-				expect(rendered.svg).toContain(`data-semantic-standing="${standing}"`);
-			}
-			// Each theme paints its standings in its own ink, and neither reaches for the
-			// ring a viewer already uses to mean "this is what you have selected".
-			const inks = (["light", "dark"] as const).map((theme) => {
-				const queue = groupOf(paintedIn(rendered.svg, theme), "node", "queue");
-				expect(queue, `queue was not drawn in ${theme}`).toBeDefined();
-				const mark = markInk(queue!);
-				expect(mark).toBeDefined();
-				expect(mark).not.toBe(selectionInk(rendered.svg, theme));
-				return mark;
-			});
-			expect(inks[0]).not.toBe(inks[1]);
-		},
-	);
+	test("one picture draws its standings in each theme's own ink", async () => {
+		const rendered = await drawn(STANDING);
+		for (const standing of ["added", "removed", "changed"]) {
+			expect(rendered.svg).toContain(`data-semantic-standing="${standing}"`);
+		}
+		// Each theme paints its standings in its own ink, and neither reaches for the
+		// ring a viewer already uses to mean "this is what you have selected".
+		const inks = (["light", "dark"] as const).map((theme) => {
+			const queue = groupOf(paintedIn(rendered.svg, theme), "node", "queue");
+			expect(queue, `queue was not drawn in ${theme}`).toBeDefined();
+			const mark = markInk(queue!);
+			expect(mark).toBeDefined();
+			expect(mark).not.toBe(selectionInk(rendered.svg, theme));
+			return mark;
+		});
+		expect(inks[0]).not.toBe(inks[1]);
+	});
 });

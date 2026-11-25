@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#FHm5EAjC",
+      "order": 1000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the core directory, and the hash it must record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/core.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 30000,
   "name": "Core loader",
   "kind": "module",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/bun-renderer/services/core.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#jY4mqBJe",
-  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "the core directory, and the hash it must record",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/services/core.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#FHm5EAjC",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp"
 }

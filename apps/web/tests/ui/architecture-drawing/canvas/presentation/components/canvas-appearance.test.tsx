@@ -41,6 +41,8 @@ function applied(
 		lineColor: "",
 		dash: "",
 		arrowhead: "",
+		rails: false,
+		effect: "",
 		...look,
 	};
 }

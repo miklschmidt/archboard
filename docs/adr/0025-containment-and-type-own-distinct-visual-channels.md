@@ -10,6 +10,12 @@ with. A container no longer establishes a color scope for its contents. Type
 independence, the icon chip, and the relationship, comparison and selection
 channels stand.
 
+Amended by [ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) on
+2026-11-22. A relationship's kind sets its line color. The effect sets its marks: a wedge and
+imprint for mutation, an eye and caller ring for query, and an equals sign and point for compute.
+Declared-only lines have a broken body and a detached chevron. In comparisons, the status color
+replaces the kind's ink and the effect keeps its marks.
+
 An API that migrates from legacy IIS into Kubernetes must visibly change its
 hosting context. It must remain recognizable as an API. Card bodies communicate
 containment, icon chips communicate node type, and comparison and selection use

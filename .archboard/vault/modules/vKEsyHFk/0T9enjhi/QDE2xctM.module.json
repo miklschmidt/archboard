@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
+      "order": 209000,
+      "kind": "async",
+      "effect": "query",
+      "label": "resolveModelReferences",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
+        "symbol": "resolveModelReferences"
+      },
+      "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
+    },
+    {
+      "id": "vKEsyHFk#Wg3meI2l",
+      "order": 980030,
+      "kind": "async",
+      "effect": "query",
+      "label": "list the checkpoints that can pin",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
+        "symbol": "listArchitectureCheckpoints"
+      },
+      "to": "vKEsyHFk#v5jpAVBo"
+    }
+  ],
   "order": 68000,
   "name": "Foreign revision pins",
   "kind": "module",
@@ -8,7 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#QDE2xctM",
   "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "documents": [
@@ -30,34 +60,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 209000,
-      "kind": "call",
-      "label": "resolveModelReferences",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
-        "symbol": "resolveModelReferences"
-      },
-      "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
-      "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
-    },
-    {
-      "order": 980030,
-      "kind": "call",
-      "label": "list the checkpoints that can pin",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
-        "symbol": "listArchitectureCheckpoints"
-      },
-      "id": "vKEsyHFk#Wg3meI2l",
-      "to": "vKEsyHFk#v5jpAVBo"
     }
   ]
 }

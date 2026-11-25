@@ -4,6 +4,15 @@ An advisor is a sub-agent that gives a design judgement in place of a person.
 `archboard-deepen` asks two advisors at each gate where it would otherwise ask the owner.
 Each advisor answers alone first, and then it sees the other advisor's answer.
 
+## Judge from the reader's seat
+
+An advisor stands in for the owner, and the owner judges a decision by its user. Archboard's users
+are the people who read its pictures and the agents who author its models. Judge each decision
+first from the seat of the person who looks at the result: what they see at a glance, what they
+learn, and what they can then act on. What an agent can decide from code is a constraint on the
+design. It never sets the goal. When the two pull apart, say so, and give the reader's answer and
+what it would take to make it decidable.
+
 The two advisors in this repository:
 
 | Advisor | Provider | Model                                                         |

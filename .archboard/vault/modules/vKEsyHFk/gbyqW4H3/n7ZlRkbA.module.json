@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
+      "order": 54000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "draw the subject warning badge",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
+        "symbol": "cornerWarning"
+      },
+      "to": "vKEsyHFk#Ut8M2UHc"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
+      "order": 65000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "draw the code warning glyph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
+        "symbol": "lineWarning"
+      },
+      "to": "vKEsyHFk#Ut8M2UHc"
+    },
+    {
+      "id": "vKEsyHFk#KTwHgUQG",
+      "order": 990100,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the warnings, for the painter to draw",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
+        "symbol": "stageOf"
+      },
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ],
   "order": 35000,
   "name": "Subject code marks",
   "kind": "module",
@@ -7,48 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "draw the subject warning badge",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
-        "symbol": "cornerWarning"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "draw the code warning glyph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
-        "symbol": "lineWarning"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the warnings, for the painter to draw",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#KTwHgUQG",
-      "to": "vKEsyHFk#9FxduWoO"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

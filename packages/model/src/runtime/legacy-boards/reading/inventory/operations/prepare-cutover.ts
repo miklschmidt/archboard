@@ -22,10 +22,10 @@ import {
 	ArchiveError,
 	archiveCommit,
 	tree,
-	CheckpointRecordSchema,
 	captureOwnSource,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import {
 	checkoutContext,
 	operationRef,

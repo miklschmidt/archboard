@@ -218,7 +218,7 @@ speakers:
   fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
 
 Run `bun run benchmark` for the separate, uncached renderer corpus.
-It draws the current repository root and every module with children, plus three fixed fixtures, on both layout engines.
+It draws the current repository root and every module with children, plus three fixed fixtures.
 The public model reader refuses unreadable canonical inputs.
 This command retains drawing assertions and speed limits outside the normal gate.
 

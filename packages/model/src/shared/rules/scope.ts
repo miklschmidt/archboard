@@ -97,6 +97,27 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
  */
 const MIXED_KIND = "mixed kinds";
 
+/**
+ * The effects a joined line can wear, strongest first. A line that holds a
+ * mutation changes state whatever else it holds, as one relationship covering
+ * several operations takes the strongest (TASK-663). A declared dependency
+ * states none and adds nothing to the join.
+ */
+const EFFECTS_BY_STRENGTH = [
+	"mutation",
+	"query",
+	"compute",
+] as const satisfies readonly NonNullable<SemanticEdge["effect"]>[];
+
+/**
+ * The strongest effect that some relationships state.
+ * @param edges The relationships.
+ * @returns The effect, or undefined when none states one.
+ */
+function strongestEffect(edges: readonly SemanticEdge[]): SemanticEdge["effect"] {
+	return EFFECTS_BY_STRENGTH.find((effect) => edges.some((edge) => edge.effect === effect));
+}
+
 /** The most parts inside a card that a joined line names. */
 const NAMED_PARTS = 2;
 
@@ -222,6 +243,70 @@ function partsReachedIn(
 	};
 }
 
+/**
+ * One plate for each cable. The lines between one pair of drawn parts, one way and in one
+ * comparison state, draw as one cable of strands, so its first line wears the words a joined
+ * line of them all would wear (`wordsOnJoinedLine`), and its other lines wear none.
+ * @param content The content the reading draws from.
+ * @param lines The lines the reading draws.
+ * @param endsOf Where a relationship's line starts and ends.
+ * @param standingOf How a line stands in a comparison.
+ * @returns The lines, each cable worded once.
+ */
+function cablePlates(
+	content: VariantContent,
+	lines: readonly OverviewLine[],
+	endsOf: (edge: SemanticEdge) => readonly [string, string],
+	standingOf: (line: DrawnEdge) => string,
+): OverviewLine[] {
+	const reached = partsReachedIn(content, endsOf);
+	const words = new Map<string, string | undefined>();
+	for (const cable of cablesOf(lines, standingOf)) {
+		const [first, ...rest] = cable;
+		if (first === undefined || rest.length === 0) continue;
+		const { from, to } = first.line;
+		const ends = { from, to, twoWay: cable.some(({ line }) => line.twoWay === true) };
+		const joins = cable.flatMap((one) => one.joins);
+		words.set(first.line.id, wordsOnJoinedLine(joins, ends, reached));
+		for (const other of rest) words.set(other.line.id, undefined);
+	}
+	return lines.map((one) =>
+		words.has(one.line.id) ? { ...one, line: worded(one.line, words.get(one.line.id)) } : one,
+	);
+}
+
+/**
+ * The cables some lines draw as: the lines between one pair of drawn parts, one way and in one
+ * comparison state, each cable's lines in the picture's order.
+ * @param lines The lines.
+ * @param standingOf How a line stands in a comparison.
+ * @returns Each cable's lines.
+ */
+function cablesOf(
+	lines: readonly OverviewLine[],
+	standingOf: (line: DrawnEdge) => string,
+): OverviewLine[][] {
+	const cables = new Map<string, OverviewLine[]>();
+	for (const one of lines) {
+		const key = [standingOf(one.line), one.line.from, one.line.to].join("\u0000");
+		cables.set(key, [...(cables.get(key) ?? []), one]);
+	}
+	return [...cables.values()].map((cable) =>
+		cable.toSorted((one, other) => one.line.order - other.line.order),
+	);
+}
+
+/**
+ * A line with other words, or none.
+ * @param line The line.
+ * @param label Its words.
+ * @returns The line.
+ */
+function worded(line: DrawnEdge, label: string | undefined): DrawnEdge {
+	const { label: _words, ...bare } = line;
+	return label === undefined ? bare : { ...bare, label };
+}
+
 /** One line of the overview, and the relationships it stands for. */
 interface OverviewLine {
 	/** What the overview draws. */
@@ -330,7 +415,8 @@ function rootOf(content: VariantContent): (id: string) => string {
  * A lone relationship is drawn as stated. A joined line keeps the identity of
  * the first relationship in model order, so a comparison marks it, and it runs
  * the way that relationship runs. It wears the kind they share, or the neutral
- * mixed kind when they differ, because a majority kind would be a false mark.
+ * mixed kind when they differ, because a majority kind would be a false mark,
+ * and the strongest effect they state, because effects are ordered.
  * What only one of them says, its description, emphasis, traffic and anchor,
  * is not said of the line, and {@link wordsOnJoinedLine} decides its words.
  * @param edges The relationships, in model order.
@@ -346,12 +432,14 @@ function oneLine(edges: Readonly<JoinedEdges>, ends: LineEnds, reached: PartsRea
 	}
 	const kinds = new Set(edges.map(({ kind }) => kind));
 	const label = wordsOnJoinedLine(edges, ends, reached);
+	const effect = strongestEffect(edges);
 	return {
 		id: first.id,
 		order: first.order,
 		from,
 		to,
 		kind: kinds.size === 1 ? first.kind : MIXED_KIND,
+		...(effect === undefined ? {} : { effect }),
 		...(label === undefined ? {} : { label }),
 		emphasis: "normal",
 		...(twoWay ? { twoWay } : {}),
@@ -440,6 +528,7 @@ export {
 	EVERYTHING_VIEW,
 	MIXED_KIND,
 	RESERVED_VIEW_NAMES,
+	cablePlates,
 	containersOf,
 	findView,
 	overviewLines,

@@ -1,14 +1,13 @@
 //! Which line rises where two lines cross, where a hop may stand, and how the
 //! crossing pass keeps every route's rounding, on fixed route geometry, so a
 //! test holds the crossing pass apart from any placement engine. Which of two
-//! lines rises by its look is in `layering`, crossings close along one line
-//! in `clusters`, and a drawing with some subjects left out in `shown`.
+//! lines rises by its look is in `layering`, and crossings close along one line
+//! in `clusters`.
 
 mod clusters;
 mod crowding;
 mod ink;
 mod layering;
-mod shown;
 
 use std::collections::BTreeMap;
 
@@ -39,6 +38,7 @@ fn facts(index: usize) -> EdgeFacts {
         from: format!("source{index}"),
         to: format!("target{index}"),
         kind: "call".to_owned(),
+        effect: None,
         emphasis: Emphasis::Normal,
         traffic: None,
         two_way: false,
@@ -80,25 +80,27 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
 }
 
 /// How each route's line is drawn: an event's dashed with an open head, as
-/// the default policy draws it, every other solid with a filled head.
+/// an old policy draws it, every other solid with a filled head.
 fn lines_of(drawing: &Drawing) -> BTreeMap<String, LineLook> {
     drawing
         .edges
         .iter()
-        .filter(|edge| edge.edge.kind == "event")
-        .map(|edge| {
-            let look = LineLook {
-                dash: Dash::Dashed,
-                arrowhead: Arrowhead::Open,
+        .filter_map(|edge| {
+            let look = match edge.edge.kind.as_str() {
+                "event" => LineLook {
+                    dash: Dash::Dashed,
+                    arrowhead: Arrowhead::Open,
+                },
+                _ => return None,
             };
-            (edge.edge.id.clone(), look)
+            Some((edge.edge.id.clone(), look))
         })
         .collect()
 }
 
 /// The crossings settled, each line drawn as its kind is.
 fn bridged(drawing: &Drawing) -> Bridged<EdgeFacts> {
-    bridge_crossings(drawing, &lines_of(drawing))
+    bridge_crossings(drawing, &lines_of(drawing), &BTreeMap::new())
 }
 
 fn across(y: f64) -> Vec<Point> {
@@ -389,9 +391,13 @@ fn bends_of(curve: &Curve) -> Vec<(f64, f64)> {
         .collect()
 }
 
+/// Where a route with just the room its two turns and its head need ends:
+/// a bend's room and the straight approach past its second turn.
+const FITTING_END: f64 = 16.0 + crate::constants::APPROACH_STRAIGHT;
+
 /// A route with just the room its two turns and its head need.
 fn fitting() -> Vec<Point> {
-    points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)])
+    points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, FITTING_END)])
 }
 
 #[test]
@@ -408,9 +414,14 @@ fn a_completed_route_needs_room_for_every_fixed_turn_and_its_head() {
     // A route too short for its turns still rounds them at eight; only the
     // finished route is refused, so label settlement tries another first.
     for short in [
-        points(&[(0.0, 1.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)]),
-        points(&[(0.0, 0.0), (0.0, 8.0), (15.0, 8.0), (15.0, 28.0)]),
-        points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 27.0)]),
+        points(&[(0.0, 1.0), (0.0, 8.0), (16.0, 8.0), (16.0, FITTING_END)]),
+        points(&[(0.0, 0.0), (0.0, 8.0), (15.0, 8.0), (15.0, FITTING_END)]),
+        points(&[
+            (0.0, 0.0),
+            (0.0, 8.0),
+            (16.0, 8.0),
+            (16.0, FITTING_END - 1.0),
+        ]),
     ] {
         assert!(lacks_clearance(&curve_through(&short, false), None));
     }

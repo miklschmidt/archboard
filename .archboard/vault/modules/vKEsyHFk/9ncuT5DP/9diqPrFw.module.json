@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/9ncuT5DP#9GaG5ItC",
+      "order": 2000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "spawn the child in the coordinator directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+        "symbol": "spawnChild"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#2OeapIzk",
+      "order": 5000,
+      "kind": "rpc",
+      "effect": "mutation",
+      "label": "private stdio session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+        "symbol": "CODEX_APP_SERVER_ARGUMENTS"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
+      "order": 11000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "prepare, write its config",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+        "symbol": "prepareCodexStorage"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#zs8yTQLI"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
+      "order": 43000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "own the Codex process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "id": "vKEsyHFk#9SuYTCBQ",
+      "order": 44000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the variables a native binary needs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+        "symbol": "nativeCodexEnvironment"
+      },
+      "to": "vKEsyHFk#06cbjPhn"
+    }
+  ],
   "order": 4000,
   "name": "Codex process",
   "kind": "module",
@@ -11,80 +83,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/processes"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#9diqPrFw",
   "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "spawn the child in the coordinator directory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
-        "symbol": "spawnChild"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#9GaG5ItC",
-      "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
-    },
-    {
-      "order": 5000,
-      "kind": "rpc",
-      "label": "private stdio session",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
-        "symbol": "CODEX_APP_SERVER_ARGUMENTS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#2OeapIzk",
-      "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
-    },
-    {
-      "order": 11000,
-      "kind": "data",
-      "label": "prepare, write its config",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
-        "symbol": "prepareCodexStorage"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
-      "to": "vKEsyHFk/vKEsyHFk#zs8yTQLI"
-    },
-    {
-      "order": 43000,
-      "kind": "dependency",
-      "label": "own the Codex process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
-      "to": "vKEsyHFk#R3jPedS8"
-    },
-    {
-      "order": 44000,
-      "kind": "call",
-      "label": "the variables a native binary needs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
-        "symbol": "nativeCodexEnvironment"
-      },
-      "id": "vKEsyHFk#9SuYTCBQ",
-      "to": "vKEsyHFk#06cbjPhn"
     }
   ]
 }

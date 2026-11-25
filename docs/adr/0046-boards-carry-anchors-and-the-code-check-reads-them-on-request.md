@@ -85,6 +85,14 @@ that it accepts, under the key `evidence` (ADR 0024). A kind without the key
 accepts every evidence kind. The default vocabulary carries the key for its
 kinds.
 
+[ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) makes
+the default vocabulary eleven built-in kinds, each with an evidence list. It
+defines a `dependency` as a declared use of the target. The code check reports
+`DEPENDENCY_CALLED` as information when the anchor shows a call into a function
+or a value of the target. It also reports `CALL_TIMING_MISMATCH` when anchored
+calls establish timing that contradicts their relationship's `sync` or `async`
+kind.
+
 ### What the check judges
 
 [ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) adds the verdicts of module

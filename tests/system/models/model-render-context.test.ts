@@ -28,35 +28,42 @@ let server: OwnedServer | undefined;
 const dom = new Window();
 
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const gateway = JSON.parse(readFileSync(join(vault, "gateway.module.json"), "utf8"));
 	gateway.outgoing.push({
 		id: "Shop#Second",
 		to: "Shop#Worker",
-		kind: "call",
+		kind: "sync",
+		effect: "mutation",
 		order: 20,
 		label: "Second route",
 	});
 	writeFileSync(join(vault, "gateway.module.json"), JSON.stringify(gateway));
 	const worker = JSON.parse(readFileSync(join(vault, "worker.module.json"), "utf8"));
-	worker.outgoing = [{ id: "Shop#Enter", to: "Shop#Handler", kind: "call", order: 10 }];
+	worker.outgoing = [
+		{ id: "Shop#Enter", to: "Shop#Handler", kind: "sync", effect: "mutation", order: 10 },
+		{ id: "Shop#Uses", to: "Shop#Library", kind: "dependency", order: 20 },
+	];
 	writeFileSync(join(vault, "worker.module.json"), JSON.stringify(worker));
 	for (const [id, order, parent] of [
 		["Job", 40, "Shop#Gateway"],
 		["Core", 50, "Shop#Gateway"],
 		["Obsolete", 60, undefined],
+		["Library", 70, undefined],
 	] as const) {
 		writeFileSync(
 			join(vault, `${id}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${id}`,
 				name: id,
 				kind: "module",
 				order,
 				parent,
 				outgoing:
-					id === "Job" ? [{ id: "Shop#Tick", to: "Shop#Core", kind: "call", order: 10 }] : [],
+					id === "Job"
+						? [{ id: "Shop#Tick", to: "Shop#Core", kind: "sync", effect: "mutation", order: 10 }]
+						: [],
 			}),
 		);
 	}
@@ -263,7 +270,7 @@ test("canonical exports retain default comparison and unresolved subject marks t
 			grammar,
 			flow: "Shop#Request",
 			focus: ["Shop#Obsolete"],
-			hideKinds: ["call"],
+			hideKinds: ["sync"],
 		});
 		expect(picture.placed).toEqual(expect.arrayContaining(["Shop#Send", "Shop#Retired"]));
 		expect(group(picture.svg, "Shop#Retired")).toContain('data-semantic-standing="removed"');
@@ -306,6 +313,18 @@ test("canonical exports retain default comparison and unresolved subject marks t
 	if (nextRecipe.kind !== "recipe") throw new Error(JSON.stringify(nextRecipe));
 	expect(comparedAgain.revision).toEqual(pinned.revision);
 	expect(nextRecipe.recipe.fingerprint).not.toBe(recipe.recipe.fingerprint);
+}, 30000);
+
+test("a picture drawn with Lanes records Lanes in its recipe, and its recipe draws it again with Lanes", async () => {
+	const lanes = await render({ layout: "lanes" });
+	const recipe = readRenderRecipe(Buffer.from(lanes.svg));
+	if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
+		throw new Error(JSON.stringify(recipe));
+	expect(recipe.recipe.reading.layout).toBe("lanes");
+	expect((await render(recipe.recipe.reading)).svg).toBe(lanes.svg);
+	const plain = readRenderRecipe(Buffer.from((await render()).svg));
+	if (plain.kind !== "recipe" || plain.recipe.recipe !== 2) throw new Error(JSON.stringify(plain));
+	expect(plain.recipe.reading.layout).toBe("blocks");
 }, 30000);
 
 test("a file the CLI renders stands alone, in a directory it creates, and refuses a flow without a grammar", () => {
@@ -353,4 +372,75 @@ test("a file the CLI renders stands alone, in a directory it creates, and refuse
 	});
 	expect(legend.status, legend.stderr).toBe(0);
 	expect(readFileSync(bare, "utf8")).toContain('data-slot="export-legend"');
+}, 30000);
+
+/**
+ * Run `model render` against the test's server.
+ * @param args Its arguments.
+ * @returns The finished command.
+ */
+function renderCli(...args: string[]) {
+	return runServerCli({
+		repoRoot,
+		server: server!,
+		input: undefined,
+		args: ["model", "render", ...args],
+	});
+}
+
+test("a picture through a lens counts the lines it left out, with or without a legend, and its recipe names the lens", () => {
+	const drawn = (args: string[]) => {
+		const out = join(home, "lenses", `${crypto.randomUUID()}.svg`);
+		const result = renderCli(...args, "--out", out);
+		expect(result.status, result.stderr).toBe(0);
+		const svg = readFileSync(out, "utf8");
+		const recipe = readRenderRecipe(Buffer.from(svg));
+		if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
+			throw new Error(JSON.stringify(recipe));
+		const note = /<g data-slot="export-status">[^]*?<text [^>]*>([^<]*)<\/text>/u.exec(svg)?.[1];
+		const { lens, hideEffects } = recipe.recipe.reading;
+		return { svg, note, lens, hideEffects };
+	};
+	// The default lens leaves out the declared dependency, and says so with and without a legend.
+	const main = drawn([]);
+	expect(main).toMatchObject({ note: "Main lines · 1 line left out", lens: "main" });
+	expect(main.svg).toContain('data-slot="export-legend"');
+	const bare = drawn(["--legend", "none"]);
+	expect(bare.note).toBe("Main lines · 1 line left out");
+	expect(bare.svg).not.toContain('data-slot="export-legend"');
+	// A part whose every line the lens leaves out leaves the picture: Library drew only its dependency.
+	expect(main.svg).not.toContain('data-semantic-id="Shop#Library"');
+	expect(drawn(["--lens", "dependencies"])).toMatchObject({
+		note: "Declared dependencies · 1 line left out",
+		lens: "dependencies",
+	});
+	const all = drawn(["--lens", "all"]);
+	expect(all).toMatchObject({ note: undefined, lens: "all" });
+	// A hidden effect filters after the lens, and the recipe keeps it.
+	expect(drawn(["--lens", "all", "--hide-effect", "declared"])).toMatchObject({
+		note: "All relationships · 1 line left out",
+		lens: "all",
+		hideEffects: ["declared"],
+	});
+	const call = renderCli("--hide-kind", "call", "--out", join(home, "lenses", "call.svg"));
+	expect(call.status).toBe(2);
+	expect(call.stderr).toMatch(/use sync .* or async/u);
+	const refused = renderCli(
+		"--lens",
+		"main",
+		"--grammar",
+		"sequence",
+		"--flow",
+		"Shop#Request",
+		"--out",
+		join(home, "lenses", "refused.svg"),
+	);
+	expect(refused.status).toBe(2);
+	expect(refused.stderr).toContain("--lens");
+	const unknown = renderCli("--lens", "nowhere", "--out", join(home, "lenses", "nowhere.svg"));
+	expect(unknown.status).toBe(2);
+	expect(unknown.stdout).toContain("LENS_NOT_FOUND");
+	expect(unknown.stderr).toContain(
+		"main, effects, sync-compute, network, reads, dependencies, all",
+	);
 }, 30000);

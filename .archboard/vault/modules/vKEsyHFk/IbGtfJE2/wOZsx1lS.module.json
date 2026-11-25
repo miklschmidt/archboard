@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 2500,
   "name": "Skill citations",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/batch/services/citations.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
-  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
-  "outgoing": []
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW"
 }

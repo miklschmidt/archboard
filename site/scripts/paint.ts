@@ -20,6 +20,7 @@ import { join } from "node:path";
 import { projectModel } from "@archboard/model/content";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { renderArchitecture } from "@archboard/renderer/bun";
+import { themeColor } from "@archboard/renderer/theme";
 
 const OUT = join(import.meta.dir, "../src/paintings");
 
@@ -62,7 +63,6 @@ async function read(vault: string, open: boolean) {
 	const reading = projectModel(model, null, null, { expand }, undefined);
 	const request = {
 		content: reading.content,
-		variant: reading.complete,
 		held: reading.held,
 		standing: reading.standing,
 		unsettled: reading.unsettled,
@@ -266,6 +266,55 @@ function apart(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly num
 }
 
 /**
+ * The nearest point in a box.
+ * @param point The point.
+ * @param box The box: left, top, width and height.
+ * @returns The point where the beam meets the box.
+ */
+function meetBox(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly number[]): Point {
+	return {
+		x: Math.min(x + width, Math.max(x, point.x)),
+		y: Math.min(y + height, Math.max(y, point.y)),
+	};
+}
+
+/**
+ * Drop groups whose roles the hero draws itself (lines, junctions, traffic and shadows), walking
+ * into nested groups such as the outer `move` group.
+ * @param items The scene items.
+ * @returns The items kept for the flat table texture.
+ */
+function stripHeroLayers(items: readonly Item[]): Item[] {
+	const dropped = new Set(["line", "junctions", "traffic", "shadow"]);
+	return items.flatMap((item) => {
+		if (item.item === "group" && dropped.has(roleOf(item) ?? "")) return [];
+		if (item.items === undefined) return [item];
+		return [{ ...item, items: stripHeroLayers(item.items) }];
+	});
+}
+
+/**
+ * The renderer's dark-theme line colour, decoded to linear light for the hero's shader.
+ * @param name The relationship kind's palette colour, when it names one.
+ * @returns Red, green and blue in linear light.
+ */
+function beamColor(name: string | undefined): [number, number, number] {
+	const color = themeColor("dark", name === undefined ? "--diagram-edge" : `--semantic-${name}`);
+	if (!/^#[\da-f]{6}$/u.test(color))
+		throw new Error(`The hero's beam colour must be opaque: ${color}.`);
+	/**
+	 * Decode one channel from the exported sRGB colour.
+	 * @param offset Where the channel starts in the hex string.
+	 * @returns The channel in linear light.
+	 */
+	const channel = (offset: number) => {
+		const srgb = Number.parseInt(color.slice(offset, offset + 2), 16) / 255;
+		return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+	};
+	return [channel(1), channel(3), channel(5)];
+}
+
+/**
  * The hero's picture: the site model painted flat on no ground, with what the hero needs of it.
  * @returns The painting and its plan.
  */
@@ -277,11 +326,7 @@ async function hero() {
 	const found = groups(painting.scene.body);
 	// The hero draws each line as a beam, and the tiles that stand on its table cast their own
 	// shadows, so the picture keeps no line, junction, traffic or shadow of its own.
-	painting.scene.body = painting.scene.body.filter(
-		(item) =>
-			item.item !== "group" ||
-			!["line", "junctions", "traffic", "shadow"].includes(roleOf(item) ?? ""),
-	);
+	painting.scene.body = stripHeroLayers(painting.scene.body);
 	const of = (role: string) => found.filter((group) => roleOf(group) === role);
 
 	// A tray is the well a container's parts stand in, and its region adds the tab of its name.
@@ -309,16 +354,28 @@ async function hero() {
 		if (!edge) throw new Error(`The painting draws a line for ${id}, which the reading lacks.`);
 		const [from, to] = [card(edge.from), card(edge.to)];
 		if (from < 0 || to < 0) throw new Error(`The line ${id} does not join two cards.`);
-		const pieces = (group.items ?? [])
-			.filter((item) => item.item === "shape" && item.purpose === "line")
-			.flatMap((item) => flatten(item.geometry?.steps ?? []));
+		// The halo traces the full route to the card ports. The stroke stops short of its marks.
+		const steps = group.items?.find(
+			(item) => item.item === "shape" && item.purpose === "halo" && item.geometry?.kind === "path",
+		)?.geometry?.steps;
+		if (!steps) throw new Error(`The painting draws no route for ${id}.`);
+		const pieces = flatten(steps);
 		// A route runs from its source to its target, so its light travels the way the line points.
-		const first = pieces[0]?.[0];
-		const last = pieces.at(-1)?.at(-1);
-		const target = cards[to]?.box ?? [];
-		if (first && last && apart(first, target) < apart(last, target)) {
-			pieces.reverse();
-			for (const piece of pieces) piece.reverse();
+		const firstPiece = pieces[0];
+		const lastPiece = pieces.at(-1);
+		const first = firstPiece?.[0];
+		const last = lastPiece?.at(-1);
+		if (firstPiece && lastPiece && first && last) {
+			const source = cards[from]?.box ?? [];
+			const target = cards[to]?.box ?? [];
+			const reversed = apart(first, target) < apart(last, target);
+			// The renderer leaves a small clearance at each port. Seat the beam on the tile.
+			firstPiece[0] = meetBox(first, reversed ? target : source);
+			lastPiece[lastPiece.length - 1] = meetBox(last, reversed ? source : target);
+			if (reversed) {
+				pieces.reverse();
+				for (const piece of pieces) piece.reverse();
+			}
 		}
 		const facts = (typeof group.role === "object" ? group.role.facts : undefined) as
 			| { appearance?: { color?: string; dash?: string } }
@@ -335,7 +392,7 @@ async function hero() {
 			id,
 			from,
 			to,
-			color: facts?.appearance?.color ?? null,
+			color: beamColor(facts?.appearance?.color),
 			dash: facts?.appearance?.dash ?? "solid",
 			emphasis: edge.emphasis ?? "normal",
 			traffic: edge.traffic ?? null,

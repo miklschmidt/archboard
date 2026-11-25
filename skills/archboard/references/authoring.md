@@ -15,6 +15,106 @@ If they represent one module, keep the identity located with that code.
 In one intent, move relationships, flow steps, and walkthrough references to it, then remove the duplicate.
 Tell the user which modules you combined and which code proved the match.
 
+### Choose the kind and the effect
+
+Every relationship states its `kind`, how it travels between its two ends, and its `effect`, what it asks the target to do.
+The kind is the color of its line and the effect the decoration at its ends, and lenses select by both.
+Read the sending code and the callee or its contract before you choose either.
+
+Choose the kind by the mechanism at the two named ends:
+
+| Kind         | The source                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| `sync`       | Calls the target in its own process and has the answer when the call returns.                        |
+| `async`      | Calls the target in its own process, and the call returns before the work is done.                   |
+| `http`       | Sends the target an HTTP request.                                                                    |
+| `rpc`        | Calls the target through a remote procedure contract, such as gRPC or JSON-RPC.                      |
+| `event`      | Publishes a named message that the target receives.                                                  |
+| `queue`      | Puts work on a queue that the target works off.                                                      |
+| `stream`     | Sends or receives successive bytes or records with no message name: a pipe, a stream, a media track. |
+| `spawn`      | Starts the target as a process.                                                                      |
+| `render`     | Places the target's component in its output.                                                         |
+| `storage`    | Reads or writes through a store's own interface: files, SQL, keys or objects.                        |
+| `dependency` | Declares a requirement and runs nothing of the target: a type-only import, a package or a build.     |
+
+Take the most specific contract that the source relies on.
+When none of these says how a relationship travels, add a kind of the vault's own under `relationshipKinds` in `.archboard/config.yaml`, with its name and color.
+JSON-RPC over HTTP is `rpc`.
+A service that asks a repository object for orders is `sync` or `async`, and the repository that issues the SQL is `storage`.
+Use `sync` or `async` for a function or value that the source uses within the same process when no more specific kind applies.
+`call` is gone: the configuration, a lens and `--hide-kind` refuse it.
+
+#### Sync or async
+
+Read the call at the anchor, the source's call into the target, and its callee:
+
+- `async` when the source awaits it (`await`, `.await`, `.then`, or it hands the promise or future on to its own awaiting caller).
+- `async` when the source starts it and leaves it to run: a task, a goroutine, a thread, `spawn`, `spawn_blocking`, `create_task`, `Task.Run`, `Task {}`, `dispatch_async`, `pthread_create`, a timer, or an async function called without being awaited.
+- `sync` for a plain call of a function that is not async, and for a value the source reads.
+
+Judge the call into the target, not the source's own signature: an async function that makes plain calls into the target is `sync` for those calls.
+Registering a callback is `sync` when the registering call returns at once; the later calls of the callback are the target's own relationship.
+A relationship that stands for several calls takes the timing of the operation its label names.
+
+The code facts already say how each call site runs its callee, where the language can tell: TypeScript, Rust, Python, C#, Swift, Go, Objective-C and C.
+`check code` reports `CALL_TIMING_MISMATCH`, as information, on a `sync` relationship whose anchored calls are all awaited or started, and on an `async` one whose anchored calls are all plain.
+Read the call, then correct the kind, or move the anchor to the call the relationship stands for.
+Where the sites disagree or one is unknown, the check says nothing, and your reading decides.
+
+A reader reads the kind with the effect: a `sync` `compute` is where a caller waits for an answer it could have asked for in the background, and the `Sync compute` lens shows those.
+Never choose a kind to make a picture look better.
+
+Choose the effect by asking in order:
+
+1. Can the operation have a side effect? Write `mutation`.
+   A conditional write, a publication, an acknowledgement that removes work and installing a subscription are side effects.
+   Follow work that the target delegates. A return value does not make a write a read.
+   A side effect is a change that someone else can observe. Bookkeeping that leaves every answer the same is none: a memo or cache of a value that never changes, a lazy start of a server, worker pool or language server that serves the request, a one-time warning or other diagnostic output, and a component's own state and timers.
+2. Otherwise, does it read held or fetched state, such as a store, the clock or a context? Write `query`.
+3. Otherwise, the answer follows from what the source hands over alone. Write `compute`.
+
+Judge every kind by its operation, as these examples do:
+
+| Code                                                              | Kind         | Effect     |
+| ----------------------------------------------------------------- | ------------ | ---------- |
+| A POST that creates an order                                      | `http`       | `mutation` |
+| A read through a cache, or one that fills a memo of a fixed value | `sync`       | `query`    |
+| An awaited write that invalidates what other callers read         | `async`      | `mutation` |
+| A function that formats the bytes that it is given                | `sync`       | `compute`  |
+| A task started to refresh an index, left to run                   | `async`      | `mutation` |
+| A component that places a child component with no mount behavior  | `render`     | `compute`  |
+| An event publication or a queue submission                        | `event`      | `mutation` |
+| A read of retained events that consumes none                      | `event`      | `query`    |
+| A short-lived process that lays out the graph that it is given    | `spawn`      | `compute`  |
+| A Git command that reads a ref                                    | `spawn`      | `query`    |
+| The start of a server that outlives the request                   | `spawn`      | `mutation` |
+| A type-only import                                                | `dependency` | none       |
+
+When the code does not rule a side effect out, write `mutation` and name the gap in your report.
+A relationship that stands for several operations takes the strongest effect: `mutation`, then `query`, then `compute`.
+A `dependency` states no effect, which says that it is a declared requirement only.
+Give it one only when loading the target does the work that the relationship stands for, such as a registration on import.
+`check code` reports a dependency whose evidence is a call into the target, so that you state the call and its effect.
+
+Add a kind of the vault's own when several relationships travel by one mechanism of this repository's domain that no built-in kind names, such as starting a durable workflow.
+A kind earns its place when a reader of the picture would act on it and the code decides it.
+Do not add one for the role of the target, such as a cache or a logger: that belongs on the card.
+Do not add one to split `sync` by what the call does: that is the effect.
+Define it under `relationshipKinds` in `.archboard/config.yaml`, with a name, a color from the palette and the evidence kinds that prove it:
+
+```yaml
+relationshipKinds:
+  workflow: { name: Workflow, color: lime, evidence: [call, configured-path] }
+```
+
+Its color is required, because the kind is the color of its lines.
+Choose a color that no other kind of the vault uses. The kind sets nothing else of the line: the effect draws its ends.
+Relationships of the vault's own kind state an effect too.
+An entry with a built-in id replaces that kind whole.
+`archboard model schema vault-config` prints the fields and the colors.
+
+Done: every relationship that you author or touch names the kind whose row matches its code, and the effect that the three questions give.
+
 ## Give each container a job
 
 A container is a module with parts.
@@ -73,7 +173,7 @@ If no part owns that responsibility, add a part for it.
 Model boundaries that callers name and architects need, not a part for every file.
 
 If two parts perform different jobs across a boundary, state two relationships.
-State each dependency once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind and label say what the code does.
+State each relationship once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind, effect and label say what the code does.
 One relationship represents other calls across the same boundary.
 `RELATIONSHIP_UNDRAWN` reports those calls as information.
 

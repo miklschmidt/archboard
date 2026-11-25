@@ -23,7 +23,7 @@ const vault = vaultIn(home);
 let server: OwnedServer | undefined;
 
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const git = (...args: string[]) => {
 		const result = Bun.spawnSync(["git", "-C", home, ...args]);
 		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
@@ -271,7 +271,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 // This composed adapter workflow includes signed retention and a real bare remote.
 test("publication adapters preserve runtime status across a server restart", async () => {
 	if (server === undefined) throw new Error("The server did not start");
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	rmSync(join(vault, "bad.module.json"), { force: true });
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
@@ -382,7 +382,7 @@ test("publication adapters preserve runtime status across a server restart", asy
 
 test("CLI and HTTP share claimed edit outcomes and an event connection starts with fresh coherent content", async () => {
 	if (server === undefined) throw new Error("The server did not start");
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const current = readArchitectureModel(vault);
 	if (!current.success || current.manifest.current === null)
 		throw new Error(JSON.stringify(current));

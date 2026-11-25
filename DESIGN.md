@@ -456,8 +456,59 @@ A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
 (`--diagram-edge`, oklch(60% 0.015 286), dark oklch(0.6 0.012 80)). It keeps
 APCA Lc 58 or more against the ground and a container's floor on chalk and Lc 34
 on graphite, and it stays far under the contrast of text. A colored line is
-drawn in its full color on chalk and at four fifths of its color on graphite. Every arrowhead is 11 units
-long, whatever the emphasis of its line. A muted line is as wide as a default
+drawn in its full color on chalk and at four fifths of its color on graphite. A line's color says
+its kind, how it travels, and nothing else: `sync` is a quiet low-chroma slate, the quietest ink
+that keeps the floors above, so the boundary kinds and `async` (amber) stand out over the many
+sync lines; `http` sky, `rpc` blue, `event` violet, `queue` lime, `stream` cyan, `spawn`
+fuchsia, `render` pink, `storage` emerald and `dependency` indigo. A line's label starts with its
+kind's name and a middle dot, except on a sync line, so its kind never rests on color alone.
+
+**The Ends Carry the Effect Rule.** A line's effect, what it does, is drawn at its ends, in the
+kind's ink, and its body stays solid: dashes and dots make a busy picture harder to follow. A
+mutation ends in a solid wedge, and the wedge leaves an imprint on the target: a short stripe along
+the card's edge, centered on the tip and kept inside the port's share of the edge. The stripe sits
+just in front of the edge, on a soft glow in the kind's ink. The live reader fades the stripe at
+both ends. An export draws it flat over a blurred glow. A query ends in an outlined eye with a
+rounded back, a dot at its center and a sharp tip. A hollow ring sits on the caller's edge, where
+the answer lands. A compute ends in an "=", two short bars across the line just behind a small
+open point. Its body stops before the bars. Only a dependency that states no effect has a broken body: long strokes, thinner than a solid line, ending in a detached
+open chevron. Each mark keeps its size in picture units at every zoom. Emphasis and the far view
+can thicken the body while the mark keeps its size. A compared line takes its standing's color
+and keeps its shapes. A reading from before effects keeps the dash and the head its policy recorded.
+
+**The Line Sizes Rule.** Sizes are in picture units, one CSS pixel at 100%. A line is 2.4 wide. An
+emphasized line is 3.6 wide. A declared-only body is 0.7 times as wide as a solid line of the same
+weight. Effect marks use a 24-unit square. The wedge is 15 long and 15 wide. The eye is about 16
+long. The "=" with its point reaches 21 back from the tip. Its bars reach 13 across the line and
+stand 8 apart. The detached chevron is about 8 long and stands clear of the body's end. The ring
+at the caller has a radius of 4.2 to the middle of its outline. A mutation's imprint reaches up to 9 to
+either side of the tip. It is 3.6 thick, like an emphasized line. Its glow is 16 wide across the
+edge. The glow fades from 40% opacity on the light ground or 60% on the dark ground to a clear rim.
+A line runs straight for 30 after its last bend, so the longest head and some body fit on that
+run. A line with no bend needs only 23 for its marks and a little body. A door, or a card,
+widens until the heads of the lines on one of its walls stand a lane (16) apart; a wall whose
+lines fit keeps its measured size. Parallel lines pack a lane apart. When Blocks finds no placement that gives every line a clear channel, it draws the retained
+placement as long parallel runs, and draws no line words there: the shell's selection lists each
+line's relationships.
+
+In Blocks, the relationships between the same two drawn ends travel as one cable: one route, with
+a strand for each relationship in its own kind and effect, so a line never claims a pair that none
+of its relationships has. The strands run half a lane (8) apart as one ribbon, with one plate for
+their words. Where a cable reaches a card its strands fan out a lane (16) apart, so that every
+strand's mark lands on a port of its own, side by side with the others at the same depth. No mark
+stands back from its card. A short end run spreads at the bend before the card; on a longer one each
+outer strand steps out to its port inside the apron at the card (its mark's straight approach and
+two bends), the outermost furthest from the card, so that strands never cross and each glow runs
+cleanly to its own mark. A cable holds its own ports, never shared with another cable. A card that
+a cable ends on widens until its ports fit one wall, and the grid keeps room above and below a card
+whose side walls are too short for a fan. Selecting a strand lists its relationship with its kind
+and effect.
+
+Nothing on a line moves by default. Pointing at a line or a card plays its effect once, in the
+spark's look, its ink toward the text, one pass and never a train of pulses: a mutation runs to the
+target and lights the imprint, a query lights the eye and runs back to the caller's ring, a
+compute's "=" brightens once, and a declared-only line stays still. Authored traffic wins on its
+own line. With reduced motion, and in SVG and PNG, the still marks carry the whole meaning. A muted line is as wide as a default
 one and paler: its ink keeps 70 % of its default ink over chalk and 60 % over
 graphite, never by opacity. A traffic pulse is the color of its
 line with white mixed in (`--diagram-glow`), so it reads as light that travels
@@ -677,31 +728,49 @@ and a long subject scrolls it down with its lists, so a reader finds it in one p
 outside the subject, so a new subject neither redraws it nor moves it, and a press on a group's
 tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
 label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
-the kinds in two columns, `Relationships` over the line types and the marks of lines, and
+the kinds in two columns, `Relationships` over the lenses, the relationship kinds, the effects and the marks of lines, and
 `Groups` over the tags. Each part opens with the rule of a section, and six pixels part a label from its rows. There is no plate. A
 row is 28px high, and every mark stands in a box 24px wide, as wide as a kind's chip, so the
 names start on one line. A kind wears the kind chip of the panel's head (see Chips). A section
 with nothing to show is absent.
 
-A reader can hide a line type and nothing else, so each line type stands on a row of its own,
-and the row is its switch. It is a row of the panel like any other, with the tone of a row
-under the pointer, 8px past the column on each side, and the ring of the keyboard's focus. Its
-sample and its name stand at the start, and an eye at its end says whether the picture draws
-the type's lines: an open eye while it does, and a struck eye while a reader hid them. A click,
-Space or Enter turns it, and the eye and the dim change in place. There is no mode to enter and
-no key to find first, because a control that only appears on request reads as missing. Under
-the line types, 4px apart and in two columns, stand what no reader hides, with no switch: a
-mixed line, which is no kind of relationship, then `More emphasis` and `Illustrated traffic`,
-the marks that lines wear beside their kinds. A row with an eye can be hidden, and a mark in the
-two columns cannot. While a line type of the reading is hidden, the key `Show all` stands at
-the right end of the `Relationships` row, 24px high and drawn as `Trace back` is, and brings every type back in one press. It needs
-no count, because every hidden type stays in the list.
+The status of the reading stands above the picture, not in the legend: the lens and how many lines
+it left out, such as `Main lines · 66 lines left out`, or `Main lines has no lines here · Showing all
+relationships` where the default lens draws nothing and the picture shows every relationship. An
+export draws the same line above its picture.
 
-The rows come from the whole reading, not from what the picture draws now, and each list keeps
-the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
-type that a reader hid stays, dimmed, with its struck eye. So does a part kind, a mixed line or a
-line's mark that left the picture with it. A chip that the picture does not draw takes the icon
-that the policy names.
+The `Relationships` part opens with a selector when a structural reading offers a choice of lenses.
+The selector is a full-width small `Select` (`quiet-key`) with `Lens` in muted ink before the chosen
+lens's name. Its popover lists the lenses in the policy's order (Main lines, Side effects, Sync
+compute, Network, Reads, Declared dependencies, All relationships). If a lens defines a question,
+`Select.Item` shows it below the name via `description`. Choosing the active lens again clears
+manual kind and effect filters.
+
+Up to four bounded sub-groups follow: `Kinds`, `Effects`, `Hidden by <lens>` and `Line marks`.
+Each sub-group carries a sentence-case heading in Body at weight 500 and muted ink, with a hairline
+rule between adjacent sub-groups so no group bleeds into the next. Under `Kinds` and `Effects`,
+each kind and each effect stands on a row of its own. A kind's sample is a solid line in the kind's
+ink; an effect's sample is a line in Line Ink with that effect's ends; a reading from before effects
+samples each kind as its policy recorded it. A row is a row of the panel like any other, with the
+tone of a row under the pointer, 8px past the column on each side, and the ring of the keyboard's
+focus. Its sample and its name stand at the start, and an eye at its end says whether the picture
+draws its lines: an open eye while it does, and a struck eye while a reader hid them. A press on the
+eye, Space or Enter turns it, and the eye and the dim change in place. A press on the name shows
+only that row and hides the other rows of its section. There is no mode to enter and no key to find
+first, because a control that only appears on request reads as missing. Rows that the active lens
+hides stand dimmed in two columns under `Hidden by <lens>`, with no eye, because turning one on
+would contradict the lens. Under `Line marks`, in two columns with no switch, stand the marks that
+no reader hides: `More emphasis`, `Illustrated traffic` and the comparison standings. If the
+reading leaves out a line or the reader hides a kind or effect, `Show all` appears at the right
+end of the `Relationships` row. The key is 24px high and looks like `Trace back`. It selects
+All relationships and clears both lists in one press. The count of omitted lines stays above the
+picture.
+
+The rows come from the whole scope, not from what the picture draws now, and each list keeps
+the order of the policy. So hiding a row moves no row, and the legend keeps its height. A
+relationship kind or an effect that a reader hid stays, dimmed, with its struck eye. So does a
+part kind or a line's mark that left the picture with it. A chip that the picture does not draw
+takes the icon that the policy names.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
 both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient

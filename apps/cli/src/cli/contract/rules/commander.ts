@@ -7,7 +7,7 @@
 // and leaves the staged parameters to their stage, help shows the staged
 // parameters and the shared options the command reads and leaves the tails out.
 
-import { Argument, Command, Option } from "commander";
+import { Argument, Command, InvalidArgumentError, Option } from "commander";
 import type {
 	AnyCommandContract,
 	OptionParameter,
@@ -74,11 +74,18 @@ function optionFor(parameter: OptionParameter, projection: Projection): Option {
 	// A `--no-x` flag is a flag of its own, read by its presence. Commander would
 	// otherwise store it as `x: false` and overwrite the value of a `--x` option.
 	option.negate = false;
-	if (parameter.occurrences === "append") {
-		option.argParser(collect);
+	const { choices } = parameter;
+	if (choices !== undefined) {
+		option.choices(choices);
 	}
-	if (parameter.choices !== undefined) {
-		option.choices(parameter.choices);
+	// Commander's choices replace the parser, so a repeatable option with choices checks each value
+	// itself and keeps collecting them.
+	if (parameter.occurrences === "append") {
+		option.argParser((value: string, previous?: string[]) => {
+			if (choices !== undefined && !choices.includes(value))
+				throw new InvalidArgumentError(`Allowed choices are ${choices.join(", ")}.`);
+			return collect(value, previous);
+		});
 	}
 	if (parameter.default !== undefined) {
 		option.default(parameter.default);

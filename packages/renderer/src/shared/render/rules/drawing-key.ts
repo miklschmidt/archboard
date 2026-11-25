@@ -1,26 +1,6 @@
 // What a drawing is kept under: a digest of the exact request the core receives.
-//
-// The core reads the whole variant only for each container's interface, and it
-// reads only containment and relationship ends for that (ADR 0044). So the
-// request carries those facts and no more: a scoped drawing depends on the
-// interface of every drawn container, and on nothing else outside the scope.
 
-import type {
-	InterfaceContent,
-	SemanticViewRenderRequest,
-} from "#shared/protocol/render-request.ts";
-
-/**
- * Reduce a whole variant to the facts that decide its containers' interfaces.
- * @param variant The whole variant.
- * @returns Its containment and relationship ends, in the variant's order.
- */
-function interfaceContent(variant: InterfaceContent): InterfaceContent {
-	return {
-		nodes: variant.nodes.map(({ id, parent }) => ({ id, parent, name: "", kind: "" })),
-		edges: variant.edges.map(({ from, to }) => ({ id: "", order: 0, from, to, kind: "" })),
-	};
-}
+import type { SemanticViewRenderRequest } from "#shared/protocol/render-request.ts";
 
 /**
  * Digest a request synchronously, because a query key is computed while React renders. This is
@@ -55,26 +35,4 @@ function drawingKey(request: Omit<SemanticViewRenderRequest, "theme">): string {
 	return textDigest(JSON.stringify(request));
 }
 
-/**
- * Reduce a scoped drawing to the request that the core receives.
- * @param scoped The visible content, complete model, and presentation policy.
- * @returns The request, with its whole variant reduced to interface facts.
- */
-function scopedRequest(
-	scoped: Omit<SemanticViewRenderRequest, "theme">,
-): Omit<SemanticViewRenderRequest, "theme"> {
-	return scoped.variant === undefined
-		? scoped
-		: { ...scoped, variant: interfaceContent(scoped.variant) };
-}
-
-/**
- * Key a scoped drawing before anything draws it, so that a reader needs no renderer to ask.
- * @param scoped The visible content, complete model, and presentation policy.
- * @returns A digest that changes whenever what the core receives does.
- */
-function scopedDrawingKey(scoped: Omit<SemanticViewRenderRequest, "theme">): string {
-	return drawingKey(scopedRequest(scoped));
-}
-
-export { drawingKey, interfaceContent, scopedDrawingKey, scopedRequest };
+export { drawingKey };

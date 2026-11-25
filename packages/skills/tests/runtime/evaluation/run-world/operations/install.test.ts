@@ -31,7 +31,7 @@ test("a candidate run installs the batch's kept copy, not the checkout as it sta
 		const paths = prepareRunDirectory(path.join(root, "run"));
 		fs.mkdirSync(paths.flask, { recursive: true });
 		Bun.spawnSync(["git", "init", "--quiet"], { cwd: paths.flask });
-		fs.cpSync(path.join(checkout, "examples/canonical-model/.archboard/vault"), paths.vault, {
+		fs.cpSync(path.join(checkout, "tests/fixtures/current-format-vault"), paths.vault, {
 			recursive: true,
 		});
 		const original = fs.readFileSync(path.join(paths.vault, "model.json"));

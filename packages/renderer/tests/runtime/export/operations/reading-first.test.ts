@@ -53,21 +53,21 @@ const policy = semanticPolicySchema().parse({
 // The graph now fixes that plan. The council judges its reading, while these
 // tests retain the contract that each drawing preserves its meaning.
 test.each([
-	["One command", oneCommand, "track"],
-	["One write lands", oneWriteLands, "track"],
-	["Board persistence", modelPersistence, "track"],
-	["Code evidence", codeEvidence, "track"],
-	["Durable write boundary", durableWriteBoundary, "track"],
-	["What the CLI can be asked", whatTheCliCanBeAsked, "blocks"],
-	["Workhorse news", workhorseNews, "blocks"],
-	["The two threads", theTwoThreads, "track"],
-	["Reading a document", readingAModel, "blocks"],
-	["Board changes reach the workhorse", modelChangesReachTheWorkhorse, "track"],
+	["One command", oneCommand],
+	["One write lands", oneWriteLands],
+	["Board persistence", modelPersistence],
+	["Code evidence", codeEvidence],
+	["Durable write boundary", durableWriteBoundary],
+	["What the CLI can be asked", whatTheCliCanBeAsked],
+	["Workhorse news", workhorseNews],
+	["The two threads", theTwoThreads],
+	["Reading a document", readingAModel],
+	["Board changes reach the workhorse", modelChangesReachTheWorkhorse],
 ] as const)(
 	"%s: one graph plan keeps every card, label, and route intact",
-	async (_name, fixture, layout) => {
+	async (_name, fixture) => {
 		const content = orderedFixture(fixture);
-		const drawing = await renderArchitecture({ content, theme: "light", layout, policy });
-		expectDrawingIntact(drawing, content, layout);
+		const drawing = await renderArchitecture({ content, theme: "light", policy });
+		expectDrawingIntact(drawing, content);
 	},
 );

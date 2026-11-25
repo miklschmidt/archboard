@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#5TtCOktb",
+      "order": 23000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "rasterize each picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
+        "symbol": "archboard"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+      "order": 58000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "interpret rasterization receipts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
+        "symbol": "parseRasterReceipt"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
+    }
+  ],
   "order": 11000,
   "name": "Captures",
   "kind": "module",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
-  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
-  "outgoing": [
-    {
-      "order": 23000,
-      "kind": "call",
-      "label": "rasterize each picture",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
-        "symbol": "archboard"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#5TtCOktb",
-      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
-    },
-    {
-      "order": 58000,
-      "kind": "dependency",
-      "label": "interpret rasterization receipts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
-        "symbol": "parseRasterReceipt"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
-      "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG"
 }

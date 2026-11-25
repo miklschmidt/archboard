@@ -1,28 +1,25 @@
 import { expect, test } from "bun:test";
 import input from "#tests/runtime/support/fixtures/placement-order-graph.json";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
 import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const CONTENT = VariantContentSchema.parse(input);
 
-async function cardBoxes(content: VariantContent, layout?: LayoutEngineName) {
+async function cardBoxes(content: VariantContent) {
 	const drawing = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout,
 	});
 	return drawing.atlas.nodes;
 }
 
-async function edgeBoxes(content: VariantContent, layout?: LayoutEngineName) {
+async function edgeBoxes(content: VariantContent) {
 	const drawing = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout,
 	});
 	return drawing.atlas.edges;
 }
@@ -70,18 +67,15 @@ test("replacing every subject identity leaves card and relationship geometry in 
 		expect(replacement.atlas.edges[after]).toEqual(original.atlas.edges[before]);
 });
 
-test.each(layoutEngineSchema().options)(
-	"document array order does not place architecture cards (%s)",
-	async (layout) => {
-		const reordered = {
-			...CONTENT,
-			nodes: CONTENT.nodes.toReversed(),
-			edges: CONTENT.edges.toReversed(),
-		};
-		expect(await cardBoxes(reordered, layout)).toEqual(await cardBoxes(CONTENT, layout));
-		expect(await edgeBoxes(reordered, layout)).toEqual(await edgeBoxes(CONTENT, layout));
-	},
-);
+test("document array order does not place architecture cards", async () => {
+	const reordered = {
+		...CONTENT,
+		nodes: CONTENT.nodes.toReversed(),
+		edges: CONTENT.edges.toReversed(),
+	};
+	expect(await cardBoxes(reordered)).toEqual(await cardBoxes(CONTENT));
+	expect(await edgeBoxes(reordered)).toEqual(await edgeBoxes(CONTENT));
+});
 
 test("authored order determines sibling positions and relationship paint order", async () => {
 	const content: VariantContent = {

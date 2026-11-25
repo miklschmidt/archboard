@@ -1,4 +1,37 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#ReCDk4lv",
+      "order": 30,
+      "kind": "dependency",
+      "label": "the code counts, findings and coverage of the reading",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    },
+    {
+      "id": "vKEsyHFk#lhtmfspB",
+      "order": 90,
+      "kind": "render",
+      "effect": "query",
+      "label": "the view What this branch changed",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#y39xN3Ne"
+    },
+    {
+      "id": "vKEsyHFk#w8kCmXJj",
+      "order": 1004000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the code history of every part",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx",
+        "symbol": "modelHistoryQuery"
+      },
+      "to": "vKEsyHFk#guvtYApo"
+    }
+  ],
   "order": 68000,
   "name": "Measures",
   "kind": "module",
@@ -8,38 +41,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#tQ2B3iEF",
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": [
-    {
-      "order": 30,
-      "kind": "call",
-      "label": "the code counts, findings and coverage of the reading",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#ReCDk4lv",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    },
-    {
-      "order": 90,
-      "kind": "render",
-      "label": "the view What this branch changed",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#lhtmfspB",
-      "to": "vKEsyHFk#y39xN3Ne"
-    },
-    {
-      "order": 1004000,
-      "kind": "call",
-      "label": "the code history of every part",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx",
-        "symbol": "modelHistoryQuery"
-      },
-      "id": "vKEsyHFk#w8kCmXJj",
-      "to": "vKEsyHFk#guvtYApo"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt"
 }

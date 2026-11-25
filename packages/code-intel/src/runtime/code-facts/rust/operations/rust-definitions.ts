@@ -41,6 +41,7 @@
 // function whose body only passes its call on names its callee's root
 // (rust-depth.ts).
 
+import { rustAsync } from "#runtime/code-facts/rust/operations/rust-timing.ts";
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
@@ -238,6 +239,7 @@ function definition(
 		...(picks === undefined ? {} : { picks }),
 		...hostCalled(node),
 		...enumClosure(node),
+		...rustAsync(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),

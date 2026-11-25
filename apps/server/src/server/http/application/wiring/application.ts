@@ -28,6 +28,7 @@ import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/serve
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { mountServiceRoutes } from "#server/http/handlers/reads/routes/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/http/handlers/reads/routes/migration-routes.ts";
+import { mountUpgradeRoutes } from "#server/http/handlers/reads/routes/upgrade-routes.ts";
 import { mountArchitectureModelRoutes } from "#server/http/handlers/reads/routes/model-routes.ts";
 
 // The Archboard server application, assembled in the order Express will run it. Each
@@ -111,6 +112,7 @@ app.use("/api/architecture", requireVault, (req, _res, next) => {
 mountArchitectureModelRoutes(app);
 mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
+mountUpgradeRoutes(app);
 mountCodeCheckRoute(app);
 mountCodeFilesRoute(app);
 mountSemanticPaneContextRoutes(app);

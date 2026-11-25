@@ -31,7 +31,7 @@ function addModule(vault: string, name: string, parent: string): void {
 	writeFileSync(
 		join(vault, `${name.toLowerCase()}.module.json`),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${name}`,
 			name,
 			kind: "module",
@@ -98,7 +98,7 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "reader-column");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	addModule(vault, "Decode", "Shop#Handler");

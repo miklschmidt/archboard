@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#HVWgimVj",
+      "order": 44000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the closed catalogue of rows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/reporting/rules/report.ts",
+        "symbol": "CATALOGUE_ROWS"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
+    }
+  ],
   "order": 15500,
   "name": "Comparison",
   "kind": "module",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/reporting/rules/report.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#mwlOEUS8",
-  "parent": "vKEsyHFk/IbGtfJE2#tDDQDe92",
-  "outgoing": [
-    {
-      "order": 44000,
-      "kind": "data",
-      "label": "the closed catalogue of rows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/reporting/rules/report.ts",
-        "symbol": "CATALOGUE_ROWS"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#HVWgimVj",
-      "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#tDDQDe92"
 }

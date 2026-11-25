@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 58000,
   "name": "Canonical local news",
   "kind": "module",
@@ -11,7 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/installation/news"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#IyV7OF9L",
   "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
   "documents": [
@@ -34,6 +35,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

@@ -13,6 +13,7 @@ import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 
 type Reading = z.infer<ReturnType<typeof architectureRenderRequestSchema>>;
+type ExportFrame = NonNullable<Parameters<typeof renderArchitecture>[0]["frame"]>;
 /**
  * Read the explicitly selected current or retained flow through the public runtime.
  * @param vault The addressed vault.
@@ -49,7 +50,7 @@ function flowReading(vault: string, input: Reading) {
 async function flowPicture(model: Model, input: Reading, vault: string) {
 	const reference = await comparisonModel(vault, model);
 	if (reference !== undefined && !reference.success) return reference;
-	const { projection, flow } = renderProjection(model, input, reference);
+	const { projection, flow, reading } = renderProjection(model, input, reference);
 	if (projection.missing || projection.missingFocus.length !== 0)
 		return {
 			success: false as const,
@@ -66,16 +67,69 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		};
 	const drawn = await renderArchitecture({
 		content: projection.content,
-		variant: projection.complete,
 		held: projection.held,
 		standing: projection.standing,
 		unsettled: projection.unsettled,
 		grammar: input.grammar,
 		policy: model.policy,
 		theme: input.theme,
-		frame: input.legend === "none" ? undefined : { legend: input.legend },
+		layout: input.layout,
+		frame: exportFrame(input, projection),
 	});
-	return renderReceipt(model, input, vault, drawn, flow);
+	return renderReceipt(model, reading, vault, drawn, flow);
+}
+/**
+ * What a structural export says of its lens above the picture: how many lines it left out, or
+ * that the default lens drew none here and the picture shows every relationship instead.
+ * @param projection The reading drawn.
+ * @returns The note, or nothing when the lens left nothing out.
+ */
+function lensNote(
+	projection: ReturnType<typeof renderProjection>["projection"],
+): ExportFrame["leftOut"] {
+	if (projection.emptyLens !== undefined)
+		return { lens: projection.emptyLens.name, count: 0, showingAll: true };
+	return projection.leftOut > 0
+		? { count: projection.leftOut, lens: projection.lens.name }
+		: undefined;
+}
+/**
+ * What an export carries beside its drawing: its legend, and the note of its lens, which stands
+ * with or without the legend.
+ * @param input The requested presentation.
+ * @param projection The reading drawn.
+ * @returns The frame, or nothing when it carries neither.
+ */
+function exportFrame(
+	input: Reading,
+	projection: ReturnType<typeof renderProjection>["projection"],
+): ExportFrame | undefined {
+	const legend = input.legend === "none" ? undefined : input.legend;
+	const leftOut = input.grammar === "architecture" ? lensNote(projection) : undefined;
+	return legend === undefined && leftOut === undefined ? undefined : { legend, leftOut };
+}
+/**
+ * Refuse a lens the reading's policy does not have, naming those it has.
+ * @param model The coherent selected reading.
+ * @param lens The lens the request names, if any.
+ * @returns The refusal, or nothing when the reading has the lens.
+ */
+function unknownLens(model: Model, lens: string | undefined) {
+	if (lens === undefined || Object.hasOwn(model.policy.lenses, lens)) return undefined;
+	const known = Object.keys(model.policy.lenses).join(", ");
+	return {
+		success: false as const,
+		code: "LENS_NOT_FOUND" as const,
+		error: `This reading has no lens "${lens}".`,
+		diagnostics: [
+			{
+				code: "LENS_NOT_FOUND",
+				file: "config.yaml",
+				message: `This reading has no lens "${lens}". Its lenses: ${known}.`,
+				recovery: `Pass one of ${known} to --lens, or leave it out for the default lens.`,
+			},
+		],
+	};
 }
 /**
  * Read only the comparison base identified by the shared public reader.
@@ -144,22 +198,30 @@ function sameCheckpoint(reference: Model, comparison: NonNullable<Model["compari
  * @param model The coherent reading.
  * @param input The requested presentation.
  * @param reference The exact comparison base, when available.
- * @returns The complete projection and selected flow.
+ * @returns The complete projection, the selected flow, and the reading its recipe records: a
+ * structural one names the lens in effect, so it redraws alike when the vault's default moves.
  */
 function renderProjection(model: Model, input: Reading, reference?: Model) {
 	const architecture = projectModel(
 		model,
 		input.scope ?? model.selectedModule ?? null,
 		input.focus ?? null,
-		{ hideKinds: input.hideKinds, expand: input.expand },
+		{
+			lens: input.lens,
+			hideKinds: input.hideKinds,
+			hideEffects: input.hideEffects,
+			expand: input.expand,
+		},
 		reference,
 	);
 	const flow = model.collections
 		.flatMap((collection) => collection.flows)
 		.find((value) => value.id === model.selectedFlow);
+	const structural = input.grammar === "architecture";
 	return {
 		flow,
-		projection: input.grammar === "architecture" ? architecture : projectFlow(architecture, flow!),
+		projection: structural ? architecture : projectFlow(architecture, flow!),
+		reading: structural ? { ...input, lens: architecture.lens.id } : input,
 	};
 }
 /**
@@ -204,7 +266,7 @@ function mountArchitectureFlowRoutes(app: Express): void {
 			.safeParse({
 				...req.query,
 				...Object.fromEntries(
-					["focus", "hideKinds", "expand"]
+					["focus", "hideKinds", "hideEffects", "expand"]
 						.filter((key) => typeof req.query[key] === "string")
 						.map((key) => [key, [req.query[key]]]),
 				),
@@ -221,7 +283,10 @@ function mountArchitectureFlowRoutes(app: Express): void {
 			respond(res, model);
 			return;
 		}
-		respond(res, await flowPicture(model, reading, vaultOfRequest(req)));
+		respond(
+			res,
+			unknownLens(model, reading.lens) ?? (await flowPicture(model, reading, vaultOfRequest(req))),
+		);
 	});
 }
 export { mountArchitectureFlowRoutes };

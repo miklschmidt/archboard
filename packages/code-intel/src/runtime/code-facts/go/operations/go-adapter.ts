@@ -29,7 +29,8 @@ import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { GO_MATH } from "#runtime/code-facts/go/operations/go-depth.ts";
 import { definitionsOf } from "#runtime/code-facts/go/operations/go-definitions.ts";
 import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { GO_TIMING } from "#runtime/code-facts/go/operations/go-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -179,6 +180,7 @@ const RUN_SYNTAX: RunSyntax = {
 		parenthesized_expression: [""],
 	},
 	arguments: { argument_list: ANY },
+	timing: GO_TIMING,
 };
 
 /**
@@ -199,7 +201,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -276,7 +278,15 @@ function packageUse(found: Import): Reference {
 function distinct(uses: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const use of uses) {
-		const key = [use.via, use.symbol, use.typeOnly, use.kind, use.asValue, use.passed].join("\0");
+		const key = [
+			use.via,
+			use.symbol,
+			use.typeOnly,
+			use.kind,
+			use.asValue,
+			use.passed,
+			use.timing,
+		].join("\0");
 		if (!seen.has(key)) seen.set(key, use);
 	}
 	return [...seen.values()];

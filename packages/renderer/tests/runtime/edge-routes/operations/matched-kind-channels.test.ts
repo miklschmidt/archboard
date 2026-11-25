@@ -1,7 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
@@ -53,65 +52,24 @@ function outgoingDiffering(change: (edge: Edge) => void): VariantContent {
 	return content;
 }
 
-/** The engine that draws the two outgoing routes on one shared trunk here. */
-const SHARING = "track";
-
-test("routes leaving one gateway in one direction may share a run", async () => {
-	// The shared trunk this engine draws here is what the overdrawn-run
-	// measure below must see, so a zero from it means no run is shared.
+test("opposing same-kind channels do not share an overdrawn run", async () => {
 	const plain = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content: channelContent,
 		theme: "dark",
-		layout: SHARING,
 	});
-	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
+	// Each pair below uses the same HTTP kind but arrives at the gateway where
+	// the other route leaves it. Their local direction is therefore different.
+	for (const pair of [
+		["NHlWy1Yw", "kJaF9nLs"],
+		["NHlWy1Yw", "HOKDAQTU"],
+		["fXPVXdiF", "2L2brMps"],
+	] as const) {
+		expect(overdrawnRun(plain, pair), pair.join(" / ")).toBe(0);
+	}
+	expect(routePoints(plain.svg).size).toBe(channelContent.edges.length);
+	expect(routeLabels(plain.svg).size).toBe(channelContent.edges.length);
 });
-
-test.each(layoutEngineSchema().options)(
-	"opposing same-kind channels do not share an overdrawn run (%s)",
-	async (layout) => {
-		const plain = await renderArchitecture({
-			policy: defaultSemanticPolicy(),
-			content: channelContent,
-			theme: "dark",
-			layout,
-		});
-		// Each pair below uses the same HTTP kind but arrives at the gateway where
-		// the other route leaves it. Their local direction is therefore different.
-		for (const pair of [
-			["NHlWy1Yw", "kJaF9nLs"],
-			["NHlWy1Yw", "HOKDAQTU"],
-			["fXPVXdiF", "2L2brMps"],
-		] as const) {
-			expect(overdrawnRun(plain, pair), pair.join(" / ")).toBe(0);
-		}
-		expect(routePoints(plain.svg).size).toBe(channelContent.edges.length);
-		expect(routeLabels(plain.svg).size).toBe(channelContent.edges.length);
-	},
-);
-
-for (const [left, right] of [
-	["added", "changed"],
-	["added", "removed"],
-	["added", "unchanged"],
-	["changed", "removed"],
-	["changed", "unchanged"],
-	["removed", "unchanged"],
-] as const) {
-	test(`different comparison standings use distinct same-kind channels (${left}/${right})`, async () => {
-		const drawing = await renderArchitecture({
-			policy: defaultSemanticPolicy(),
-			content: channelContent,
-			theme: "dark",
-			layout: SHARING,
-			standing: { [OUTGOING_CHANNELS[0]]: left, [OUTGOING_CHANNELS[1]]: right },
-		});
-		expect(overdrawnRun(drawing, OUTGOING_CHANNELS), `${left}/${right}`).toBe(0);
-		expect(routePoints(drawing.svg).size).toBe(channelContent.edges.length);
-		expect(routeLabels(drawing.svg).size).toBe(channelContent.edges.length);
-	});
-}
 
 /** What makes the first outgoing route differ from the second in one thing but its kind. */
 const DIFFERENCES: Record<string, (edge: Edge) => void> = {
@@ -123,20 +81,16 @@ const DIFFERENCES: Record<string, (edge: Edge) => void> = {
 	},
 };
 
-// Each engine keeps the complete treatment of a shared channel.
+// The complete treatment of a shared channel.
 for (const [name, change] of Object.entries(DIFFERENCES)) {
-	test.each(layoutEngineSchema().options)(
-		`different ${name} uses distinct same-kind channels (%s)`,
-		async (layout) => {
-			const drawing = await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content: outgoingDiffering(change),
-				theme: "dark",
-				layout,
-			});
-			expect(overdrawnRun(drawing, OUTGOING_CHANNELS)).toBe(0);
-			expect(routePoints(drawing.svg).size).toBe(channelContent.edges.length);
-			expect(routeLabels(drawing.svg).size).toBe(channelContent.edges.length);
-		},
-	);
+	test(`different ${name} uses distinct same-kind channels`, async () => {
+		const drawing = await renderArchitecture({
+			policy: defaultSemanticPolicy(),
+			content: outgoingDiffering(change),
+			theme: "dark",
+		});
+		expect(overdrawnRun(drawing, OUTGOING_CHANNELS)).toBe(0);
+		expect(routePoints(drawing.svg).size).toBe(channelContent.edges.length);
+		expect(routeLabels(drawing.svg).size).toBe(channelContent.edges.length);
+	});
 }

@@ -1,0 +1,137 @@
+// How TypeScript awaits and starts a call, and which of its callables are
+// async (call-timing.ts, TASK-663.09).
+
+import type { Node } from "web-tree-sitter";
+import type { Definition } from "#runtime/code-facts/operations/facts.ts";
+import { lastWord, type TimingSyntax } from "#runtime/code-facts/operations/call-timing.ts";
+
+/** The calls that run what they are handed later, on the event loop. */
+const STARTERS = new Set([
+	"setTimeout",
+	"setInterval",
+	"setImmediate",
+	"queueMicrotask",
+	"nextTick",
+	"requestAnimationFrame",
+]);
+
+/** The callables a scheduler runs later when they are its first argument. */
+const CALLBACKS = new Set(["arrow_function", "function_expression"]);
+/** The syntax of a call. */
+const CALLS = new Set(["call_expression", "new_expression"]);
+
+/**
+ * Whether some syntax hands its arguments to a timer or the microtask queue.
+ * @param holder The syntax.
+ * @param held Its child.
+ * @returns True when `held` is the argument list of a scheduling call.
+ */
+function schedules(holder: Node, held: Node): boolean {
+	return (
+		holder.type === "call_expression" &&
+		holder.childForFieldName("arguments")?.id === held.id &&
+		STARTERS.has(lastWord(holder.childForFieldName("function")))
+	);
+}
+
+/**
+ * Whether a scheduler runs a site later: the callback it is handed by name, or a call inside the
+ * callable it is handed. A call that computes the callback runs before scheduling.
+ * @param callback The scheduler's first argument.
+ * @param site The call or name being classified.
+ * @returns True when it runs later.
+ */
+function runsLater(callback: Node, site: Node): boolean {
+	if (callback.id === site.id) return !CALLS.has(site.type);
+	return (
+		CALLBACKS.has(callback.type) &&
+		callback.startIndex <= site.startIndex &&
+		site.endIndex <= callback.endIndex
+	);
+}
+
+/**
+ * How TypeScript awaits and starts a call: `await`, `.then` on its result, a
+ * timer or the microtask queue. A bare call's callee decides.
+ */
+const TYPESCRIPT_TIMING: TimingSyntax = {
+	calls: CALLS,
+	awaits: new Set(["await_expression"]),
+	wrappers: new Set([
+		"parenthesized_expression",
+		"non_null_expression",
+		"as_expression",
+		"satisfies_expression",
+	]),
+	continuations: new Map([
+		["then", "awaited"],
+		["catch", "pass"],
+		["finally", "pass"],
+	]),
+	/**
+	 * A timer or microtask queue runs its callback later. Its other arguments
+	 * and calls that compute the callback are evaluated before scheduling.
+	 * @param holder The syntax.
+	 * @param held Its child.
+	 * @param site The call or name being classified.
+	 * @returns Whether the scheduler runs it.
+	 */
+	starts: (holder, held, site) => {
+		if (!schedules(holder, held)) return false;
+		const callback = held.namedChildren.find((child) => child.type !== "comment");
+		return callback !== undefined && runsLater(callback, site);
+	},
+	/**
+	 * A construction is plain; any other call is as its callee is.
+	 * @param call The call.
+	 * @returns The call site.
+	 */
+	bare: (call) => (call.type === "new_expression" ? "plain" : "unawaited"),
+};
+
+/** Callable literals and declarations, inside which a `return` is another function's. */
+const FUNCTIONS = new Set([
+	"function_declaration",
+	"generator_function_declaration",
+	"method_definition",
+	"arrow_function",
+	"function_expression",
+	"generator_function",
+	"class_body",
+]);
+
+/** A declared return type that is a promise. */
+const PROMISED = /^:\s*(?:Promise|PromiseLike)\s*</u;
+
+/**
+ * Whether a function body returns a value of its own, which may be a promise.
+ * @param body The body.
+ * @returns True when one of its own `return` statements returns a value.
+ */
+function returnsValue(body: Node): boolean {
+	return body.descendantsOfType("return_statement").some((statement) => {
+		if (statement.namedChildCount === 0) return false;
+		for (let at = statement.parent; at !== null && at.id !== body.id; at = at.parent) {
+			if (FUNCTIONS.has(at.type)) return false;
+		}
+		return true;
+	});
+}
+
+/**
+ * Whether a callable is async: `async`, or a declared promise. One with
+ * another declared return type, or a block body that returns no value, is
+ * synchronous. Any other may return a promise, so it is not told.
+ * @param callable The function literal or declaration.
+ * @returns The mark, or nothing when the declaration does not tell.
+ */
+function typeScriptAsync(callable: Node): Pick<Definition, "async"> {
+	if (callable.children.some((child) => child.type === "async")) return { async: true };
+	const returns = callable.childForFieldName("return_type");
+	if (returns !== null) return { async: PROMISED.test(returns.text) };
+	const body = callable.childForFieldName("body");
+	if (body?.type !== "statement_block" || returnsValue(body)) return {};
+	return { async: false };
+}
+
+export { TYPESCRIPT_TIMING, typeScriptAsync };

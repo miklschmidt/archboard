@@ -19,7 +19,7 @@ test("an explanation captures the complete reading without changing authored inp
 		subjects: ["Shop#Gateway"],
 		reading: {
 			focus: [],
-			relationshipKinds: ["call"],
+			relationshipKinds: ["sync"],
 			grammar: "architecture" as const,
 		},
 	};
@@ -64,7 +64,7 @@ test("relationship and missing-flow explanations retain stable reading intent an
 			scope: "Shop#Gateway",
 			focus: ["Shop#Worker"],
 			referenceSubject: "Shop#Dispatch",
-			relationshipKinds: ["call"],
+			relationshipKinds: ["sync"],
 			grammar: "architecture" as const,
 		},
 	};

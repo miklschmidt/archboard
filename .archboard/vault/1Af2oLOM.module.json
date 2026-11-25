@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#GTrRDM2m",
+      "order": 91004,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the graph and its nodes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-geom/src/node_size.rs",
+        "symbol": "textfont_object"
+      },
+      "to": "vKEsyHFk#FLnwES7I"
+    }
+  ],
   "order": 90001,
   "name": "graphviz-pure-geom",
   "kind": "external",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure-geom"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#1Af2oLOM",
-  "outgoing": [
-    {
-      "order": 91004,
-      "kind": "dependency",
-      "label": "the graph and its nodes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-geom/src/shapes.rs",
-        "symbol": "NodeData"
-      },
-      "id": "vKEsyHFk#GTrRDM2m",
-      "to": "vKEsyHFk#FLnwES7I"
-    }
-  ],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

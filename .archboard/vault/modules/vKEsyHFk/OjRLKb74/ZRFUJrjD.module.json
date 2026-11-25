@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 7000,
   "name": "Compound graph",
   "kind": "function",
@@ -8,8 +9,7 @@
     "path": "crates/archboard-layout/src/architecture/graph.rs",
     "symbol": "compound_graph"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/OjRLKb74#ZRFUJrjD",
-  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ"
 }

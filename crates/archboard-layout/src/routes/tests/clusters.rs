@@ -1,10 +1,10 @@
 //! Crossings along one line close enough for their hops to touch: who rises
 //! over them, and under how many arcs.
 
-use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
+use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, bridge_crossings};
 use super::{
-    DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from, drawing,
-    drawn, hops, points,
+    Arrowhead, BTreeMap, Dash, DrawingBridge, Emphasis, LineLook, across, across_from, bridged,
+    curve_bounds, down, down_from, drawing, drawn, hops, lines_of, points,
 };
 
 /// The hops among a crossing pass's bridges.
@@ -16,16 +16,13 @@ fn hops_of(bridges: &[DrawingBridge]) -> Vec<&DrawingBridge> {
 // line each hopped it cleanly, and became one long brace on the line they cross.
 #[test]
 fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
-    // Whether the crossed line is painted first or between the two.
+    // Whether the crossed line is painted first or between the two. Every
+    // line runs straight well past its approaches, so each has a hop's room.
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
     for (routes, line) in [
-        (
-            [down_from(50.0, 0.0, 150.0), across(50.0), across(66.0)],
-            "0",
-        ),
-        (
-            [across(50.0), down_from(50.0, 0.0, 150.0), across(66.0)],
-            "1",
-        ),
+        ([crossed(), crosser(50.0), crosser(66.0)], "0"),
+        ([crosser(50.0), crossed(), crosser(66.0)], "1"),
     ] {
         let result = bridged(&drawing(&routes));
         assert_eq!(result.bridges.len(), 2);
@@ -33,6 +30,47 @@ fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
             assert!(hops(bridge));
             assert_eq!(bridge.under, [line]);
         }
+    }
+}
+
+// Kinds layer: where a ribbon of strands crossed a line, every strand hopped the
+// line on its own, and a crossing of two ribbons drew a hop at every pair.
+#[test]
+fn the_strands_of_one_cable_crossing_a_line_are_hopped_as_one_ribbon() {
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
+    let mut cable = drawing(&[crossed(), crosser(50.0), crosser(66.0)]);
+    let (from, to) = (
+        cable.edges[1].edge.from.clone(),
+        cable.edges[1].edge.to.clone(),
+    );
+    cable.edges[2].edge.from = from;
+    cable.edges[2].edge.to = to;
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+    assert_eq!(result.bridges.len(), 1);
+    let bridge = &result.bridges[0];
+    assert_eq!(bridge.edge_id, "0");
+    assert!(hops(bridge));
+    let mut under = bridge.under.clone();
+    under.sort();
+    assert_eq!(under, ["1", "2"]);
+}
+
+#[test]
+fn independent_routes_between_the_same_parts_each_hop_the_line_they_cross() {
+    let mut reading = drawing(&[
+        down_from(50.0, -50.0, 150.0),
+        across_from(50.0, -50.0, 150.0),
+        across_from(66.0, -50.0, 150.0),
+    ]);
+    reading.edges[2].edge.from = reading.edges[1].edge.from.clone();
+    reading.edges[2].edge.to = reading.edges[1].edge.to.clone();
+    let result = bridged(&reading);
+    assert_eq!(result.bridges.len(), 2);
+    for bridge in &result.bridges {
+        assert!(hops(bridge));
+        assert_eq!(bridge.under, ["0"]);
     }
 }
 
@@ -254,4 +292,162 @@ fn a_crossing_a_crest_would_touch_is_one_cluster_with_the_crests_crossings() {
             );
         }
     }
+}
+
+// Owner's crop of the root reading: where a ribbon of strands hopped another cable, every strand
+// arched one way but the outermost, which arched out the other way, so the set read as a tube.
+#[test]
+fn every_strand_of_a_cable_hopping_a_crossing_bulges_the_same_way() {
+    // A ribbon of four strands down, eight apart, crossing a ribbon of four strands across.
+    let mut routes: Vec<_> = (0..4)
+        .map(|at| across_from(50.0 + 8.0 * f64::from(at), -100.0, 200.0))
+        .collect();
+    routes.extend((0..4).map(|at| down_from(40.0 + 8.0 * f64::from(at), -100.0, 200.0)));
+    let mut cables = drawing(&routes);
+    let mut riders = BTreeMap::new();
+    for at in [1, 2, 3, 5, 6, 7] {
+        let leader = if at < 4 { 0 } else { 4 };
+        cables.edges[at].edge.from = cables.edges[leader].edge.from.clone();
+        cables.edges[at].edge.to = cables.edges[leader].edge.to.clone();
+        riders.insert(at.to_string(), leader.to_string());
+    }
+    let result = bridge_crossings(&cables, &lines_of(&cables), &riders);
+    let sides: Vec<bool> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|bridge| super::bulge_of(bridge).1 > 0.0)
+        .collect();
+    assert_eq!(sides.len(), 4);
+    assert!(sides.iter().all(|&side| side == sides[0]), "{sides:?}");
+}
+
+#[test]
+fn an_aligned_cable_keeps_its_hops_over_a_crossing() {
+    let mut cable = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(66.0, -100.0, 200.0),
+        ],
+        &[(1, "call", Emphasis::Hero), (2, "call", Emphasis::Hero)],
+    );
+    cable.edges[2].edge.from = cable.edges[1].edge.from.clone();
+    cable.edges[2].edge.to = cable.edges[1].edge.to.clone();
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+
+    let mut risers: Vec<_> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|hop| hop.edge_id.as_str())
+        .collect();
+    risers.sort_unstable();
+    assert_eq!(risers, ["1", "2"]);
+}
+
+#[test]
+fn turning_a_cables_hops_keeps_them_clear_of_a_join_between_its_strands() {
+    let mut cable = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(58.0, -100.0, 200.0),
+            across_from(54.0, 45.0, 200.0),
+            across_from(54.0, 48.0, 200.0),
+        ],
+        &[(1, "call", Emphasis::Hero), (2, "call", Emphasis::Hero)],
+    );
+    cable.edges[2].edge.from = cable.edges[1].edge.from.clone();
+    cable.edges[2].edge.to = cable.edges[1].edge.to.clone();
+    let riders = BTreeMap::from([("2".to_owned(), "1".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+    let lower = hops_of(&result.bridges)
+        .into_iter()
+        .find(|hop| hop.edge_id == "2")
+        .expect("the lower strand still hops the crossing");
+    assert_eq!(
+        super::bulge_of(lower).0,
+        0.0,
+        "the hop bulges away from the join"
+    );
+}
+
+#[test]
+fn a_lifted_crest_matches_the_standing_hop_of_its_cable() {
+    let mut cables = drawn(
+        &[
+            down_from(50.0, -100.0, 200.0),
+            down_from(42.0, -100.0, 200.0),
+            across_from(50.0, -100.0, 200.0),
+            across_from(66.0, 10.0, 200.0),
+            across_from(53.0, 64.0, 200.0),
+            across_from(53.0, 67.0, 200.0),
+        ],
+        &[
+            (0, "call", Emphasis::Hero),
+            (1, "call", Emphasis::Hero),
+            (3, "call", Emphasis::Hero),
+        ],
+    );
+    for (strand, leader) in [(1, 0), (3, 2)] {
+        cables.edges[strand].edge.from = cables.edges[leader].edge.from.clone();
+        cables.edges[strand].edge.to = cables.edges[leader].edge.to.clone();
+    }
+    let riders = BTreeMap::from([
+        ("1".to_owned(), "0".to_owned()),
+        ("3".to_owned(), "2".to_owned()),
+    ]);
+    let result = bridge_crossings(&cables, &lines_of(&cables), &riders);
+
+    let mut crests: Vec<_> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|crest| {
+            let mut under: Vec<_> = crest.under.iter().map(String::as_str).collect();
+            under.sort_unstable();
+            (crest.edge_id.as_str(), under, super::bulge_of(crest).0)
+        })
+        .collect();
+    crests.sort_unstable_by_key(|&(id, _, _)| id);
+    assert_eq!(
+        crests,
+        [("2", vec!["0", "1"], 0.0), ("3", vec!["0", "1"], 0.0)]
+    );
+}
+
+#[test]
+fn a_cable_hops_one_way_across_a_lines_end_approach() {
+    let mut cable = drawing(&[down(50.0), down(58.0), across_from(50.0, 86.0, -100.0)]);
+    cable.edges[1].edge.from = cable.edges[0].edge.from.clone();
+    cable.edges[1].edge.to = cable.edges[0].edge.to.clone();
+    let riders = BTreeMap::from([("1".to_owned(), "0".to_owned())]);
+    let result = bridge_crossings(&cable, &lines_of(&cable), &riders);
+
+    let hops = hops_of(&result.bridges);
+    assert_eq!(hops.len(), 2);
+    assert!(hops.iter().all(|hop| hop.under == ["2"]));
+    let bulges_left = |hop| super::bulge_of(hop).0 < 0.0;
+    assert_eq!(bulges_left(hops[0]), bulges_left(hops[1]));
+    assert_eq!(result.edges[2].curve, cable.edges[2].curve);
+}
+
+#[test]
+fn a_cable_hop_does_not_turn_into_the_crossed_lines_arrowhead() {
+    let mut cable = drawing(&[down(50.0), down(58.0), across_from(50.0, -100.0, 73.0)]);
+    cable.edges[1].edge.from = cable.edges[0].edge.from.clone();
+    cable.edges[1].edge.to = cable.edges[0].edge.to.clone();
+    let riders = BTreeMap::from([("1".to_owned(), "0".to_owned())]);
+    let lines = BTreeMap::from([(
+        "2".to_owned(),
+        LineLook {
+            arrowhead: Arrowhead::Equals,
+            dash: Dash::Solid,
+        },
+    )]);
+    let result = bridge_crossings(&cable, &lines, &riders);
+
+    let hop = hops_of(&result.bridges)
+        .into_iter()
+        .find(|hop| hop.edge_id == "0")
+        .expect("the first strand still hops the crossing");
+    let bounds = curve_bounds(&hop.curve);
+    // The compute mark has a bar 16.8 units back from its tip at x=73.
+    assert!(bounds.x + bounds.width < 56.2);
 }

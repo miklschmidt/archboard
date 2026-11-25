@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 41100,
   "name": "archboard-paint",
   "kind": "package",
@@ -11,11 +12,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#NFwqWgrm",
   "formerNames": [
     "Painter core"
   ],
-  "outgoing": [],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

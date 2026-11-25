@@ -271,6 +271,7 @@ test("an imported historical predecessor keeps exact scoped ancestry instead of 
 			resolutions: [{ subject: "Shop/System#Api", field: "responsibility", take: "theirs" }],
 		},
 	});
-	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	// A migrated vault holds the old module format, so every write waits for the upgrade (TASK-663).
+	expect(settled).toMatchObject({ success: false, code: "UPGRADE_REQUIRED" });
 	expect(await exportArchitectureModel(value.vault)).toMatchObject({ success: true });
 }, 15000);

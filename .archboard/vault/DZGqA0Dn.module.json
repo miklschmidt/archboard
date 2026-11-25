@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 91000,
   "name": "Embedded grammars",
   "kind": "config",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts/services/grammar-files.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#DZGqA0Dn",
-  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
 }

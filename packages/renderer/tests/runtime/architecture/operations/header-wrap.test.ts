@@ -1,6 +1,5 @@
-// Parent headers use normal card sizing in both engines and every theme (TASK-548.11).
+// Parent headers use normal card sizing in every theme (TASK-548.11).
 import { expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
@@ -44,27 +43,24 @@ function iconSize(svg: string, id: string): number {
 	return Number(/<svg [^>]*width="([\d.]+)"/u.exec(own)?.[1]);
 }
 
-for (const layout of layoutEngineSchema().options) {
-	for (const theme of ["light", "dark", undefined] as const) {
-		test(`a compact parent keeps its text and visible line ends (${layout}, ${theme ?? "page"})`, async () => {
-			const drawing = await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content,
-				theme,
-				layout,
-			});
-			const frame = drawing.atlas.nodes["plan"]!;
-			const header = headerCards(drawing).get("plan")!;
-			expect(header.width).toBeLessThan(frame.width);
-			const texts = drawnTexts(drawing.svg);
-			// The tab holds one line, and the file keeps what the frame is for as its title.
-			expect(texts.filter(({ subject, size }) => subject.id === "plan" && size === 11)).toEqual([]);
-			expect(drawing.svg).toContain(`<title>${RESPONSIBILITY}</title>`);
-			const name = (id: string) =>
-				texts.find((run) => run.subject.id === id && run.text === "Durable access")!;
-			expect(name("plan").size).toBeGreaterThan(name("plain").size);
-			expect(iconSize(drawing.svg, "plan")).toBeGreaterThan(iconSize(drawing.svg, "plain"));
-			expectDrawingIntact(drawing, content, layout);
+for (const theme of ["light", "dark", undefined] as const) {
+	test(`a compact parent keeps its text and visible line ends (${theme ?? "page"})`, async () => {
+		const drawing = await renderArchitecture({
+			policy: defaultSemanticPolicy(),
+			content,
+			theme,
 		});
-	}
+		const frame = drawing.atlas.nodes["plan"]!;
+		const header = headerCards(drawing).get("plan")!;
+		expect(header.width).toBeLessThan(frame.width);
+		const texts = drawnTexts(drawing.svg);
+		// The tab holds one line, and the file keeps what the frame is for as its title.
+		expect(texts.filter(({ subject, size }) => subject.id === "plan" && size === 11)).toEqual([]);
+		expect(drawing.svg).toContain(`<title>${RESPONSIBILITY}</title>`);
+		const name = (id: string) =>
+			texts.find((run) => run.subject.id === id && run.text === "Durable access")!;
+		expect(name("plan").size).toBeGreaterThan(name("plain").size);
+		expect(iconSize(drawing.svg, "plan")).toBeGreaterThan(iconSize(drawing.svg, "plain"));
+		expectDrawingIntact(drawing, content);
+	});
 }

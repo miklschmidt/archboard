@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#SEYMj3ln",
+      "order": 69000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the card's box in the picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
+        "symbol": "subjectBox"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#1ZI1Njp7",
+      "order": 98000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the child and parent flight fits",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
+        "symbol": "cameraFor"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    }
+  ],
   "order": 35000,
   "name": "Work out the flight",
   "kind": "function",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#IH0j4qQo",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 69000,
-      "kind": "call",
-      "label": "the card's box in the picture",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
-        "symbol": "subjectBox"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#SEYMj3ln",
-      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
-    },
-    {
-      "order": 98000,
-      "kind": "call",
-      "label": "the child and parent flight fits",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
-        "symbol": "cameraFor"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#1ZI1Njp7",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

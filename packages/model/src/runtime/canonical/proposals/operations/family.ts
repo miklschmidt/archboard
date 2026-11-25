@@ -10,9 +10,9 @@ import {
 	proposalBaseline,
 	decodeProposal,
 	decodeSubjects,
-	predecessorRevision,
 	requireModel,
 } from "#runtime/canonical/proposals/operations/read.ts";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
 import {
 	retainBaseline,
 	updateChanges,

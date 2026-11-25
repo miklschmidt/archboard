@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SMjRfwN3#MGrLK1Qz",
+      "order": 40000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "description": "fetch it, then run it in its own place",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
+        "symbol": "NIX_ARGV"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
+    }
+  ],
   "order": 26000,
   "name": "Nix",
   "kind": "external",
@@ -7,22 +23,7 @@
   "groups": [
     "walkthrough"
   ],
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#WSI0A2k3",
-  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R",
-  "outgoing": [
-    {
-      "order": 40000,
-      "kind": "call",
-      "description": "fetch it, then run it in its own place",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
-        "symbol": "NIX_ARGV"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#MGrLK1Qz",
-      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
 }

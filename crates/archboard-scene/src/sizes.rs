@@ -64,8 +64,6 @@ pub(crate) const CARD_THICKNESS: f64 = 4.0;
 pub(crate) const TRAY_LIP: f64 = 2.0;
 /// How tall a well shows its top wall.
 pub(crate) const TRAY_WALL: f64 = 6.0;
-/// How far a container's words stand in from the outer edge of its box.
-const HEADER_SLAB_INSET: f64 = 8.0;
 /// How tall a type chip's front edge shows.
 pub(crate) const CHIP_THICKNESS: f64 = 1.5;
 /// How tall a label plate's front edge shows.
@@ -158,16 +156,14 @@ pub(crate) const TAG_INSET: f64 = 12.0;
 pub(crate) const TAG_BESIDE: f64 = 8.0;
 
 /// How much larger everything a far view sets larger stands: a far card's words
-/// and every line with its arrowhead.
+/// and the bodies of its lines.
 pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// How thick a line of normal weight is drawn.
-pub(crate) const LINE_WIDTH: f64 = 1.4;
+pub(crate) const LINE_WIDTH: f64 = 2.4;
+/// How thick a broken line's body is, as a share of its weight's width.
+pub(crate) const THIN_BODY: f64 = 0.7;
 /// How thick a line of hero weight is drawn.
-pub(crate) const HERO_LINE_WIDTH: f64 = 2.2;
-/// How wide a double line's rails stand, side to side.
-pub(crate) const RAILS: f64 = 3.6;
-/// The gap a double line's rails leave down its middle.
-pub(crate) const RAIL_GAP: f64 = 1.2;
+pub(crate) const HERO_LINE_WIDTH: f64 = 3.6;
 /// The room between an architecture card's edge and its chip and words.
 pub(crate) const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.
@@ -181,8 +177,6 @@ pub(crate) const FLOW_HEADING: f64 = PART_TITLE_LINE;
 /// How tall a flow's heading stands in its tab with its summary.
 pub(crate) const FLOW_HEADING_WITH_NOTE: f64 =
     PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;
-/// How far a container's words stand in from the sides of its box.
-pub(crate) const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
 /// The room inside a relationship's label plate, on the left and the right of its words.
 pub(crate) const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;
 /// The room inside a relationship's label plate, above and below its words.

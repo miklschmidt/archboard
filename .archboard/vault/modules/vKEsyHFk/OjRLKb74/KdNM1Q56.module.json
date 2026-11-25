@@ -1,17 +1,7 @@
 {
-  "order": 40600,
-  "name": "Graphviz",
-  "kind": "external",
-  "responsibility": "Ranks and orders the cards of a block",
-  "description": "The vendored graphviz-pure, a pure-Rust port of Graphviz 16.1.0, runs in the core through crates/archboard-graphviz (ADR 0060). Its answer depends on its graph alone.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/vendor/graphviz-pure"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
   "outgoing": [
     {
+      "id": "vKEsyHFk#2pseYTlP",
       "order": 91000,
       "kind": "dependency",
       "label": "its errors and diagnostics",
@@ -21,12 +11,13 @@
         "path": "crates/vendor/graphviz-pure/src/decoded.rs",
         "symbol": "GraphvizError"
       },
-      "id": "vKEsyHFk#2pseYTlP",
       "to": "vKEsyHFk#FLnwES7I"
     },
     {
+      "id": "vKEsyHFk#d7yWvhGj",
       "order": 91001,
-      "kind": "dependency",
+      "kind": "sync",
+      "effect": "compute",
       "label": "lay the graph out",
       "emphasis": "normal",
       "anchor": {
@@ -34,12 +25,13 @@
         "path": "crates/vendor/graphviz-pure/src/decoded.rs",
         "symbol": "LayoutOptions"
       },
-      "id": "vKEsyHFk#d7yWvhGj",
       "to": "vKEsyHFk#kEeWzBGr"
     },
     {
+      "id": "vKEsyHFk#iE5MSVo4",
       "order": 91002,
-      "kind": "dependency",
+      "kind": "sync",
+      "effect": "compute",
       "label": "parse the DOT text",
       "emphasis": "normal",
       "anchor": {
@@ -47,23 +39,24 @@
         "path": "crates/vendor/graphviz-pure/src/plugins.rs",
         "symbol": "parse_dot_all"
       },
-      "id": "vKEsyHFk#iE5MSVo4",
       "to": "vKEsyHFk#hBkjiO4k"
     },
     {
+      "id": "vKEsyHFk#q7glsoJH",
       "order": 91003,
-      "kind": "dependency",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "write the laid-out graph",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/vendor/graphviz-pure/src/lib.rs",
-        "symbol": "OutputFormat"
+        "symbol": "reset_render_state"
       },
-      "id": "vKEsyHFk#q7glsoJH",
       "to": "vKEsyHFk#7yGUY6ta"
     },
     {
+      "id": "vKEsyHFk#5iytjWV7",
       "order": 91012,
       "kind": "dependency",
       "label": "build with the shapes and path planning",
@@ -73,9 +66,19 @@
         "path": "crates/vendor/graphviz-pure/Cargo.toml",
         "symbol": "graphviz-pure-geom"
       },
-      "id": "vKEsyHFk#5iytjWV7",
       "to": "vKEsyHFk#1Af2oLOM"
     }
   ],
+  "order": 40600,
+  "name": "Graphviz",
+  "kind": "external",
+  "responsibility": "Ranks and orders the cards of a block",
+  "description": "The vendored graphviz-pure, a pure-Rust port of Graphviz 16.1.0, runs in the core through crates/archboard-graphviz (ADR 0060). Its answer depends on its graph alone.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/graphviz-pure"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
   "parent": "vKEsyHFk#HgZPVIE2"
 }

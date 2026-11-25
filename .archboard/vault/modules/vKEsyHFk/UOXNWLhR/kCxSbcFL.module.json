@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 59000,
   "name": "Pane chrome",
   "kind": "function",
@@ -9,8 +10,7 @@
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts",
     "symbol": "usePaneChrome"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#kCxSbcFL",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

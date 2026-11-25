@@ -7,6 +7,7 @@ export {
 	offeredViewSchema,
 	pictureReceiptShape,
 	renderedVariantSchema,
+	savedLayoutEngineSchema,
 	semanticRenderReplySchema,
 	standaloneThemeSchema,
 	subjectStandingSchema,

@@ -1,14 +1,17 @@
-//! A corpus picture drawn by a native build of the core, to the same document
+//! Corpus pictures drawn by a native build of the core, to the same documents
 //! the WebAssembly build draws (ADR 0059).
 //!
-//! The fixture (`fixtures/recommendations.json`) holds what the WebAssembly core was
-//! asked and answered: the request its host wrote, the icons it was given, and
-//! the document it wrote. The native render lays out each solve here, Graphviz
-//! included (ADR 0060), so a native build lays a picture out with no C library
-//! and no host's Graphviz.
+//! Each fixture holds what the WebAssembly core was asked and answered: the
+//! request its host wrote, the icons it was given, and the document it wrote.
+//! `fixtures/recommendations.json` is a reading of the old format, which draws
+//! each kind as its policy recorded it; `fixtures/effects.json` is the same
+//! request in the current format, where each line's marks show its effect
+//! (TASK-663). The native render lays out each solve here, Graphviz included
+//! (ADR 0060), so a native build lays a picture out with no C library and no
+//! host's Graphviz.
 //!
 //! `packages/renderer/tests/runtime/support/capture-native-fixture.ts` writes
-//! the fixture again after a change to what the core draws.
+//! the fixtures again after a change to what the core draws.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -23,7 +26,7 @@ use archboard_render::{Host, Rendered, Renderer};
 use serde::Deserialize;
 
 /// What the WebAssembly core was asked and answered.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Fixture {
     request: String,
     icons: BTreeMap<String, Vec<String>>,
@@ -71,25 +74,33 @@ fn answer_of<T>(future: impl Future<Output = T>) -> T {
     }
 }
 
-#[test]
-fn a_native_build_draws_a_corpus_picture_to_the_bytes_the_webassembly_build_draws() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/recommendations.json"
-    );
-    let fixture: Fixture =
-        serde_json::from_str(&fs::read_to_string(path).expect("the fixture is there"))
-            .expect("the fixture reads");
-    let host = Native::new(fixture.icons);
+/// A fixture, read.
+fn fixture(name: &str) -> Fixture {
+    let path = format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"));
+    serde_json::from_str(&fs::read_to_string(path).expect("the fixture is there"))
+        .expect("the fixture reads")
+}
+
+/// The document a native build draws for a fixture's request.
+fn drawn_natively(fixture: &Fixture) -> String {
+    let host = Native::new(fixture.icons.clone());
     let request: RenderRequest = serde_json::from_str(&fixture.request).expect("the request reads");
     let rendered = answer_of(Renderer::default().render(&request, &host)).expect("it draws");
     let Rendered::Drawn(drawn) = rendered else {
         panic!("the picture drew nothing");
     };
-    assert!(
-        drawn.document.svg == fixture.svg,
-        "the native document differs from the WebAssembly one"
-    );
+    drawn.document.svg
+}
+
+#[test]
+fn a_native_build_draws_corpus_pictures_to_the_bytes_the_webassembly_build_draws() {
+    for name in ["recommendations.json", "effects.json"] {
+        let fixture = fixture(name);
+        assert!(
+            drawn_natively(&fixture) == fixture.svg,
+            "the native document of {name} differs from the WebAssembly one"
+        );
+    }
 }
 
 #[test]

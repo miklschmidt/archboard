@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#ttcJkRoJ",
+      "order": 11000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the step's focus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
+        "symbol": "useAutoFit"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#pjGLTugH",
+      "order": 25000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "subject boxes in the atlas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
+        "symbol": "subjectBox"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#5oNIinxP",
+      "order": 30000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "ends of named lines and steps, lines between named cards",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
+        "symbol": "subjectOf"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#gPCozayF",
+      "order": 99000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the region a walkthrough beat focuses",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
+        "symbol": "unionRect"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    }
+  ],
   "order": 9000,
   "name": "Drive walkthrough focus",
   "kind": "function",
@@ -11,61 +69,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 11000,
-      "kind": "data",
-      "label": "the step's focus",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
-        "symbol": "useAutoFit"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#ttcJkRoJ",
-      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
-    },
-    {
-      "order": 25000,
-      "kind": "call",
-      "label": "subject boxes in the atlas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
-        "symbol": "subjectBox"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#pjGLTugH",
-      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
-    },
-    {
-      "order": 30000,
-      "kind": "call",
-      "label": "ends of named lines and steps, lines between named cards",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
-        "symbol": "subjectOf"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#5oNIinxP",
-      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
-    },
-    {
-      "order": 99000,
-      "kind": "call",
-      "label": "the region a walkthrough beat focuses",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
-        "symbol": "unionRect"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#gPCozayF",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

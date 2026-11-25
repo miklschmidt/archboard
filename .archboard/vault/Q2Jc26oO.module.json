@@ -1,19 +1,10 @@
 {
-  "order": 960220,
-  "name": "Frame transport",
-  "kind": "module",
-  "responsibility": "Writes and reads newline-framed JSON over the stdio of the child, and tells each owner what arrived",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/transport/clients"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#Q2Jc26oO",
-  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
   "outgoing": [
     {
+      "id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
       "order": 4000,
       "kind": "rpc",
+      "effect": "mutation",
       "label": "JSON-RPC over stdio",
       "emphasis": "hero",
       "traffic": {
@@ -25,12 +16,13 @@
         "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
         "symbol": "createFrameWriter"
       },
-      "id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
       "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
+      "id": "vKEsyHFk#gdsIiF8h",
       "order": 980160,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "route each decoded frame",
       "emphasis": "muted",
       "anchor": {
@@ -38,8 +30,18 @@
         "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
         "symbol": "createInboundRouter"
       },
-      "id": "vKEsyHFk#gdsIiF8h",
       "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
     }
-  ]
+  ],
+  "order": 960220,
+  "name": "Frame transport",
+  "kind": "module",
+  "responsibility": "Writes and reads newline-framed JSON over the stdio of the child, and tells each owner what arrived",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/transport/clients"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#Q2Jc26oO",
+  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk"
 }

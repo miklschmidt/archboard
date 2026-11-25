@@ -74,7 +74,8 @@ if (model.proposals.some((proposal) => proposal.name === "Initial pipeline")) {
 					source: "CLI",
 					relationship: {
 						to: "Architecture runtime",
-						kind: "call",
+						kind: "sync",
+						effect: "mutation",
 						order: 0,
 						label: "Submit one intent",
 					},
@@ -82,7 +83,13 @@ if (model.proposals.some((proposal) => proposal.name === "Initial pipeline")) {
 				{
 					type: "add-relationship",
 					source: "Architecture runtime",
-					relationship: { to: "Archive", kind: "data", order: 1, label: "Retain exact history" },
+					relationship: {
+						to: "Archive",
+						kind: "storage",
+						effect: "mutation",
+						order: 1,
+						label: "Retain exact history",
+					},
 				},
 			],
 		});

@@ -1,4 +1,5 @@
 import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
+import { UpgradeInstallationSchema } from "#shared/upgrade/schemas/upgrade.ts";
 import { privateArchivePath } from "#runtime/canonical/archive/store/model-archive-location.ts";
 import { operationSubjects } from "#shared/rules/model-operation.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
@@ -56,6 +57,7 @@ const JournalSchema = z
 			PortableInstallationSchema,
 			InitializationInstallationSchema,
 			MigrationInstallationSchema,
+			UpgradeInstallationSchema,
 		]),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 		before: ModelRevisionSchema,

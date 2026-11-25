@@ -1,19 +1,17 @@
 //! A block of cards' placed leaves, set right where Graphviz leaves them
 //! off: the header in its corner, with the ports on its rank beside it.
 
-use crate::constants::CONTAINER_INSET;
-use crate::ecma::{js_max, js_min, max, min, via_text};
-use crate::geometry::{Point, Rect, Side};
+use crate::ecma::{js_max, max, min};
+use crate::geometry::{Point, Rect};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{Map, Placement};
+use crate::lanes::spacing::Rim;
 use crate::placed::PlacedNode;
-use crate::track::chains::LANE;
-use crate::track::labels::extent_of;
-use crate::track::scene::{Map, Placement};
-use crate::track::spacing::Rim;
 
 use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};
 use super::lone::{caption_width, frame_width, room_of, side_room};
-use super::tree::{Block, BlockTree, Kind, Nesting, header_of};
+use super::tree::{Block, BlockTree, Kind, header_of};
 
 /// The side of a port's square.
 pub(crate) const PORT: f64 = 1.0;
@@ -87,31 +85,6 @@ fn widened(
     taken.index
 }
 
-/// Let a block's own top and bottom ports slide along its edge while it is
-/// routed: Graphviz stands them beside the header, which may hold a port away
-/// from its line, and a port may then move onto that line's column. A top
-/// port keeps clear of the header. The root has no ports of its own.
-pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
-    if block.kind == Kind::Root {
-        return;
-    }
-    let (left, right) = extent_of(scene);
-    let clear = scene.cards.get(&header_of(block)).map_or(left, |&item| {
-        let header = scene.item(item).bx;
-        js_max(left, header.x + header.width + LANE)
-    });
-    for (port, &side) in &block.ports {
-        let Some(&item) = scene.cards.get(port) else {
-            continue;
-        };
-        if block.header_entry(port) || matches!(side, Side::Left | Side::Right) {
-            continue;
-        }
-        let low = if side == Side::Top { clear } else { left };
-        scene.slides.insert(item, (low, js_max(low, right)));
-    }
-}
-
 /// Mark the items of a block's scene that stand for group regions: a region
 /// packed whole, and a card laid out as the region it is alone in, whose own
 /// faces stand in from its box. A lane keeps a region's clearance off each, as
@@ -120,7 +93,6 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
 /// off a card's region there, the lanes beside it pushed the next one along
 /// its container's wall (Recording a walkthrough).
 pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
-    let inline = tree.nesting != Nesting::Blocks;
     for item in &block.items {
         let card = scene.cards.get(item).copied();
         if let Some(lone) = tree.lone.get(item) {
@@ -132,7 +104,7 @@ pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTre
         let region = tree
             .block_of(item)
             .is_some_and(|inner| matches!(tree.get(inner).kind, Kind::Region | Kind::Frame));
-        if (inline && tree.lone.contains_key(item)) || region {
+        if region {
             scene
                 .region_blocks
                 .insert(card.expect("a region is on its block's scene"));
@@ -160,22 +132,7 @@ pub(crate) fn pinned_leaf(
         y,
         width: PORT,
         height: inner.height,
-        children: None,
-        frame: None,
     }
-}
-
-/// Every leaf under a block's placed nodes, those inside its frames included.
-pub(crate) fn leaves_of(nodes: &mut [PlacedNode]) -> Vec<&mut PlacedNode> {
-    let mut leaves = Vec::new();
-    for node in nodes {
-        if node.children.is_none() {
-            leaves.push(node);
-        } else if let Some(children) = &mut node.children {
-            leaves.extend(leaves_of(children));
-        }
-    }
-    leaves
 }
 
 /// Where a block routed again stands a pin or a block inside it: a pin where
@@ -209,33 +166,6 @@ pub(crate) fn settled_leaf(
         width,
         height,
     })
-}
-
-/// Grow inline frames around children resized after their ports settle.
-pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
-    for node in nodes {
-        let Some(children) = node
-            .children
-            .as_mut()
-            .filter(|children| !children.is_empty())
-        else {
-            continue;
-        };
-        hold_resized_children(children);
-        let Some(row) = &node.frame else {
-            continue;
-        };
-        let inset = CONTAINER_INSET + row.below.map_or(0.0, via_text);
-        let low = js_min(node.x, min(children.iter().map(|child| child.x - inset)));
-        let high = js_max(
-            node.x + node.width,
-            max(children.iter().map(|child| child.x + child.width + inset)),
-        );
-        node.x = low;
-        node.width = high - low;
-        let row = node.frame.as_mut().expect("a frame");
-        row.title[0] = low;
-    }
 }
 
 /// The room a block of cards keeps where no line turns under its header, a

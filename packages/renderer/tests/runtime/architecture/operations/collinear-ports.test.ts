@@ -44,8 +44,8 @@ test.each([false, true])(
 		expect(collinearPorts(drawing(2, vertical), content)).toHaveLength(1);
 		expect(collinearPorts(drawing(12, vertical), content)).toHaveLength(1);
 		expect(collinearPorts(drawing(16, vertical), content)).toEqual([]);
-		expect(() => expectDrawingIntact(drawing(0, vertical), content, "blocks")).toThrow();
-		expect(() => expectDrawingIntact(drawing(16, vertical), content, "blocks")).not.toThrow();
+		expect(() => expectDrawingIntact(drawing(0, vertical), content)).toThrow();
+		expect(() => expectDrawingIntact(drawing(16, vertical), content)).not.toThrow();
 	},
 );
 

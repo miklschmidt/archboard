@@ -30,7 +30,7 @@ test.each(["canonical", "retained"] as const)(
 			recordedAt: new Date("2026-10-27T00:00:00Z"),
 			language: "en",
 			theme: "light",
-			layout: "track",
+			layout: "lanes",
 			document: architecture === undefined ? ORIGINAL : null,
 			architecture,
 			policy: {
@@ -84,7 +84,7 @@ test.each(["canonical", "retained"] as const)(
 				directory,
 				container: "mp4",
 				theme: "light",
-				layout: "track",
+				layout: "lanes",
 				out,
 				signal: new AbortController().signal,
 				say: () => undefined,

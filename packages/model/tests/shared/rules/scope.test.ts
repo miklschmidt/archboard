@@ -149,6 +149,28 @@ describe("the overview a model opens on", () => {
 		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: MIXED_KIND });
 	});
 
+	test("a joined line wears the strongest effect its relationships state", () => {
+		const joined = (...effects: (string | undefined)[]) =>
+			scopedContent(
+				content({
+					nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
+					edges: effects.map((effect, index) => ({
+						id: `e${index + 1}`,
+						from: index % 2 === 0 ? "rt" : "au",
+						to: "ld",
+						kind: effect === undefined ? "dependency" : "call",
+						...(effect === undefined ? {} : { effect }),
+					})),
+				}),
+				{ kind: "overview" },
+			).edges[0]?.effect;
+		expect(joined("compute", "mutation", "query")).toBe("mutation");
+		expect(joined("compute", "query")).toBe("query");
+		// A declared dependency states none and adds nothing to the join.
+		expect(joined(undefined, "compute")).toBe("compute");
+		expect(joined(undefined, undefined)).toBeUndefined();
+	});
+
 	test("says of a joined line only what stands for all of its relationships", () => {
 		const calls = content({
 			nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],

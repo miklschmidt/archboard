@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 90000,
   "name": "graphviz-pure-core",
   "kind": "external",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure-core"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#FLnwES7I",
-  "outgoing": [],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

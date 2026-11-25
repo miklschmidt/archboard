@@ -134,11 +134,9 @@ async function openReader(resources: AsyncDisposableStack) {
 		resources,
 		resolve(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts"),
 	);
-	cpSync(
-		resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"),
-		fixture.vault,
-		{ recursive: true },
-	);
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), fixture.vault, {
+		recursive: true,
+	});
 	initializeSource(fixture.root);
 	writeFileSync(
 		fixture.controlPath,

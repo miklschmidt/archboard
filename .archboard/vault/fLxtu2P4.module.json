@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "order": 13000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/hooks/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "to": "vKEsyHFk#gaC5nahN"
+    }
+  ],
   "order": 960090,
   "name": "Workspace port",
   "kind": "function",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/clients/workspace-port.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#fLxtu2P4",
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
-  "outgoing": [
-    {
-      "order": 13000,
-      "kind": "call",
-      "label": "opening address; write what panes show and where",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/hooks/use-workspace-addressing.ts",
-        "symbol": "useWorkspaceAddress"
-      },
-      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
-      "to": "vKEsyHFk#gaC5nahN"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l"
 }

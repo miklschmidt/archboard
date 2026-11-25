@@ -7,7 +7,7 @@
 // drawings differ between two runs and how their times moved.
 //
 // Run from the repository root:
-//   bun scripts/render-corpus.ts render <out> [--engines track,blocks]
+//   bun scripts/render-corpus.ts render <out> [--engines blocks,lanes]
 //     [--variants all|current] [--themes light,dark] [--comparison on,off]
 //     [--jobs 8] [--svg]
 //   bun scripts/render-corpus.ts compare <before> <after>
@@ -230,7 +230,6 @@ async function draw(
 	const started = performance.now();
 	const { svg, painting, width, height } = await renderArchitecture({
 		content: reading.content,
-		variant: reading.complete,
 		held: reading.held,
 		standing: reading.standing,
 		unsettled: reading.unsettled,
@@ -278,7 +277,7 @@ interface Axes {
  */
 function axesOf(options: Record<string, string | boolean | undefined>): Axes {
 	return {
-		engines: z.array(layoutEngineSchema()).parse(listOf(options["engines"], "track,blocks")),
+		engines: z.array(layoutEngineSchema()).parse(listOf(options["engines"], "blocks,lanes")),
 		themes: z.array(z.enum(["light", "dark"])).parse(listOf(options["themes"], "light,dark")),
 		comparisons: listOf(options["comparison"], "on,off").map((value) => value === "on"),
 		every: (options["variants"] ?? "all") === "all",

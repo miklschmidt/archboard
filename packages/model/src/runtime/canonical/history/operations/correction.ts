@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";
@@ -100,7 +101,7 @@ async function correctionCandidate(
 ) {
 	const selection = correctionTarget(request, selected);
 	const structure = await applyCandidateStructure(vault, selected, request, captured.inputs.keys());
-	const start = materializedInputs(selected, Buffer.from(Bun.YAML.stringify(selected.policy)));
+	const start = materializedInputs(selected, configurationFile(selected.policy));
 	const inputs = candidateInputs(
 		{ inputs: start, revision: modelRevision(start), diagnostics: [] },
 		selected,

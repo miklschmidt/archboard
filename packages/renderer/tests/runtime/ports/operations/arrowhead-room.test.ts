@@ -4,13 +4,12 @@
 // whatever size a head is.
 //
 // What this catches: a head made longer than that run, for any weight and
-// either head form, and a line drawn with a shorter last run, in either
-// engine. The documents are small ones that draw hero, default and muted heads,
+// either head form, and a line drawn with a shorter last run.
+// The documents are small ones that draw hero, default and muted heads,
 // filled and open, and the two approaches that once came up short.
 
 import { expect, test } from "bun:test";
 
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -39,8 +38,8 @@ const DOCUMENTS: readonly VariantContent[] = [
 ].map(orderedFixture);
 
 /**
- * How far each marker's ink reaches back from the end of its line, in widths of
- * that line: from the line's end at `refX` to the first ink of its shape.
+ * How far each marker's ink reaches back from the end of its line, in the page's
+ * units: from the line's end at `refX` to the first ink of its shape.
  * @param svg The drawn document.
  * @returns Each marker's reach, by its id.
  */
@@ -78,29 +77,24 @@ function lastRun(d: string): { from: Point; to: Point; straight: boolean } {
 	return last;
 }
 
-test.each(layoutEngineSchema().options)(
-	"every arrowhead fits the straight run that every line keeps before its end (%s)",
-	async (layout) => {
-		for (const content of DOCUMENTS) {
-			const { svg } = await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content,
-				theme: "light",
-				layout,
-			});
-			const reaches = markerReaches(svg);
-			const lines = [
-				...svg.matchAll(/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
-			];
-			expect(lines.length).toBeGreaterThan(0);
-			for (const [path, head] of lines) {
-				const width = Number(/stroke-width="([\d.]+)"/.exec(path)![1]);
-				const run = lastRun(/\sd="([^"]+)"/.exec(path)![1]!);
-				const length = Math.hypot(run.to.x - run.from.x, run.to.y - run.from.y);
-				expect(run.straight).toBe(true);
-				expect(length).toBeGreaterThanOrEqual(APPROACH_STRAIGHT - 0.01);
-				expect(reaches.get(head!)! * width).toBeLessThanOrEqual(APPROACH_STRAIGHT);
-			}
+test("every arrowhead fits the straight run that every line keeps before its end", async () => {
+	for (const content of DOCUMENTS) {
+		const { svg } = await renderArchitecture({
+			policy: defaultSemanticPolicy(),
+			content,
+			theme: "light",
+		});
+		const reaches = markerReaches(svg);
+		const lines = [
+			...svg.matchAll(/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),
+		];
+		expect(lines.length).toBeGreaterThan(0);
+		for (const [path, head] of lines) {
+			const run = lastRun(/\sd="([^"]+)"/.exec(path)![1]!);
+			const length = Math.hypot(run.to.x - run.from.x, run.to.y - run.from.y);
+			expect(run.straight).toBe(true);
+			expect(length).toBeGreaterThanOrEqual(APPROACH_STRAIGHT - 0.01);
+			expect(reaches.get(head!)!).toBeLessThanOrEqual(APPROACH_STRAIGHT);
 		}
-	},
-);
+	}
+});

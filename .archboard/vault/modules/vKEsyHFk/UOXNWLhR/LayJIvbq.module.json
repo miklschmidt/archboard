@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 18000,
   "name": "Walkthrough position",
   "kind": "function",
@@ -10,8 +11,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#LayJIvbq",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

@@ -18,7 +18,7 @@ const home = mkdtempSync(join(tmpdir(), "archboard-footprint-surface-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	// A module bound to a directory, and a module bound to a file inside it.
 	for (const [id, name, path, order] of [
 		["Wkspace", "Workspace", "libs/workspace", 40],
@@ -27,7 +27,7 @@ beforeAll(async () => {
 		writeFileSync(
 			join(vault, `${id.toLowerCase()}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${id}`,
 				name,
 				kind: "module",

@@ -4,7 +4,7 @@
 
 use crate::constants::fit_in;
 use crate::ecma::{max, min, sorted_by};
-use crate::track::scene::Map;
+use crate::lanes::scene::Map;
 
 use super::super::laid::Size;
 

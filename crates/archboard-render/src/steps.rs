@@ -42,6 +42,7 @@ fn line_of(step: &Message, order: f64) -> Edge {
         from: step.from.clone(),
         to: step.to.clone(),
         kind: word(&step.kind).to_owned(),
+        effect: None,
         label: Some(step.label.clone()),
         emphasis: Emphasis::Normal,
         traffic: None,

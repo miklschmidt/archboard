@@ -1,4 +1,58 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#HQYCIoIC",
+      "order": 90,
+      "kind": "async",
+      "effect": "query",
+      "label": "read the selected state, at the head",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
+      "order": 51000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "select the source files of a binding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/history-lens/clients/source-history.ts",
+        "symbol": "filesOfBinding"
+      },
+      "to": "vKEsyHFk#NVlMWCWO"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
+      "order": 113000,
+      "kind": "async",
+      "effect": "compute",
+      "label": "reads declarations from historical source bytes",
+      "description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/history-lens/operations/symbol-attribution.ts",
+        "symbol": "terraformConfiguration"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "id": "vKEsyHFk#ID37nw1v",
+      "order": 120000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "share one cached fact reader across a repository walk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/history-lens/clients/source-history.ts",
+        "symbol": "createSourceFacts"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    }
+  ],
   "order": 20000,
   "name": "History lens",
   "kind": "module",
@@ -8,7 +62,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/history-lens"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#radK8osF",
   "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "documents": [
@@ -30,56 +84,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 90,
-      "kind": "call",
-      "label": "read the selected state, at the head",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#HQYCIoIC",
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
-    },
-    {
-      "order": 51000,
-      "kind": "dependency",
-      "label": "select the source files of a binding",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/history-lens/clients/source-history.ts",
-        "symbol": "filesOfBinding"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
-      "to": "vKEsyHFk#NVlMWCWO"
-    },
-    {
-      "order": 113000,
-      "kind": "call",
-      "label": "reads declarations from historical source bytes",
-      "description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/history-lens/operations/symbol-attribution.ts",
-        "symbol": "terraformConfiguration"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 120000,
-      "kind": "call",
-      "label": "share one cached fact reader across a repository walk",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/history-lens/clients/source-history.ts",
-        "symbol": "createSourceFacts"
-      },
-      "id": "vKEsyHFk#ID37nw1v",
-      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
     }
   ]
 }

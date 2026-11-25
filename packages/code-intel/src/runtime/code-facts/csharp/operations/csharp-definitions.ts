@@ -26,6 +26,7 @@
 // operators and finalizers, which have no name a binding could spell. A
 // declaration in a part of the file that did not parse is not read.
 
+import { csharpAsync } from "#runtime/code-facts/csharp/operations/csharp-timing.ts";
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
@@ -155,6 +156,7 @@ function definitionAt(
 		visibility,
 		exposed: visibility === "public" && (scope.holder?.exposed ?? true),
 		...depthTraits(node, name),
+		...csharpAsync(node),
 	};
 }
 

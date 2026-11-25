@@ -85,7 +85,7 @@ function module(
 	return [
 		`${id}.module.json`,
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind: "module",
@@ -164,7 +164,8 @@ beforeAll(async () => {
 	const anchored = (id: string, symbol: string) => ({
 		id: `Shop/Orders#${id}`,
 		order: 1,
-		kind: "call",
+		kind: "sync",
+		effect: "mutation",
 		emphasis: "normal",
 		to: "Shop#Mail",
 		anchor: { repo: REPO, path: "src/orders.ts", symbol },

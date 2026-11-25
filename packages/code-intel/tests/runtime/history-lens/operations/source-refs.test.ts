@@ -75,7 +75,7 @@ function module(name: string, repo: string): void {
 	writeFileSync(
 		join(vault, `${name}.module.json`),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${name}`,
 			name,
 			kind: "module",

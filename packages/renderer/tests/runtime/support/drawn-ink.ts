@@ -3,6 +3,7 @@ import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { across, along, breadth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { cablesOf, onCableMiddle } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	corridorPoints,
 	routeCrosses,
@@ -126,16 +127,22 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
 }
 
 /**
- * How many routes leave each card by each of its flanks: the left and right
+ * How many traced routes leave each card by each of its flanks: the left and right
  * faces when the page reads down, the top and bottom when it reads left to
  * right. A flank rule can put skips on either (TASK-245.08).
  * @param drawing The rendered document.
  * @param content The document.
+ * @param traced The lines a reader traces, one per cable.
  * @returns The largest count over the cards and flanks: a fan of routes down one flank.
  */
-function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
+function flankFanOf(
+	drawing: RenderedDiagram,
+	content: VariantContent,
+	traced: ReadonlySet<string>,
+): number {
 	const counts = new Map<string, number>();
 	for (const [id, points] of corridorPoints(drawing.svg)) {
+		if (!traced.has(id)) continue;
 		const edge = content.edges.find((candidate) => candidate.id === id);
 		const from = edge === undefined ? undefined : drawing.atlas.nodes[edge.from];
 		if (edge === undefined || from === undefined) continue;
@@ -150,18 +157,20 @@ function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
 /**
  * The share of route ink in runs along the reading beside no card, which is
  * a lane down a margin rather than a route between rows, and the bends per
- * route.
+ * traced route.
  * @param drawing The rendered document.
+ * @param traced The lines a reader traces, one per cable.
  * @returns Corridor ink over all ink, and bends per route.
  */
-function inkOf(drawing: RenderedDiagram): Ink {
+function inkOf(drawing: RenderedDiagram, traced: ReadonlySet<string>): Ink {
 	const cards = Object.values(drawing.atlas.nodes);
 	let total = 0,
 		corridor = 0,
 		bends = 0,
 		routes = 0;
-	for (const points of corridorPoints(drawing.svg).values()) {
-		routes += 1;
+	for (const [id, points] of corridorPoints(drawing.svg)) {
+		const follows = traced.has(id);
+		if (follows) routes += 1;
 		for (let index = 1; index < points.length; index += 1) {
 			const start = points[index - 1]!,
 				end = points[index]!;
@@ -174,7 +183,7 @@ function inkOf(drawing: RenderedDiagram): Ink {
 				!cards.some((box) => across(box) <= lane && lane <= across(box) + breadth(box))
 			)
 				corridor += length;
-			if (index >= 2) {
+			if (follows && index >= 2) {
 				const before = points[index - 2]!;
 				if ((before.x === start.x) !== (start.x === end.x)) bends += 1;
 			}
@@ -184,47 +193,19 @@ function inkOf(drawing: RenderedDiagram): Ink {
 }
 
 /**
- * Whether a label lies on one straight axis-aligned run of a route.
- * @param points The route without its bridges.
- * @param label The label's box.
- * @returns True when one run carries the whole label through its centre.
- */
-function onStraightRun(
-	points: readonly DrawnPoint[],
-	label: { x: number; y: number; width: number; height: number },
-): boolean {
-	const centre = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
-	// The engine centres an inline label at a rounded width and snaps routes to
-	// whole units, so a label on its run can sit up to about a unit off it
-	// (0.88 on Archboard server): invisible, and not a label off its line.
-	const snap = 1;
-	return points.slice(1).some((end, index) => {
-		const start = points[index]!;
-		const horizontal = start.y === end.y && Math.abs(start.y - centre.y) < snap;
-		const vertical = start.x === end.x && Math.abs(start.x - centre.x) < snap;
-		return (
-			(horizontal &&
-				Math.min(start.x, end.x) <= label.x &&
-				Math.max(start.x, end.x) >= label.x + label.width) ||
-			(vertical &&
-				Math.min(start.y, end.y) <= label.y &&
-				Math.max(start.y, end.y) >= label.y + label.height)
-		);
-	});
-}
-
-/**
  * The labelled relationships whose label does not sit on a straight run of
- * its own route.
+ * its own route, or, for a cable's plate, on the middle of its strands.
  * @param drawing The rendered document.
  * @returns Their ids.
  */
 function labelsOffRuns(drawing: RenderedDiagram): string[] {
 	const routes = corridorPoints(drawing.svg);
+	const cables = cablesOf(drawing);
 	const found: string[] = [];
 	for (const [id, label] of routeLabels(drawing.svg)) {
-		const route = routes.get(id);
-		if (route !== undefined && !onStraightRun(route, label)) found.push(id);
+		const strands = cables.get(id) ?? [id];
+		if (strands.some((strand) => !routes.has(strand))) continue;
+		if (!onCableMiddle(strands, routes, label)) found.push(id);
 	}
 	return found;
 }
@@ -340,10 +321,13 @@ function bundleAt(run: Run, runs: readonly Run[]): number {
  * and the share of all route ink that has another route beside it. A reader
  * can follow one line out of such a corridor only by counting lines across it.
  * @param drawing The rendered document.
+ * @param runs The runs to measure: every route's, unless the caller names fewer.
  * @returns The longest shared stretch, the widest bundle and the share of ink drawn beside another route.
  */
-function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
-	const runs = runsOf(drawing);
+function sharedCorridorOf(
+	drawing: RenderedDiagram,
+	runs: readonly Run[] = runsOf(drawing),
+): Corridor {
 	let total = 0,
 		beside = 0,
 		longest = 0,

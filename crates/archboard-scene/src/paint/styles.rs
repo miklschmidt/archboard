@@ -1,20 +1,21 @@
-//! What each drawn thing looks like: a line's dash says what sort of
-//! relationship it is and its weight how much attention the author asked for.
+//! What each drawn thing looks like: a line's dash says what its relationship
+//! does and its weight how much attention the author asked for.
 //! Every lettering that sets a size also sets the face that measured the string.
 
 use crate::drawing::{DiagramFont, Emphasis};
 use crate::geometry::Point;
 use crate::paint::appearance::semantic_ink;
 use crate::paint::colour::{Share, tinted};
+use crate::paint::heads::place_of;
 use crate::paint::palette::Palette;
 use crate::paint::standing::ink_of;
-use crate::request::{Arrowhead, Dash, LineAppearance, Standing};
+use crate::request::{Arrowhead, Dash, LineAppearance, LineEffect, Standing};
 use crate::scene::{Colour, Head, HeadInk, MarkerId, Paint, Shape, Stroke, Text};
 use crate::sizes::{
     CARD_NOTE_FONT, CARD_TITLE_FONT, LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE,
     PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_FONT, PILL_TEXT_SIZE,
 };
-use crate::sizes::{HERO_LINE_WIDTH, LINE_WIDTH};
+use crate::sizes::{HERO_LINE_WIDTH, LINE_WIDTH, THIN_BODY};
 
 /// Every weight, loudest first.
 pub(super) const WEIGHTS: [Emphasis; 3] = [Emphasis::Hero, Emphasis::Normal, Emphasis::Muted];
@@ -27,41 +28,32 @@ pub(super) fn stroke_width(weight: Emphasis) -> f64 {
     }
 }
 
-pub(super) use crate::sizes::RAIL_GAP;
-
 /// How long an arrowhead of each weight is, from its base to its tip.
 pub(super) const HEAD_LENGTH: f64 = 11.0;
-
-/// How big an arrowhead of a weight is drawn, in widths of its line.
-pub(super) fn head_widths(weight: Emphasis) -> f64 {
-    HEAD_LENGTH / stroke_width(weight)
-}
 
 /// The head a line's appearance ends in, or none.
 pub(super) fn head_of(arrowhead: Arrowhead) -> Option<Head> {
     match arrowhead {
         Arrowhead::Filled => Some(Head::Filled),
         Arrowhead::Open => Some(Head::Open),
+        Arrowhead::Wedge => Some(Head::Wedge),
+        Arrowhead::Eye => Some(Head::Eye),
+        Arrowhead::Equals => Some(Head::Equals),
+        Arrowhead::Detached => Some(Head::Detached),
         Arrowhead::None => None,
     }
 }
 
-/// Where on its ten-unit drawing each head sits on the end of its line.
-pub(super) fn head_ref_x(head: Head) -> f64 {
-    match head {
-        Head::Filled => 8.0,
-        Head::Open => 10.0,
-    }
-}
-
-/// How far an arrowhead's tip lies past the end of its line.
+/// How far a classic head's tip lies past the end of its line.
 pub(super) fn head_reach(head: Head) -> f64 {
-    ((10.0 - head_ref_x(head)) / 10.0) * HEAD_LENGTH
+    let place = place_of(head);
+    ((place.view - place.reference.x) / place.view) * HEAD_LENGTH
 }
 
-/// How far back from the end of its line an arrowhead's base lies.
+/// How far back from the end of its line a classic head's base lies.
 pub(super) fn head_base(head: Head) -> f64 {
-    (head_ref_x(head) / 10.0) * HEAD_LENGTH
+    let place = place_of(head);
+    (place.reference.x / place.view) * HEAD_LENGTH
 }
 
 /// The ink a line and its arrowhead are drawn in.
@@ -136,16 +128,77 @@ pub(super) fn marker_for(weight: Emphasis, head: Head, standing: Option<Standing
     MarkerId::Shared { head, weight, ink }
 }
 
-/// How a line of each dash is broken.
-pub(super) fn dash_array(dash: Dash) -> &'static [f64] {
-    match dash {
-        Dash::Solid | Dash::Mixed => &[],
-        Dash::Dashed => &[6.0, 4.0],
-        Dash::Dotted => &[1.5, 3.5],
+/// How a line says what its relationship does: the line type its body takes,
+/// how thick its body is as a share of its weight's width, the head at its
+/// target, the mark at its caller, and whether it leaves an imprint on its
+/// target's edge.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EffectLook {
+    /// The line type its body takes.
+    pub dash: Dash,
+    /// How thick its body is, as a share of its weight's width.
+    pub body: f64,
+    /// The head at its target.
+    pub head: Arrowhead,
+    /// The mark at its caller, if any.
+    pub tail: Option<Head>,
+    /// Whether it leaves an imprint on its target's edge.
+    pub imprint: bool,
+}
+
+/// The one table of how a line says what its relationship does. A mutation is
+/// solid with a solid wedge and an imprint on its target. A query is solid with
+/// an eye and a ring at its caller, where the answer lands. A compute is solid
+/// up to an "=" and a small open point. A dependency that states none is broken
+/// and thinner, with a detached chevron. `dash_array` says how each line type
+/// is broken; the picture, its legend and an export's legend all read from here.
+pub fn effect_look(effect: LineEffect) -> EffectLook {
+    let solid = |head: Arrowhead| EffectLook {
+        dash: Dash::Solid,
+        body: 1.0,
+        head,
+        tail: None,
+        imprint: false,
+    };
+    match effect {
+        LineEffect::Mutation => EffectLook {
+            imprint: true,
+            ..solid(Arrowhead::Wedge)
+        },
+        LineEffect::Query => EffectLook {
+            tail: Some(Head::Ring),
+            ..solid(Arrowhead::Eye)
+        },
+        LineEffect::Compute => solid(Arrowhead::Equals),
+        LineEffect::Declared => EffectLook {
+            dash: Dash::Declared,
+            body: THIN_BODY,
+            ..solid(Arrowhead::Detached)
+        },
     }
 }
 
-/// How one relationship's line is stroked.
+/// A stroke at a share of its width.
+pub(super) fn thinned(stroke: &Stroke, share: f64) -> Stroke {
+    Stroke {
+        width: stroke.width.map(|width| width * share),
+        ..stroke.clone()
+    }
+}
+
+/// How a line of each type is broken: lengths drawn and left, in turn, none
+/// for a solid line. A round cap grows each drawn length by the line's width,
+/// so a drawn length near zero is a dot.
+pub(super) fn dash_array(dash: Dash) -> &'static [f64] {
+    match dash {
+        Dash::Solid => &[],
+        Dash::Dashed => &[7.0, 6.0],
+        Dash::Dotted => &[0.1, 4.5],
+        Dash::Declared => &[11.0, 6.0],
+    }
+}
+
+/// How one relationship's line is stroked, before its decoration breaks it.
 pub(super) fn edge_stroke(
     weight: Emphasis,
     palette: &Palette,
@@ -161,7 +214,6 @@ pub(super) fn edge_stroke(
         stroke_width(weight),
     )
     .rounded()
-    .dashed(dash_array(appearance.dash))
 }
 
 /// A face, a size and a colour that words are set in.

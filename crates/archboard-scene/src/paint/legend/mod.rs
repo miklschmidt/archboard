@@ -9,3 +9,4 @@ mod symbols;
 
 pub use entries::{Applied, Drawn, picture_legend};
 pub(super) use export::{exported_name, framed_for_export, placed_on};
+pub(super) use symbols::effect_sample;

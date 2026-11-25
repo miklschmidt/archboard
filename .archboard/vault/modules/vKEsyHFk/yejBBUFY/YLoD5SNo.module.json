@@ -1,4 +1,43 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#ZV5gxAfu",
+      "order": 82000,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "show the captured answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
+        "symbol": "ModelExplanationHost"
+      },
+      "to": "vKEsyHFk#p0EDMxTr"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#RaEm0Enu",
+      "order": 83000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "read and control the temporary answer",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#FmzPTTiB",
+      "order": 85000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "address the existing tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
+        "symbol": "tabSessionId"
+      },
+      "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    }
+  ],
   "order": 64000,
   "name": "Model explanations",
   "kind": "module",
@@ -8,7 +47,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#YLoD5SNo",
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "documents": [
@@ -23,42 +62,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 82000,
-      "kind": "call",
-      "label": "show the captured answer",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
-        "symbol": "ModelExplanationHost"
-      },
-      "id": "vKEsyHFk/yejBBUFY#ZV5gxAfu",
-      "to": "vKEsyHFk#p0EDMxTr"
-    },
-    {
-      "order": 83000,
-      "kind": "call",
-      "label": "read and control the temporary answer",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#RaEm0Enu",
-      "to": "vKEsyHFk#guvtYApo"
-    },
-    {
-      "order": 85000,
-      "kind": "call",
-      "label": "address the existing tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
-        "symbol": "tabSessionId"
-      },
-      "id": "vKEsyHFk/yejBBUFY#FmzPTTiB",
-      "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
     }
   ]
 }

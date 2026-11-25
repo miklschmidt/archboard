@@ -223,6 +223,7 @@ fn drawing_of(
         color: None,
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
+        effect: None,
     };
     let joining = LineAppearance {
         arrowhead: Arrowhead::None,
@@ -266,6 +267,7 @@ fn drawing_of(
                 from: run.from,
                 to: run.to,
                 kind: NEXT_KIND.to_owned(),
+                effect: None,
                 emphasis: Emphasis::Normal,
                 traffic: None,
                 two_way: false,
@@ -442,7 +444,6 @@ pub fn picture(request: FlowchartRequest) -> PaintRequest {
     PaintRequest {
         picture: Picture::Architecture(Box::new(ArchitecturePicture {
             drawing,
-            whole: None,
             appearances,
             lines,
             steps: Vec::new(),

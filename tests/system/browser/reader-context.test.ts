@@ -212,7 +212,7 @@ test("the right column follows what a reader looks at, and the left column holds
 		writeFileSync(
 			join(vault, "queue.module.json"),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: "Shop#Queue",
 				name: "Queue",
 				kind: "module",
@@ -410,7 +410,7 @@ test("the right column follows what a reader looks at, and the left column holds
 	await drawn(browser);
 	const blocks = await geometry(browser);
 	await pressSettings(browser);
-	await browser.run(["click", `${SWITCH} [data-choice="track"]`]);
+	await browser.run(["click", `${SWITCH} [data-choice="lanes"]`]);
 	await browser.run(["press", "Escape"]);
 	await pollUntil(
 		() => geometry(browser),
@@ -419,15 +419,15 @@ test("the right column follows what a reader looks at, and the left column holds
 		WAIT,
 	);
 	await drawn(browser);
-	const tracks = await geometry(browser);
+	const lanes = await geometry(browser);
 	expect(await explained(browser)).toBe("Shop#Handler");
 	await browser.run(["reload"]);
 	await drawn(browser);
-	expect(await geometry(browser)).toBe(tracks);
+	expect(await geometry(browser)).toBe(lanes);
 	await pressSettings(browser);
 	expect(
 		await browser.eval<string | null>(
-			`document.querySelector('${SWITCH} [data-choice="track"]').getAttribute('aria-pressed')`,
+			`document.querySelector('${SWITCH} [data-choice="lanes"]').getAttribute('aria-pressed')`,
 		),
 	).toBe("true");
 	await browser.run(["press", "Escape"]);

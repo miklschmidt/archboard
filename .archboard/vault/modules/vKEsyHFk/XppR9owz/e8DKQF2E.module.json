@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 10000,
   "name": "Model comparison",
   "kind": "module",
@@ -9,7 +10,7 @@
     "path": "apps/cli/src/cli/commands/model/operations/read.ts",
     "symbol": "modelCompareContract"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#e8DKQF2E",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "formerNames": [
@@ -35,6 +36,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

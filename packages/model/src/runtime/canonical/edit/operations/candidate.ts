@@ -2,7 +2,11 @@ import { walkthroughDependencies } from "#runtime/canonical/history/retained-rea
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";
-import { decodeModel, readCurrentModel } from "#runtime/canonical/read/operations/model-read.ts";
+import {
+	decodeModel,
+	failure,
+	readCurrentModel,
+} from "#runtime/canonical/read/operations/model-read.ts";
 import { requireModel } from "#runtime/canonical/proposals/operations/read.ts";
 import {
 	requireSubjectClaim,
@@ -205,6 +209,11 @@ async function selectedTarget(
 async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
 	const catalogue = await requireTargetCatalogue(vault, request.target);
 	if (!catalogue.success) return catalogue;
+	if (catalogue.readOnly !== undefined)
+		return {
+			...failure("UPGRADE_REQUIRED", [catalogue.readOnly]),
+			error: "The vault is read-only until it is upgraded.",
+		};
 	if (!isDeepStrictEqual(catalogue.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
 	const captured = captureRevision(vault, catalogue.revision);

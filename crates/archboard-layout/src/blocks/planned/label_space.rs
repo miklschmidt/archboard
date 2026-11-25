@@ -1,11 +1,14 @@
 //! Fixed obstacles near a label, shared by all candidate routes of one placement.
 
 use super::shape::Shape;
+use crate::constants::LABEL_LABEL_CLEARANCE;
 use crate::geometry::{Rect, inflate};
 use rustc_hash::FxHashMap;
 use std::cell::RefCell;
 
 const CELL: f64 = 128.0;
+/// The room one line's words keep from another's, so that each reads as its own line's.
+pub(super) const LABEL_ROOM: f64 = LABEL_LABEL_CLEARANCE + 0.01;
 
 #[derive(Default)]
 pub(super) struct Protection {
@@ -126,7 +129,7 @@ impl Labels {
         index
     }
     pub(super) fn remember(&mut self, edge: usize, at: Rect) {
-        for cell in cells(inflate(at, 8.01)) {
+        for cell in cells(inflate(at, LABEL_ROOM)) {
             let ids = self.cells.entry(cell).or_default();
             if !ids.contains(&edge) {
                 ids.push(edge);
@@ -138,7 +141,7 @@ impl Labels {
             self.cells.get(&cell).is_none_or(|ids| {
                 ids.iter().all(|id| {
                     labels.get(id).is_none_or(|&r| {
-                        let r = inflate(r, 8.01);
+                        let r = inflate(r, LABEL_ROOM);
                         at.x >= r.x + r.width
                             || r.x >= at.x + at.width
                             || at.y >= r.y + r.height

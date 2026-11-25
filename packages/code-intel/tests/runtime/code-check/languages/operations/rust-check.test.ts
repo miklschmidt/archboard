@@ -136,13 +136,13 @@ beforeAll(async () => {
 				],
 				edges: [
 					// The anchor holds: the renamed import leads through the re-export to `post`.
-					edge("e1", ["pCart", "pEntry"], "call", [CHECKOUT, "book"]),
+					edge("e1", ["pCart", "pEntry"], "sync", [CHECKOUT, "book"]),
 					// The name is nowhere in the file.
-					edge("e2", ["pEntry", "pMoney"], "call", [ENTRY, "Nope"]),
+					edge("e2", ["pEntry", "pMoney"], "sync", [ENTRY, "Nope"]),
 					// Drawn from the money, while the entry builds money.
-					edge("e3", ["pMoney", "pEntry"], "call"),
+					edge("e3", ["pMoney", "pEntry"], "sync"),
 					// A trait method called through a value, which only rust-analyzer resolves.
-					edge("e4", ["pCart", "pEntry"], "call", [CHECKOUT, "entry.balance"]),
+					edge("e4", ["pCart", "pEntry"], "sync", [CHECKOUT, "entry.balance"]),
 				],
 			},
 		},

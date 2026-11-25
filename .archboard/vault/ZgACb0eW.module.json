@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960385,
   "name": "Policy icons",
   "kind": "function",
@@ -8,7 +9,6 @@
     "path": "packages/renderer/src/shared/render/rules/policy-icons.ts"
   },
   "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#ZgACb0eW",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#ZgACb0eW"
 }

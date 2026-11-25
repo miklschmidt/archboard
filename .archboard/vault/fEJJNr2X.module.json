@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#9FE5IWk9",
+      "order": 10000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "write a file whole",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/language-servers.ts",
+        "symbol": "writeFileAtomic"
+      },
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    }
+  ],
   "order": 27000,
   "name": "Language server files",
   "kind": "module",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/store/language-servers.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#fEJJNr2X",
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "outgoing": [
-    {
-      "order": 10000,
-      "kind": "call",
-      "label": "write a file whole",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/store/language-servers.ts",
-        "symbol": "writeFileAtomic"
-      },
-      "id": "vKEsyHFk#9FE5IWk9",
-      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR"
 }

@@ -1,6 +1,6 @@
 ---
 title: Architecture on pull requests
-description: Put each finding on the diff with an excerpt of the code and the manifest, and give the reviewer the plan and the modules that changed outside the plan.
+description: Annotate architecture findings directly on pull request diffs and post a summary comparing changed modules against the proposal.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
@@ -15,18 +15,18 @@ export const report = Object.fromEntries(
 		.inputs.map((input) => [input.name, input.default]),
 );
 
-A plain diff is the wrong level for an architectural change. A reviewer sees forty changed lines and not that Intake now calls Billing. Two GitHub Actions put the architecture on the pull request. Both run only commands of the published CLI.
+A line-by-line diff hides architectural impact: a reviewer can read forty changed lines without noticing that Intake now calls Billing. Two GitHub Actions surface architecture changes on every pull request using only the published CLI.
 
-| Action                                       | What the reviewer gets                                               | Permissions                              |
-| -------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------- |
-| `miklschmidt/archboard/actions/check`        | Each finding as an annotation on the changed line, and a job summary | `contents: read`                         |
-| `miklschmidt/archboard/actions/pull-request` | One text comment with the proposal, the footprint and the plan check | `contents: read`, `pull-requests: write` |
+| Action                                       | What the reviewer gets                                                 | Permissions                              |
+| -------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
+| `miklschmidt/archboard/actions/check`        | Inline diff annotations for each finding, plus a job summary           | `contents: read`                         |
+| `miklschmidt/archboard/actions/pull-request` | Pull request comment with the proposal, code footprint, and plan check | `contents: read`, `pull-requests: write` |
 
 ## Findings on the diff
 
-The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files: the line of code that reads the address, and the line of the manifest that sets it. Each end in the pull request's repository gets an annotation.
+The check Action adds a GitHub annotation on the file and line for each finding's evidence. When a finding spans a network hop (code in one file, manifest in another), every end inside the pull request's repository receives an annotation.
 
-GitHub cannot put an annotation on a file of another repository, so every annotation names both ends with an excerpt of each, and the reviewer reads the whole connection from one place.
+Because GitHub cannot annotate files in another repository, each annotation includes excerpts from both ends so reviewers can inspect the full connection in one place.
 
 ```yaml title=".github/workflows/architecture.yml"
 name: architecture
@@ -52,9 +52,9 @@ jobs:
           version: "{{version}}"
 ```
 
-The code check resolves a call only through a language server, so the job installs the dependencies and the servers first. [The gate in CI](../gate/#in-ci) says which servers to install. Without a server, the finding below stays information.
+Install project dependencies and language servers before running the check Action, because symbol resolution requires a language server. See [Run checks as a gate](../gate/#in-ci) for setup details. Without a language server, unresolved references stay at information severity.
 
-In the relay example, the code is in one repository and the manifest is in another. The annotation on `services/intake/src/accept.ts` line 51 reads:
+In the relay example, application code and Kubernetes manifests live in separate repositories. The annotation on `services/intake/src/accept.ts` line 51 shows both ends:
 
 ```text title="RELATIONSHIP_UNDRAWN: Rate card"
 The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
@@ -69,23 +69,23 @@ Evidence:
       14 |
 ```
 
-The job summary lists up to {reference.facts.summaryRows} findings, evidence for the first {reference.facts.summaryDetails} errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most {reference.facts.annotationsPerLevel} annotations of each level for one step. The Action saves the complete JSON report at its [`report`](../reference/actions/#check-report) output. Upload that file as an artifact to keep the complete list for review.
+The job summary lists up to {reference.facts.summaryRows} findings, shows evidence for the first {reference.facts.summaryDetails} errors and warnings, and lists skipped subjects. Each code links to the [Check findings reference](../reference/findings/). Because GitHub displays at most {reference.facts.annotationsPerLevel} annotations per severity level in a step, upload the Action's [`report`](../reference/actions/#check-report) output file as an artifact to preserve the complete JSON report.
 
-<Aside type="note" title="See it on a real pull request">
+<Aside type="note" title="See an example pull request">
 	[Pull request #1 of the relay
-	example](https://github.com/miklschmidt/archboard-relay-example/pull/1) makes Intake call Billing
-	with no plan. Its check fails, and the annotation sits on line 51 of `accept.ts`.
+	example](https://github.com/miklschmidt/archboard-relay-example/pull/1) adds an unmodeled call
+	from Intake to Billing. The check fails and annotates line 51 of `accept.ts`.
 </Aside>
 
 ### Decide what blocks
 
-| Input                                                     | Effect                                                                                                      |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| [`fail-on: warning`](../reference/actions/#check-fail-on) | The default. The job fails while a warning or a semantic diagnostic remains.                                |
-| [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
-| [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
+| Input                                                     | Effect                                                                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [`fail-on: warning`](../reference/actions/#check-fail-on) | The default. Fails the job if any warning or semantic diagnostic is reported.                                      |
+| [`fail-on: never`](../reference/actions/#check-fail-on)   | Reports findings in annotations and the job summary without failing the job.                                       |
+| [`allow-codes`](../reference/actions/#check-allow-codes)  | Lists finding codes (such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn)) to report without failing. |
 
-The vault decides the level of each module-depth code, such as [`EXPOSED_VALUE`](../reference/findings/#exposed-value), for the CLI, Measures and the Action alike. If you upgrade and write no rules, the new module-depth warnings fail the job, [`MODULE_SHALLOW`](../reference/findings/#module-shallow) on every module among them. [Debt mode](../gate/#fail-on-a-shallow-module) fails them only on the modules that a pull request touches. To lower one for the whole repository, set its rule in the vault's configuration. A code set to information keeps its findings. Debt mode promotes an information-level shallow-module finding to a warning when the pull request touches that module, which fails the job. A code set to off removes its findings from the job summary and annotations:
+Module-depth severities (such as [`EXPOSED_VALUE`](../reference/findings/#exposed-value)) are controlled in the vault configuration and apply consistently across the CLI, Measures, and the GitHub Action. Without custom rules, upgrading enables module-depth warnings across all modules, including [`MODULE_SHALLOW`](../reference/findings/#module-shallow). Use [debt mode](../gate/#fail-on-a-shallow-module) to fail only on shallow modules touched by the pull request. To lower a rule across the repository, configure `codeCheck.rules`: setting a code to information keeps findings visible without failing (unless debt mode promotes a touched shallow module to a warning), while `"off"` removes it from annotations and job summaries:
 
 ```yaml title=".archboard/vault/.archboard/config.yaml"
 codeCheck:
@@ -94,28 +94,28 @@ codeCheck:
     CODE_PASS_THROUGH: "off"
 ```
 
-[The gate](../gate/#set-the-level-of-a-module-depth-rule) lists the eight codes and what a rule can and cannot change. Use [`allow-codes`](../reference/actions/#check-allow-codes) for a code that only this job lets pass.
+See [Set the level of a module-depth rule](../gate/#set-the-level-of-a-module-depth-rule) for all seven codes and configuration constraints. Use [`allow-codes`](../reference/actions/#check-allow-codes) when you want to allow a finding only in a specific CI job.
 
-A check that cannot run fails the job in every case: a usage error, a refusal, an unreachable server, or a checkout without a vault when the checks read one. With [`checks: embeds`](../reference/actions/#check-checks) the Action needs no vault.
+Execution errors always fail the job regardless of [`fail-on`](../reference/actions/#check-fail-on): invalid arguments, CLI refusals, an unreachable server, or a missing vault. Set [`checks: embeds`](../reference/actions/#check-checks) if the repository has no vault and you only want to verify tracked diagrams.
 
-## The plan on the pull request
+## Proposal and footprint comment
 
-An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. When a push removes the vault, the comment says so.
+Before implementing an architectural change, an agent writes a proposal describing the target architecture alongside the current state. The `pull-request` Action locates that proposal and maintains one comment on the pull request, updating it on every push. If a push removes the vault, the comment notes that as well.
 
-[Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
+[Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) implements the Billing call with a proposal and shows all four sections below.
 
 <Steps>
 
-1. **The proposal.** Its name and summary, and what it adds, removes and changes.
-2. **The vault.** A link to the vault at the head commit.
-3. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
-4. **The footprint.** The modules whose code the pull request changed, in three groups: changed outside the plan, planned and changed, and planned but unchanged. Below them, the changed files that no module is bound to, because no module shows their change. Those files are never judged. Each group is a disclosure with its count. Only the group of modules changed outside the plan starts open.
+1. **Proposal.** The proposal's name, summary, and added, removed, or changed subjects.
+2. **Vault.** A link to the vault at the pull request's head commit.
+3. **Plan check.** Whether any module changed outside the proposal and how that affects the job status.
+4. **Footprint.** Changed modules grouped into three collapsible sections with counts: changed outside the plan (expanded by default), planned and changed, and planned but unchanged. Changed files not bound to any module appear below them and are never judged as out of plan.
 
 </Steps>
 
-<Aside type="note" title="Planned: a pull request bot">
-	The comment is text. A paid pull request bot is planned. It will add the architecture before and
-	after as interactive diagrams.
+<Aside type="note" title="Planned: interactive diagrams">
+	The current comment is Markdown text. A planned hosted pull request bot will add interactive
+	before-and-after architecture diagrams.
 </Aside>
 
 ```yaml title=".github/workflows/pull-request.yml" {4,10-12,20}
@@ -145,89 +145,89 @@ jobs:
           out-of-plan: warn
 ```
 
-`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `concurrency` group cancels the run of an older push. A run that still finishes after a newer push posts nothing. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
+`fetch-depth: 0` is required so the Action can read both the base and head commits from Git history. The `concurrency` group cancels superseded runs on new pushes, and any stale run that finishes later skips posting. Listening to `labeled` and `unlabeled` applies the override label immediately, and `edited` re-runs the check if the description marker changes.
 
-### How it finds the proposal
+### How the Action selects a proposal
 
-The Action takes the first of these that it finds:
+The Action selects the first match in this order:
 
 <Steps>
 
-1. The [`state`](../reference/actions/#pull-request-state) input, by identity or name.
-2. The marker that the `archboard-pr` skill writes into the pull request's description:
+1. The [`state`](../reference/actions/#pull-request-state) input, by ID or name.
+2. An HTML comment marker written into the pull request description by the `archboard-pr` skill:
 
    ```html
    <!-- archboard-pr model="rpmPjlm0" state="zu80HRHt" -->
    ```
 
-3. The only draft proposal of the model.
+3. The model's only draft proposal, if just one exists.
 
 </Steps>
 
-With none, the comment lists the changed modules and judges nothing against a plan. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
+If none matches, the comment lists the changed modules without comparing them against a plan, as in [pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1).
 
-The plan is what the proposal changes against the current architecture at the base: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
+The plan consists of everything the proposal changes relative to the base commit's current architecture: every added, removed, or changed module, plus both endpoints of every added, removed, or changed relationship or flow step. This applies both to active drafts and to proposals already adopted on the branch.
 
-When the base has no vault, as on the pull request that adds the first one, the current architecture at the base is empty. Then the plan names every module of the proposal. When a model cannot be read, the comment names the commit, base or head, and the reason that the CLI gave.
+If the base commit has no vault (for example, on the pull request introducing Archboard), the base architecture is treated as empty and the plan covers every module in the proposal. If either commit's model cannot be read, the comment names the commit and prints the CLI error.
 
 ### Changes outside the plan
 
-The footprint's middle group lists modules whose code changed although the plan did not name them. It excludes a module whose `holds` lists another changed module, because the modules in its `holds` bind each file that it changed. If an older CLI omits `holds`, the Action counts every changed module absent from the plan. [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) says what happens then.
+Modules whose bound code changed without being part of the plan appear in the out-of-plan group. A parent directory module is excluded if its `holds` list contains changed child modules that cover every modified file inside it. Older CLI versions that omit `holds` count every changed module absent from the plan. Configure the behavior with [`out-of-plan`](../reference/actions/#pull-request-out-of-plan):
 
-| [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) | Effect                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `warn`                                                          | The default. An annotation and a line in the comment.                                                                                                                                                                                                                                                                                                                      |
-| `fail`                                                          | The job fails. It also fails when the plan cannot be checked: the proposals or the footprint cannot be read, the pull request names a proposal that the model does not have, or the model has several drafts and the pull request names none. The label <code>{report["override-label"]}</code> lets the pull request through, and the comment says that the label did it. |
-| `off`                                                           | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                                |
+| [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) | Effect                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `warn`                                                          | The default. Adds a warning annotation and notes out-of-plan modules in the comment.                                                                                                                                                                                                 |
+| `fail`                                                          | Fails the job. Also fails when the plan cannot be checked (unreadable proposals or footprint, an unknown proposal name, or multiple drafts with none selected). Adding the <code>{report["override-label"]}</code> label bypasses the failure and notes the override in the comment. |
+| `off`                                                           | Displays the footprint without judging out-of-plan changes.                                                                                                                                                                                                                          |
 
-Change the label with [`override-label`](../reference/actions/#pull-request-override-label). A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
+Customize the bypass label with [`override-label`](../reference/actions/#pull-request-override-label). Pull requests with no proposal have no plan and cannot fail this check. Because a single draft is selected automatically, deleting the description marker will not disable the check. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) instead. When multiple drafts exist and none is specified, the plan check cannot run.
 
 ### Added modules without new code
 
-A proposal that adds a module whose code the base already has draws that code as added, although the diff adds none of it. The footprint lists each module that the proposal adds and whose code the pull request does not add, in the group "Added without new code". The branch adds code to a module when it adds a file inside the module's binding, or the declaration that its binding names. A renamed file adds no code. A module bound to a directory that gains a new file is therefore not listed. The fix is to model the existing code in the current architecture first, in a pull request below this one. A module whose binding names code that exists nowhere is listed too: repair its binding. [`preexisting`](../reference/actions/#pull-request-preexisting) says what happens to the listed modules.
+If a proposal adds a module whose source files already exist on the base branch, the diagram misleadingly presents existing code as newly added. The footprint flags these modules under "Added without new code". A branch counts as adding code when it introduces a new file inside the module's binding or adds the bound symbol (renaming an existing file does not count, while adding a new file inside a bound directory does). To fix this, model the existing code in the current architecture in a prerequisite pull request. Modules bound to non-existent paths appear here too and need their bindings repaired. Configure this check with [`preexisting`](../reference/actions/#pull-request-preexisting):
 
 | [`preexisting`](../reference/actions/#pull-request-preexisting) | Effect                                                                                                                                                                                                          |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `warn`                                                          | The default. An annotation and a line in the comment.                                                                                                                                                           |
-| `fail`                                                          | The job fails, also when the footprint cannot be read. The label <code>{report["override-label"]}</code> lets the pull request through, as for [`out-of-plan`](../reference/actions/#pull-request-out-of-plan). |
-| `off`                                                           | The group shows, and nothing is judged.                                                                                                                                                                         |
+| `warn`                                                          | The default. Adds a warning annotation and notes the modules in the comment.                                                                                                                                    |
+| `fail`                                                          | Fails the job (including when the footprint cannot be read). The <code>{report["override-label"]}</code> label bypasses the failure, just like [`out-of-plan`](../reference/actions/#pull-request-out-of-plan). |
+| `off`                                                           | Displays the group without failing or annotating.                                                                                                                                                               |
 
-### Before a pull request
+### Checking branches before a pull request
 
-A branch can merge without a pull request, for example a ticket branch that merges into an integration branch. Run a similar judgement there with the CLI:
+For branches merged without a pull request (such as ticket branches merging into an integration branch), run the same check locally with the CLI:
 
 ```bash
 archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
 ```
 
-It exits <Exit command="model footprint" outcome="outside" /> when the branch changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules.
+The command exits <Exit command="model footprint" outcome="outside" /> and prints out-of-plan modules to standard error. Passing `--fail-outside` requires a draft state.
 
-If the vault's repository holds the ticket branch, the command reads that branch's draft. Otherwise, it reads the draft on disk.
+If the vault repository contains the ticket branch, `model footprint` reads the draft from that branch. Otherwise, it reads the draft from disk.
 
-The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits. The `archboard-deepen` skill runs the same gate before it merges each ticket of a redesign.
+Both `archboard-plan` and `archboard-deepen` run this gate with `--model-at checkout` in the integration worktree before merging each ticket branch, because the draft edits live in the integration worktree rather than on individual ticket branches.
 
-A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes does not count. In a stack that merges instead of rebasing, a change that a lower layer also made, and that a merge brings in, does not count either. Each changed module lists the commits that changed it.
+A module counts as changed only when its bound code differs between the merge base and the head commit. Reverted changes and changes already present in a lower layer of a merge-based stack do not count. Each changed module lists the commits that modified it.
 
-A module bound to a directory changes with each module bound inside it. It counts only when the branch changed a file that no other changed module inside it binds. Otherwise the answer lists those other modules in the module's `holds`, and the module passes. The Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
+A directory-bound module changes whenever files inside it change, but it is excluded from out-of-plan failures if changed child modules listed in its `holds` cover every modified file. The GitHub Action applies the same rule. For example, given `Workspace` bound to `libs/workspace` and `Installation` bound to `libs/workspace/src/installation.ts`:
 
-| The branch changes                   | The draft names | Exit status                                                               |
-| ------------------------------------ | --------------- | ------------------------------------------------------------------------- |
-| `libs/workspace/src/installation.ts` | `Installation`  | 0. `Workspace` changed too, and holds `Installation`.                     |
-| `libs/workspace/src/installation.ts` | neither module  | <Exit command="model footprint" outcome="outside" />, for `Installation`. |
-| `libs/workspace/README.md`           | `Installation`  | <Exit command="model footprint" outcome="outside" />, for `Workspace`.    |
-| both files                           | `Installation`  | <Exit command="model footprint" outcome="outside" />, for `Workspace`.    |
+| Changed file                         | Included in draft | Exit status                                                           |
+| ------------------------------------ | ----------------- | --------------------------------------------------------------------- |
+| `libs/workspace/src/installation.ts` | `Installation`    | `0` (`Workspace` changed too, and holds `Installation`)               |
+| `libs/workspace/src/installation.ts` | neither           | <Exit command="model footprint" outcome="outside" /> (`Installation`) |
+| `libs/workspace/README.md`           | `Installation`    | <Exit command="model footprint" outcome="outside" /> (`Workspace`)    |
+| both files                           | `Installation`    | <Exit command="model footprint" outcome="outside" /> (`Workspace`)    |
 
-The answer's `unboundFiles` lists each changed file that no module is bound to, and standard error names the first few. Those files never change the exit status. Read each one, and bind it to a module or say why it belongs to none.
+Changed files not matched by any binding appear under `unboundFiles` in JSON output (with the first few printed to standard error) and never affect the exit status. Review them to decide whether to add bindings or leave them unbound.
 
-With a draft, the answer lists each module that the draft adds and whose code the branch does not add, by the rule of the Action above. Each module says in `newSource` whether the branch added code to it. With `--fail-preexisting`, the command exits <Exit command="model footprint" outcome="preexisting" /> when that list is not empty. The `archboard-pr` skill runs this gate before it writes a pull request body.
+With a draft selected, each module's `newSource` field reports whether the branch added new code for it. Passing `--fail-preexisting` exits <Exit command="model footprint" outcome="preexisting" /> if any newly added module has no new code. The `archboard-pr` skill runs this check before generating a pull request description.
 
-### When the comment cannot be posted
+### Fork pull requests and missing permissions
 
-A pull request from a fork gets a read-only token, so GitHub refuses the comment. The report is then in the job summary of the run. The same happens when the token lacks `pull-requests: write`.
+Pull requests from forks receive a read-only token, so GitHub blocks posting comments. In that case, or whenever the workflow omits `pull-requests: write`, the Action writes the report to the workflow job summary instead.
 
-### Take the report as a file
+### Write the report to a file
 
-The [`report-file`](../reference/actions/#pull-request-report-file) input names a file that takes the report in place of the comment. The Action writes the Markdown that it would post to that file, with the hidden marker that identifies its comment. It posts and changes no comment and writes no job summary, so the job needs only `contents: read`. The plan check annotates the log and fails the step as it does without the input. The [`report`](../reference/actions/#pull-request-report) output names the file, and a later step puts the report where the team wants it. This workflow puts it in the job summary:
+Pass [`report-file`](../reference/actions/#pull-request-report-file) to write the Markdown report (including its hidden comment marker) to a file instead of posting a comment or writing a job summary. The job then needs only `contents: read`, while plan checks still emit annotations and fail the step normally. Use the [`report`](../reference/actions/#pull-request-report) output in a downstream step to publish the file wherever you need, such as appending it to the job summary:
 
 ```yaml title=".github/workflows/pull-request.yml" {17,20-24}
 name: pull-request
@@ -256,20 +256,20 @@ jobs:
           REPORT: ${{ steps.architecture.outputs.report }}
 ```
 
-`always()` runs the last step also when the plan check fails the Action's step.
+`always()` ensures the final step runs even when the plan check fails.
 
-A relative path starts at the workspace. The Action creates missing parent directories. If the file cannot be written, the step fails and sets no [`report`](../reference/actions/#pull-request-report) output.
+Relative paths resolve from the workspace root, and missing parent directories are created automatically. If writing the file fails, the step fails and leaves [`report`](../reference/actions/#pull-request-report) empty.
 
-## Explain the change in the description
+## Explain the change in the PR description
 
-The comment states facts. The `archboard-pr` skill, which `archboard init` installs, has your agent write the description around them: the problem, the resulting behavior, the evidence and the merge danger. Ask for it when you open the pull request:
+The bot comment reports objective diff facts. The `archboard-pr` skill (installed by `archboard init`) guides your agent to explain the context in the pull request description: the problem, resulting behavior, supporting evidence, and merge risks. Prompt your agent when opening a pull request:
 
 ```text title="Ask your agent" wrap
 Open a pull request for this branch. Use the archboard-pr skill: plan the change as a proposal,
 adopt it on this branch once the code matches, and explain the architecture in the description.
 ```
 
-The skill models every flowchart and sequence chart as a flow and draws it with `archboard model render`. A chart that an agent wrote in Mermaid by hand can contradict the model. So when the `archboard-pr` section of the description holds a Mermaid code block, the Action warns in the log and in the comment. The warning never fails the job.
+`archboard-pr` models flowcharts and sequence diagrams as Archboard flows and renders them with `archboard model render`. Hand-written Mermaid blocks can drift from the model, so if the `archboard-pr` section of a description contains a Mermaid code block, the Action logs a warning and notes it in the comment without failing the job.
 
 ## Next
 
@@ -278,12 +278,12 @@ The skill models every flowchart and sequence chart as a flow and draws it with 
 		{
 			path: "reference/actions",
 			title: "GitHub Actions reference",
-			text: "Every input and output of both Actions.",
+			text: "Inputs and outputs for both Actions.",
 		},
 		{
 			path: "platform",
 			title: "Application and infrastructure",
-			text: "Check out a second repository so a hop reads on both sides.",
+			text: "Check out a second repository to validate cross-network hops.",
 		},
 	]}
 />

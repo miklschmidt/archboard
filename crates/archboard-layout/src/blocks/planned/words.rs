@@ -40,7 +40,7 @@ const STEM: f64 = 24.0;
 const LEADS: f64 = 33.0;
 
 /// The lines of every door's trunk, each with whether its part is its source: from
-/// three lines of one kind to one door, each way, the lines share a trunk (rule 5).
+/// three lines of one kind and effect to one door, each way, the lines share a trunk (rule 5).
 fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
     let door = |endpoint: usize| {
         let end = &model.endpoints[endpoint];
@@ -53,9 +53,10 @@ fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
             let end = if part_first { to } else { from };
             let line = &model.edges[edge];
             let kind = line.option("archboard.relationship.kind");
+            let effect = line.option(crate::graph::EFFECT);
             let two_way = line.option(TWO_WAY);
             trunks
-                .entry((end, part_first, kind, two_way))
+                .entry((end, part_first, kind, effect, two_way))
                 .or_default()
                 .push(edge);
         }
@@ -77,14 +78,14 @@ pub(in crate::blocks) fn without_trunk_words(graph: &Node) -> Option<Node> {
         .filter(|&&edge| model.edges[edge].label().is_some())
         .map(|&edge| model.edges[edge].id.as_str())
         .collect();
-    (!worded.is_empty()).then(|| without_words(graph, &worded))
+    (!worded.is_empty()).then(|| without_words(graph, |line| worded.contains(&line)))
 }
 
-/// A graph with the words of some lines taken off.
-fn without_words(graph: &Node, lines: &[&str]) -> Node {
+/// A graph with the words of the lines `taken` names taken off.
+pub(in crate::blocks) fn without_words(graph: &Node, taken: impl Fn(&str) -> bool) -> Node {
     let mut quiet = graph.clone();
     for edge in quiet.edges.iter_mut().flatten() {
-        if lines.contains(&edge.id.as_str()) {
+        if edge.labels.is_some() && taken(&edge.id) {
             *edge = Rc::new(Edge {
                 labels: None,
                 ..(**edge).clone()
@@ -383,7 +384,7 @@ pub(in crate::blocks) fn dress(graph: &Node, drawing: Placed) -> Result<Placed, 
         .iter()
         .map(|&edge| model.edges[edge].id.as_str())
         .collect();
-    let kept = without_words(graph, &wordless);
+    let kept = without_words(graph, |line| wordless.contains(&line));
     let model = Model::new(&kept)?;
     settled(&model, &Topology::new(&model), &mut shape)
 }
@@ -407,7 +408,7 @@ mod tests {
     fn reading(lines: &[serde_json::Value], parts: &[&str]) -> Node {
         let parts: Vec<_> = parts.iter().map(|id| card(id)).collect();
         serde_json::from_value(json!({"id":"root",
-            "layoutOptions":{"archboard.blocks.nesting":"blocks"},
+            "layoutOptions":{},
             "children":[{"id":"open","width":400,"height":36,
                 "layoutOptions":{"archboard.header.size":"36"},"children":parts},
                 card("door")],

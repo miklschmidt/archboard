@@ -56,6 +56,7 @@ fn link(scene: &mut Scene, from: usize, to: usize) {
         from,
         to,
         plate: 0.0,
+        weight: 1.0,
     });
 }
 

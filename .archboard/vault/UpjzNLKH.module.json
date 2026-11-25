@@ -1,4 +1,41 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#AMEzH5bC",
+      "order": 100,
+      "kind": "dependency",
+      "label": "the painting that a page shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painter-wasm/src/browser.rs",
+        "symbol": "Painting"
+      },
+      "to": "vKEsyHFk#U4Q7nid1"
+    },
+    {
+      "id": "vKEsyHFk#RaRMc6Gn",
+      "order": 1000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "one stage for the canvas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painter-wasm/src/browser.rs",
+        "symbol": "Stage"
+      },
+      "to": "vKEsyHFk#ttPYQNXo"
+    },
+    {
+      "id": "vKEsyHFk#2yn8ZgXE",
+      "order": 91011,
+      "kind": "dependency",
+      "label": "the buffers its Vello renderer allocates for a frame",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#uoYBS8oN"
+    }
+  ],
   "order": 41200,
   "name": "archboard-painter-wasm",
   "kind": "package",
@@ -11,46 +48,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-painter-wasm"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#UpjzNLKH",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Browser painter"
-  ],
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "dependency",
-      "label": "the painting that a page shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-painter-wasm/src/browser.rs",
-        "symbol": "Painting"
-      },
-      "id": "vKEsyHFk#AMEzH5bC",
-      "to": "vKEsyHFk#U4Q7nid1"
-    },
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "one stage for the canvas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-painter-wasm/src/browser.rs",
-        "symbol": "Stage"
-      },
-      "id": "vKEsyHFk#RaRMc6Gn",
-      "to": "vKEsyHFk#ttPYQNXo"
-    },
-    {
-      "order": 91011,
-      "kind": "dependency",
-      "label": "the buffers its Vello renderer allocates for a frame",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#2yn8ZgXE",
-      "to": "vKEsyHFk#uoYBS8oN"
-    }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

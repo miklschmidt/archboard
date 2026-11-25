@@ -1,6 +1,6 @@
 ---
-title: The check as a gate
-description: Run `archboard check` where you already run `tsc`, `ruff` and your tests. It fails while the map and the code disagree, in a Git hook, in CI and in an agent's loop.
+title: Run checks as a gate
+description: Run `archboard check` alongside your linter and tests to fail Git hooks, CI jobs, and agent loops whenever the architecture model disagrees with the code.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
@@ -9,7 +9,7 @@ import Clip from "../../components/docs/Clip.astro";
 import Exit from "../../components/docs/Exit.astro";
 import reference from "../../generated/reference.json";
 
-A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails the build is a fact that the agent must deal with. `archboard check` is deterministic: the same model and the same code give the same answer, with an exit code that CI understands.
+Instructions in `AGENTS.md` are advisory and easy for an agent to skip. `archboard check` is a deterministic CLI gate: given the same model and codebase, it returns the same findings and a standard exit code for hooks, CI, and agent loops.
 
 <Clip
 	src="https://raw.githubusercontent.com/miklschmidt/archboard-relay-example/main/docs/clips/gate.gif"
@@ -18,27 +18,26 @@ A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails t
 	width={1320}
 	height={800}
 >
-	The [relay example](https://github.com/miklschmidt/archboard-relay-example): the check passes,
-	fails on a call that the model does not draw, and passes again. A real recording of the published
-	CLI.
+	In the [relay example](https://github.com/miklschmidt/archboard-relay-example), `archboard check`
+	passes, fails when code introduces an unmodeled call, and passes again after reverting the change.
 </Clip>
 
 ## What passes and what fails
 
-`archboard check` runs three checks in order: semantics, code, then embeds. It exits <Exit outcome="issues" /> while one of them has something that you must fix.
+`archboard check` runs three checks in sequence: semantics, code, and embeds. It exits <Exit outcome="issues" /> if any check reports an error or warning.
 
-| Outcome                       | Exit                                                  | Example                                                                                                                  |
-| ----------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Nothing to report             | `0`                                                   | A model that matches its code                                                                                            |
-| Information only              | `0`                                                   | A relationship whose evidence is a candidate, matched by name only                                                       |
-| A code warning                | <Exit outcome="issues" />                             | [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn): code calls a module that the model does not join  |
-| A semantic diagnostic         | <Exit outcome="issues" />                             | [`RELATIONSHIP_ON_CONTAINER`](../reference/findings/#relationship-on-container): a line that ends on a module with parts |
-| An outdated picture           | <Exit outcome="issues" />                             | [`EMBED_OUTDATED`](../reference/findings/#embed-outdated): a tracked SVG that no longer matches the model                |
-| No vault in the checkout      | `0`, or <Exit outcome="issues" /> when an embed warns | Only the embeds check runs, and a skip says that the others did not                                                      |
-| A usage error, or no checkout | <Exit refusal="VAULT_NOT_FOUND" />                    | Outside any Git checkout, with no vault above it                                                                         |
-| No server                     | <Exit refusal="SERVER_UNREACHABLE" />                 | The server did not answer and could not start                                                                            |
+| Outcome                    | Exit                                                | Example                                                                                                           |
+| -------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Nothing to report          | `0`                                                 | Model matches the codebase                                                                                        |
+| Information only           | `0`                                                 | Candidate evidence matched by name only                                                                           |
+| Code warning               | <Exit outcome="issues" />                           | [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn): code calls a module missing from the model |
+| Semantic diagnostic        | <Exit outcome="issues" />                           | [`RELATIONSHIP_ON_CONTAINER`](../reference/findings/#relationship-on-container): relationship ends on a container |
+| Outdated embed             | <Exit outcome="issues" />                           | [`EMBED_OUTDATED`](../reference/findings/#embed-outdated): tracked SVG or PNG does not match the current model    |
+| No vault in checkout       | `0`, or <Exit outcome="issues" /> if an embed warns | Only the embeds check runs, and skipped checks are reported                                                       |
+| Usage error or no checkout | <Exit refusal="VAULT_NOT_FOUND" />                  | Run outside a Git checkout with no parent vault                                                                   |
+| Server unreachable         | <Exit refusal="SERVER_UNREACHABLE" />               | Local server did not respond and could not start                                                                  |
 
-Information and skips print on standard error and never change the exit status. [Check findings](../reference/findings/) lists every code. Each check also runs alone:
+Information-level findings and skips print to standard error without changing the exit code. See [Check findings](../reference/findings/) for every code. You can also run each check individually:
 
 ```bash
 archboard check semantics
@@ -48,7 +47,7 @@ archboard check embeds
 
 ## Read a failure
 
-A warning of the code check names its code, the file of the module in the vault, the module and what to do. Each piece of evidence follows on its own line, with its kind, whether it is resolved, and its file and line:
+Each code-check warning prints the finding code, the module file in the vault, the affected module, and how to resolve it. Supporting evidence follows on indented lines with its evidence kind, resolution status, file path, and line number:
 
 ```text title="stderr"
 warning: RELATIONSHIP_UNDRAWN: ZvzEpjXR.module.json: module "Rate card": The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
@@ -56,19 +55,21 @@ warning: RELATIONSHIP_UNDRAWN: ZvzEpjXR.module.json: module "Rate card": The cod
   configured-path, resolved, deploy/kubernetes/peer-endpoints.yaml:13
 ```
 
-There are two fixes, and the finding says both. If the call is intended, the agent draws the relationship. If it is not, the agent changes the code. Either way the next check passes. The JSON answer on standard output carries the same findings for a script.
+Resolve a warning either by updating the model (if the call is intentional) or by changing the code (if it is not). Standard output emits the same findings as JSON for scripts.
 
-<Aside type="caution" title="Do not pipe the check">
-	A pipeline exits with the status of its last command, so `archboard check | tee check.log` hides a failing check. Redirect the streams instead: `archboard check > check.json 2> check.log`.
+<Aside type="caution" title="Do not pipe the check directly">
+	Shell pipelines exit with the status of the last command, so `archboard check | tee check.log`
+	masks a failing exit code. Redirect the streams instead: `archboard check > check.json 2>
+	check.log`.
 </Aside>
 
 ## Fail on a shallow module
 
-The code check also judges how deep each bound module is. A deep module hides much logic behind few names. An exported value that code outside the module reads is [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module.
+The code check also measures module depth for each bound module. A deep module hides substantial logic behind a small public interface. Exporting a value that external code reads triggers [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module.
 
-One warning judges each module as a whole. Its width is the number of names that callers must learn: its exported functions, classes, public methods and values. Exported types do not count. A function that picks the operation it runs by a closed key that its caller passes, such as `change(vault, "claim" | "release", input)`, counts one name for each operation it picks. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like an exposed value, or a module whose names have fewer than 4 pieces of logic behind each. The threshold is fixed, and holds at every width: no module is too small to judge or too wide to pass. Cutting a module in two, or folding its names behind one key, moves its names and leaves them to learn.
+A module's interface width is the number of symbols callers must learn: exported functions, classes, public methods, and values (exported types do not count). A dispatch function that branches on a closed set of caller-supplied keys, such as `change(vault, "claim" | "release", input)`, counts once per operation. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) fires when every non-type export has a depth finding (such as an exposed value) or when the module averages fewer than 4 units of logic per exported symbol. This threshold is fixed at every size: splitting a module in two or hiding operations behind one key parameter does not reduce the symbols callers must learn.
 
-The code fails the check on every module. If your repository is not ready for that, use debt mode. Set it to information, and fail only on the modules that a branch touched, uncommitted changes included:
+By default, [`MODULE_SHALLOW`](../reference/findings/#module-shallow) fails the check on every module. If your repository has existing shallow modules, enable debt mode to downgrade existing findings to information and fail only on modules touched by the current branch (including uncommitted changes):
 
 ```yaml title=".archboard/vault/.archboard/config.yaml"
 codeCheck:
@@ -77,15 +78,15 @@ codeCheck:
     MODULE_SHALLOW: information
 ```
 
-With `failShallowModules: true`, every plain `archboard check` runs the gate, in a hook and in CI too. The flag runs it for one command:
+With `failShallowModules: true`, every `archboard check` run enforces debt mode locally, in Git hooks, and in CI. To enable it for a single run, pass the flag:
 
 ```bash
 archboard check --fail-shallow-modules --base main
 ```
 
-Without `--base`, the default base decides: where `origin/HEAD` points, else `main`. A base that does not resolve exits <Exit refusal="BASE_UNRESOLVED" />, never `0`.
+Without `--base`, Archboard uses `origin/HEAD` and falls back to `main`. If the base ref does not resolve, the command exits <Exit refusal="BASE_UNRESOLVED" />.
 
-A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request, the [check Action](../reference/actions/) needs neither: when the gate can be on, by the flag in its [`args`](../reference/actions/#check-args), by the configuration, or because the args check drafts, which keep the setting each was made with, it fetches the pull request's base branch, with the whole history when the checkout is shallow, and passes it as `--base origin/<base branch>`. With the gate off, it fetches nothing. A `--base` in the args wins. On a push, name the base there, and give `actions/checkout` the history with `fetch-depth: 0`:
+CI checkouts often lack a local `main` branch or `origin/HEAD`. On pull requests, the [check Action](../reference/actions/) handles this automatically: whenever shallow-module gating can apply (through [`args`](../reference/actions/#check-args), vault configuration, or draft checks), it fetches the pull request's base branch with full history if the checkout is shallow and passes `--base origin/<base branch>`. When the gate is off, it fetches nothing. An explicit `--base` in [`args`](../reference/actions/#check-args) overrides this behavior. On `push` workflows, pass `--base` explicitly and set `fetch-depth: 0` on `actions/checkout`:
 
 ```yaml
 - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
@@ -96,9 +97,9 @@ A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request,
 
 ## Set the level of a module-depth rule
 
-The code check reports seven module-depth codes: [`EXPOSED_VALUE`](../reference/findings/#exposed-value), [`EXPOSED_VALUE_COMPUTED`](../reference/findings/#exposed-value-computed), [`CODE_PASS_THROUGH`](../reference/findings/#code-pass-through), [`REEXPORT_PASS_THROUGH`](../reference/findings/#reexport-pass-through), [`EXPOSED_UNUSED`](../reference/findings/#exposed-unused), [`INTERFACE_UNDECLARED`](../reference/findings/#interface-undeclared) and [`MODULE_SHALLOW`](../reference/findings/#module-shallow). Several are warnings, so they fail the check. If you upgrade and write no rules, your repository gets these warnings, and the check fails on them.
+The code check reports seven module-depth codes: [`EXPOSED_VALUE`](../reference/findings/#exposed-value), [`EXPOSED_VALUE_COMPUTED`](../reference/findings/#exposed-value-computed), [`CODE_PASS_THROUGH`](../reference/findings/#code-pass-through), [`REEXPORT_PASS_THROUGH`](../reference/findings/#reexport-pass-through), [`EXPOSED_UNUSED`](../reference/findings/#exposed-unused), [`INTERFACE_UNDECLARED`](../reference/findings/#interface-undeclared), and [`MODULE_SHALLOW`](../reference/findings/#module-shallow). Several default to warning severity and fail the check immediately after an upgrade unless configured otherwise.
 
-To lower a code for the whole repository, set its level in the vault's configuration:
+To downgrade or disable a rule across the repository, configure `codeCheck.rules` in the vault configuration:
 
 ```yaml title=".archboard/vault/.archboard/config.yaml"
 codeCheck:
@@ -107,13 +108,13 @@ codeCheck:
     CODE_PASS_THROUGH: "off"
 ```
 
-A code set to information stays in the answer, and its warnings become information, which never fails the check. Its message says that the vault policy set it. A code set to off has no findings at all: no line, no count, nothing in Measures and no annotation. The check prints one line that names the codes that are off, for example `code check: off by vault policy: CODE_PASS_THROUGH`. A code without a rule keeps its built-in level.
+Setting a rule to information keeps its findings in the output (noting the vault policy override) without failing the check. Setting a rule to `"off"` omits those findings from CLI output, Measures, and PR annotations, and prints a summary line such as `code check: off by vault policy: CODE_PASS_THROUGH`. Any unconfigured code keeps its built-in severity.
 
-A rule can only lower a code. The check derives shallow modules before it applies the rules, so a rule that turns off exposed values does not change which modules are shallow. Another code, or another level such as warning, makes the configuration invalid, and the semantics check names the entry. A rule that turns off the shallow-module code beside `failShallowModules: true` is invalid too, because the gate fails on it. Remove any rule for the retired width cap to make the configuration valid. If you pass `--fail-shallow-modules` with the shallow-module code set to off, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
+Rules can only lower severity, not raise it. Shallow-module detection runs before rules are applied, so turning off exposed-value rules does not change which modules count as shallow. Unknown codes or unsupported levels (such as `warning`) fail the semantics check, as does disabling [`MODULE_SHALLOW`](../reference/findings/#module-shallow) while `failShallowModules: true` is set. Remove any entry for the retired width-cap rule to keep the configuration valid. Passing `--fail-shallow-modules` while [`MODULE_SHALLOW`](../reference/findings/#module-shallow) is set to `"off"` exits with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
 
 ## In a Git hook
 
-A `pre-push` hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
+A `pre-push` hook prevents pushing changes when the architecture check fails. Save this script as `.githooks/pre-push` and make it executable:
 
 ```sh title=".githooks/pre-push" frame="code"
 #!/bin/sh
@@ -122,14 +123,14 @@ A `pre-push` hook keeps a failing map off the remote. Save this as `.githooks/pr
 archboard check > /dev/null
 ```
 
-Point Git at the directory once per clone:
+Point Git at `.githooks` once per clone:
 
 ```bash
 chmod +x .githooks/pre-push
 git config core.hooksPath .githooks
 ```
 
-In a Node.js repository, pin the CLI as a dev dependency and let `npm install` set the hook path for every clone:
+In a Node.js repository, pin `archboard` in `devDependencies` so `npm install` configures the hook path automatically:
 
 ```json title="package.json" ins={3,6}
 {
@@ -142,11 +143,11 @@ In a Node.js repository, pin the CLI as a dev dependency and let `npm install` s
 }
 ```
 
-For this setup, replace `archboard check` in `.githooks/pre-push` with `./node_modules/.bin/archboard check`. The hook then runs the pinned program, the same one that CI runs. A `pre-commit` hook works the same way, but a full check on every commit is slow on a large repository. Push is the better moment.
+Replace `archboard check` in `.githooks/pre-push` with `./node_modules/.bin/archboard check` so local pushes run the exact version pinned for CI. A `pre-commit` hook works the same way, though running full checks on push avoids slowing down every commit in large repositories.
 
 ## In CI
 
-The check Action installs the CLI, runs `archboard check`, and turns each finding into an annotation on the pull request's diff. It fails the job on a warning or a diagnostic:
+The check Action installs the CLI, runs `archboard check`, annotates findings on the pull request diff, and fails the job on any warning or semantic diagnostic:
 
 ```yaml title=".github/workflows/architecture.yml" ins={19,21,24}
 name: architecture
@@ -175,11 +176,11 @@ jobs:
           version: "{{version}}"
 ```
 
-The code check resolves a name only through a language server, and only resolved evidence makes a warning. So install the dependencies first. `npm ci` installs the checkout's own TypeScript, which serves from version {reference.facts.nativeTypescript}. Before {reference.facts.nativeTypescript}, the check also needs `typescript-language-server` in the dev dependencies. Install the server of each other language that `.archboard/language-servers.json` names, as `pip install pyright` does for Python. Without a server, a call that needs resolved evidence stays information, and the gate passes.
+Install dependencies and language servers before running the check Action. The code check requires a language server to resolve symbols, and only resolved evidence produces warnings. `npm ci` installs the repository's TypeScript version (built-in support starts at TypeScript {reference.facts.nativeTypescript}, and earlier versions also require `typescript-language-server` in `devDependencies`). Install servers for any other languages configured in `.archboard/language-servers.json`, such as `pip install pyright` for Python. Without a language server, unresolved references remain information-level and do not fail the check.
 
-Pin [`version`](../reference/actions/#check-version) to the release that your team runs, as you pin your compiler. Without it, the Action installs the CLI of the release that it comes from. The examples pin the Action to the commit of `{{ref}}`, with the tag in a comment. A tag can move, and a commit cannot, so pin any third-party Action this way. The [Actions reference](../reference/actions/) lists every input: [`fail-on: never`](../reference/actions/#check-fail-on) reports findings without failing, though a checkout without a vault still fails, and [`allow-codes`](../reference/actions/#check-allow-codes) keeps chosen findings visible without failing on them.
+Pin [`version`](../reference/actions/#check-version) to the CLI release your team runs. Without it, the Action installs the CLI matching its own release. Pin the Action itself to a commit SHA (with the tag `{{ref}}` in a comment) because Git tags can move. See the [GitHub Actions reference](../reference/actions/) for all inputs, including [`fail-on: never`](../reference/actions/#check-fail-on) (report findings without failing, except when a vault is missing) and [`allow-codes`](../reference/actions/#check-allow-codes) (report specific codes without failing).
 
-Any other CI runs the same command. The exit code is the gate:
+Other CI systems can run `archboard check` directly and gate on its exit code:
 
 ```yaml title=".gitlab-ci.yml"
 architecture:
@@ -193,20 +194,20 @@ architecture:
     paths: [check.json]
 ```
 
-<Aside type="note" title="Bindings into other repositories">
-	A binding into a repository that the CI machine has not registered is skipped as
-	[`repository-unregistered`](../reference/findings/#repository-unregistered), and a skip never
-	fails the check. Check out each repository that your bindings name, and register it. [Application
-	and infrastructure](../platform/) shows how.
+<Aside type="note" title="Bindings to other repositories">
+	Bindings pointing to an unregistered repository are skipped as
+	[`repository-unregistered`](../reference/findings/#repository-unregistered), and skips do not fail
+	the check. Check out and register every repository your bindings reference. See [Application and
+	infrastructure](../platform/) for multi-repo CI setup.
 </Aside>
 
-## In an agent's loop
+## In an agent loop
 
-Give the check's words back to the agent before a person reviews the work. The agent then fixes the map or the code while it still holds the context. Three ways work today.
+Pass check failures back to your coding agent so it fixes the code or model while it still has context. Three setups work well:
 
-### Claude Code: a hook when it stops
+### Claude Code Stop hook
 
-A `Stop` hook runs when Claude Code wants to finish. When the hook ends with status `2`, Claude Code gives the hook's standard error back to Claude, and Claude goes on working:
+A `Stop` hook runs when Claude Code finishes a turn. When the hook ends with status `2`, Claude Code passes standard error back to the agent and continues working:
 
 ```json title=".claude/settings.json"
 {
@@ -225,9 +226,9 @@ A `Stop` hook runs when Claude Code wants to finish. When the hook ends with sta
 }
 ```
 
-### Any agent: a loop in the shell
+### Shell loop for any agent
 
-Run the agent, run the check, and give the findings back until the check passes or the rounds run out:
+Run the agent, run `archboard check`, and feed any findings back until the check passes or the retry limit is reached:
 
 ```bash title="agent-loop.sh" frame="code"
 #!/usr/bin/env bash
@@ -250,20 +251,20 @@ echo "archboard check still fails after 3 rounds" >&2
 exit 1
 ```
 
-### In the instructions of the repository
+### Repository instructions
 
-Tell the agent where the gate is, so it runs the check before it says it is done:
+Add a rule to `AGENTS.md` so agents run the check before finishing:
 
 ```markdown title="AGENTS.md"
 Run `archboard check` before you finish. It fails while the architecture model and the code
 disagree. Fix the code or the model. Never silence a finding.
 ```
 
-An instruction alone is a request, so keep the hook or the loop as the gate.
+Instructions alone are advisory, so pair them with a hook, shell loop, or CI gate.
 
-## Keep the pictures current
+## Keep embedded diagrams current
 
-Pictures in your README and ADRs are embeds: SVG or PNG files that Archboard drew and Git tracks. The embeds check fails when one no longer matches the model. Draw them again and commit them:
+Diagrams committed for READMEs and ADRs are embeds: Git-tracked SVG or PNG files generated by Archboard. The embeds check fails when an embed falls behind the model. Regenerate outdated embeds and commit them:
 
 ```bash
 archboard check embeds --fix
@@ -277,12 +278,12 @@ git add docs/architecture
 		{
 			path: "pull-requests",
 			title: "Architecture on pull requests",
-			text: "Findings on the diff, and the plan against the changed code.",
+			text: "Annotate findings on the diff and compare changed modules against the proposal.",
 		},
 		{
 			path: "platform",
 			title: "Application and infrastructure",
-			text: "Check bindings that cross into another repository.",
+			text: "Validate bindings and network hops across multiple repositories.",
 		},
 	]}
 />

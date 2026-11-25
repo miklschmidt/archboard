@@ -47,7 +47,8 @@ import {
 } from "#runtime/code-facts/python/operations/python-scopes.ts";
 import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { PYTHON_MATH } from "#runtime/code-facts/python/operations/python-depth.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { PYTHON_TIMING } from "#runtime/code-facts/python/operations/python-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -198,6 +199,7 @@ const RUN_SYNTAX: RunSyntax = {
 		 */
 		argument_list: (list) => list.parent?.type === "call",
 	},
+	timing: PYTHON_TIMING,
 };
 
 /** What deciding whether a captured name is a use needs. */
@@ -236,7 +238,7 @@ function codeReference(node: Node, context: UseContext, shadows: Shadows): Use |
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 	return isLocal(node, reference.symbol, shadows) ? { ...reference, local: true } : reference;
 }
@@ -498,7 +500,7 @@ function distinct(
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const use of uses) {
 		const { local, ...reference } = use;
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(use.asValue)}\0${String(use.passed)}\0${String(local === true)}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(use.asValue)}\0${String(use.passed)}\0${String(use.timing)}\0${String(local === true)}`;
 		if (seen.has(key)) continue;
 		const through = reachesImport(use) ? throughImport(use.symbol, locals) : undefined;
 		seen.set(key, through === undefined ? reference : { ...reference, through });

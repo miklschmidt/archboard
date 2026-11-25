@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#xovfrY1j",
+      "order": 18000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "resume the grading thread",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
+        "symbol": "codexGraderArgv"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#1snXnK3G"
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#NzNYGL6D",
+      "order": 40000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "a private codex home for the grader",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
+        "symbol": "fillCodexHome"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa"
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
+      "order": 45000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "unwrap the grader's shell commands",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
+        "symbol": "unwrapped"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
+    }
+  ],
   "order": 13000,
   "name": "Codex grader",
   "kind": "module",
@@ -10,48 +54,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
-  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
-  "outgoing": [
-    {
-      "order": 18000,
-      "kind": "call",
-      "label": "resume the grading thread",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
-        "symbol": "codexGraderArgv"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#xovfrY1j",
-      "to": "vKEsyHFk/IbGtfJE2#1snXnK3G"
-    },
-    {
-      "order": 40000,
-      "kind": "call",
-      "label": "a private codex home for the grader",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
-        "symbol": "fillCodexHome"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#NzNYGL6D",
-      "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa"
-    },
-    {
-      "order": 45000,
-      "kind": "call",
-      "label": "unwrap the grader's shell commands",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
-        "symbol": "unwrapped"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
-      "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG"
 }

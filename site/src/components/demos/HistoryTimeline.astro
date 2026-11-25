@@ -1,22 +1,15 @@
 ---
-// The example shop's retained history: the states it kept, and the reason recorded when one was
-// adopted or shelved. Names, dates and reasons are the answer of `archboard model proposals`.
+// The example shop's retained history as the shell's History dialog lists it: the current state
+// on its card, then one rail of the other states, the proposals first, then the states that were
+// current, then the shelved ones. Each says why it stands where it does. Names, dates and reasons
+// are the answer of `archboard model proposals`; the shell lists the shop's other proposals too.
 
+const current = {
+	when: "2026-10-27",
+	name: "Synchronous checkout",
+	text: "The shop now draws its inventory internals inside the Inventory service that owns them. All earlier readings and the other proposals stay available.",
+};
 const events = [
-	{
-		when: "2026-10-27",
-		kind: "Adopted",
-		name: "Synchronous checkout",
-		text: "The shop now draws its inventory internals inside the Inventory service that owns them. All earlier readings and the other proposals stay available.",
-		tone: "adopted",
-	},
-	{
-		when: "2026-11-01",
-		kind: "Shelved",
-		name: "Queued fulfilment, first draft",
-		text: "Rebuilt on Synchronous checkout, which replaced the state this draft started from.",
-		tone: "shelved",
-	},
 	{
 		when: "2026-11-01",
 		kind: "Proposal",
@@ -24,14 +17,29 @@ const events = [
 		text: "Answer the shopper once the payment has started; stock and the receipt move to a queue-fed worker.",
 		tone: "proposal",
 	},
+	{ kind: "Earlier", name: "Migration baseline", tone: "earlier" },
+	{
+		when: "2026-11-01",
+		kind: "Shelved",
+		name: "Queued fulfilment, first draft",
+		text: "Rebuilt on Synchronous checkout, which replaced the state this draft started from.",
+		tone: "shelved",
+	},
 ];
 ---
 
 <div class="history table">
 	<div class="current">
-		<span class="dot"></span>
-		<p class="ink strong">Current: Synchronous checkout</p>
-		<span class="chip">Exact checkpoints</span>
+		<span class="rail" aria-hidden="true"><span class="node" /></span>
+		<div class="event-body">
+			<p class="event-head">
+				<span class="kind">Current</span>
+				<span class="name">{current.name}</span>
+				<span class="shown">On screen</span>
+				<time class="mono when">{current.when}</time>
+			</p>
+			<p class="text">{current.text}</p>
+		</div>
 	</div>
 	<ol class="events">
 		{
@@ -43,10 +51,10 @@ const events = [
 					<div class="event-body">
 						<p class="event-head">
 							<span class="kind">{event.kind}</span>
-							<span class="ink strong">{event.name}</span>
-							<time class="mono when">{event.when}</time>
+							<span class="name">{event.name}</span>
+							{event.when && <time class="mono when">{event.when}</time>}
 						</p>
-						<p class="text">{event.text}</p>
+						{event.text && <p class="text">{event.text}</p>}
 					</div>
 				</li>
 			))
@@ -59,30 +67,20 @@ const events = [
 		padding: 6px;
 		background: var(--chrome);
 	}
+	/* The current state stands first, on a card with a ring of gold. */
 	.current {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		padding: 14px 16px;
+		display: grid;
+		grid-template-columns: 28px 1fr;
+		gap: 8px;
+		padding: 8px 8px 0;
 		border-radius: 6px;
 		background: var(--card);
 		box-shadow:
 			var(--shadow-raised),
-			inset 0 0 0 1px color-mix(in oklch, var(--gold-mark) 30%, transparent);
+			inset 0 0 0 1px color-mix(in oklch, var(--gold-mark) 35%, transparent);
 	}
-	.current .dot {
-		color: var(--gold-mark);
-		box-shadow: 0 0 12px oklch(0.86 0.125 86 / 0.7);
-	}
-	.current .chip {
-		margin-left: auto;
-		background: var(--well);
-		color: var(--ink-muted);
-		font-family: var(--font-mono);
-		font-weight: 400;
-	}
-	.strong {
-		font-weight: 600;
+	.current .event-body {
+		padding-bottom: 12px;
 	}
 	.events {
 		list-style: none;
@@ -101,7 +99,7 @@ const events = [
 		display: flex;
 		justify-content: center;
 	}
-	.rail::before {
+	.events .rail::before {
 		content: "";
 		position: absolute;
 		top: 0;
@@ -115,6 +113,9 @@ const events = [
 	.event:last-child .rail::before {
 		bottom: calc(100% - 14px);
 	}
+	/* The node the About page draws: solid gold with a halo for the current state, a ring in the
+	   changed orange for a proposal, a ring in muted ink for a state that was current, and a
+	   fainter ring for a shelved one. */
 	.node {
 		position: relative;
 		margin-top: 8px;
@@ -122,14 +123,17 @@ const events = [
 		height: 12px;
 		border-radius: 50%;
 		background: var(--chrome);
-		box-shadow: inset 0 0 0 2px var(--ink-faint);
+		box-shadow: inset 0 0 0 2px var(--ink-muted);
 	}
-	.adopted .node {
+	.current .node {
 		background: var(--gold-mark);
 		box-shadow: 0 0 0 4px oklch(0.86 0.125 86 / 0.18);
 	}
 	.proposal .node {
 		box-shadow: inset 0 0 0 2px var(--changed);
+	}
+	.shelved .node {
+		box-shadow: inset 0 0 0 2px var(--ink-faint);
 	}
 	.event-body {
 		padding: 4px 8px 18px;
@@ -148,8 +152,17 @@ const events = [
 		font-weight: 600;
 		color: var(--ink-muted);
 	}
-	.adopted .kind {
+	.current .kind {
 		color: var(--gold-mark);
+	}
+	.shown {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--gold-mark);
+	}
+	.name {
+		font-weight: 600;
+		color: var(--ink);
 	}
 	.when {
 		margin-left: auto;
@@ -160,9 +173,6 @@ const events = [
 		font-size: 0.875rem;
 		line-height: 1.55;
 		color: var(--ink-body);
-	}
-	.shelved .node {
-		box-shadow: inset 0 0 0 2px var(--ink-faint);
 	}
 	.shelved .text {
 		color: var(--ink-muted);

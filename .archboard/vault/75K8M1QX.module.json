@@ -1,4 +1,15 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#tAq4DxjV",
+      "order": 10,
+      "kind": "async",
+      "effect": "query",
+      "label": "footprint, locality and source refs",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    }
+  ],
   "order": 90,
   "name": "Architecture history routes",
   "kind": "route",
@@ -8,17 +19,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads/routes/history-routes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#75K8M1QX",
-  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "call",
-      "label": "footprint, locality and source refs",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#tAq4DxjV",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    }
-  ]
+  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw"
 }

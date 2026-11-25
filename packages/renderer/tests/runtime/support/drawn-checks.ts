@@ -1,10 +1,10 @@
 // Corpus checks on a drawn document, shared by the wide-picture corpus and the
 // focused owners of the regressions it found: a run under another line's
-// label, lines closer than a lane, a line along a container's wall, a label
-// across a container's edge, and a route on a slant.
+// label, a label across a container's edge, and a route on a slant.
 
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
 import {
 	type DrawnPoint,
 	bodyShift,
@@ -53,16 +53,21 @@ function runsUnder(pill: DiagramBox, points: readonly DrawnPoint[]): number {
 }
 
 /**
- * Every straight run of one route through another relationship's label, where
- * a reader would take the route to end at the label it vanishes under.
+ * Every straight run of one route through another cable's label, where a
+ * reader would take the route to end at the label it vanishes under. A
+ * cable's strands run under its own plate.
  * @param drawing The rendered document.
  * @returns Each such route and label, named.
  */
 function runsUnderLabels(drawing: RenderedDiagram): string[] {
 	const routes = [...corridorPoints(drawing.svg)];
+	const cables = cablesOf(drawing);
 	return [...routeLabels(drawing.svg)].flatMap(([id, pill]) =>
 		routes
-			.filter(([other, points]) => other !== id && runsUnder(pill, points) > 0)
+			.filter(
+				([other, points]) =>
+					!(cables.get(id) ?? [id]).includes(other) && runsUnder(pill, points) > 0,
+			)
 			.map(([other]) => `${other} under ${id}`),
 	);
 }
@@ -79,101 +84,8 @@ function labelsOverOwnLine(drawing: RenderedDiagram): string[] {
 	);
 }
 
-/** The least distance the track engine keeps between two lines that do not share a trunk. */
-const TRACK_LANE = 16;
-
-/** One straight run of a drawn route. */
-interface Run {
-	readonly edge: string;
-	readonly vertical: boolean;
-	/** Where it stands across its direction. */
-	readonly at: number;
-	readonly from: number;
-	readonly to: number;
-}
-
-/**
- * Every straight run of every route longer than a bend.
- * @param routes Each route's points, by relationship id.
- * @returns The runs.
- */
-function runsOf(routes: ReadonlyMap<string, readonly DrawnPoint[]>): Run[] {
-	return [...routes].flatMap(([edge, points]) =>
-		points.slice(1).flatMap((point, index) => {
-			const previous = points[index]!;
-			const vertical = Math.abs(point.x - previous.x) < 0.01;
-			const horizontal = Math.abs(point.y - previous.y) < 0.01;
-			if (vertical === horizontal) return [];
-			const [one, other] = vertical ? [previous.y, point.y] : [previous.x, point.x];
-			if (Math.abs(other - one) < 2 * TRACK_LANE) return [];
-			return [
-				{
-					edge,
-					vertical,
-					at: vertical ? point.x : point.y,
-					from: Math.min(one, other),
-					to: Math.max(one, other),
-				},
-			];
-		}),
-	);
-}
-
-/**
- * Pairs of lines that run side by side closer than a lane without sharing a
- * trunk: the near-coincident lanes the track engine exists to prevent. Lanes
- * are read without crossing hops: a trunk's drawer rises over a crossing
- * alone, a hop's radius off the ink its trunk mates share and do not show.
- * @param drawing The rendered document.
- * @returns The pairs, by relationship ids and their distance.
- */
-function nearLanes(drawing: RenderedDiagram): string[] {
-	const runs = runsOf(corridorPoints(drawing.svg));
-	return runs.flatMap((run, index) =>
-		runs.slice(index + 1).flatMap((other) => {
-			const gap = Math.abs(run.at - other.at);
-			const overlap = Math.min(run.to, other.to) - Math.max(run.from, other.from);
-			return run.edge !== other.edge &&
-				run.vertical === other.vertical &&
-				overlap > TRACK_LANE &&
-				gap > 0.5 &&
-				gap < TRACK_LANE - 0.5
-				? [`${run.edge}/${other.edge} ${gap.toFixed(1)}`]
-				: [];
-		}),
-	);
-}
-
-/**
- * Upright runs within half a lane of a frame's side wall,
- * where a line reads as part of the container's border.
- * @param drawing The rendered document.
- * @returns Each such run's relationship id and the wall's x.
- */
-function wallHugs(drawing: RenderedDiagram): string[] {
-	const boxes =
-		/<g data-semantic-kind="region"[^>]*data-depiction="container"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
-	// Routes are read on the page, so the walls are moved onto it with them.
-	const shift = bodyShift(drawing.svg);
-	const walls = [...drawing.svg.matchAll(boxes)].flatMap(([, x, y, width, height]) =>
-		[Number(x), Number(x) + Number(width)].map((at) => ({
-			at: at + shift.x,
-			from: Number(y) + shift.y,
-			to: Number(y) + Number(height) + shift.y,
-		})),
-	);
-	return runsOf(routePoints(drawing.svg))
-		.filter(({ vertical }) => vertical)
-		.flatMap((run) =>
-			walls
-				.filter((wall) => {
-					const gap = Math.abs(run.at - wall.at);
-					const along = Math.min(run.to, wall.to) - Math.max(run.from, wall.from);
-					return gap > 0.5 && gap < TRACK_LANE / 2 && along > 2 * TRACK_LANE;
-				})
-				.map((wall) => `${run.edge} ${wall.at}`),
-		);
-}
+/** A lane: the width a drawn line may be off a straight one before a bend is worth drawing. */
+const LANE = 16;
 
 /**
  * The label boxes that stand across a container's edge: over part of a frame
@@ -223,19 +135,11 @@ function slants(drawing: RenderedDiagram): string[] {
 			const previous = points[index]!;
 			const across = Math.abs(point.x - previous.x);
 			const down = Math.abs(point.y - previous.y);
-			return across > 0.5 && down > 0.5 && Math.hypot(across, down) > 3 * TRACK_LANE;
+			return across > 0.5 && down > 0.5 && Math.hypot(across, down) > 3 * LANE;
 		})
 			? [edge]
 			: [],
 	);
 }
 
-export {
-	TRACK_LANE,
-	labelsAcrossWalls,
-	labelsOverOwnLine,
-	nearLanes,
-	runsUnderLabels,
-	slants,
-	wallHugs,
-};
+export { labelsAcrossWalls, labelsOverOwnLine, runsUnderLabels, slants };

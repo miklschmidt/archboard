@@ -291,6 +291,19 @@ impl Painter {
         self.stage.set_camera(Camera { x, y, scale }, ms, now);
     }
 
+    /// Play the effect of some relationships' lines once, from a moment in
+    /// milliseconds of the page's clock: what a reader sees when it points at
+    /// a line, or at a card for each of the lines it touches. A mutation runs
+    /// to its target and lights the imprint, a query lights its eye and runs
+    /// back to its caller's ring, a compute's "=" brightens, and a declared
+    /// requirement stays still. A line with traffic of its own keeps its
+    /// traffic. A page that wants reduced motion does not call it.
+    #[wasm_bindgen(js_name = playEffects)]
+    pub fn play_effects(&mut self, ids: Vec<String>, now: f64) {
+        let now = self.clock.at(now);
+        self.stage.play(ids, now);
+    }
+
     /// Say at which scale of the camera the far view begins, in canvas pixels to
     /// a unit, and how long a swap takes in milliseconds. A picture with no far
     /// view has its line at 0.

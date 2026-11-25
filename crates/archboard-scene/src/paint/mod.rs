@@ -27,6 +27,7 @@ mod far_card;
 mod far_view;
 mod finish;
 mod flowchart_shapes;
+mod heads;
 mod icons;
 mod junctions;
 mod legend;
@@ -54,6 +55,7 @@ mod tray;
 pub use junctions::junction_boxes;
 pub use legend::{Applied, Drawn, picture_legend};
 pub use marks::viewer_marks;
+pub use styles::effect_look;
 
 /// One card or frame as the painter reads it.
 type Node = DrawingNode<NodeFacts>;
@@ -97,7 +99,6 @@ fn definitions(palette: &palette::Palette) -> Vec<Definition> {
                         ink: *ink,
                     },
                     head,
-                    weight,
                     colour,
                 )));
             }
@@ -190,9 +191,7 @@ fn sequence_far_scale(picture: &SequencePicture) -> f64 {
 /// The one type scale of a picture's far cards.
 fn picture_far_scale(picture: &Picture) -> f64 {
     match picture {
-        Picture::Architecture(picture) => {
-            far_scale(picture, picture.whole.as_ref().unwrap_or(&picture.drawing))
-        }
+        Picture::Architecture(picture) => far_scale(picture, &picture.drawing),
         Picture::Sequence(picture) => sequence_far_scale(picture),
     }
 }
@@ -225,7 +224,7 @@ pub fn paint(request: &PaintRequest) -> Scene {
                         shapes: &parts.shapes,
                         palette,
                     });
-            let page_drawing = picture.whole.as_ref().unwrap_or(&picture.drawing);
+            let page_drawing = &picture.drawing;
             let vocabulary = architecture::Vocabulary {
                 appearances: &picture.appearances,
                 lines: &picture.lines,

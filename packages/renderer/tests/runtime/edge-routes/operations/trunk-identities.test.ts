@@ -29,7 +29,6 @@ test("Blocks keeps different kinds distinct from a caller to two parent members"
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "blocks",
 	});
 	expect(ambiguousTrunks(drawing, content)).toEqual([]);
 });
@@ -39,7 +38,7 @@ test("comparison context cannot merge the visible kinds of overview relationship
 		nodes: ["source", "one", "two"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: ["one", "two"].map((to) => ({ id: to, from: "source", to, kind: "call" })),
 	});
-	const request = { policy: defaultSemanticPolicy(), content, layout: "blocks" as const };
+	const request = { policy: defaultSemanticPolicy(), content };
 	await renderArchitecture(request);
 	const held = structuredClone(content);
 	held.edges[0]!.kind = "event";

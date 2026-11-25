@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 32000,
   "name": "Trace what a part reaches",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/reach.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#t49irDl0",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

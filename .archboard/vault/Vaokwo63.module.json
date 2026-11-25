@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#NT8m11DS",
+      "order": 1000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "nix build .#release, which runs it offline",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": ".github/workflows/release.yml",
+        "symbol": "build"
+      },
+      "to": "vKEsyHFk#rnYDP0Ma"
+    },
+    {
+      "id": "vKEsyHFk#XeoFkyZv",
+      "order": 2000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "install and run on Linux and macOS",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": ".github/workflows/release.yml",
+        "symbol": "smoke"
+      },
+      "to": "vKEsyHFk#A0Nn7Ejh"
+    }
+  ],
   "order": 5000,
   "name": "Release workflow",
   "kind": "job",
@@ -8,34 +38,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": ".github/workflows/release.yml"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#Vaokwo63",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "nix build .#release, which runs it offline",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": ".github/workflows/release.yml",
-        "symbol": "build"
-      },
-      "id": "vKEsyHFk#NT8m11DS",
-      "to": "vKEsyHFk#rnYDP0Ma"
-    },
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "install and run on Linux and macOS",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": ".github/workflows/release.yml",
-        "symbol": "smoke"
-      },
-      "id": "vKEsyHFk#XeoFkyZv",
-      "to": "vKEsyHFk#A0Nn7Ejh"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#Vaokwo63"
 }

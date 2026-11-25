@@ -5,7 +5,7 @@ import {
 	ArchitecturePortableBundleSchema,
 } from "#shared/schemas/model-portable.ts";
 import { mintId } from "#shared/rules/ids.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
+import { DEFAULT_VAULT_CONFIGURATION } from "#shared/schemas/semantic-policy.ts";
 import { modelRevision, readModelFiles } from "#runtime/store/model-files.ts";
 import {
 	archiveContext,
@@ -70,8 +70,10 @@ function initialBundle(before: Inputs, request: Request): Bundle {
 		),
 	);
 	if (!inputs.has(".archboard/config.yaml")) {
-		const { levels: _levels, ...policy } = DEFAULT_SEMANTIC_POLICY;
-		inputs.set(".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(policy)));
+		inputs.set(
+			".archboard/config.yaml",
+			Buffer.from(Bun.YAML.stringify(DEFAULT_VAULT_CONFIGURATION)),
+		);
 	}
 	return {
 		format: "archboard-model",

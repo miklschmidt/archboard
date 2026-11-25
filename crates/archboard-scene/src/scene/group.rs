@@ -93,6 +93,8 @@ pub enum Slot {
     PlannedFrame,
     /// The title an export draws above its picture.
     ExportTitle,
+    /// The status line above an export's picture that says what its lens did.
+    ExportStatus,
     /// The legend an export draws, and how it is laid out.
     ExportLegend {
         /// How the legend is laid out.
@@ -110,6 +112,8 @@ pub enum EntryKind {
     Kind,
     /// A relationship kind.
     Relationship,
+    /// What a line's dash says it does.
+    Effect,
     /// A line drawn with more emphasis.
     Emphasis,
     /// A line's traffic.

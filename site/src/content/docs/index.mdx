@@ -1,11 +1,11 @@
 ---
 title: Archboard docs
-description: Install Archboard, map a repository with your agent, and hold the map to the code in CI and on every pull request.
+description: Install Archboard, map a repository with your coding agent, and check the model against your code in CI and on pull requests.
 ---
 
 import LinkCards from "../../components/docs/LinkCards.astro";
 
-Archboard keeps a model of your architecture next to your code. Your agent writes the model through the CLI. Archboard draws it, checks it against the code, and shows how a change moves it.
+Archboard stores an architecture model in your repository alongside your code. Your coding agent updates the model through the CLI. Archboard renders diagrams from it, checks the model against the codebase, and shows how pull requests change the architecture.
 
 ## Start here
 
@@ -15,22 +15,22 @@ Archboard keeps a model of your architecture next to your code. Your agent write
 		{
 			path: "install",
 			title: "Install and set up",
-			text: "Install the CLI and run `archboard init` in a repository.",
+			text: "Install the CLI and initialize a vault with `archboard init`.",
 		},
 		{
 			path: "first-map",
-			title: "A first map in one session",
-			text: "A first map, three flows and a walkthrough for a newcomer.",
+			title: "Map your first repository",
+			text: "Create an initial architecture model, three flows, and an onboarding walkthrough.",
 		},
 		{
 			path: "gate",
-			title: "The check as a gate",
-			text: "Fail CI, a Git hook or an agent loop when the map and the code disagree.",
+			title: "Run checks as a gate",
+			text: "Fail CI, a Git hook, or an agent loop when the model and code disagree.",
 		},
 		{
 			path: "pull-requests",
 			title: "Architecture on pull requests",
-			text: "Findings on the diff, and the plan against the changed code.",
+			text: "Annotate findings on the diff and compare changed modules against the proposal.",
 		},
 	]}
 />
@@ -43,50 +43,50 @@ archboard init
 archboard check
 ```
 
-`init` makes the vault and installs the skills. Then ask your agent to map the repository. [A first map in one session](first-map/) gives the prompts.
+`archboard init` creates `.archboard/vault` and installs the agent skills. Next, ask your coding agent to map the repository. See [Map your first repository](first-map/) for example prompts.
 
 ## See it work
 
-The relay example is a parcel desk of four services. Its code and its model are in one repository, and its Kubernetes manifests are in another. Clone it to run the gate on your machine, or read its pull requests:
+The relay example is a parcel-handling system with four services. Its application code and architecture model live in one repository, and its Kubernetes manifests live in another. Clone it to run checks locally, or inspect two example pull requests:
 
 <LinkCards
 	cards={[
 		{
 			path: "https://github.com/miklschmidt/archboard-relay-example/pull/1",
-			title: "A change with no plan",
-			text: "Intake calls Billing. The check fails, with an annotation on the line.",
+			title: "Change without a plan",
+			text: "Intake calls Billing with no matching relationship in the model. The check fails and annotates the line in the diff.",
 		},
 		{
 			path: "https://github.com/miklschmidt/archboard-relay-example/pull/2",
-			title: "The same change with a plan",
-			text: "The comment shows the proposal, its changes and the footprint.",
+			title: "Same change with a plan",
+			text: "The pull request comment summarizes the proposal, its model changes, and the code footprint.",
 		},
 	]}
 />
 
-## Look something up
+## Reference
 
 <LinkCards
 	cards={[
 		{
 			path: "reference/cli",
 			title: "CLI reference",
-			text: "Every command, its options, its exit codes and its examples.",
+			text: "Commands, options, exit codes, and usage examples.",
 		},
 		{
 			path: "reference/findings",
 			title: "Check findings",
-			text: "What each finding code means, and how to fix it.",
+			text: "Finding codes, severities, and how to resolve them.",
 		},
 		{
 			path: "reference/schemas",
 			title: "Schemas",
-			text: "The JSON that the commands read and write.",
+			text: "JSON Schemas for vault files and CLI write payloads.",
 		},
 		{
 			path: "reference/actions",
 			title: "GitHub Actions",
-			text: "Every input and output of the `check` and `pull-request` Actions.",
+			text: "Inputs and outputs for the `check` and `pull-request` Actions.",
 		},
 	]}
 />

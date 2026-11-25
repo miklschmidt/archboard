@@ -223,7 +223,7 @@ describe("a group shows as a tag, and a card's face stays neutral", () => {
 		// The line is drawn at its line strength: the kind's colour, weaker.
 		const rose = hueOf(themeColor("light", "--semantic-rose"));
 		expect(Math.abs(hueOf(lineStroke(edge)) - rose)).toBeLessThan(6);
-		expect(edge).toContain('stroke-dasharray="1.5 3.5"');
+		expect(edge).toContain('stroke-dasharray="0.1 4.5"');
 		expect(edge).toContain('data-arrowhead="open"');
 		expect(hero.svg).not.toContain("<animateMotion");
 		expect(lineStroke(groupOf(paintedIn(hero.svg), "edge", "e")!.markup)).toBe(lineStroke(edge));

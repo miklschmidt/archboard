@@ -25,7 +25,7 @@ reader invariants beside it. Fit is the scale at which the whole drawing shows
 in the pane. The scorecard in CONTEXT.md then gave fit the same weight as
 crossings and bends. The engines followed.
 
-Track's score multiplies fit into the cost of its crossings, so a better fit can
+The former Track engine ([ADR 0096](0096-track-is-replaced-by-lanes.md)) used a score that multiplies fit into the cost of its crossings, so a better fit can
 buy a crossing. Blocks chooses its placements and joins by fit. Picture reviews counted a
 smaller fit as a regression.
 

@@ -20,6 +20,11 @@ boards remain authoritative until explicit migration, and a canonical read
 refuses a vault that still contains them. No other canonical failure selects
 legacy content.
 
+[ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) keeps
+the first rule for the module format from before effects: no read converts it,
+and only an explicit upgrade installs the current format. A live vault in that
+format still reads, read-only, because its modules are canonical already.
+
 A manifest identifies the model and its current state. Each module owns its
 definition and outgoing relationships. Incoming relationships derive from those
 definitions. Containment forms a forest, while dependencies can cycle.

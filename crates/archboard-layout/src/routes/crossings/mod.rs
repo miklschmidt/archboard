@@ -9,6 +9,8 @@
 //! cluster (`clusters`): its crossers hop it one each where every one may and
 //! every hop fits, else its line rises over all of it under one crest, else
 //! over single crossings of it where it is the upper line at the rest. A
+//! cluster whose crossers are the strands of one cable is hopped as one ribbon:
+//! its line rises over all of it under one crest. A
 //! crossing no plan settles still hops where a hop fits, and else gets the
 //! least crowded arc that stands wherever a line runs straight past both of a
 //! hop's feet (`forced`): its own hop, the hops beside it grown into one
@@ -35,10 +37,11 @@ use super::drawn_lines::{
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passage_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
 
+mod cables;
 mod forced;
 
 /// The straight line a rising line keeps past each foot: a bend's room, so a
@@ -80,6 +83,8 @@ struct Settling<'a> {
     scene: HopScene<'a>,
     /// How each line is drawn, by relationship id.
     lines: &'a BTreeMap<String, LineLook>,
+    /// Each strand that rides another line's route, by id.
+    riders: &'a BTreeMap<String, String>,
     crossings: Vec<DrawnCrossing>,
     clusters: Clusters,
     /// The rise each standing hop stands for, beside its hop in the scene's.
@@ -227,10 +232,11 @@ impl Settling<'_> {
     }
 
     /// How a line stands when choosing which rises: its emphasis, then whether
-    /// it is drawn solid.
+    /// it is drawn as one solid line.
     fn standing_of(&self, line: &Line) -> [f64; 2] {
         let edge = &self.edges()[self.scene.runs[line.drawer].edge_index].edge;
-        let solid = look_of(self.lines, &edge.id).dash == Dash::Solid;
+        let look = look_of(self.lines, &edge.id);
+        let solid = look.dash == Dash::Solid;
         [weight(edge.emphasis), if solid { 1.0 } else { 0.0 }]
     }
 
@@ -286,7 +292,7 @@ impl Settling<'_> {
         let runs = &self.scene.runs;
         rise.crossings.iter().all(|&crossing| {
             let beneath = &runs[self.sides(rise.cluster, crossing).1.drawer];
-            passes_beneath(runs, beneath, self.crossings[crossing].point, 1.0)
+            passage_beneath(runs, beneath, self.crossings[crossing].point, 1.0).is_clear()
         })
     }
 
@@ -314,6 +320,22 @@ impl Settling<'_> {
         self.plan_of(0.0, FULL_ROOM, rises)
     }
 
+    /// Whether a cluster's crossers ride one route and are hopped as one ribbon.
+    fn ribbon(&self, cluster: usize) -> bool {
+        let mut lines = (self.cluster(cluster).crossings.iter()).map(|&crossing| {
+            let crosser = self.sides(cluster, crossing).1;
+            &self.edges()[self.scene.runs[crosser.drawer].edge_index]
+                .edge
+                .id
+        });
+        let Some(first) = lines.next() else {
+            return false;
+        };
+        let leader = self.riders.get(first).unwrap_or(first);
+        lines.clone().any(|id| id != first)
+            && lines.all(|id| self.riders.get(id).unwrap_or(id) == leader)
+    }
+
     /// The plans one cluster offers, by stage: its crossers hopping it one
     /// each with a bend's room, or, for a lone crossing no other line crosses
     /// among others, its line hopping it; then its line rising over all of it
@@ -330,7 +352,7 @@ impl Settling<'_> {
                 .len()
                 == 1;
         let mut plans = Vec::new();
-        if several {
+        if several && !self.ribbon(cluster) {
             plans.extend(self.one_each(cluster));
         }
         if alone {
@@ -386,7 +408,7 @@ impl Settling<'_> {
         let run = &runs[self.cluster(cluster).run];
         let beneath = &runs[self.sides(cluster, crossing).1.drawer];
         let point = self.crossings[crossing].point;
-        if !passes_beneath(runs, beneath, point, bulge) {
+        if !passage_beneath(runs, beneath, point, bulge).is_clear() {
             return false;
         }
         let place = at_on(run, &self.crossings[crossing]);
@@ -521,6 +543,7 @@ fn by_key(a: &Plan, b: &Plan) -> f64 {
 pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
+    riders: &BTreeMap<String, String>,
 ) -> Bridged<EdgeFacts> {
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
@@ -535,6 +558,7 @@ pub(crate) fn bridge_unfolded(
     let mut state = Settling {
         scene: HopScene::new(drawing, runs, lines),
         lines,
+        riders,
         settled: vec![false; crossings.len()],
         risen: vec![None; crossings.len()],
         crossings,
@@ -543,6 +567,7 @@ pub(crate) fn bridge_unfolded(
         cuts: Vec::new(),
     };
     state.settle();
+    state.align_cables();
     let (bridges, replacements) = state.finish();
     Bridged {
         edges: edges
@@ -561,6 +586,7 @@ pub(crate) fn bridge_unfolded(
 pub(crate) fn bridge_crossings(
     settled: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
+    riders: &BTreeMap<String, String>,
 ) -> Bridged<EdgeFacts> {
-    bridge_unfolded(&unfold_crossings(settled), lines)
+    bridge_unfolded(&unfold_crossings(settled), lines, riders)
 }

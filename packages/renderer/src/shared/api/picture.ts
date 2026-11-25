@@ -1,7 +1,10 @@
 // What a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks it draws with, the warnings on code, and what a render asks and answers. Safe for the browser.
 export {
 	cornerWarning,
+	effectKey,
+	effectSampleSize,
 	HEAD_LENGTH,
+	lineDash,
 	lineInk,
 	neutralPulse,
 	OPEN_ARM,
@@ -10,6 +13,7 @@ export {
 	standingMark,
 } from "#shared/render/rules/marks.ts";
 export { lineMarks, markCounts } from "#shared/render/rules/key-marks.ts";
-export { scopedDrawingKey } from "#shared/render/rules/drawing-key.ts";
+export { drawingKey } from "#shared/render/rules/drawing-key.ts";
 export type { LineMark, LineMarkEntry } from "#shared/render/rules/key-marks.ts";
+export type { EffectKeyEntry } from "#shared/render/rules/marks.ts";
 export type { SubjectStanding } from "#shared/protocol/render-request.ts";

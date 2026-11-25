@@ -107,7 +107,6 @@ test("an SVG drawn for a file reads back as its recipe, and its picture digest i
 		view: { id: "intake" },
 		comparison: "on",
 		theme: "light",
-		layout: null,
 		title: null,
 		legend: { layout: "vertical", alone: false },
 	});

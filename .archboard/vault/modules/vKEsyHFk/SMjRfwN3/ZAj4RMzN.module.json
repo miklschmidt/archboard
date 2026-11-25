@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 15000,
   "name": "Walkthrough recorder",
   "kind": "module",
@@ -11,10 +12,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/runtime/recorder"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
   "parent": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
-  "outgoing": [],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

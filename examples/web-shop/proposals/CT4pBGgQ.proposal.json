@@ -15,8 +15,8 @@
   "schemaVersion": 1,
   "lifecycle": "draft",
   "predecessor": "ud0cQDB9",
-  "predecessorRevision": "e9a83b2c3350728eb5011ed1b72b35812889ff64d7bc012e1e7739774d995d0d",
-  "baseline": "e55d70a66863a71d448db7234029412092889738",
+  "predecessorRevision": "a2786d993e8c252c0d5b5270d07597b6e9a097199d5ca48a9e354eeb693fcf7b",
+  "baseline": "2f61d42786f14990792d689d85fba73d16879faf",
   "changes": [
     {
       "type": "remove",
@@ -33,6 +33,7 @@
       "value": {
         "order": 6000,
         "kind": "queue",
+        "effect": "mutation",
         "label": "publish views and basket adds",
         "emphasis": "normal",
         "traffic": {
@@ -62,7 +63,8 @@
       "kind": "relationship",
       "value": {
         "order": 5000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "query",
         "label": "top 8 for a product",
         "emphasis": "hero",
         "traffic": {
@@ -89,7 +91,7 @@
         "name": "Shopper events",
         "kind": "queue",
         "responsibility": "Every product view and basket add, as it happens",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#8n40EjCz"
       }
     },
@@ -107,6 +109,7 @@
       "value": {
         "order": 7000,
         "kind": "queue",
+        "effect": "mutation",
         "label": "deliver each event",
         "emphasis": "normal",
         "traffic": {
@@ -133,7 +136,7 @@
         "name": "Live scorer",
         "kind": "job",
         "responsibility": "Scores two products higher each time one shopper looks at both",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#hLt6rwYN"
       }
     },
@@ -150,7 +153,8 @@
       "kind": "relationship",
       "value": {
         "order": 8000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "mutation",
         "label": "raise pair scores",
         "emphasis": "normal",
         "traffic": {
@@ -177,7 +181,7 @@
         "name": "Pair scores",
         "kind": "cache",
         "responsibility": "A score for each pair of products, fading over 7 days",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#nuT2H9fQ"
       }
     },

@@ -275,8 +275,9 @@ function hides(svg: string, mask: string | undefined, point: { x: number; y: num
 	return lines || boxes;
 }
 
-// Graphviz, Track and Blocks: routes of one kind on one trunk each drew their
-// own stroke, dash pattern and arrowhead over it, a doubled or solid line.
+// Routes of one kind on one trunk each drew their own stroke, dash pattern and
+// arrowhead over it, a doubled or solid line. Lanes joins these lines on one
+// trunk; Blocks brings them in from apart.
 test("routes sharing a trunk draw its ink once: one line, one dash pattern, one arrowhead", async () => {
 	const content = orderedFixture({
 		nodes: ["a", "b", "c", "t"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
@@ -286,7 +287,7 @@ test("routes sharing a trunk draw its ink once: one line, one dash pattern, one 
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "track",
+		layout: "lanes",
 	});
 	const drawn = routes(svg);
 	const ends = drawn.map((route) => endsOf(route.paths[0]!).slice(-2));
@@ -349,7 +350,8 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 				stream: { name: "Stream", dash, arrowhead: "open" as const },
 			},
 		};
-		const { svg } = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+		// Lanes crosses the stream lines over the calls where Blocks draws as many hops either way.
+		const { svg } = await renderArchitecture({ content, theme: "light", policy, layout: "lanes" });
 		const pieces = new Map(
 			[...svg.matchAll(/<mask id="([^"]+)"[^>]*>([\s\S]*?)<\/mask>/gu)].map((match) => [
 				match[1]!,
@@ -389,7 +391,6 @@ test("traffic on a joined line runs on past the junction to its card", async () 
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "track",
 	});
 	const layers = [...svg.matchAll(/data-traffic="([^"]+)"/gu)];
 	expect(layers.map((layer) => layer[1])).toEqual(["bt"]);

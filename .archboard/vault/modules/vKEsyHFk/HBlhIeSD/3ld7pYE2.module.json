@@ -1,4 +1,85 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#D62cZNEq",
+      "order": 39000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the phase it is in",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#wzL4gP8d",
+      "order": 41000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "how many sockets",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "admittedClientCount"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "id": "vKEsyHFk#2mo2WPJK",
+      "order": 90000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "records unhandled route errors",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#EbMc8PH2"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
+      "order": 120000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "whether writes are admitted, and how many run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "mutationAdmission.accepting"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    },
+    {
+      "id": "vKEsyHFk#hhuZHtcv",
+      "order": 121000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "whether source and bundle are current",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "sourceState"
+      },
+      "to": "vKEsyHFk#apyQZjM7"
+    },
+    {
+      "id": "vKEsyHFk#k8KGwI7m",
+      "order": 122000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "the version and the mode that health names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 7000,
   "name": "Service routes",
   "kind": "route",
@@ -8,7 +89,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#3ld7pYE2",
   "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
   "documents": [
@@ -30,81 +111,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "the phase it is in",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "serverPhase"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#D62cZNEq",
-      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
-    },
-    {
-      "order": 41000,
-      "kind": "call",
-      "label": "how many sockets",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "admittedClientCount"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#wzL4gP8d",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "records unhandled route errors",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#2mo2WPJK",
-      "to": "vKEsyHFk#EbMc8PH2"
-    },
-    {
-      "order": 120000,
-      "kind": "call",
-      "label": "whether writes are admitted, and how many run",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "mutationAdmission.accepting"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
-      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
-    },
-    {
-      "order": 121000,
-      "kind": "call",
-      "label": "whether source and bundle are current",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "sourceState"
-      },
-      "id": "vKEsyHFk#hhuZHtcv",
-      "to": "vKEsyHFk#apyQZjM7"
-    },
-    {
-      "order": 122000,
-      "kind": "dependency",
-      "label": "the version and the mode that health names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#k8KGwI7m",
-      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

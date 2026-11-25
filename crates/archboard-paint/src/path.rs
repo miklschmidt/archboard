@@ -2,7 +2,9 @@
 
 use archboard_scene::geometry::{Point, Rect, Segment};
 use archboard_scene::scene::{Cap, Geometry, Join, PathStep, Stroke};
-use kurbo::{Affine, BezPath, ParamCurve as _, Shape as _, Vec2};
+use std::borrow::Cow;
+
+use kurbo::{Affine, BezPath, ParamCurve as _, ParamCurveArclen as _, PathSeg, Shape as _, Vec2};
 
 /// How closely a curve stands in for a circle or a rounded corner.
 const TOLERANCE: f64 = 0.05;
@@ -208,14 +210,69 @@ pub(crate) fn placed(x: f64, y: f64, scale: Option<f64>) -> Affine {
     Affine::translate((x, y)) * Affine::scale(scale.unwrap_or(1.0))
 }
 
+/// How exactly a trim measures along a path, in the picture's units.
+const TRIM_ACCURACY: f64 = 0.01;
+
+/// A path with a length taken off its start and its end, along its ink. A
+/// path with no length left is empty.
+pub(crate) fn trimmed(path: &BezPath, start: f64, end: f64) -> Cow<'_, BezPath> {
+    if start <= 0.0 && end <= 0.0 {
+        return Cow::Borrowed(path);
+    }
+    let mut segments: Vec<PathSeg> = path.segments().collect();
+    let lengths: Vec<f64> = segments
+        .iter()
+        .map(|seg| seg.arclen(TRIM_ACCURACY))
+        .collect();
+    if lengths.iter().sum::<f64>() <= start + end {
+        return Cow::Owned(BezPath::new());
+    }
+    let mut left = end;
+    while left > 0.0 {
+        let Some(last) = segments.pop() else { break };
+        let length = lengths[segments.len()];
+        if length > left {
+            let t = last.inv_arclen(length - left, TRIM_ACCURACY);
+            segments.push(last.subsegment(0.0..t));
+            break;
+        }
+        left -= length;
+    }
+    let mut left = start;
+    let mut index = 0;
+    while left > 0.0 && index < segments.len() {
+        let length = segments[index].arclen(TRIM_ACCURACY);
+        if length > left {
+            let t = segments[index].inv_arclen(left, TRIM_ACCURACY);
+            segments[index] = segments[index].subsegment(t..1.0);
+            break;
+        }
+        left -= length;
+        index += 1;
+    }
+    Cow::Owned(BezPath::from_path_segments(
+        segments.into_iter().skip(index),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{end_of, outline_of, path_of, stroke_of};
+    use super::{end_of, outline_of, path_of, stroke_of, trimmed};
     use archboard_scene::geometry::{Point, Rect};
     use archboard_scene::scene::{Cap, Geometry, PathStep, Stroke, Token};
 
     fn at(x: f64, y: f64) -> Point {
         Point { x, y }
+    }
+
+    #[test]
+    fn a_short_body_gives_way_when_its_marks_take_all_its_room() {
+        let body = path_of(&[
+            PathStep::Move { to: at(0.0, 0.0) },
+            PathStep::Line { to: at(10.0, 0.0) },
+        ]);
+        assert!(trimmed(&body, 3.0, 8.0).is_empty());
+        assert!(!trimmed(&body, 3.0, 5.0).is_empty());
     }
 
     #[test]

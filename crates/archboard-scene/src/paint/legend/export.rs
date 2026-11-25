@@ -1,6 +1,6 @@
 //! What a picture exported to stand alone carries around its drawing: a title
-//! above it (TASK-467) and a legend under it or beside it, or the legend alone
-//! (TASK-468). The drawing is moved down whole and the page grows; asked for
+//! above it (TASK-467), the status line of its lens under the title, and a
+//! legend under it or beside it, or the legend alone (TASK-468). The drawing is moved down whole and the page grows; asked for
 //! nothing, the page is the page that was painted.
 //!
 //! The legend lists what the page's key lists (`archboard_svg::appearances`), read
@@ -20,7 +20,7 @@ use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
-use crate::request::{ExportFrame, LegendLayout, Standing};
+use crate::request::{ExportFrame, LeftOut, LegendLayout, Standing};
 use crate::scene::{Atlas, Colour, Group, Item, Role, Slot, Text, Transform};
 use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 
@@ -31,6 +31,7 @@ const LIST_GAP: f64 = 40.0;
 const WORD_SIZE: f64 = 12.0;
 const TITLE_SIZE: f64 = 18.0;
 const TITLE_LINE: f64 = 24.0;
+const NOTE_LINE: f64 = 20.0;
 
 /// How wide an entry is: its symbol, its words and its count, rounded.
 fn width_of(entry: &Entry) -> f64 {
@@ -243,6 +244,50 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
     }
 }
 
+/// What the status line above a picture says of its lens.
+fn status_words(left_out: &LeftOut) -> String {
+    if left_out.showing_all == Some(true) {
+        return format!(
+            "{} has no lines here · Showing all relationships",
+            left_out.lens
+        );
+    }
+    if left_out.count == 0 {
+        return left_out.lens.clone();
+    }
+    let lines = if left_out.count == 1 { "line" } else { "lines" };
+    format!("{} · {} {lines} left out", left_out.lens, left_out.count)
+}
+
+/// A page moved down under the status line that says what its lens did,
+/// made wide enough for the line.
+fn under_status(page: PaintedPage, left_out: &LeftOut, palette: &Palette) -> PaintedPage {
+    let words = status_words(left_out);
+    let line = caption(
+        Point {
+            x: DIAGRAM_MARGIN,
+            y: DIAGRAM_MARGIN + NOTE_LINE / 2.0,
+        },
+        CARD_NOTE_FONT,
+        WORD_SIZE,
+        &palette.muted,
+        &words,
+    );
+    let band = DIAGRAM_MARGIN + NOTE_LINE;
+    PaintedPage {
+        body: lines(vec![
+            grouped(Group::new(Role::Slot(Slot::ExportStatus), line)),
+            grouped(Group::new(Role::Inset, page.body).moved(Transform::translate(0.0, band))),
+        ]),
+        width: js::js_max(
+            page.width,
+            with_diagram_margins(measure::width(&words, CARD_NOTE_FONT, WORD_SIZE).ceil()),
+        ),
+        height: band + page.height,
+        atlas: moved_atlas(&page.atlas, 0.0, band),
+    }
+}
+
 /// Whether a key is an array index, which an ECMAScript object lists before
 /// its other keys, in ascending order.
 fn array_index(key: &str) -> Option<u32> {
@@ -277,7 +322,8 @@ pub(in crate::paint) fn placed_on(atlas: &Atlas) -> Vec<String> {
 }
 
 /// A page as an export carries it: with its legend under it or beside it, or
-/// its legend alone, under its title when it has one.
+/// its legend alone, under the status line of its lens when it has one, under
+/// its title when it has one.
 pub(in crate::paint) fn framed_for_export(
     page: PaintedPage,
     frame: Option<&ExportFrame>,
@@ -288,31 +334,36 @@ pub(in crate::paint) fn framed_for_export(
     let Some(frame) = frame else {
         return page;
     };
-    let keyed = match frame.legend {
-        None => page,
-        Some(layout) => {
-            let marks = if plain {
-                Vec::new()
-            } else {
-                mark_counts(standing, &placed.iter().map(String::as_str).collect())
-            };
-            let legend = legend_of(&page.body, &marks, layout, page.width);
-            let shown = if frame.legend_only == Some(true) {
-                PaintedPage {
-                    body: Items::new(),
-                    width: 0.0,
-                    height: 0.0,
-                    atlas: Atlas::default(),
-                }
-            } else {
-                page
-            };
-            with_legend(shown, &legend, palette)
+    let legend = frame.legend.map(|layout| {
+        let marks = if plain {
+            Vec::new()
+        } else {
+            mark_counts(standing, &placed.iter().map(String::as_str).collect())
+        };
+        legend_of(&page.body, &marks, layout, page.width)
+    });
+    let alone = legend.is_some() && frame.legend_only == Some(true);
+    let shown = if alone {
+        PaintedPage {
+            body: Items::new(),
+            width: 0.0,
+            height: 0.0,
+            atlas: Atlas::default(),
         }
+    } else {
+        page
+    };
+    let keyed = match &legend {
+        None => shown,
+        Some(legend) => with_legend(shown, legend, palette),
+    };
+    let stated = match &frame.left_out {
+        Some(left_out) if !alone => under_status(keyed, left_out, palette),
+        _ => keyed,
     };
     match &frame.title {
-        None => keyed,
-        Some(title) => under_title(keyed, title, palette),
+        None => stated,
+        Some(title) => under_title(stated, title, palette),
     }
 }
 

@@ -269,3 +269,74 @@ fn a_trunk_branch_tries_its_narrow_plate_before_waiting_for_room() {
         paths
     );
 }
+
+/// A straight cable holds its plate only with a mark's straight run clear at each end: 40 of plate
+/// and 23 at each end need 86 of the 80 a short cable has.
+#[test]
+fn a_cables_plate_needs_room_between_its_marks() {
+    let graph = serde_json::from_value(json!({
+        "id": "root", "children": [{"id": "a"}, {"id": "b"}], "edges": [{
+            "id": "cable", "sources": ["a"], "targets": ["b"],
+            "layoutOptions": {"archboard.cable": "one;two"},
+            "labels": [{"width": 80, "height": 40}]
+        }]
+    }))
+    .unwrap();
+    let model = Model::new(&graph).unwrap();
+    let mut shape = Shape::new(Placed {
+        width: 400.0,
+        height: 400.0,
+        cards: vec![],
+        frames: vec![],
+        regions: vec![],
+        edges: vec![],
+        titles: vec![],
+        routed: None,
+    });
+    std::rc::Rc::make_mut(&mut shape.scopes).insert(
+        0,
+        ScopePlacement {
+            bounds: Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 400.0,
+                height: 400.0,
+            },
+        },
+    );
+    let slots = Slots::new(&model, &shape);
+    let slot = |to| {
+        slots.slot(
+            &model,
+            0,
+            &[Point { x: 100.0, y: 100.0 }, Point { x: 100.0, y: to }],
+        )
+    };
+    assert!(slot(180.0).is_none());
+    let (label, _) = slot(250.0).expect("the plate fits between the cable's marks");
+    assert_eq!(label.y, 155.0);
+}
+
+#[test]
+fn a_cables_words_do_not_cover_a_strand_on_its_other_end_run() {
+    let graph = serde_json::from_value(json!({
+        "id": "root", "children": [{"id": "a"}, {"id": "b"}], "edges": [{
+            "id": "cable", "sources": ["a"], "targets": ["b"],
+            "layoutOptions": {"archboard.cable": "one;two"},
+            "labels": [{"width": 100, "height": 24}]
+        }]
+    }))
+    .unwrap();
+    let model = Model::new(&graph).unwrap();
+    for (end, fits) in [(156.0, false), (160.0, true)] {
+        let shape = drawing(&[(
+            "cable",
+            &[(100.0, 100.0), (100.0, 224.0), (end, 224.0), (end, 160.0)],
+        )]);
+        let slots = Slots::new(&model, &shape);
+        assert_eq!(
+            slots.beside(&model, 0, &shape.routes[0].points).is_some(),
+            fits
+        );
+    }
+}

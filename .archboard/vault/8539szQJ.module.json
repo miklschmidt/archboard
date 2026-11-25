@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#PatiT3PG",
+      "order": 130000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the binding schema of a module",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
+        "symbol": "codeBindingSchema"
+      },
+      "to": "vKEsyHFk#NVlMWCWO"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",
+      "order": 186000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "FlowCollectionSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
+        "symbol": "ArchitectureModelSchema"
+      },
+      "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
+    }
+  ],
   "order": 906000,
   "name": "Model contract",
   "kind": "module",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#8539szQJ",
-  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
-  "outgoing": [
-    {
-      "order": 130000,
-      "kind": "dependency",
-      "label": "the binding schema of a module",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
-        "symbol": "codeBindingSchema"
-      },
-      "id": "vKEsyHFk#PatiT3PG",
-      "to": "vKEsyHFk#NVlMWCWO"
-    },
-    {
-      "order": 186000,
-      "kind": "call",
-      "label": "FlowCollectionSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
-        "symbol": "ArchitectureModelSchema"
-      },
-      "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",
-      "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
-    }
-  ]
+  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
 }

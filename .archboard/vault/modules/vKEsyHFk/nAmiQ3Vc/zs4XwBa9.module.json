@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 3000,
   "name": "Global flag readers",
   "kind": "function",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing/rules/global-flags.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
-  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
-  "outgoing": []
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
 }

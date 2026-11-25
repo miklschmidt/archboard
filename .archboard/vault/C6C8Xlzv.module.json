@@ -1,19 +1,10 @@
 {
-  "order": 909000,
-  "name": "Recorder",
-  "kind": "module",
-  "responsibility": "Runs one recording of a walkthrough: voice, steps, capture and talk",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#C6C8Xlzv",
-  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "outgoing": [
     {
+      "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
       "order": 26000,
       "kind": "event",
+      "effect": "mutation",
       "label": "voice as a recording in its language; each step shown",
       "description": "The page asks the server's agent for voice narrating this walkthrough as a recording in the language it was opened with, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand. Only a recording carries a language: the voice is told to speak only that language, whatever language a step is written in.",
       "emphasis": "normal",
@@ -22,12 +13,13 @@
         "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "WalkthroughRecorder.start"
       },
-      "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
       "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "Talk as a recording, in its own tab session",
       "emphasis": "normal",
       "anchor": {
@@ -35,12 +27,13 @@
         "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "talk"
       },
-      "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
       "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
       "order": 30000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "mutation",
       "label": "the voice's stream; each step, line and version shown",
       "emphasis": "normal",
       "anchor": {
@@ -48,12 +41,13 @@
         "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "TalkCapture"
       },
-      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
       "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
       "order": 31000,
-      "kind": "data",
+      "kind": "sync",
+      "effect": "compute",
       "label": "the step to show",
       "emphasis": "normal",
       "anchor": {
@@ -61,12 +55,13 @@
         "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "recordedStep"
       },
-      "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
       "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
       "order": 40000,
-      "kind": "event",
+      "kind": "sync",
+      "effect": "mutation",
       "label": "each change of the voice's transcript",
       "emphasis": "normal",
       "anchor": {
@@ -74,8 +69,18 @@
         "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "subscribe"
       },
-      "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
     }
-  ]
+  ],
+  "order": 909000,
+  "name": "Recorder",
+  "kind": "module",
+  "responsibility": "Runs one recording of a walkthrough: voice, steps, capture and talk",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#C6C8Xlzv",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt"
 }

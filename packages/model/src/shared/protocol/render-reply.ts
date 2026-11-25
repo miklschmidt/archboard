@@ -44,12 +44,20 @@ type LegendLayout = z.infer<typeof LegendLayoutSchema>;
 
 /**
  * Which engine lays an architecture out, behind one seam (TASK-348, ADR 0040).
- * `track` routes every relationship on an assigned track in the channels
- * between ranks (TASK-349); `blocks` packs each container as a block and
- * routes shared trunks between them (TASK-351).
+ * `blocks` packs each container as a block and routes shared trunks between
+ * them (TASK-351); `lanes` places the same way and routes every line on a lane
+ * (ADR 0096).
  */
-const LayoutEngineSchema = z.enum(["track", "blocks"]);
+const LayoutEngineSchema = z.enum(["blocks", "lanes"]);
 type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
+/**
+ * A saved engine name: what a browser, a recipe or a talk kept. Lanes replaced Track
+ * (ADR 0096), so the saved name `track` reads as `lanes`. Any other unknown name is refused.
+ */
+const SavedLayoutEngineSchema = z.preprocess(
+	(saved) => (saved === "track" ? "lanes" : saved),
+	LayoutEngineSchema,
+);
 /** The engine a render uses when it names none. */
 const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "blocks";
 
@@ -238,6 +246,10 @@ const AppliedAppearanceSchema = z.object({
 	lineColor: z.string(),
 	dash: z.string(),
 	arrowhead: z.string(),
+	/** Whether a line joined several kinds as two rails: only a renderer from before lines joined one kind sets it. */
+	rails: z.boolean().optional(),
+	/** What a line's dash says it does, as the effect key names it; empty where the dash is its kind's own. */
+	effect: z.string(),
 });
 
 /**
@@ -312,6 +324,7 @@ export {
 	type LegendLayout,
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
+	SavedLayoutEngineSchema,
 	type LayoutEngineName,
 	type DiagramBox,
 	DiagramAtlasSchema,
@@ -349,6 +362,14 @@ export function diagramThemeSchema(): typeof DiagramThemeSchema {
  */
 export function layoutEngineSchema(): typeof LayoutEngineSchema {
 	return LayoutEngineSchema;
+}
+
+/**
+ * The schema `SavedLayoutEngineSchema`, for callers that read an engine a browser, a recipe or a talk kept.
+ * @returns The schema.
+ */
+export function savedLayoutEngineSchema(): typeof SavedLayoutEngineSchema {
+	return SavedLayoutEngineSchema;
 }
 
 /**

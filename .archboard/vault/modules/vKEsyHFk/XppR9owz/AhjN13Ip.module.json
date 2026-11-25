@@ -1,4 +1,32 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#YyXXHRVN",
+      "order": 101000,
+      "kind": "async",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#DugcdHTp",
+      "order": 102000,
+      "kind": "sync",
+      "effect": "query",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
+        "symbol": "statedInvocation"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    }
+  ],
   "order": 59000,
   "name": "Migration client",
   "kind": "module",
@@ -7,7 +35,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#AhjN13Ip",
   "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
   "formerNames": [
@@ -32,32 +60,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 101000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#YyXXHRVN",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 102000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
-        "symbol": "statedInvocation"
-      },
-      "id": "vKEsyHFk/XppR9owz#DugcdHTp",
-      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     }
   ]
 }

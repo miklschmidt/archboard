@@ -22,12 +22,17 @@
 // Search parameters rather than path segments because the Archboard server serves
 // the page at `/` alone, so a path would answer 404 on every direct load.
 
+import type { ModelFilters } from "@archboard/model/content";
+import { lineEffectSchema } from "@archboard/model/policy";
 import {
 	settledAddress,
 	type AddressedPane,
 	type ModelAddress,
 	type WorkspaceAddress,
 } from "#ui/panes/reading-routing/rules/address.ts";
+
+/** An effect a reader can hide. */
+type HiddenEffect = NonNullable<ModelFilters["hideEffects"]>[number];
 
 /** The search parameters this application owns, as they appear in the URL. */
 type WorkspaceSearch = Readonly<Record<string, string>>;
@@ -150,7 +155,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|ref|focus|hideKinds|expand|showGroups|grammar|flow|fileRepo|file|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|ref|focus|lens|hideKinds|hideEffects|expand|showGroups|grammar|flow|fileRepo|file|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -219,10 +224,12 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		subject: search[`subject${paneId}`],
 		grammar: search[`grammar${paneId}`],
 		flow: search[`flow${paneId}`],
+		lens: search[`lens${paneId}`],
 		file: search[`file${paneId}`],
 		fileRepo: search[`fileRepo${paneId}`],
 		focus: searchList(search[`focus${paneId}`]),
 		hideKinds: searchList(search[`hideKinds${paneId}`]),
+		hideEffects: searchList(search[`hideEffects${paneId}`]),
 		expand: searchList(search[`expand${paneId}`]),
 	};
 }
@@ -302,6 +309,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 					"subject",
 					"grammar",
 					"flow",
+					"lens",
 					"file",
 					"fileRepo",
 				] as const
@@ -311,7 +319,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 			}),
 		),
 		...Object.fromEntries(
-			(["focus", "hideKinds", "expand"] as const).flatMap((field) => {
+			(["focus", "hideKinds", "hideEffects", "expand"] as const).flatMap((field) => {
 				const value = model[field];
 				// An empty list narrows nothing, and `focus=` would read back as one empty identity.
 				return value === undefined || value.length === 0
@@ -357,8 +365,34 @@ function searchOfRepository(
 	return { ...Object.fromEntries(kept), [repoParam(paneId)]: repository };
 }
 
+/**
+ * The effects an address hides, leaving out a word that names no effect.
+ * @param value The validated search value, or absence.
+ * @returns The effects.
+ */
+function effectList(value: string | undefined): HiddenEffect[] {
+	return (value?.split(",") ?? []).flatMap((word) => {
+		const parsed = lineEffectSchema().safeParse(word);
+		return parsed.success ? [parsed.data] : [];
+	});
+}
+
+/**
+ * Reading fields serialize without making missing values into names.
+ * @param value A field of the canonical address.
+ * @returns Its search value, or absence.
+ */
+function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefined {
+	if (value === null || value === undefined) return undefined;
+	if (typeof value === "string") return value;
+	// An empty list narrows nothing, and `focus=` would read back as one empty identity.
+	return value.length === 0 ? undefined : value.join(",");
+}
+
 export {
 	addressFromSearch,
+	effectList,
+	searchValue,
 	parseWorkspaceSearchString,
 	searchFromAddress,
 	searchOfRepository,

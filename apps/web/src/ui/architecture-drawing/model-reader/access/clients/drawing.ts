@@ -1,6 +1,6 @@
 import type { LayoutEngineName } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
-import { scopedDrawingKey } from "@archboard/renderer/picture";
+import { drawingKey } from "@archboard/renderer/picture";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { projectModel, Model } from "@archboard/model/content";
 import { rendererBuild } from "virtual:archboard-renderer";
@@ -34,13 +34,12 @@ function modelDrawingQuery(
 		grammar,
 		layout,
 		content: projection.content,
-		variant: projection.complete,
 		held: projection.held,
 		standing: projection.standing,
 		unsettled: projection.unsettled,
 		policy: model.policy,
 	};
-	const key = modelDrawingKey(rendererBuild, model.manifest.id, scopedDrawingKey(request));
+	const key = modelDrawingKey(rendererBuild, model.manifest.id, drawingKey(request));
 	return queryOptions({
 		queryKey: [DRAWINGS, key],
 		/**

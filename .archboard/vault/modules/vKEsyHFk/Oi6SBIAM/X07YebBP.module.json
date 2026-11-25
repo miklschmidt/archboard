@@ -1,4 +1,159 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "order": 4000,
+      "kind": "event",
+      "effect": "mutation",
+      "label": "the page's agent messages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "handleCodexBrowserMessage"
+      },
+      "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "order": 6000,
+      "kind": "event",
+      "effect": "mutation",
+      "label": "model and agent news; the vault a pane is in",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "sendStartingPlace"
+      },
+      "to": "vKEsyHFk#iORmkZrI"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
+      "order": 15000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "register the page's socket; admit it once it knows its place",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "registerSocket"
+      },
+      "to": "vKEsyHFk#Zse70SS2"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#4fPIYyd3",
+      "order": 21000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "upgrades on the same listener",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "server"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#2ssPZnZc",
+      "order": 38000,
+      "kind": "sync",
+      "effect": "compute",
+      "description": "Guards the WebSocket handshake through the shared public request policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "checkBrowserCsrf"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#kUKOPjAB",
+      "order": 41000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "refuses an upgrade naming none",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "namedVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "order": 53000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "name the repository the pane starts in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "repositoryOfVault"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
+      "order": 84000,
+      "kind": "sync",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "parsePaneKey"
+      },
+      "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
+      "order": 143000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "vault-scoped current event stream",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/architecture-feed.ts",
+        "symbol": "watchArchitectureModel"
+      },
+      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+    },
+    {
+      "id": "vKEsyHFk#ImhHUqRg",
+      "order": 1008000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "keep a vault's news running; send a new page the snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "id": "vKEsyHFk#yO0Gg6Lz",
+      "order": 1009000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "a returning pane's vault; a new pane's model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "paneVaultOf"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    }
+  ],
   "order": 10000,
   "name": "Pane socket",
   "kind": "module",
@@ -11,7 +166,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/Oi6SBIAM#X07YebBP",
   "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "documents": [
@@ -24,150 +179,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 4000,
-      "kind": "event",
-      "label": "the page's agent messages",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "handleCodexBrowserMessage"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
-      "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 6000,
-      "kind": "event",
-      "label": "model and agent news; the vault a pane is in",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "sendStartingPlace"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
-      "to": "vKEsyHFk#iORmkZrI"
-    },
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "register the page's socket; admit it once it knows its place",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "registerSocket"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
-      "to": "vKEsyHFk#Zse70SS2"
-    },
-    {
-      "order": 21000,
-      "kind": "dependency",
-      "label": "upgrades on the same listener",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "server"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#4fPIYyd3",
-      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
-    },
-    {
-      "order": 38000,
-      "kind": "call",
-      "description": "Guards the WebSocket handshake through the shared public request policy",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "checkBrowserCsrf"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#2ssPZnZc",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
-      "order": 41000,
-      "kind": "call",
-      "label": "refuses an upgrade naming none",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "namedVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#kUKOPjAB",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 53000,
-      "kind": "call",
-      "label": "name the repository the pane starts in",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "repositoryOfVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
-    },
-    {
-      "order": 84000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "parsePaneKey"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
-      "to": "vKEsyHFk#9VahN2IU"
-    },
-    {
-      "order": 143000,
-      "kind": "call",
-      "label": "vault-scoped current event stream",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/architecture-feed.ts",
-        "symbol": "watchArchitectureModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
-      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
-    },
-    {
-      "order": 1008000,
-      "kind": "call",
-      "label": "keep a vault's news running; send a new page the snapshots",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk#ImhHUqRg",
-      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
-    },
-    {
-      "order": 1009000,
-      "kind": "call",
-      "label": "a returning pane's vault; a new pane's model",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "paneVaultOf"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#yO0Gg6Lz"
     }
   ]
 }

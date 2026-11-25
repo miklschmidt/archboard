@@ -11,8 +11,7 @@
 //! morphed beside it, the two cross-fading. A swipe that appears or disappears
 //! morphs with the stroke, fading in or out.
 
-use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::rail_gap;
+use archboard_scene::geometry::{Point, Rect, round_coord, route_tolerance};
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
@@ -35,8 +34,6 @@ const SAME_SHAPE: f64 = 10.0;
 
 /// Where the cuts of the last picture are gone, as a share of the move.
 const OLD_CUTS_GONE_BY: f64 = 0.1;
-/// How far a mask reaches past its line.
-const MASK_ROOM: f64 = 18.0;
 
 /// How far something that moves this far recedes in a move.
 pub(super) fn depth_of_travel(reach: f64) -> f64 {
@@ -63,18 +60,33 @@ fn is_halo(shape: &Shape) -> bool {
     )
 }
 
+/// Whether an item stands at the target once the line lands.
+pub(super) fn target_imprint(item: &Item) -> bool {
+    matches!(
+        item,
+        Item::Shape(Shape {
+            purpose: Purpose::Imprint | Purpose::Glow,
+            ..
+        })
+    )
+}
+
+/// A route shape, excluding marks that stand across its end.
+fn route_shape(item: &Item) -> Option<&Shape> {
+    match item {
+        Item::Shape(shape) if !target_imprint(item) => Some(shape),
+        _ => None,
+    }
+}
+
 /// The shapes of a line that draw a route, by job: a halo has its purpose, the
 /// stroke is the last inked shape, and an inked shape drawn before it is the
 /// swipe.
 fn paths(group: &Group) -> Paths<'_> {
-    let routes = group
-        .items
-        .iter()
-        .enumerate()
-        .filter_map(|(at, item)| match item {
-            Item::Shape(shape) if route_of(&shape.geometry).is_some() => Some((at, shape)),
-            _ => None,
-        });
+    let routes = group.items.iter().enumerate().filter_map(|(at, item)| {
+        let shape = route_shape(item)?;
+        route_of(&shape.geometry).map(|_| (at, shape))
+    });
     let (halos, inked): (Vec<_>, Vec<_>) = routes.partition(|(_, shape)| is_halo(shape));
     Paths {
         halos,
@@ -102,33 +114,36 @@ fn route(shape: Option<&Shape>) -> Vec<PathStep> {
 
 /// Where a line begins: the point its first route starts at.
 pub(super) fn start_of(group: &Group) -> Option<Point> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => match route_of(&shape.geometry)?.first()? {
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| match route_of(&shape.geometry)?.first()? {
             PathStep::Move { to } => Some(*to),
             _ => None,
-        },
-        _ => None,
-    })
+        })
 }
 
 /// Where a line ends, and how far it runs: the last point of its first route.
 pub(super) fn end_of(group: &Group) -> Option<(Point, f64)> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => {
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| {
             let steps = route_of(&shape.geometry)?;
             let end = path_of(&steps).elements().last()?.end_point()?;
             Some((Point { x: end.x, y: end.y }, length(&steps)?))
-        }
-        _ => None,
-    })
+        })
 }
 
 /// The outline of a line's first route.
 pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
-    group.items.iter().find_map(|item| match item {
-        Item::Shape(shape) => route_of(&shape.geometry).map(|steps| path_of(&steps)),
-        _ => None,
-    })
+    group
+        .items
+        .iter()
+        .filter_map(route_shape)
+        .find_map(|shape| route_of(&shape.geometry).map(|steps| path_of(&steps)))
 }
 
 /// A shape this much visible, under whatever visibility it states.
@@ -222,70 +237,44 @@ struct Ghost {
     morph: Option<Morph>,
 }
 
-/// Whether a shape of a mask is the core of a double line.
-fn is_core(shape: &Shape) -> bool {
-    shape.purpose == Purpose::Cutout
-        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(rail_gap())
-}
-
 /// A cut this much of the way in.
 fn cut_at(shape: &Shape, strength: f64) -> Shape {
     dim(shape.clone(), strength)
 }
 
-/// What a line's masks do through a move. The core of a double line travels with
-/// it. The rest of the cuts belong to where a line stands: the old ones go as it
-/// sets off, and the new ones come once it is in place.
+/// What a line's masks do through a move. The cuts belong to where a line
+/// stands: the old ones go as it sets off, and the new ones come once it is in place.
 #[derive(Clone, Debug)]
 struct Cuts {
     id: MaskId,
-    /// The core of the line, and how it gets from one route to the other.
-    core: Option<(Shape, Option<Morph>)>,
-    /// How the core stands at each end of the move, when it does not at both.
-    core_shown: (f64, f64),
     old: Vec<Shape>,
     next: Vec<Shape>,
-    /// The next mask's box, for a moment when the line stands still.
+    /// The next mask's box.
     bounds: Rect,
 }
 
 impl Cuts {
     /// The cuts of a line, from its masks in the two pictures.
     fn of(old: Option<&Mask>, next: Option<&Mask>) -> Option<Cuts> {
-        let cuts = |mask: Option<&Mask>, core: bool| -> Vec<Shape> {
+        let cuts = |mask: Option<&Mask>| -> Vec<Shape> {
             mask.map_or_else(Vec::new, |mask| {
                 mask.shapes
                     .iter()
-                    .filter(|shape| shape.fill != Some(white()) && is_core(shape) == core)
+                    .filter(|shape| shape.fill != Some(white()))
                     .cloned()
                     .collect()
             })
         };
-        let (old_core, next_core) = (cuts(old, true), cuts(next, true));
-        let (from, to) = (old_core.first(), next_core.first());
-        let core = to.or(from).map(|shape| {
-            let morph = from
-                .zip(to)
-                .and_then(|(a, b)| Morph::new(&route(Some(a)), &route(Some(b))));
-            (shape.clone(), morph)
-        });
-        let (old_cuts, next_cuts) = (cuts(old, false), cuts(next, false));
-        let bounds = next.or(old)?.bounds;
         Some(Cuts {
             id: next.or(old)?.id.clone(),
-            core,
-            core_shown: (
-                f64::from(u8::from(from.is_some())),
-                f64::from(u8::from(to.is_some())),
-            ),
-            old: old_cuts,
-            next: next_cuts,
-            bounds,
+            old: cuts(old),
+            next: cuts(next),
+            bounds: next.or(old)?.bounds,
         })
     }
 
     /// The mask at a moment of the move, or none while nothing is cut.
-    fn at(&self, progress: f64, along: f64, swapped: f64, t: &Transition) -> Option<Mask> {
+    fn at(&self, progress: f64, t: &Transition) -> Option<Mask> {
         let mut shapes = Vec::new();
         let leaving = 1.0 - ease_in_out(phase(progress, 0.0, OLD_CUTS_GONE_BY));
         if leaving > 0.0 {
@@ -295,30 +284,9 @@ impl Cuts {
         if landing > 0.0 {
             shapes.extend(self.next.iter().map(|shape| cut_at(shape, landing)));
         }
-        let mut bounds = self.bounds;
-        if let Some((shape, morph)) = &self.core {
-            let (from, to) = self.core_shown;
-            let strength = from + (to - from) * swapped;
-            let shape = match morph {
-                Some(morph) => {
-                    let held = morph.bounds_at(along).inflate(MASK_ROOM, MASK_ROOM);
-                    bounds = Rect {
-                        x: held.x0,
-                        y: held.y0,
-                        width: held.width(),
-                        height: held.height(),
-                    };
-                    on_route(shape.clone(), morph.at(along))
-                }
-                None => shape.clone(),
-            };
-            if strength > 0.0 {
-                shapes.push(cut_at(&shape, strength));
-            }
-        }
         (!shapes.is_empty()).then(|| Mask {
             id: self.id.clone(),
-            bounds,
+            bounds: self.bounds,
             shapes,
         })
     }
@@ -331,12 +299,67 @@ fn white() -> Paint {
     }
 }
 
+/// The marks already on the old target and the marks the new line will leave.
+#[derive(Clone, Debug)]
+struct TargetImprints {
+    old: Vec<Shape>,
+    next: Vec<Shape>,
+    moves: bool,
+}
+
+impl TargetImprints {
+    fn new(before: &Group, after: &Group) -> Self {
+        let marks = |group: &Group| {
+            group
+                .items
+                .iter()
+                .filter(|item| target_imprint(item))
+                .filter_map(|item| match item {
+                    Item::Shape(shape) => Some(shape.clone()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        let (old, next) = (marks(before), marks(after));
+        let arrival =
+            |group| outline_of(group).and_then(|path| path.elements().last()?.end_point());
+        let moves = !old.is_empty()
+            && match (arrival(before), arrival(after)) {
+                // Rounded scene coordinates can differ by a hundredth at the same port.
+                (Some(from), Some(to)) => round_coord(from.distance(to)) > route_tolerance(),
+                (from, to) => from != to,
+            };
+        Self { old, next, moves }
+    }
+
+    /// Keep the old marks until the line sets off and show the new marks when it lands.
+    /// Marks already on a target that stays in place can stay through the move.
+    fn at(&self, moved: f64, swapped: f64) -> impl Iterator<Item = Item> + '_ {
+        let (old, next) = if self.moves || self.old.is_empty() {
+            (f64::from(moved == 0.0), f64::from(moved == 1.0))
+        } else if self.old == self.next {
+            (0.0, 1.0)
+        } else {
+            (1.0 - swapped, swapped)
+        };
+        [(old, &self.old), (next, &self.next)]
+            .into_iter()
+            .filter(|(shown, _)| *shown > 0.0)
+            .flat_map(|(shown, marks)| {
+                marks
+                    .iter()
+                    .map(move |mark| Item::Shape(dim(mark.clone(), shown)))
+            })
+    }
+}
+
 /// One line carried from its old route to its new one.
 #[derive(Clone, Debug)]
 pub(super) struct LineCarry {
     template: Group,
     slides: Vec<Slide>,
     ghosts: Vec<Ghost>,
+    imprints: TargetImprints,
     /// How far the line recedes as it travels.
     depth: f64,
     /// What its masks do.
@@ -466,6 +489,7 @@ impl LineCarry {
             template,
             slides,
             ghosts,
+            imprints: TargetImprints::new(before.group, after.group),
             depth: depth_of_travel(reach),
             cuts: Cuts::of(masks.0, masks.1),
             phases,
@@ -474,20 +498,22 @@ impl LineCarry {
 
     /// What the line's mask cuts at a moment of the move.
     pub(super) fn mask_at(&self, progress: f64) -> Option<Mask> {
-        let t = &self.phases;
-        let along = emphasised(phase(progress, t.move_start, t.move_end));
-        let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
-        self.cuts.as_ref()?.at(progress, along, swapped, t)
+        self.cuts.as_ref()?.at(progress, &self.phases)
     }
 
     /// The line at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Group {
         let t = &self.phases;
-        let along = emphasised(phase(progress, t.move_start, t.move_end));
+        let moved = phase(progress, t.move_start, t.move_end);
+        let along = emphasised(moved);
         let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
         let shown = receded(self.depth, progress);
         let mut items = Vec::with_capacity(self.template.items.len() + self.ghosts.len());
+        items.extend(self.imprints.at(moved, swapped));
         for (child, item) in self.template.items.iter().enumerate() {
+            if target_imprint(item) {
+                continue;
+            }
             for ghost in self.ghosts.iter().filter(|ghost| ghost.before == child) {
                 let shape = match &ghost.morph {
                     Some(morph) => on_route(ghost.shape.clone(), morph.at(along)),

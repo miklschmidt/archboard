@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 11000,
   "name": "Wait graph",
   "kind": "module",
@@ -7,7 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/workhorses/wait-graph/state"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SJ2JMVyz#abHx4peq",
   "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
   "documents": [
@@ -15,6 +16,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

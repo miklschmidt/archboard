@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
+      "order": 37000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "narrated walkthroughs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/realtime/rules/presentation-mode.ts",
+        "symbol": "languageName"
+      },
+      "to": "vKEsyHFk#6RJ25ejV"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
+      "order": 86000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "address the exact pane socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/presentation.ts",
+        "symbol": "sendKeylessToPane"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    }
+  ],
   "order": 34000,
   "name": "Presentation position",
   "kind": "module",
@@ -8,7 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/panes/services/presentation.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/Oi6SBIAM#74SVrhRe",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
@@ -21,34 +51,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 37000,
-      "kind": "dependency",
-      "label": "narrated walkthroughs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/realtime/rules/presentation-mode.ts",
-        "symbol": "languageName"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
-      "to": "vKEsyHFk#6RJ25ejV"
-    },
-    {
-      "order": 86000,
-      "kind": "call",
-      "label": "address the exact pane socket",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/presentation.ts",
-        "symbol": "sendKeylessToPane"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     }
   ]
 }

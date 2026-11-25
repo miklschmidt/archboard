@@ -1,17 +1,17 @@
 {
+  "outgoing": [],
   "order": 40300,
   "name": "archboard-layout",
   "kind": "package",
-  "responsibility": "Lays out an architecture picture: one solve of a measured graph by Track or Blocks, and the choice between the solves",
+  "responsibility": "Lays out an architecture picture: one solve of a measured graph by Blocks or Lanes, and the choice between the solves",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-layout"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#ld6jjHND",
   "formerNames": [
     "Layout and measuring"
   ],
-  "outgoing": [],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

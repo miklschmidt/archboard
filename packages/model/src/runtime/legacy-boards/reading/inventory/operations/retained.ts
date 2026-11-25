@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import type { z } from "zod";
 import { LegacyOriginalInputsSchema } from "#shared/schemas/migration-inputs.ts";
 import { createHash } from "node:crypto";
@@ -7,10 +8,8 @@ import type {
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { LegacyMappingPlanSchema } from "#shared/schemas/migration.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
-import {
-	ArchiveError,
-	type CheckpointRecordSchema,
-} from "#runtime/canonical/archive/store/model-archive.ts";
+import { ArchiveError } from "#runtime/canonical/archive/store/model-archive.ts";
+import { type CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import { modelRevision, type readModelFiles } from "#runtime/store/model-files.ts";
 import { MIGRATION_PLAN_PATH } from "#runtime/legacy-boards/store/migration-plan.ts";
 import { inventoryFromInputs } from "#runtime/legacy-boards/reading/inventory/operations/inventory.ts";
@@ -124,7 +123,7 @@ function originalsOnly(
 					}),
 				),
 			],
-			[".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY))],
+			[".archboard/config.yaml", configurationFile(DEFAULT_SEMANTIC_POLICY)],
 		]),
 		revision: captured.revision,
 		diagnostics: [],

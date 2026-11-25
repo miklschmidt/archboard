@@ -299,4 +299,4 @@ function openResolution(
 	};
 }
 
-export { type Resolve, type TokenType, openResolution };
+export { type Resolve, type TokenType, innermostAt, openResolution };

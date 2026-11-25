@@ -5,7 +5,7 @@ import { readArchitectureModel } from "@archboard/model/store-read";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
 const current = readArchitectureModel(
-	resolve(import.meta.dir, "../../../../../../../examples/canonical-model/.archboard/vault"),
+	resolve(import.meta.dir, "../../../../../../../tests/fixtures/current-format-vault"),
 );
 if (!current.success || current.selectedState === null) throw new Error(JSON.stringify(current));
 const selected = {

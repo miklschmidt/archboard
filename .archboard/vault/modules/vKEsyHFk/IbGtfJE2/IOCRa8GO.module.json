@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 14003,
   "name": "Evaluation inputs",
   "kind": "config",
@@ -8,7 +9,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "evals"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#IOCRa8GO",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/IbGtfJE2#IOCRa8GO"
 }

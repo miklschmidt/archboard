@@ -6,11 +6,8 @@ import type {
 	ArchitectureCheckpoint,
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { failure } from "#runtime/canonical/read/operations/model-read.ts";
-import {
-	ArchiveError,
-	ARCHIVE_REF,
-	CheckpointRecordSchema,
-} from "#runtime/canonical/archive/store/model-archive.ts";
+import { ArchiveError, ARCHIVE_REF } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
@@ -42,6 +39,8 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	NODE_HAS_CHILDREN: "Reparent or remove the remaining children in the same batch.",
 	ARCHIVE_UNREADABLE:
 		"Inspect the named archive ref. Preserve unrelated source branches and restore a complete Archboard archive or configure its correct independent ref.",
+	ARCHIVE_NEWER:
+		"Update Archboard to the newest release, then retry. The history is intact: do not restore, fetch or roll back the archboard-history branch.",
 	ARCHIVE_NOT_PORTABLE:
 		"Keep this checkpoint local. Publication cannot redact immutable checkpoint metadata. Future retained source associations require a portable repository identity rather than a machine path.",
 	ARCHIVE_NETWORK_FAILED:

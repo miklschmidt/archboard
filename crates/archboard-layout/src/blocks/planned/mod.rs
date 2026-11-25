@@ -77,7 +77,8 @@ impl From<&str> for Refused {
 }
 
 pub(super) use parts::{Routed, Split, Step, solve_part};
-pub(super) use words::{dress, without_trunk_words};
+pub(super) use ports::doors_widened;
+pub(super) use words::{dress, without_trunk_words, without_words};
 
 mod fixed;
 /// Rank guarded candidates against one fixed reference, so an intermediate
@@ -91,6 +92,7 @@ pub(super) fn route_candidates(
     let mut best = None;
     let mut score = (usize::MAX, u64::MAX);
     let mut drawn = 0;
+    let weights = model::weights(graph);
     while let Some(drawing) = candidates.next(reference.is_some())? {
         // The other route orders rescue a view that has no drawing yet.
         let orders = if reference.is_some() {
@@ -100,7 +102,8 @@ pub(super) fn route_candidates(
         };
         match fixed::route(graph, drawing, orders) {
             Ok(next) => {
-                let next_score = reading::drawn_rank(&next);
+                let next_score =
+                    reading::drawn_rank(&next, &|id| weights.get(id).copied().unwrap_or(1.0));
                 let first = reference.get_or_insert_with(|| next.clone());
                 if next_score < score && reading::worth_placing(&next, first, graph) {
                     score = next_score;
@@ -363,7 +366,9 @@ impl Tries for Here<'_> {
             match fixed::route(self.graph, chain.drawn.clone(), &selection::ORDERS[..1]) {
                 Ok(next) => {
                     chain.wanting = ends_of(self.graph, &reading::long_lines(&next));
-                    Try::Routed(reading::order(&next), next)
+                    let weights = model::weights(self.graph);
+                    let weigh = |id: &str| weights.get(id).copied().unwrap_or(1.0);
+                    Try::Routed(reading::order(&next, &weigh), next)
                 }
                 Err(refused) => {
                     chain.wanting = refused.blocked;

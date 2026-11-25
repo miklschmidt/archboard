@@ -7,7 +7,7 @@ use archboard_scene::geometry::{
 
 use crate::constants::EPSILON;
 
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, STRAIGHT_RUN};
 use crate::ecma::{hypot, min};
 
 /// Halfway between two control points, for exact de Casteljau subdivision.
@@ -128,12 +128,16 @@ fn short_leg(points: &[Point]) -> bool {
     (1..points.len()).any(|index| {
         let start = points[index - 1];
         let end = points[index];
-        let required = (if index == 1 { 0.0 } else { BEND_RADIUS })
-            + if index == points.len() - 1 {
-                APPROACH_STRAIGHT
-            } else {
-                BEND_RADIUS
-            };
+        let required = if points.len() == 2 {
+            STRAIGHT_RUN
+        } else {
+            (if index == 1 { 0.0 } else { BEND_RADIUS })
+                + if index == points.len() - 1 {
+                    APPROACH_STRAIGHT
+                } else {
+                    BEND_RADIUS
+                }
+        };
         let available = hypot(end.x - start.x, end.y - start.y);
         available + EPSILON < required
     })

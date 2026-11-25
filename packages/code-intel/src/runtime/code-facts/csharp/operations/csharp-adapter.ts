@@ -43,7 +43,8 @@ import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import { CSHARP_MATH } from "#runtime/code-facts/csharp/operations/csharp-depth.ts";
 import { csharpDefinitions } from "#runtime/code-facts/csharp/operations/csharp-definitions.ts";
 import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { CSHARP_TIMING } from "#runtime/code-facts/csharp/operations/csharp-timing.ts";
 import { firstBranches } from "#runtime/code-facts/csharp/operations/csharp-preprocessor.ts";
 import type {
 	Import,
@@ -332,6 +333,7 @@ const RUN_SYNTAX: RunSyntax = {
 		cast_expression: ["value"],
 	},
 	arguments: { argument: ANY },
+	timing: CSHARP_TIMING,
 };
 
 /** What deciding whether a captured name is a use needs. */
@@ -364,7 +366,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
 		...(context.typeNames.holds(at) ? { asType: true } : {}),
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -413,7 +415,7 @@ function usingImport(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}\0${String(reference.asValue)}\0${String(reference.passed)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}\0${String(reference.asValue)}\0${String(reference.passed)}\0${String(reference.timing)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

@@ -29,6 +29,7 @@ const shop = drawings.webShop;
 			</div>
 			<div class="pane-head">
 				<span class="crumb">Shop</span>
+				<span class="lens">Main lines</span>
 				<span class="reading">
 					<span class="field state">Current</span>
 					<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
@@ -50,7 +51,7 @@ const shop = drawings.webShop;
 								<span class="working-name">Shop</span>
 								<span class="mono when">now</span>
 							</p>
-							<p class="working-doing">mapping the shop</p>
+							<p class="working-doing">mapping web-shop</p>
 						</div>
 						<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
 						<DockLines />
@@ -63,7 +64,7 @@ const shop = drawings.webShop;
 				</div>
 			</div>
 			<div class="picture" data-picture>
-				<figure class="drawing" role="img" aria-label={`The example shop, drawn by Archboard: ${shop.label}`}>
+				<figure class="drawing" role="img" aria-label={`Web shop architecture rendered by Archboard: ${shop.label}`}>
 					<img src={shop.url} width={shop.width} height={shop.height} alt="" decoding="async" />
 				</figure>
 				<canvas class="paint" aria-hidden="true"></canvas>
@@ -175,11 +176,17 @@ const shop = drawings.webShop;
 		background: var(--well);
 		box-shadow: var(--shadow-well);
 	}
+	/* The lens the picture is read through stands before the reading, in muted ink, as the
+	   shell's status line above the picture says it. */
+	.lens {
+		margin-left: auto;
+		font-size: 13px;
+		color: var(--ink-muted);
+	}
 	/* The state chip and the comparison are one control of two keys, because they say one
 	   thing: what this reading is, against what. */
 	.reading {
 		display: inline-flex;
-		margin-left: auto;
 	}
 	.reading .field {
 		font-weight: 500;

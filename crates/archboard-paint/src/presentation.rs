@@ -81,6 +81,18 @@ pub(crate) struct Presentation {
     pub sweep: Option<Sweep>,
     /// The marks of the code check's warnings.
     pub warnings: Warnings,
+    /// The lines whose effect plays once now, each with how far through its
+    /// play it is.
+    pub plays: Vec<Playing>,
+}
+
+/// One line's effect, playing once.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct Playing {
+    /// The relationship whose line plays.
+    pub id: String,
+    /// How far through its play it is, from 0 to 1.
+    pub at: f64,
 }
 
 impl Presentation {

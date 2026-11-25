@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#yIlWm0s3",
+      "order": 50000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "every read takes the vault from the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts",
+        "symbol": "PaneVaultContext"
+      },
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
+    }
+  ],
   "order": 44000,
   "name": "Pane vault",
   "kind": "function",
@@ -12,22 +28,7 @@
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts",
     "symbol": "usePaneVault"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#51hijVQY",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 50000,
-      "kind": "call",
-      "label": "every read takes the vault from the pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts",
-        "symbol": "PaneVaultContext"
-      },
-      "id": "vKEsyHFk/yejBBUFY#yIlWm0s3",
-      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

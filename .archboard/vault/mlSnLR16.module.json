@@ -1,4 +1,155 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#eIAHRejk",
+      "order": 900,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the brief for a missing server, in a fix asked for",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#8xqOjFa6"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
+      "order": 1000,
+      "kind": "render",
+      "effect": "compute",
+      "label": "the desktop frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "Shell"
+      },
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "id": "vKEsyHFk#6HrhFftD",
+      "order": 8100,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "open a file an agent's answer names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "activateCodeTarget"
+      },
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "order": 11000,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "dock, conversation, voice box, the presentation's voice key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/AgentSurfaceSlots.tsx",
+        "symbol": "AgentDock"
+      },
+      "to": "vKEsyHFk#UoblaIEv"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
+      "order": 14000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "read canonical repository summaries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "useModelCatalog"
+      },
+      "to": "vKEsyHFk#upjMkmlU"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "order": 27000,
+      "kind": "render",
+      "effect": "query",
+      "label": "over voice's pane, or the presented one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/PaneSubtitles.tsx",
+        "symbol": "VoiceSubtitles"
+      },
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
+      "order": 28000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the recorder, when the address asks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/hooks/use-page-recording.ts",
+        "symbol": "openWalkthroughRecorder"
+      },
+      "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "order": 43000,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "the stage the one orb is flown on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "OrbStageProvider"
+      },
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
+      "order": 59000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "a pane focused, a model opened, a fix asked for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "conversationActivation"
+      },
+      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
+      "order": 71000,
+      "kind": "render",
+      "effect": "query",
+      "label": "the settings dialog's opener tab, when the person opens it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/SettingsDialog.tsx",
+        "symbol": "OpenerSettings"
+      },
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "id": "vKEsyHFk#c77ph39b",
+      "order": 980130,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the panes the address opens",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "openingPaneList"
+      },
+      "to": "vKEsyHFk#fLxtu2P4"
+    }
+  ],
   "order": 960070,
   "name": "Application frame",
   "kind": "ui",
@@ -7,147 +158,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/components/Application.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#mlSnLR16",
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "call",
-      "label": "the brief for a missing server, in a fix asked for",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#eIAHRejk",
-      "to": "vKEsyHFk#8xqOjFa6"
-    },
-    {
-      "order": 1000,
-      "kind": "render",
-      "label": "the desktop frame",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "Shell"
-      },
-      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
-      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
-    },
-    {
-      "order": 8100,
-      "kind": "call",
-      "label": "open a file an agent's answer names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "activateCodeTarget"
-      },
-      "id": "vKEsyHFk#6HrhFftD",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    },
-    {
-      "order": 11000,
-      "kind": "render",
-      "label": "dock, conversation, voice box, the presentation's voice key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/AgentSurfaceSlots.tsx",
-        "symbol": "AgentDock"
-      },
-      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
-      "to": "vKEsyHFk#UoblaIEv"
-    },
-    {
-      "order": 14000,
-      "kind": "call",
-      "label": "read canonical repository summaries",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "useModelCatalog"
-      },
-      "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
-      "to": "vKEsyHFk#upjMkmlU"
-    },
-    {
-      "order": 27000,
-      "kind": "render",
-      "label": "over voice's pane, or the presented one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/PaneSubtitles.tsx",
-        "symbol": "VoiceSubtitles"
-      },
-      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
-    },
-    {
-      "order": 28000,
-      "kind": "call",
-      "label": "the recorder, when the address asks",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/hooks/use-page-recording.ts",
-        "symbol": "openWalkthroughRecorder"
-      },
-      "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
-      "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
-    },
-    {
-      "order": 43000,
-      "kind": "render",
-      "label": "the stage the one orb is flown on",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "OrbStageProvider"
-      },
-      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
-      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
-    },
-    {
-      "order": 59000,
-      "kind": "call",
-      "label": "a pane focused, a model opened, a fix asked for",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "conversationActivation"
-      },
-      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
-      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
-    },
-    {
-      "order": 71000,
-      "kind": "render",
-      "label": "the settings dialog's opener tab, when the person opens it",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/SettingsDialog.tsx",
-        "symbol": "OpenerSettings"
-      },
-      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    },
-    {
-      "order": 980130,
-      "kind": "call",
-      "label": "the panes the address opens",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "openingPaneList"
-      },
-      "id": "vKEsyHFk#c77ph39b",
-      "to": "vKEsyHFk#fLxtu2P4"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l"
 }

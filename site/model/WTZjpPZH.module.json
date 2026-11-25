@@ -3,7 +3,7 @@
   "name": "Panes",
   "kind": "ui",
   "responsibility": "Open any module into its parts",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#WTZjpPZH",
   "parent": "q9TUBeZT#CXLlEMBM",
   "outgoing": []

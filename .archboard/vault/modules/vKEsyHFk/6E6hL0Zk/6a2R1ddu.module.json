@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
+      "order": 11000,
+      "kind": "async",
+      "effect": "query",
+      "label": "resolve a module's canonical code binding and target",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#LLVzjl11",
+      "order": 48000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "locate and persist opener configuration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/store/configuration.ts",
+        "symbol": "stateDir"
+      },
+      "to": "vKEsyHFk#Q1jP0WbC"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
+      "order": 52000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "interpret and validate opener selections",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/github-link.ts",
+        "symbol": "codeBindingSchema"
+      },
+      "to": "vKEsyHFk#NVlMWCWO"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#ZAbHs2zZ",
+      "order": 70000,
+      "kind": "async",
+      "effect": "query",
+      "label": "the line where a bound symbol is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "symbolLine"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "id": "vKEsyHFk#6MddSKIu",
+      "order": 70019,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "enforce the local browser origin",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    }
+  ],
   "order": 9000,
   "name": "Code opener",
   "kind": "module",
@@ -8,7 +80,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-opener/src/server"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
   "parent": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
   "documents": [
@@ -25,73 +97,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 11000,
-      "kind": "call",
-      "label": "resolve a module's canonical code binding and target",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/projections/model-target.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 48000,
-      "kind": "dependency",
-      "label": "locate and persist opener configuration",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/store/configuration.ts",
-        "symbol": "stateDir"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#LLVzjl11",
-      "to": "vKEsyHFk#Q1jP0WbC"
-    },
-    {
-      "order": 52000,
-      "kind": "dependency",
-      "label": "interpret and validate opener selections",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/projections/github-link.ts",
-        "symbol": "codeBindingSchema"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
-      "to": "vKEsyHFk#NVlMWCWO"
-    },
-    {
-      "order": 70000,
-      "kind": "call",
-      "label": "the line where a bound symbol is defined",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "symbolLine"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ZAbHs2zZ",
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 70019,
-      "kind": "call",
-      "label": "enforce the local browser origin",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "createBrowserOriginGuard"
-      },
-      "id": "vKEsyHFk#6MddSKIu",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
     }
   ]
 }

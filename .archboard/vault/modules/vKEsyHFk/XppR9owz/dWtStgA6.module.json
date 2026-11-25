@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 50000,
   "name": "Stated JSON input",
   "kind": "function",
@@ -8,7 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/input.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#dWtStgA6",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "formerNames": [
@@ -34,6 +35,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

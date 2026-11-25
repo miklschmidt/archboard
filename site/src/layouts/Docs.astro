@@ -84,7 +84,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 			<footer class="docs-foot" data-pagefind-ignore>
 				<a class="edit" href={`${links.repository}/blob/${docsRef}/${source}`}>
 					<Icon name="fileCode" size={16} />
-					{isRelease ? `The source of this page at ${docsRef}` : "Edit this page on GitHub"}
+					{isRelease ? `View source at ${docsRef}` : "Edit this page on GitHub"}
 				</a>
 				<Pager path={path} />
 			</footer>

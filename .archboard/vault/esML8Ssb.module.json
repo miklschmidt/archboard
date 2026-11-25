@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SJ2JMVyz#CHkvrU1f",
+      "order": 12000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "register and release a wait edge",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
+        "symbol": "addEdgeSet"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq"
+    }
+  ],
   "order": 68001,
   "name": "Thread tool settlements",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/dynamic-tools/settlements"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#esML8Ssb",
-  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "call",
-      "label": "register and release a wait edge",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
-        "symbol": "addEdgeSet"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#CHkvrU1f",
-      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq"
-    }
-  ]
+  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
 }

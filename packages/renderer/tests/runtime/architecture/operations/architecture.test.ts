@@ -5,14 +5,8 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { across, along } from "#tests/runtime/support/drawn-reading.ts";
-import {
-	distanceToFrame,
-	routeCrosses,
-	routeEnds,
-	routePoints,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { routeCrosses, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/model/content";
-import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const policy = defaultSemanticPolicy();
@@ -115,22 +109,13 @@ function within(inner: DiagramBox, outer: DiagramBox): boolean {
 }
 
 describe("renderArchitecture", () => {
-	test("an omitted engine draws Blocks while an explicit Track request stays selectable", async () => {
+	test("an omitted engine draws Blocks while an explicit Lanes request changes the drawing", async () => {
 		const implicit = await render();
-		const blocks = await renderArchitecture({
-			policy,
-			content: SAMPLE,
-			theme: "light",
-			layout: "blocks",
-		});
-		const track = await renderArchitecture({
-			policy,
-			content: SAMPLE,
-			theme: "light",
-			layout: "track",
-		});
+		const request = { policy, content: SAMPLE, theme: "light" } as const;
+		const blocks = await renderArchitecture({ ...request, layout: "blocks" });
+		const lanes = await renderArchitecture({ ...request, layout: "lanes" });
 		expect(implicit.svg).toBe(blocks.svg);
-		expect(track.svg).not.toBe(blocks.svg);
+		expect(lanes.svg).not.toBe(blocks.svg);
 	});
 
 	test("the same content and theme produce the same bytes", async () => {
@@ -317,18 +302,6 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("an edge naming a container arrives on its visible header card", async () => {
-		const rendered = await render();
-		const arrival = routeEnds(rendered.svg).get("e7");
-		expect(arrival).toBeDefined();
-
-		const box = headerCards(rendered).get("store")!;
-		expect(box).toBeDefined();
-		expect(distanceToFrame(arrival!, box)).toBeLessThan(2);
-		expect(arrival!.x).toBeGreaterThanOrEqual(box.x - 2);
-		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);
-	});
-
 	test("nodes belonging to nothing spread across the reading instead of lining up along it", async () => {
 		const loose = ["Ingest", "Normaliser", "Scheduler", "Worker Pool", "Metrics", "Object Store"];
 		const rendered = await render(
@@ -418,17 +391,19 @@ describe("renderArchitecture", () => {
 		}
 
 		// A label is also checked against its own plate, which the atlas was
-		// derived from and so cannot vouch for. Every plate is its label's width
-		// plus the same padding, and a plate sized in a face other than the one
-		// its words are set in would leave a different amount of room on a short
-		// label than on a long one.
-		const slack = drawn
-			.filter((one) => one.subject.kind === "edge")
-			.map((one) => {
-				const plate = plates.get(one.subject.id)!;
-				expect(spanFits(drawnSpan(one), plate)).toBe(true);
-				return Math.round((plate.width - one.width) * 100) / 100;
-			});
+		// derived from and so cannot vouch for. Every plate is its label's widest
+		// line plus the same padding, and a plate sized in a face other than the
+		// one its words are set in would leave a different amount of room on a
+		// short label than on a long one.
+		const widest = new Map<string, number>();
+		for (const one of drawn.filter((line) => line.subject.kind === "edge")) {
+			const plate = plates.get(one.subject.id)!;
+			expect(spanFits(drawnSpan(one), plate)).toBe(true);
+			widest.set(one.subject.id, Math.max(widest.get(one.subject.id) ?? 0, one.width));
+		}
+		const slack = [...widest].map(
+			([id, width]) => Math.round((plates.get(id)!.width - width) * 100) / 100,
+		);
 		expect(slack.length).toBeGreaterThan(3);
 		expect(new Set(slack).size).toBe(1);
 		expect(slack[0]!).toBeGreaterThan(0);

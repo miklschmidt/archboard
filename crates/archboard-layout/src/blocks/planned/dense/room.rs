@@ -23,6 +23,19 @@ pub(in crate::blocks::planned) struct Room {
 }
 
 impl Room {
+    /// This room with another's added, gap by gap.
+    pub(super) fn plus(&self, other: &Room) -> Room {
+        let add = |one: &[f64], two: &[f64]| {
+            (0..one.len().max(two.len()))
+                .map(|at| one.get(at).unwrap_or(&0.0) + two.get(at).unwrap_or(&0.0))
+                .collect()
+        };
+        Room {
+            rows: add(&self.rows, &other.rows),
+            columns: add(&self.columns, &other.columns),
+        }
+    }
+
     pub(super) fn row(&self, at: usize) -> f64 {
         self.rows.get(at).copied().unwrap_or(0.0)
     }
@@ -31,20 +44,72 @@ impl Room {
         self.columns.get(at).copied().unwrap_or(0.0)
     }
 
-    /// A lane of room in each row room and each column room of some ranges, and whether that
-    /// is any room at all.
-    fn add(&mut self, grid: &Grid, (rows, columns): (Range<usize>, Range<usize>)) -> bool {
+    /// A lane of room, and as much again as the asking line's apron adds (`apron_room`), in each
+    /// row room and each column room of some ranges, and whether that is any room at all.
+    fn add(
+        &mut self,
+        grid: &Grid,
+        (rows, columns): (Range<usize>, Range<usize>),
+        apron: f64,
+    ) -> bool {
         self.rows.resize(grid.rows() + 1, 0.0);
         self.columns.resize(grid.columns + 1, 0.0);
         let asks = !rows.is_empty() || !columns.is_empty();
         for at in rows {
-            self.rows[at] += LANE_ROOM;
+            self.rows[at] += LANE_ROOM + apron;
         }
         for at in columns {
-            self.columns[at] += LANE_ROOM;
+            self.columns[at] += LANE_ROOM + apron;
         }
         asks
     }
+}
+
+/// The room a frame's grid keeps from its first try beside each part that cables crowd: a part
+/// whose side walls are too short for a cable's fan takes its cables on its top and bottom, so
+/// the gaps above and below its row keep its widest cable's apron beyond a plain approach, and a
+/// body and a lane for each further cable that face can expect, half its cables. A part whose top
+/// and bottom are too short keeps that room in the gaps beside its column instead.
+pub(super) fn reserved(
+    graph: &crate::graph::Node,
+    items: &[super::grid::Item<'_>],
+    grid: &Grid,
+) -> Room {
+    use crate::constants::{APPROACH_STRAIGHT, FAN, STRAND, apron};
+    let mut room = Room {
+        rows: vec![0.0; grid.rows() + 1],
+        columns: vec![0.0; grid.columns + 1],
+    };
+    for (item, &cell) in items.iter().zip(&grid.cells) {
+        let id = item.node.id.as_str();
+        let mut cables: Vec<f64> = (graph.edges.iter().flatten())
+            .filter(|edge| edge.source() == id || edge.target() == id)
+            .filter_map(|edge| edge.option(crate::graph::CABLE))
+            .map(|cable| (cable.split(';').count() - 1) as f64)
+            .collect();
+        cables.sort_by(|a, b| b.total_cmp(a));
+        let Some(&widest) = cables.first() else {
+            continue;
+        };
+        let fan = widest * FAN + 2.0 * crate::lanes::channels::PORT_MARGIN;
+        let (half, reach) = (widest * STRAND / 2.0, widest * FAN / 2.0);
+        let further: f64 = (cables.iter().skip(1).take(cables.len().div_ceil(2) - 1))
+            .map(|gaps| gaps * STRAND + crate::lanes::chains::LANE)
+            .sum();
+        let keep = apron(half, reach) - APPROACH_STRAIGHT + further;
+        let (column, row) = grid.at(cell);
+        let widen = |gaps: &mut Vec<f64>, at: usize| {
+            for gap in [at, at + 1] {
+                gaps[gap] = gaps[gap].max(keep);
+            }
+        };
+        if item.node.h() < fan {
+            widen(&mut room.rows, row);
+        } else if item.node.w() < fan {
+            widen(&mut room.columns, column);
+        }
+    }
+    room
 }
 
 /// Where one end of a line stands.
@@ -178,13 +243,47 @@ impl Grids<'_> {
             return false;
         };
         rooms.resize(self.reading.blocks.len(), Room::default());
-        rooms[frame].add(grid, asked)
+        rooms[frame].add(grid, asked, apron_room(self.reading.graph, ends))
     }
+}
+
+/// How much more room than a lone line the widest line between two ends asks for: a cable's apron
+/// beyond a plain approach (`constants::apron`), where its strands step out to their ports.
+fn apron_room(graph: &crate::graph::Node, [one, other]: [&str; 2]) -> f64 {
+    (graph.edges.iter().flatten())
+        .filter(|edge| {
+            (edge.source(), edge.target()) == (one, other)
+                || (edge.source(), edge.target()) == (other, one)
+        })
+        .filter_map(|edge| edge.option(crate::graph::CABLE))
+        .map(|cable| {
+            let gaps = (cable.split(';').count() - 1) as f64;
+            let half = gaps * crate::constants::STRAND / 2.0;
+            let reach = gaps * crate::constants::FAN / 2.0;
+            crate::constants::apron(half, reach) - crate::constants::APPROACH_STRAIGHT
+        })
+        .fold(0.0, f64::max)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_cable_asks_for_the_room_its_apron_adds_either_way_round() {
+        let graph: crate::graph::Node = serde_json::from_value(serde_json::json!({
+            "id": "root", "children": [{"id": "a"}, {"id": "b"}, {"id": "c"}],
+            "edges": [
+                {"id": "cable", "sources": ["a"], "targets": ["b"],
+                    "layoutOptions": {"archboard.cable": "sync;event;rpc"}},
+                {"id": "lone", "sources": ["a"], "targets": ["c"]}]}))
+        .expect("a graph");
+        // Three strands step out a lane apart from half a lane, past two bends.
+        let apron =
+            2.0 * crate::constants::BEND_RADIUS + crate::constants::FAN - crate::constants::STRAND;
+        assert_eq!(apron_room(&graph, ["b", "a"]), apron);
+        assert_eq!(apron_room(&graph, ["a", "c"]), 0.0);
+    }
 
     const WALL: Rect = Rect {
         x: 0.0,

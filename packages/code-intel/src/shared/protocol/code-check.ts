@@ -81,7 +81,13 @@
 // retires the flat cap TASK-651 added (`INTERFACE_WIDE`) and the 8-name floor,
 // counts a switchboard as one name for each operation it picks, and gives each
 // module's `width` and `switchboards` in `depth`. The CLI's gate fails on an
-// information `MODULE_SHALLOW` only on a touched module.
+// information `MODULE_SHALLOW` only on a touched module. TASK-663.05 adds
+// `DEPENDENCY_CALLED`, information on a dependency whose anchor or evidence
+// is a call into its end, since nothing of a dependency's target runs at run
+// time. TASK-663.09 adds `CALL_TIMING_MISMATCH`, information on a `sync`
+// relationship whose anchored calls are all awaited or started, or an `async`
+// one whose anchored calls are all plain, with each call's `timing` in its
+// evidence.
 
 import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
@@ -106,6 +112,13 @@ const CodeCheckDocumentSchema = z
 	.strict();
 
 /**
+ * How a call site runs its callee (TASK-663.09): it awaits it, starts it as a
+ * task or leaves an async callee to run, calls a synchronous callee plainly,
+ * or the code does not tell.
+ */
+const CallTimingSchema = z.enum(["awaited", "started", "plain", "unknown"]);
+
+/**
  * One piece of code a finding rests on: what it proves, whether a language
  * server or the code itself named what it reaches (`resolved`) or the check
  * matched it by name only (`candidate`), the parts whose bound code makes the
@@ -123,6 +136,8 @@ const CodeEvidenceSchema = z
 		path: z.string(),
 		line: z.int().positive(),
 		symbol: z.string(),
+		/** How the call runs its callee, on the evidence of `CALL_TIMING_MISMATCH` (TASK-663.09). */
+		timing: CallTimingSchema.optional(),
 	})
 	.strict();
 
@@ -444,6 +459,7 @@ type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
+type CallTiming = z.infer<typeof CallTimingSchema>;
 type ModuleDepth = z.infer<typeof ModuleDepthSchema>;
 type ModuleExport = z.infer<typeof ModuleExportSchema>;
 type ModuleSwitchboard = z.infer<typeof ModuleSwitchboardSchema>;
@@ -451,6 +467,7 @@ type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
 export {
+	type CallTiming,
 	type CheckTiming,
 	BehindCommitSchema,
 	type BehindCommit,

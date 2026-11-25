@@ -1,10 +1,11 @@
 {
+  "outgoing": [],
   "order": 46000,
   "name": "Canonical archive objects",
   "kind": "module",
   "responsibility": "Retains exact architecture and reads its immutable records",
   "description": "The archive owner batches record reads and supplies immutable tree identities. An operation-local parent graph proves actual dependency ancestry without repeated Git commands. Signed commits, source exclusion, and exact input fingerprints remain mandatory.",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
   "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
   "documents": [
@@ -28,7 +29,6 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/archive"

@@ -12,14 +12,24 @@ use crate::request::PaletteColor;
 use crate::scene::colour::Colour;
 use crate::scene::shape::{PathStep, Shape};
 
-/// The two forms of arrowhead a line can end in.
+/// The marks a line can end in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Head {
-    /// A solid head, whose tip reaches a little past the end of its line.
+    /// A classic solid head, whose tip reaches a little past the end of its line.
     Filled,
-    /// An open head, whose tip lies at the end of its line.
+    /// A classic open head, whose tip lies at the end of its line.
     Open,
+    /// A solid wedge: a mutation.
+    Wedge,
+    /// An eye, with a rounded back, a dot at its centre and a sharp tip: a query.
+    Eye,
+    /// An "=" behind a small open point: a compute.
+    Equals,
+    /// An open chevron that stands clear of its line: a declared requirement.
+    Detached,
+    /// A hollow ring on the caller's edge, where a query's answer lands.
+    Ring,
 }
 
 /// The ink of an arrowhead every line of some standing shares.
@@ -123,7 +133,8 @@ pub struct Marker {
     pub view: f64,
     /// The point of the square laid on the path's end.
     pub reference: Point,
-    /// How big the square is drawn, in widths of the path's stroke.
+    /// How big the square is drawn, in the picture's units, whatever the
+    /// path's stroke.
     pub size: f64,
     /// What it draws in its square.
     pub shapes: Vec<Shape>,

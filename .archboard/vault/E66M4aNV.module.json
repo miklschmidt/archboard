@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#NAzwezpK",
+      "order": 64000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the --url default",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/protocol/shared-options.ts",
+        "symbol": "defaultArchboardUrl"
+      },
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    }
+  ],
   "order": 960260,
   "name": "Contract definition",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract/protocol"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#E66M4aNV",
-  "parent": "vKEsyHFk/XppR9owz#o5zkAtUT",
-  "outgoing": [
-    {
-      "order": 64000,
-      "kind": "dependency",
-      "label": "the --url default",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/contract/protocol/shared-options.ts",
-        "symbol": "defaultArchboardUrl"
-      },
-      "id": "vKEsyHFk/XppR9owz#NAzwezpK",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
-    }
-  ]
+  "parent": "vKEsyHFk/XppR9owz#o5zkAtUT"
 }

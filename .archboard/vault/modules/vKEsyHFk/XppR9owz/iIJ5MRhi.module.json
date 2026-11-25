@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#U2DjfZHj",
+      "order": 1009080,
+      "kind": "async",
+      "effect": "query",
+      "label": "ask the server about itself",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    }
+  ],
   "order": 17000,
   "name": "Server client",
   "kind": "module",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#iIJ5MRhi",
   "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "documents": [
@@ -30,21 +46,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1009080,
-      "kind": "call",
-      "label": "ask the server about itself",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk#U2DjfZHj",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     }
   ]
 }

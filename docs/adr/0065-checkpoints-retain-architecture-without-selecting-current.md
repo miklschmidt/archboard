@@ -13,6 +13,7 @@ A checkpoint retains exact authored inputs, state metadata, schema information, 
 It contains no source checkout, unrelated working files, or machine paths.
 Readers open a complete immutable checkpoint identity without changing their checkout.
 They interpret its retained policy and modules through the same architecture contract as current inputs.
+[ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) relies on this: a reading from before the upgrade to kinds and effects reads exactly, with its own policy, and keeps its recorded look.
 
 The independent `archboard-history` branch retains checkpoints through actual Git ancestry.
 Required baselines also become actual parents.

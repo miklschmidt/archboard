@@ -8,7 +8,7 @@
 
 use crate::ecma::sort_by;
 use crate::geometry::{Rect, Side};
-use crate::track::scene::Map;
+use crate::lanes::scene::Map;
 
 use super::laid::Laid;
 use super::settle::{Settling, settled_ports};

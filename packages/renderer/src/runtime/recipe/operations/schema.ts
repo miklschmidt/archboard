@@ -14,7 +14,7 @@ import { architectureRenderRequestSchema } from "@archboard/model/contract";
 
 import { z } from "zod";
 import {
-	layoutEngineSchema,
+	savedLayoutEngineSchema,
 	legendLayoutSchema,
 	offeredViewSchema,
 	renderedVariantSchema,
@@ -61,8 +61,8 @@ const RenderRecipeSchema = z
 			z.object({ against: IdSchema }).strict(),
 		]),
 		theme: standaloneThemeSchema(),
-		/** The layout engine named, or null for the default one. */
-		layout: layoutEngineSchema().nullable(),
+		/** The layout engine named, or null for the default one. A saved `track` reads as `lanes`. */
+		layout: savedLayoutEngineSchema().nullable(),
 		/** The words of the title, true for the names of what is drawn, or null for none. */
 		title: z.union([z.string().regex(/\S/u), z.literal(true)]).nullable(),
 		/** How the legend is laid out and whether it stands alone, or null for none. */

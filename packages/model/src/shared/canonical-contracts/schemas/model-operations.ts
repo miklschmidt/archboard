@@ -9,6 +9,7 @@ import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import {
 	StandaloneThemeSchema,
 	DiagramAtlasSchema,
+	LayoutEngineSchema,
 	LegendLayoutSchema,
 } from "#shared/protocol/render-reply.ts";
 import {
@@ -16,6 +17,8 @@ import {
 	RecordedFlowChangeSchema,
 } from "#shared/canonical-contracts/schemas/model-flows.ts";
 import { z } from "zod";
+import { LineEffectSchema } from "#shared/schemas/semantic-policy.ts";
+import { retiredCallAdvice } from "#shared/schemas/built-in-vocabulary.ts";
 import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitives.ts";
 import {
 	ArchitectureModuleSchema,
@@ -35,11 +38,18 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	scope: QualifiedSubjectIdSchema.optional(),
 	focus: z.array(QualifiedSubjectIdSchema).optional(),
 	expand: z.array(QualifiedSubjectIdSchema).optional(),
+	/** The lens a structural picture is read through, by id; the vault's default lens when absent. */
+	lens: z.string().min(1).optional(),
+	/** Relationship kinds hidden besides what the lens leaves out. `call`, from before sync and async, hides both. */
 	hideKinds: z.array(z.string()).optional(),
+	/** Effects hidden besides what the lens leaves out; `declared` is a dependency that states none. */
+	hideEffects: z.array(LineEffectSchema).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
 	/** Where the legend is drawn: under the picture, beside it, or `none` to leave it out. */
 	legend: z.enum([...LegendLayoutSchema.options, "none"]).default("horizontal"),
+	/** The engine that lays the picture out. A reading kept before it was stated was drawn with Blocks. */
+	layout: LayoutEngineSchema.default("blocks"),
 });
 const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({
@@ -108,52 +118,70 @@ const ModuleFieldsSchema = ArchitectureModuleSchema.omit({
 	outgoing: true,
 	formerNames: true,
 }).extend({ parent: SingleLineTextSchema.optional() });
-const RelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
+/** A relationship as history recorded it, which may name the retired kind call. */
+const RecordedRelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
 	.omit({ id: true })
 	.extend({ to: SingleLineTextSchema });
-const StructureChangeSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
-	z
-		.object({
-			type: z.literal("add-relationship"),
-			source: SingleLineTextSchema,
-			relationship: RelationshipFieldsSchema,
-		})
-		.strict(),
-	z.object({ type: z.literal("remove-relationship"), subject: QualifiedSubjectIdSchema }).strict(),
-	z
-		.object({
-			type: z.literal("edit-relationship"),
-			subject: QualifiedSubjectIdSchema,
-			source: SingleLineTextSchema.optional(),
-			set: RelationshipFieldsSchema.partial()
-				.extend({ emphasis: RelationshipFieldsSchema.shape.emphasis.removeDefault().optional() })
-				.optional(),
-			clear: z.array(z.enum(["label", "description", "traffic", "anchor"])).optional(),
-		})
-		.strict(),
-	z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),
-	z
-		.object({
-			type: z.literal("edit-module"),
-			subject: SingleLineTextSchema,
-			set: ModuleFieldsSchema.partial().optional(),
-			clear: z
-				.array(
-					z.enum([
-						"responsibility",
-						"description",
-						"parent",
-						"groups",
-						"binding",
-						"documents",
-						"references",
-					]),
-				)
-				.optional(),
-		})
-		.strict(),
-]);
+/** A relationship a new edit writes: it never names the retired kind call. */
+const RelationshipFieldsSchema = RecordedRelationshipFieldsSchema.extend({
+	kind: RecordedRelationshipFieldsSchema.shape.kind.superRefine((kind, context) => {
+		const advice = retiredCallAdvice(kind);
+		if (advice !== undefined) context.addIssue({ code: "custom", message: `${advice}.` });
+	}),
+});
+/**
+ * The structure changes of an edit, with the relationship fields it may write.
+ * @param relationship What a written relationship holds.
+ * @returns The changes.
+ */
+function structureChangeSchema(relationship: typeof RecordedRelationshipFieldsSchema) {
+	return z.discriminatedUnion("type", [
+		z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
+		z
+			.object({
+				type: z.literal("add-relationship"),
+				source: SingleLineTextSchema,
+				relationship,
+			})
+			.strict(),
+		z
+			.object({ type: z.literal("remove-relationship"), subject: QualifiedSubjectIdSchema })
+			.strict(),
+		z
+			.object({
+				type: z.literal("edit-relationship"),
+				subject: QualifiedSubjectIdSchema,
+				source: SingleLineTextSchema.optional(),
+				set: relationship
+					.partial()
+					.extend({ emphasis: relationship.shape.emphasis.removeDefault().optional() })
+					.optional(),
+				clear: z.array(z.enum(["effect", "label", "description", "traffic", "anchor"])).optional(),
+			})
+			.strict(),
+		z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),
+		z
+			.object({
+				type: z.literal("edit-module"),
+				subject: SingleLineTextSchema,
+				set: ModuleFieldsSchema.partial().optional(),
+				clear: z
+					.array(
+						z.enum([
+							"responsibility",
+							"description",
+							"parent",
+							"groups",
+							"binding",
+							"documents",
+							"references",
+						]),
+					)
+					.optional(),
+			})
+			.strict(),
+	]);
+}
 const ProposalConfirmationsSchema = z.array(z.enum(["INHERITANCE_DROPPED", "PART_RECREATED"]));
 const ProposalIntentSchema = z.discriminatedUnion("type", [
 	z.strictObject({
@@ -239,7 +267,7 @@ function editSchema<Statement extends z.ZodType>(statement: Statement) {
 }
 const ArchitectureModuleEditSchema = editSchema(
 	z.discriminatedUnion("type", [
-		...StructureChangeSchema.options,
+		...structureChangeSchema(RelationshipFieldsSchema).options,
 		...FlowChangeSchema.options,
 		...WalkthroughChangeSchema.options,
 	]),
@@ -247,7 +275,7 @@ const ArchitectureModuleEditSchema = editSchema(
 /** An intent as a signed record or a journal holds it, which history must keep decoding. */
 const RecordedModuleEditSchema = editSchema(
 	z.discriminatedUnion("type", [
-		...StructureChangeSchema.options,
+		...structureChangeSchema(RecordedRelationshipFieldsSchema).options,
 		...RecordedFlowChangeSchema.options,
 		...WalkthroughChangeSchema.options,
 	]),

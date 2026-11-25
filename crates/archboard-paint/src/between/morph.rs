@@ -182,17 +182,6 @@ impl Morph {
         })
     }
 
-    /// The box that holds the route this far along.
-    pub(super) fn bounds_at(&self, t: f64) -> kurbo::Rect {
-        let along = self.left.between(&self.right, t.clamp(0.0, 1.0));
-        along
-            .segments
-            .iter()
-            .map(kurbo::ParamCurveExtrema::bounding_box)
-            .reduce(|a, b| a.union(b))
-            .unwrap_or_default()
-    }
-
     /// How far the point of the route that moves most moves.
     pub(super) fn reach(&self) -> f64 {
         let points = |chain: &Chain| {

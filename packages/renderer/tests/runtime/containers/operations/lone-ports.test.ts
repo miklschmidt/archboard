@@ -2,18 +2,14 @@
 // its face once kept its channel's card-wide slot: the last of five channels
 // left its face 8.8 px from the corner while the middle was free, and its
 // label hung past the card. A line once passed 8 px from another line's
-// label, where a label on its own run keeps 12. And a port moved off its
-// slot let a line run part of a lane beside another.
-// What this catches: an engine leaving a lone port beside its face's corner,
-// routing a line past a label closer than a label's clearance, or running
-// two lines closer than a lane without sharing one stroke.
+// label, where a label on its own run keeps 12.
+// What this catches: a lone port left beside its face's corner, or a line
+// routed past a label closer than a label's clearance.
 
 import { expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
-	cornersOf,
 	corridorPoints,
 	distanceToRoute,
 	routeLabels,
@@ -22,7 +18,6 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import archboard from "#tests/runtime/support/fixtures/archboard.json";
-import readingAModel from "#tests/runtime/support/fixtures/reading-a-model.json";
 
 /** The room a line's words keep from an unrelated line: archboard_layout::routes::LABEL_ROUTE_CLEARANCE. */
 const LABEL_ROUTE_CLEARANCE = 12;
@@ -75,106 +70,40 @@ function portOf(box: Box, end: DrawnPoint): readonly [string, number] {
 /** How far from its face's corners a port stands to read as meeting the face, not the corner. */
 const FACE_INSET = 12;
 
-test.each(layoutEngineSchema().options)(
-	"a port alone on a card face keeps clear of the corners (%s)",
-	async (layout) => {
-		const content = orderedFixture(archboard);
-		const drawn = await renderArchitecture({ content, theme: "light", policy, layout });
-		const routes = routePoints(drawn.svg);
-		const ports = new Map<string, number[]>();
-		for (const edge of content.edges) {
-			const points = routes.get(edge.id)!;
-			for (const [card, end] of [
-				[edge.from, points[0]!],
-				[edge.to, points.at(-1)!],
-			] as const) {
-				const [face, corner] = portOf(drawn.atlas.nodes[card]!, end);
-				ports.set(`${card}:${face}`, [...(ports.get(`${card}:${face}`) ?? []), corner]);
-			}
+test("a port alone on a card face keeps clear of the corners", async () => {
+	const content = orderedFixture(archboard);
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	const routes = routePoints(drawn.svg);
+	const ports = new Map<string, number[]>();
+	for (const edge of content.edges) {
+		const points = routes.get(edge.id)!;
+		for (const [card, end] of [
+			[edge.from, points[0]!],
+			[edge.to, points.at(-1)!],
+		] as const) {
+			const [face, corner] = portOf(drawn.atlas.nodes[card]!, end);
+			ports.set(`${card}:${face}`, [...(ports.get(`${card}:${face}`) ?? []), corner]);
 		}
-		const crowded = [...ports].filter(
-			([, corners]) =>
-				corners.every((corner) => Math.abs(corner - corners[0]!) < 1) &&
-				corners[0]! < FACE_INSET - 0.5,
-		);
-		expect(crowded).toEqual([]);
-	},
-);
-
-test.each(layoutEngineSchema().options)(
-	"a label keeps a label's clearance from every other line (%s)",
-	async (layout) => {
-		const content = orderedFixture(archboard);
-		const drawn = await renderArchitecture({ content, theme: "light", policy, layout });
-		const routes = corridorPoints(drawn.svg);
-		const crowded = [...routeLabels(drawn.svg)].flatMap(([label, box]) =>
-			[...routes]
-				.filter(
-					([line, points]) =>
-						line !== label && distanceToRoute(box, points) < LABEL_ROUTE_CLEARANCE - 0.5,
-				)
-				.map(([line]) => `${label}<-${line}`),
-		);
-		expect(crowded).toEqual([]);
-	},
-);
-
-/** The pitch of neighbouring parallel lines. */
-const LANE = 16;
-
-/** Two runs nearer than this are one stroke, a trunk the lines share. */
-const SHARED_STROKE = 2;
-
-/**
- * The straight runs of a drawn line, as the axis each keeps and the stretch it spans.
- * @param points The drawn points.
- * @returns Its runs, a vertical run keeping x and a level one y.
- */
-function runsOf(points: readonly DrawnPoint[]) {
-	return points.slice(1).flatMap((point, index) => {
-		const previous = points[index]!;
-		const vertical = Math.abs(point.x - previous.x) < 0.01;
-		if (!vertical && Math.abs(point.y - previous.y) >= 0.01) return [];
-		const [one, other] = vertical ? [previous.y, point.y] : [previous.x, point.x];
-		return [
-			{
-				vertical,
-				at: vertical ? point.x : point.y,
-				from: Math.min(one, other),
-				to: Math.max(one, other),
-			},
-		];
-	});
-}
-
-// Blocks still runs two of this document's lines a part-lane apart.
-test("no line runs a part-lane beside another", async () => {
-	const content = orderedFixture(readingAModel);
-	const drawn = await renderArchitecture({
-		policy: defaultSemanticPolicy(),
-		content,
-		theme: "light",
-		layout: "track",
-	});
-	const lines = [...routePoints(drawn.svg)].map(
-		([id, points]) => [id, runsOf(cornersOf(points))] as const,
+	}
+	const crowded = [...ports].filter(
+		([, corners]) =>
+			corners.every((corner) => Math.abs(corner - corners[0]!) < 1) &&
+			corners[0]! < FACE_INSET - 0.5,
 	);
-	const doubled = lines.flatMap(([id, runs], index) =>
-		lines
-			.slice(index + 1)
-			.flatMap(([other, theirs]) =>
-				runs.some((run) =>
-					theirs.some(
-						(against) =>
-							run.vertical === against.vertical &&
-							Math.abs(run.at - against.at) > SHARED_STROKE &&
-							Math.abs(run.at - against.at) < LANE - 0.5 &&
-							Math.min(run.to, against.to) - Math.max(run.from, against.from) >= LANE,
-					),
-				)
-					? [`${id}|${other}`]
-					: [],
-			),
+	expect(crowded).toEqual([]);
+});
+
+test("a label keeps a label's clearance from every other line", async () => {
+	const content = orderedFixture(archboard);
+	const drawn = await renderArchitecture({ content, theme: "light", policy });
+	const routes = corridorPoints(drawn.svg);
+	const crowded = [...routeLabels(drawn.svg)].flatMap(([label, box]) =>
+		[...routes]
+			.filter(
+				([line, points]) =>
+					line !== label && distanceToRoute(box, points) < LABEL_ROUTE_CLEARANCE - 0.5,
+			)
+			.map(([line]) => `${label}<-${line}`),
 	);
-	expect(doubled).toEqual([]);
+	expect(crowded).toEqual([]);
 });

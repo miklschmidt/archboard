@@ -246,7 +246,7 @@ describe("vault-level checks", () => {
 			{
 				check: "config-has",
 				configuredGroups: { "request-lifecycle": { name: "Request lifecycle" } },
-				relationshipKinds: { call: { dash: "solid" } },
+				relationshipKinds: { sync: { color: "slate" } },
 			},
 			{ check: "config-has", nodeKinds: { extension: { icon: "RiPlugLine" } } },
 		];

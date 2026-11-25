@@ -192,8 +192,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", asyn
 		)![0];
 		const head = markers.get(/marker-end="url\(#([^)]+)\)"/.exec(line)![1]!)!;
 		const pen = penOf(/\sd="([^"]+)"/.exec(line)![1]!);
-		const reach =
-			((10 - head.refX) / 10) * head.width * Number(/stroke-width="([\d.]+)"/.exec(line)![1]);
+		const reach = ((10 - head.refX) / 10) * head.width;
 		const tip = pen.end + pen.heading * reach;
 		if (step.kind === "self") {
 			// A loop comes back to exactly where it left.

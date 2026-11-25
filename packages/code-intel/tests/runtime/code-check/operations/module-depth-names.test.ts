@@ -67,7 +67,7 @@ function module(
 ): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind,
@@ -76,7 +76,8 @@ function module(
 			outgoing: calls.map((to, index) => ({
 				id: `Shop#r${id.slice(0, 3)}${index}`,
 				order: (index + 1) * 10,
-				kind: "call",
+				kind: "sync",
+				effect: "compute",
 				to: `Shop#${to}`,
 			})),
 		}),
@@ -351,7 +352,7 @@ const DEPTH = new Set([
 test("a folder module with no declared interface says how many of its names files outside it use", async () => {
 	const answer = await check();
 	expect(judged(answer, "INTERFACE_UNDECLARED")).toEqual([["Ledger", undefined, "information"]]);
-	const [finding] = answer.findings.filter((each) => each.code === "INTERFACE_UNDECLARED");
+	const finding = answer.findings.find((each) => each.code === "INTERFACE_UNDECLARED");
 	// `seal` is used outside, `freeze` only by `epoch.ts` beside it; `orphan` and `probe` by none.
 	expect(finding?.message).toContain("Files outside it use 1 of its 4 exported names");
 	expect(finding?.message).toContain("only its own files import 1: freeze.");

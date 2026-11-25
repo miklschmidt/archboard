@@ -2,6 +2,7 @@
 //! and the order of its attributes, as the picture has always written it, so
 //! the same scene is the same bytes.
 
+use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
 
@@ -12,8 +13,10 @@ use crate::xml::{Attributes, empty};
 
 /// The class of everything a viewer shows only round what is selected.
 pub(crate) const HALO_CLASS: &str = "ab-halo";
-/// The class of a double line's rails.
-pub(crate) const RAIL_CLASS: &str = "ab-rail";
+
+/// How a glow is spelt: a stroke this share of its breadth, blurred by this
+/// share of it, so it fades out about where a viewer's glow does.
+const GLOW_SPELLING: (f64, f64) = (0.5, 0.125);
 
 /// One attribute a shape can carry.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,11 +36,12 @@ enum Key {
     Pointer,
     Clip,
     Members,
+    Soft,
 }
 
 use Key::{
     Cap, Class, Clip, Dash, Fill, FillOpacity, Join, Marker, Members, Offset, Opacity, Place,
-    Pointer, Stroke, Width,
+    Pointer, Soft, Stroke, Width,
 };
 
 /// The order a shape's attributes are written in, by its geometry and what it is.
@@ -57,7 +61,6 @@ fn template(shape: &Shape) -> &'static [Key] {
         (Geometry::Path { .. }, Purpose::Halo | Purpose::Ring) => {
             &[Class, Place, Width, Opacity, Cap, Join, Fill, Stroke]
         }
-        (Geometry::Path { .. }, Purpose::Rail) => &[Class, Place, Fill, Stroke, Width, Cap, Join],
         (Geometry::Path { .. }, Purpose::LitLine) => {
             &[Class, Place, Marker, Fill, Stroke, Width, Cap, Join, Dash]
         }
@@ -89,7 +92,8 @@ fn spelling_of(purpose: Purpose, arrowhead: Spelling) -> Spelling {
         | Purpose::Halo
         | Purpose::LitLine
         | Purpose::Line
-        | Purpose::Rail
+        | Purpose::Imprint
+        | Purpose::Glow
         | Purpose::Swipe
         | Purpose::Cutout
         | Purpose::Rule => Spelling::Route,
@@ -128,7 +132,7 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
 pub(crate) fn listed(numbers: &[f64]) -> String {
     numbers
         .iter()
-        .map(|number| archboard_scene::js::number(*number))
+        .map(|number| js::number(*number))
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -138,14 +142,7 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
     let stroke = shape.stroke.as_ref();
     match key {
         Class => {
-            out.set(
-                "class",
-                if shape.purpose == Purpose::Rail {
-                    RAIL_CLASS
-                } else {
-                    HALO_CLASS
-                },
-            );
+            out.set("class", HALO_CLASS);
         }
         Place => place(shape, arrowhead, out),
         Marker => {
@@ -163,7 +160,17 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
             out.maybe("stroke", stroke.map(|stroke| paint(&stroke.paint)));
         }
         Width => {
-            out.maybe("stroke-width", stroke.and_then(|stroke| stroke.width));
+            let share = if shape.purpose == Purpose::Glow {
+                GLOW_SPELLING.0
+            } else {
+                1.0
+            };
+            out.maybe(
+                "stroke-width",
+                stroke
+                    .and_then(|stroke| stroke.width)
+                    .map(|width| width * share),
+            );
         }
         Opacity => {
             out.maybe("stroke-opacity", stroke.and_then(|stroke| stroke.opacity));
@@ -217,12 +224,21 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
                 (!shape.members.is_empty()).then(|| shape.members.join(" ")),
             );
         }
+        Soft => {
+            out.maybe(
+                "filter",
+                stroke
+                    .and_then(|stroke| stroke.width)
+                    .filter(|_| shape.purpose == Purpose::Glow)
+                    .map(|width| format!("blur({}px)", js::number(width * GLOW_SPELLING.1))),
+            );
+        }
     }
 }
 
 /// Every attribute a shape can carry, in the order a shape no template
 /// expects it of writes it.
-const EVERY: [Key; 15] = [
+const EVERY: [Key; 16] = [
     Class,
     Place,
     Marker,
@@ -238,6 +254,7 @@ const EVERY: [Key; 15] = [
     Pointer,
     Clip,
     Members,
+    Soft,
 ];
 
 /// A shape as an element, an arrowhead spelt as the place it is drawn in asks.

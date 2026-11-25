@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
+      "order": 95000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "await captured host narrative",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
+        "symbol": "prepareNarrative"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#K53UIYaX"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#4taYdz5M",
+      "order": 97000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "create the existing realtime offer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
+        "symbol": "createOffer"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    }
+  ],
   "order": 53000,
   "name": "Voice session actions",
   "kind": "module",
@@ -8,41 +38,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/voice"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
   "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 95000,
-      "kind": "call",
-      "label": "await captured host narrative",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
-        "symbol": "prepareNarrative"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
-      "to": "vKEsyHFk/9ncuT5DP#K53UIYaX"
-    },
-    {
-      "order": 97000,
-      "kind": "call",
-      "label": "create the existing realtime offer",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
-        "symbol": "createOffer"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#4taYdz5M",
-      "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
     }
   ]
 }

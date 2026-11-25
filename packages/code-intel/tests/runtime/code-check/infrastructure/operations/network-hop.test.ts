@@ -285,10 +285,10 @@ beforeAll(async () => {
 				],
 				edges: [
 					edge("e1", ["pW", "pO"], "http"),
-					edge("e2", ["pO", "pD"], "data"),
+					edge("e2", ["pO", "pD"], "storage"),
 					edge("e3", ["pO", "pL"], "http"),
 					edge("e4", ["pW", "pL"], "http"),
-					edge("e5", ["pD", "pC"], "data"),
+					edge("e5", ["pD", "pC"], "storage"),
 					edge("e6", ["pJ", "pQ"], "queue"),
 					edge("e7", ["pK", "pQ"], "queue"),
 					edge("e8", ["pN", "pE"], "queue"),

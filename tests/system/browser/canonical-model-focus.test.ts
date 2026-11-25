@@ -35,7 +35,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "focused-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const gatewayPath = join(vault, "gateway.module.json");
@@ -43,7 +43,8 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	gateway.outgoing.push({
 		id: "Shop#Handle",
 		to: "Shop#Handler",
-		kind: "call",
+		kind: "sync",
+		effect: "mutation",
 		order: 20,
 		label: "Handle",
 	});
@@ -51,7 +52,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
@@ -63,14 +64,21 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	writeFileSync(
 		join(vault, "hidden.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Hidden",
 			name: "Hidden",
 			kind: "module",
 			parent: "Shop#Gateway",
 			order: 50,
 			outgoing: [
-				{ id: "Shop#Private", to: "Shop#Hidden", kind: "call", order: 60, label: "Internal only" },
+				{
+					id: "Shop#Private",
+					to: "Shop#Hidden",
+					kind: "sync",
+					effect: "mutation",
+					order: 60,
+					label: "Internal only",
+				},
 			],
 		}),
 	);

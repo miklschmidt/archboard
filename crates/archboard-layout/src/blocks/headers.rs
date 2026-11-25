@@ -120,13 +120,13 @@ pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
 /// The visible slab's horizontal reach for lines naming the parent itself.
 pub(crate) fn header_reach(block: &super::tree::Block, laid: &super::laid::Laid) -> (f64, f64) {
     let at = laid.boxes[super::tree::header_of(block).as_str()];
-    let (low, high) = crate::track::channels::port_reach(&crate::geometry::Rect {
+    let (low, high) = crate::lanes::channels::port_reach(&crate::geometry::Rect {
         width: tab_width(at.width).max(0.0),
         ..at
     });
     (
         block.lone.as_ref().map_or(low, |lone| {
-            low.max(super::lone::caption_width(lone) + crate::track::chains::LANE)
+            low.max(super::lone::caption_width(lone) + crate::lanes::chains::LANE)
         }),
         high,
     )
@@ -137,7 +137,7 @@ pub(crate) fn header_reach(block: &super::tree::Block, laid: &super::laid::Laid)
 pub(crate) fn place_header_entries(
     block: &super::tree::Block,
     laid: &mut super::laid::Laid,
-    settled: &crate::track::scene::Map<String, f64>,
+    settled: &crate::lanes::scene::Map<String, f64>,
 ) {
     use crate::geometry::{Rect, Side};
     if !block.ports.keys().any(|port| block.header_entry(port)) {
@@ -161,7 +161,7 @@ pub(crate) fn place_header_entries(
                 .unwrap_or(at.x + at.width / 2.0)
         })
         .collect();
-    let xs = crate::track::channels::spread_along(reach, &wanted);
+    let xs = crate::lanes::channels::spread_along(reach, &wanted);
     let y = at.y + block.lone.as_ref().map_or(0.0, super::lone::band_of);
     for (port, x) in ports.into_iter().zip(xs) {
         let size = super::leaves::PORT;

@@ -54,7 +54,8 @@ fn a_busy_row_leaves_the_gap_of_a_quiet_row_alone() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("a gap to close");
+    let drawn =
+        drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default())).expect("a gap to close");
     let gap = |one: usize, two: usize| {
         let (first, second) = (drawn.cards[one].bx, drawn.cards[two].bx);
         second.x - first.x - first.width
@@ -86,7 +87,8 @@ fn a_line_joining_another_before_their_card_keeps_a_junctions_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
+    let drawn =
+        drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default())).expect("room to take out");
     let join = drawn.edges[1].points[1].y;
     assert!(drawn.cards[1].bx.y - join >= JOIN_ROOM);
     assert!(drawn.cards[1].bx.y < 500.0);
@@ -114,7 +116,12 @@ fn a_line_leaving_another_after_their_card_keeps_a_junctions_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &["straight"]).expect("room to take out");
+    let drawn = drawing(
+        &shape,
+        8.0,
+        (&["straight"], &rustc_hash::FxHashMap::default()),
+    )
+    .expect("room to take out");
     let source = drawn.cards[0].bx;
     let part = drawn.edges[1].points[1].y;
     assert!(part - (source.y + source.height) >= JOIN_ROOM);
@@ -147,7 +154,8 @@ fn branches_that_join_from_opposite_sides_keep_a_junctions_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
+    let drawn =
+        drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default())).expect("room to take out");
     assert!(super::super::junctions::readable(
         &drawn.edges[0].points,
         &drawn.edges[1].points,
@@ -179,7 +187,8 @@ fn coincident_whole_routes_need_no_junction_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
+    let drawn =
+        drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default())).expect("room to take out");
     let points = &drawn.edges[0].points;
     assert!(points[3].y - points[2].y < JOIN_ROOM);
 }
@@ -227,8 +236,8 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
                     &[
                         (200.0, 50.0),
                         (250.0, 50.0),
-                        (250.0, 300.0),
-                        (400.0, 300.0),
+                        (250.0, 220.0),
+                        (400.0, 220.0),
                         (400.0, 100.0),
                     ],
                 ),
@@ -237,8 +246,8 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
                     &[
                         (200.0, 50.0),
                         (250.0, 50.0),
-                        (250.0, 300.0),
-                        (700.0, 300.0),
+                        (250.0, 220.0),
+                        (700.0, 220.0),
                         (700.0, 500.0),
                     ],
                 ),
@@ -263,7 +272,8 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
             ))
     );
     assert!(super::super::runs::freeze(&model, &shape.routes).is_some());
-    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
+    let drawn =
+        drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default())).expect("room to take out");
     for (branch, straight) in [(0, 2), (1, 3)] {
         assert!(super::super::junctions::readable(
             &drawn.edges[branch].points,
@@ -293,7 +303,8 @@ fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("room between the cards");
+    let drawn = drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default()))
+        .expect("room between the cards");
     for row in drawn.cards.as_chunks::<2>().0 {
         let gap = row[1].bx.x - row[0].bx.x - row[0].bx.width;
         assert!(gap <= CARD_GAP + STAY_ALIGNED);
@@ -351,7 +362,8 @@ fn a_sparse_frame_closes_and_its_lines_stay_on_their_cards_walls() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0, &[]).expect("empty tray to take out");
+    let drawn = drawing(&shape, 8.0, (&[], &rustc_hash::FxHashMap::default()))
+        .expect("empty tray to take out");
     let (from, to) = (drawn.cards[0].bx, drawn.cards[1].bx);
     let line = &drawn.edges[0].points;
     assert_eq!(line[0].y, from.y + from.height);
@@ -427,7 +439,7 @@ fn check_endpoint_walls(axis: Axis) {
     if matches!(axis, Axis::X) {
         transpose(&mut drawing);
     }
-    let sheet = Sheet::of(&drawing, axis, &[]);
+    let sheet = Sheet::of(&drawing, axis, (&[], &rustc_hash::FxHashMap::default()));
     let shift = -900.0;
     let shifts = vec![shift; sheet.movers];
     sheet.apply_boxes(&mut drawing, axis, &shifts);
@@ -471,4 +483,58 @@ fn transpose(drawing: &mut Placed) {
     for point in drawing.edges.iter_mut().flat_map(|line| &mut line.points) {
         std::mem::swap(&mut point.x, &mut point.y);
     }
+}
+
+/// A cable that turns off its approach above the card it enters keeps the approach its inner
+/// strand needs, where a lone line keeps a lone line's.
+#[test]
+fn a_cable_keeps_the_approach_its_strands_need() {
+    let line = |id: &str| PlacedLine {
+        id: id.into(),
+        points: [(100.0, 300.0), (400.0, 300.0), (400.0, 500.0)]
+            .iter()
+            .map(|&(x, y)| Point { x, y })
+            .collect(),
+        label: None,
+    };
+    let approach = |inks: &rustc_hash::FxHashMap<&str, f64>, id: &str| {
+        let shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![card("target", 300.0, 500.0)],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![line(id)],
+            titles: Vec::new(),
+            routed: None,
+        });
+        let drawn = drawing(&shape, 8.0, (&[], inks)).expect("room to take out");
+        drawn.cards[0].bx.y - drawn.edges[0].points[1].y
+    };
+    let none = rustc_hash::FxHashMap::default();
+    let inks: rustc_hash::FxHashMap<&str, f64> = std::iter::once(("cable", 12.0)).collect();
+    assert!(approach(&none, "lone") < APPROACH + 12.0);
+    assert!(approach(&inks, "cable") >= APPROACH + 12.0);
+}
+
+#[test]
+fn a_straight_cable_keeps_room_for_its_marks_when_the_cards_move_together() {
+    let shape = Shape::new(Placed {
+        width: 1000.0,
+        height: 600.0,
+        cards: vec![card("from", 100.0, 200.0), card("to", 600.0, 200.0)],
+        frames: Vec::new(),
+        regions: Vec::new(),
+        edges: vec![PlacedLine {
+            id: "cable".into(),
+            points: vec![Point { x: 300.0, y: 250.0 }, Point { x: 600.0, y: 250.0 }],
+            label: None,
+        }],
+        titles: Vec::new(),
+        routed: None,
+    });
+    let inks = std::iter::once(("cable", 4.0)).collect();
+    let drawn = drawing(&shape, 8.0, (&[], &inks)).expect("a gap to close");
+    let gap = drawn.edges[0].points[1].x - drawn.edges[0].points[0].x;
+    assert!((STRAIGHT_RUN..300.0).contains(&gap));
 }

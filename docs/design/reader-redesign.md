@@ -78,7 +78,7 @@ what the marks of the picture mean.
   control, and a bar under the legend put the tag out from under the pointer. It needs no click, and it lists the
   kinds, line types and groups of the reading. A long subject and its lists scroll above it.
   The action bar offers `Explain with Codex` with nothing selected. Its warning control stays through selection and scope changes.
-- Layout engine: a switch in the `Picture` tab of the Settings dialog (TASK-605). It stood under the legend first, after the owner asked for it back (TASK-559.21).
+- Layout engine: a switch between Blocks and Lanes ([ADR 0096](../adr/0096-track-is-replaced-by-lanes.md)) in the `Picture` tab of the Settings dialog (TASK-605). It stood under the legend first, after the owner asked for it back (TASK-559.21).
   This browser remembers the choice for every pane. A switch keeps the selection and fits the new picture. The engine
   is part of what a stored drawing is kept under, so one engine never answers for the other. No engine lays out a flow,
   so a flow keeps its own layout.

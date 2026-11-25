@@ -47,8 +47,8 @@ const ARCHITECTURE = {
 		{ name: "Auditor", kind: "service", responsibility: "Reads the ledger nightly, To Vary AWAY" },
 	],
 	edges: [
-		{ from: "Gateway", to: "Ledger", kind: "call", label: "transfer with an audit id" },
-		{ from: "Auditor", to: "Ledger", kind: "call", label: "reconcile" },
+		{ from: "Gateway", to: "Ledger", kind: "sync", label: "transfer with an audit id" },
+		{ from: "Auditor", to: "Ledger", kind: "sync", effect: "query" as const, label: "reconcile" },
 	],
 };
 
@@ -196,7 +196,9 @@ test("every painter draws the glyphs where the core put them, and the words are 
 
 	// The page's core: the picture the pane draws for itself.
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", modelAddress(server.base, model)]);
+	// Through the lens that draws every line: the default leaves the query line, and with it the
+	// auditor and its words, out of the picture.
+	await browser.run(["open", `${modelAddress(server.base, model)}&lensA=all`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => browser.eval<Runs>(runsUnder(SURFACE, "words alone")),

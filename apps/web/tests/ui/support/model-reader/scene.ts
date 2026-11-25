@@ -52,7 +52,7 @@ function shopReading(overrides: Partial<SceneReading> = {}): SceneReading {
 		scope: null,
 		focus: null,
 		expand: [],
-		filters: { hideKinds: [] },
+		filters: { lens: undefined, hideKinds: [], hideEffects: [] },
 		grammar: "architecture",
 		flow: null,
 		subject: null,

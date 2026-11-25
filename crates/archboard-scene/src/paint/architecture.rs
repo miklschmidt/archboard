@@ -5,10 +5,11 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::drawing::Painted;
 use crate::geometry::{Rect, curve_bounds, inflate, union};
+use crate::js;
 use crate::paint::Ctx;
 use crate::paint::build::{Items, lines};
 use crate::paint::crossings::{
-    Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, rail_cutouts, trunk_cutouts,
+    Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::door::{door_colours, door_shadow, paint_door};
 use crate::paint::edge_line::{
@@ -18,6 +19,7 @@ use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::far_card::Part;
 use crate::paint::finish::finish_definitions;
 use crate::paint::flowchart_shapes::FlowchartShapes;
+use crate::paint::heads::IMPRINT_REACH;
 use crate::paint::junctions::junction_marks;
 use crate::paint::measured_cards::paint_measured_card;
 use crate::paint::page::{PaintedPage, atlas_boxes, canvas_for, shifted};
@@ -28,9 +30,12 @@ use crate::paint::standing::{Standings, Unsettled, marked_box};
 use crate::paint::styles::{head_of, quietened, relationship_ink, stroke_width};
 use crate::paint::traffic::{TrafficLine, paint_traffic};
 use crate::paint::{Edge, Node};
-use crate::request::{Dash, LineAppearance, NodeAppearance, Standing};
+use crate::request::{LineAppearance, NodeAppearance, Standing};
 use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 use crate::sizes::{DIAGRAM_MARGIN, SLAB_RADIUS};
+
+/// The air an imprint keeps from the end of another line on its edge.
+const IMPRINT_AIR: f64 = 2.0;
 
 /// Boxes by subject id, in the order they were found.
 type Boxed<'edge> = Vec<(&'edge str, Rect)>;
@@ -167,10 +172,8 @@ impl<'p> Painting<'p> {
     ) -> Painting<'p> {
         let edges = &drawing.bridged.edges;
         let removed = |id: &str| standings.of(id) == Some(Standing::Removed);
-        let double = |routed: &Edge| look_of(vocabulary, &routed.edge.id).dash == Dash::Mixed;
-        let mut cutouts: Vec<Cutout> = crossing_cutouts(edges, &drawing.bridged.bridges, &double);
-        cutouts.extend(trunk_cutouts(edges, &double));
-        cutouts.extend(rail_cutouts(edges, &double));
+        let mut cutouts: Vec<Cutout> = crossing_cutouts(edges, &drawing.bridged.bridges);
+        cutouts.extend(trunk_cutouts(edges));
         let see_through: Vec<Rect> = edges
             .iter()
             .filter(|routed| removed(&routed.edge.id))
@@ -312,8 +315,25 @@ impl<'p> Painting<'p> {
             look_of(self.vocabulary, id),
             self.masks.masks.get(id),
             self.vocabulary.steps.contains(id.as_str()),
-            &slots,
+            (&slots, self.imprint_reach(routed)),
         )
+    }
+
+    /// How far a mutation's imprint may reach along its target's edge to
+    /// either side of its tip: its share of the edge, half the way to the
+    /// nearest end of another line, less a little air.
+    fn imprint_reach(&self, routed: &Edge) -> f64 {
+        let tip = routed.curve.end();
+        let nearest = self
+            .drawing
+            .drawing
+            .edges
+            .iter()
+            .filter(|other| other.edge.id != routed.edge.id)
+            .flat_map(|other| [other.curve.from, other.curve.end()])
+            .map(|end| js::hypot(end.x - tip.x, end.y - tip.y))
+            .fold(f64::INFINITY, f64::min);
+        (nearest / 2.0 - IMPRINT_AIR).clamp(0.0, IMPRINT_REACH)
     }
 
     /// The marks where lines join, each in its line's ink, removed lines left out.

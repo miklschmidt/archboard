@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#J2g3pRdG",
+      "order": 1000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the files of each grammar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-facts/operations/adapters.ts",
+        "symbol": "GRAMMARS"
+      },
+      "to": "vKEsyHFk#DZGqA0Dn"
+    }
+  ],
   "order": 44000,
   "name": "Fact analysis",
   "kind": "module",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
   "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "documents": [
@@ -25,21 +41,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "the files of each grammar",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-facts/operations/adapters.ts",
-        "symbol": "GRAMMARS"
-      },
-      "id": "vKEsyHFk#J2g3pRdG",
-      "to": "vKEsyHFk#DZGqA0Dn"
     }
   ]
 }

@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#hHG2mx8m",
+      "order": 121000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "include the comparison in the picture cache key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-cache.ts",
+        "symbol": "comparisonKey"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ],
   "order": 13000,
   "name": "Picture cache",
   "kind": "function",
@@ -11,22 +27,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-cache.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
-  "outgoing": [
-    {
-      "order": 121000,
-      "kind": "call",
-      "label": "include the comparison in the picture cache key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-cache.ts",
-        "symbol": "comparisonKey"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#hHG2mx8m",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1"
 }

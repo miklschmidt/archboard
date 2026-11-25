@@ -1,6 +1,8 @@
 ---
-// A warning from the code check as the Right panel steps through it, beside the source line
-// that supports it. The checkout is a small example, like the README's.
+// A warning of the code check as Measures shows it, under "Where the map and the code
+// disagree" in the Cards layout: the count of warnings and when the check ran over the cards,
+// then the card of one finding beside the source line that supports it. The checkout is a small
+// example, like the README's.
 import Icon from "../Icon.astro";
 
 const source = `<span class="ln">18</span><span class="k">export async function</span> placeOrder(basket) {
@@ -13,27 +15,25 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 ---
 
 <div class="evidence table">
-	<div class="panel">
-		<div class="panel-head">
-			<span class="count"><Icon name="alert" size={15} /> Warnings</span>
-			<span class="stepper" aria-hidden="true">
-				<span class="step"><Icon name="chevronLeft" size={14} /></span>
-				<span class="mono">1 of 3</span>
-				<span class="step"><Icon name="chevronRight" size={14} /></span>
-			</span>
-		</div>
-		<div class="finding">
+	<div class="view-head">
+		<p class="count"><Icon name="alert" size={15} /> 3 warnings</p>
+		<p class="when">Code check at <time class="mono">12:49 PM</time></p>
+		<span class="layouts" aria-hidden="true"><span class="is-on">Cards</span><span>List</span></span>
+	</div>
+	<div class="finding">
+		<p class="finding-head">
 			<span class="chip missing">Missing relationship</span>
-			<p class="route">
-				<span>Place order</span>
-				<Icon name="arrowRight" size={14} />
-				<span>Save order</span>
-			</p>
-			<p class="explain">
-				Place order calls Save order, and the architecture has no relationship between them.
-			</p>
-			<p class="strength"><Icon name="check" size={14} /> Resolved by analysis, not matched by name</p>
-		</div>
+			<span class="show" aria-hidden="true"><Icon name="focus" size={15} /></span>
+		</p>
+		<p class="route">
+			<span>Place order</span>
+			<Icon name="arrowRight" size={14} />
+			<span>Save order</span>
+		</p>
+		<p class="explain">
+			Place order calls Save order, but no relationship connects them in the model.
+		</p>
+		<p class="strength"><Icon name="check" size={14} /> Resolved by analysis · awaited</p>
 	</div>
 	<figure class="source">
 		<figcaption class="file">
@@ -43,7 +43,7 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 		<pre tabindex="0"><code set:html={source} /></pre>
 	</figure>
 </div>
-<p class="caption example-caption">Example checkout and source evidence.</p>
+<p class="caption example-caption">Sample finding from a checkout service, linked to the calling line.</p>
 
 <style>
 	.evidence {
@@ -54,19 +54,15 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 		padding: 6px;
 		background: var(--chrome);
 	}
-	.panel {
+	/* Over the cards, as in Measures: the count and the time of the check, then the switch of
+	   the two layouts at the end. */
+	.view-head {
+		grid-column: 1 / -1;
 		display: flex;
-		flex-direction: column;
-		gap: 14px;
-		padding: 16px;
-		border-radius: 6px;
-		background: var(--plane);
-		box-shadow: inset 0 0 0 1px var(--rule);
-	}
-	.panel-head {
-		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
+		gap: 4px 16px;
+		padding: 8px 10px 6px;
 	}
 	.count {
 		display: inline-flex;
@@ -79,24 +75,34 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 	.count :global(svg) {
 		color: var(--changed);
 	}
-	.stepper {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
+	.when {
+		font-size: 0.8125rem;
 		color: var(--ink-muted);
 	}
-	.stepper .mono {
+	.when .mono {
 		font-size: 0.75rem;
 	}
-	.step {
-		display: inline-grid;
-		place-items: center;
-		width: 24px;
-		height: 24px;
+	.layouts {
+		display: inline-flex;
+		gap: 2px;
+		margin-left: auto;
+		padding: 2px;
 		border-radius: 3px;
-		background: var(--raised);
-		box-shadow: var(--shadow-raised);
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.layouts span {
+		padding: 3px 10px;
+		border-radius: 3px;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.layouts .is-on {
 		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
 	}
 	.finding {
 		display: flex;
@@ -109,8 +115,22 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 			var(--shadow-raised),
 			inset 0 0 0 1px color-mix(in oklch, var(--changed) 45%, transparent);
 	}
+	.finding-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	/* The quiet key that selects the finding's subject on the picture. */
+	.show {
+		display: inline-grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		margin: -2px -4px 0 0;
+		color: var(--ink-muted);
+	}
 	.chip.missing {
-		align-self: flex-start;
 		color: oklch(0.2 0.03 50);
 		background: var(--changed);
 	}
@@ -198,6 +218,9 @@ const source = `<span class="ln">18</span><span class="k">export async function<
 	@media (max-width: 640px) {
 		.evidence {
 			grid-template-columns: minmax(0, 1fr);
+		}
+		.view-head {
+			grid-column: auto;
 		}
 	}
 </style>

@@ -12,7 +12,7 @@
 
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import { containersOf } from "#shared/rules/scope.ts";
-import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
+import type { VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 import { containmentDiagnostics } from "#runtime/check/operations/containment.ts";
 import { duplicateDiagnostics } from "#runtime/check/operations/duplicates.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";

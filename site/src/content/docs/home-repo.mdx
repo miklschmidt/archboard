@@ -1,15 +1,15 @@
 ---
 title: Archboard in a Home Repo
-description: Keep one model of the whole system in your Home Repo, bind it to the code of every other repository, and see which parts of the system an agent changed across all of them.
+description: Keep a single system-wide model in your Home Repo, bind modules to code across every other repository, and track which modules an agent's commits changed.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 import Exit from "../../components/docs/Exit.astro";
 
-A Home Repo is one repository that holds your skills, your `AGENTS.md` and your shared docs. You start every agent session there, and its `AGENTS.md` points to each of your other repositories. Matt Pocock describes the pattern in [The Home Repo Pattern](https://www.aihero.dev/the-home-repo-pattern). The architecture of a system that spans those repositories is a shared doc too, so its vault goes in the Home Repo.
+A Home Repo is a central repository holding your agent skills, `AGENTS.md`, and shared documentation. You start agent sessions there, and its `AGENTS.md` points to your service repositories. Matt Pocock describes this pattern in [The Home Repo Pattern](https://www.aihero.dev/the-home-repo-pattern). Putting the Archboard vault in the Home Repo gives you a single model covering every repository in your system.
 
-## The layout
+## Directory layout
 
 ```text
 ~/repos/acme/
@@ -21,20 +21,20 @@ A Home Repo is one repository that holds your skills, your `AGENTS.md` and your 
 └── platform/
 ```
 
-The other repositories have no vault. A module in the model binds to a file or a directory in any repository, by the identity of the repository and a path, such as `github.com/acme/storefront` and `src/checkout/`. The identity comes from the `origin` remote of the checkout. The binding holds no absolute path, so it resolves on every machine.
+The service repositories do not need vaults of their own. Modules in the Home Repo bind to code in other repositories using a repository identity (from the checkout's `origin` remote, such as `github.com/acme/storefront`) and a relative path (such as `src/checkout/`). Because bindings store no absolute paths, they resolve on every machine.
 
-## Set it up
+## Setup
 
 <Steps>
 
-1. Run `archboard init` in the Home Repo. It installs the skills for your user, makes the vault and registers the checkout of the Home Repo.
+1. Run `archboard init` in the Home Repo to install the agent skills, create the vault, and register the Home Repo checkout.
 
    ```bash
    cd ~/repos/acme/home
    archboard init
    ```
 
-2. Register a checkout of each other repository on this machine. The code check and the browser read the code of a binding from that checkout.
+2. Register local checkouts for the other repositories so the code check and browser UI can read their source files.
 
    ```bash
    archboard repo add ~/repos/acme/storefront
@@ -43,7 +43,7 @@ The other repositories have no vault. A module in the model binds to a file or a
    archboard repo list
    ```
 
-3. Ask your agent to [draw the first map](../first-map/#2-draw-the-first-map) in the Home Repo. `init` creates an empty model. Bind each module to its source in the other repositories. Use the repository identities from `archboard repo list`.
+3. Ask your agent to [draw the first map](../first-map/#2-draw-the-first-map) from the Home Repo. `archboard init` creates an empty model. Bind each module to its source in the other repositories using the repository identities printed by `archboard repo list`.
 
 4. Commit the vault in the Home Repo.
 
@@ -54,70 +54,70 @@ The other repositories have no vault. A module in the model binds to a file or a
 
 </Steps>
 
-Each machine that runs the check registers its own checkouts, because the registry belongs to the machine. Register a language server for each language in the repository that holds the code, as [Install and set up](../install/#set-up-the-language-servers) shows.
+Because the checkout registry is machine-local, each developer machine registers its own checkouts. Register language servers inside each repository that holds the source code, as described in [Install and set up](../install/#set-up-the-language-servers).
 
-## Where the agent runs commands
+## Running commands across repositories
 
-A model command run in the Home Repo finds the vault without `-C`. In another repository, `model read` refuses with `VAULT_NOT_FOUND`. If the Home Repo's model binds that repository, the refusal names the Home Repo as the directory to give with `-C`:
+Commands run inside the Home Repo locate `.archboard/vault` automatically. Running `model read` inside a service repository without a vault exits with `VAULT_NOT_FOUND`. If the Home Repo's model binds to that repository, the error prints the Home Repo path so you can pass it with `-C`:
 
 ```bash
 archboard -C ~/repos/acme/home model read
 ```
 
-In a checkout without a vault, `archboard check` skips the semantic and code checks. Pass `-C` to run them against the Home Repo.
+In a checkout without a vault, `archboard check` skips the semantics and code checks. Pass `-C` pointing to the Home Repo to run them.
 
-## See what an agent changed
+## Track cross-repository changes
 
-Git tells you which repositories have new commits. `archboard model footprint` tells you which modules those commits changed, in every repository that the model binds. Run it in the Home Repo:
+Git shows which repositories have new commits, while `archboard model footprint` maps those commits to affected modules across every bound repository. Run it from the Home Repo:
 
 ```bash
 archboard model footprint --base main
 ```
 
-It reads the commits between `main` and `HEAD` in the chosen checkout of each repository. It lists each module that the commits changed. Under `unboundFiles`, it lists each changed file that no module is bound to.
+The command reads commits between `main` and `HEAD` in the chosen checkout of each repository. It lists every changed module and reports changed files with no module binding under `unboundFiles`.
 
-If the agent worked from a proposal, select the draft with `--state`. The answer then puts modules in three groups: planned and changed, changed outside the plan, and planned but unchanged. Review the modules changed outside the plan first. `--fail-outside` exits <Exit command="model footprint" outcome="outside" /> for changed modules outside the plan. It ignores an outer directory module when changed modules inside it bind every changed file there. Unbound files never fail this gate.
+Pass `--state` with a proposal name or ID to compare the commits against that plan. The output groups modules into three categories: planned and changed, changed outside the plan, and planned but unchanged. Review out-of-plan modules first. Adding `--fail-outside` exits <Exit command="model footprint" outcome="outside" /> if any modified module is outside the plan. A parent directory module is excluded if changed child modules already bind every modified file inside it. Unbound files never fail this gate.
 
-The answer also lists each module that the draft adds although the commits add none of its code. `--fail-preexisting` exits <Exit command="model footprint" outcome="preexisting" /> for these modules. Model their code in the current architecture first.
+The output also lists modules added by the draft whose source code already existed before the branch. Pass `--fail-preexisting` to exit <Exit command="model footprint" outcome="preexisting" /> when that list is non-empty, so you can model existing code in the current architecture first.
 
 ```bash
 archboard model footprint --base main --state "Split payments" --fail-outside
 ```
 
-If the branch adopted its proposal, the proposal is the current state at the head. Without `--state`, the command then sets the current state against the current state at the merge base, so the three groups stay. The command does this when the two current states differ.
+If the branch already adopted its proposal into the current state, running `model footprint` without `--state` compares the head's current state against the merge base's current state whenever they differ, preserving the three groups.
 
-<Aside type="caution" title="Every repository needs the base">
-	Use a ref that resolves in each checkout, such as `main` or a commit. If a repository cannot read
-	the base or the head, the command names that repository and exits
-	<Exit command="model footprint" outcome="unread" />. The command reads only what each checkout
-	already has, and it fetches nothing.
+<Aside type="caution" title="Every repository needs the base ref">
+	Use a ref that exists in every bound checkout, such as `main` or a commit SHA. If any checkout
+	cannot resolve the base or head ref, the command names that repository and exits
+	<Exit command="model footprint" outcome="unread" />. The command reads only local Git objects and
+	never fetches.
 </Aside>
 
-The command reads one checkout of each repository, the chosen checkout. `archboard repo list` shows which checkout that is. If an agent commits in a worktree, choose that worktree first with `archboard repo use <dir>`.
+`model footprint` inspects each repository's chosen checkout shown by `archboard repo list`. If an agent committed changes in a Git worktree, switch the chosen checkout to that worktree first with `archboard repo use <dir>`.
 
-To read another branch, name it with `--head`. By default, the command reads the vault at that head if the Home Repo holds it. Then `--state` can name a proposal that exists only on that branch. If only a code repository holds the head, the command reads the vault on disk. With `--checkpoint`, it reads the saved state instead.
+Pass `--head` to inspect another branch. If the Home Repo holds that branch, Archboard reads the vault from that Git ref so `--state` can select branch-only proposals. If only a code repository holds that branch, Archboard reads the vault on disk. Pass `--checkpoint` to read a retained checkpoint instead.
 
 ```bash
 archboard model footprint --base main --head agent/split-payments --state "Split payments"
 ```
 
-The answer's `vaultRead` records the model's source. For the vault on disk, it holds `{ "at": "checkout" }`. For a Git ref, it holds `{ "at": "ref", "ref": "<head>", "commit": "<commit>" }`.
+The JSON field `vaultRead` records the model source: `{ "at": "checkout" }` for the working tree on disk, or `{ "at": "ref", "ref": "<head>", "commit": "<commit>" }` for a Git ref.
 
-If you edited a proposal without a commit to the head, add `--model-at checkout`. The command then reads the model on disk.
+If you have uncommitted proposal edits on disk, add `--model-at checkout` to read the working tree instead of the committed head.
 
 ### In the browser
 
-Open Measures and choose `What this branch changed`. Choose the base, the head and the state to set the commits against. Each of the three menus is searchable, and you can type any ref. The view reads when it opens and when you press Refresh.
+Open **Measures** and select **What this branch changed**. Pick the base ref, head ref, and comparison state from the searchable menus (you can also type any Git ref). The view loads when opened and refreshes when you click **Refresh**.
 
-With a proposal, the view shows three cards: `Planned and changed`, `Changed outside the plan` and `Planned, not changed yet`. Without one, it shows one card, `Changed`. If the branch adopted its proposal, Against says `Current, adopted on this branch`, and the view shows the three cards. Select a module in a card to select it on its picture. The information key beside Refresh shows what the read covers.
+With a proposal selected, the view displays three cards: **Planned and changed**, **Changed outside the plan**, and **Planned, not changed yet**. Without a proposal, it shows a single **Changed** card. If the branch already adopted its proposal, **Against** displays **Current, adopted on this branch** and shows all three cards. Click a module in any card to select it in the diagram, or click the info button beside **Refresh** to inspect the read scope.
 
-Each card with modules has `Show on picture` at its foot. It opens the nearest shared parent of the card's modules. If they share no parent, it opens the root reading. It selects each listed module that the picture draws, or the drawn module that holds it.
+Click **Show on picture** at the bottom of a card to open the nearest shared parent of its modules (or the root reading if they have none) and select every listed module or its drawn container.
 
-It uses the model that the footprint read, in the state that Against names. If the footprint read a Git ref, it opens a branch reading: the model at that ref's commit. If only a code repository holds the head, it uses the model on disk. The state chip names a branch reading's ref and commit. A branch reading is read-only, and its address survives a reload.
+The diagram uses the model source and state shown in **Against**. When reading from a Git ref, Archboard opens a read-only branch reading whose state chip displays the ref and commit SHA, and whose URL survives page reloads.
 
 ## In CI
 
-The other repositories have no vault, so their own `archboard check` has no model to read. Run the check with the vault of the Home Repo, and register the checkout of the code beside it. In the CI of a repository such as the storefront, check out both and list the code in the check Action's [`repos`](../reference/actions/#check-repos) input:
+Because service repositories have no vault, running `archboard check` alone inside them skips model checks. Instead, check out both the service repository and the Home Repo in CI, set [`working-directory`](../reference/actions/#check-working-directory) to the Home Repo, and list the service checkout under the check Action's [`repos`](../reference/actions/#check-repos) input:
 
 ```yaml title=".github/workflows/architecture.yml" {8-12,16-18}
 jobs:
@@ -140,8 +140,8 @@ jobs:
             storefront
 ```
 
-Install the dependencies and the language servers of the storefront before the check, as [The check as a gate](../gate/#in-ci) shows. Without a language server, a call that needs resolved evidence stays information, and the check passes. A private Home Repo needs a token with read access, as the second checkout shows. A binding into a repository that the run does not register is skipped as [`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails the check. To check the whole system in the CI of the Home Repo, check out every repository and list each one under [`repos`](../reference/actions/#check-repos).
+Install the storefront's dependencies and language servers before running the check, as shown in [Run checks as a gate](../gate/#in-ci). Without a language server, unresolved calls stay at information severity and do not fail the check. A private Home Repo requires a read-access token in the second checkout step. Bindings to repositories not registered in the workflow are skipped as [`repository-unregistered`](../reference/findings/#repository-unregistered) and never fail the check. To validate the entire system in the Home Repo's own CI, check out every bound repository and list all of them under [`repos`](../reference/actions/#check-repos).
 
-## When the vault stays in its repository
+## When to keep the vault in a service repository
 
-A Home Repo puts the change to the model and the change to the code in different pull requests. If one repository holds most of the system, keep the vault in that repository. A reviewer then reads both changes in one diff, and that model can still bind into the other repositories, as [Application and infrastructure](../platform/) shows.
+A Home Repo puts model updates and code updates in separate pull requests. If a single repository holds most of your system, keep the vault in that repository instead so reviewers see model and code changes in the same diff. That model can still bind to secondary repositories, as shown in [Application and infrastructure](../platform/).

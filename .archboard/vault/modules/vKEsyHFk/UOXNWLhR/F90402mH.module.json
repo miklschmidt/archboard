@@ -1,4 +1,104 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#NFop37Ak",
+      "order": 10000,
+      "kind": "async",
+      "effect": "compute",
+      "label": "renderLegacyBoard, linked faces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "renderLegacyBoard"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
+      "order": 11000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "installRendererHost",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "installRendererHost"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
+      "order": 28000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "Web Workers, as the host's solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "createEnginePool"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
+    },
+    {
+      "id": "vKEsyHFk#EwDGu9IN",
+      "order": 60600,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "serve solves in a Web Worker",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/workers/layout-worker.ts",
+        "symbol": "serveLayoutEngine"
+      },
+      "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
+      "order": 74000,
+      "kind": "async",
+      "effect": "compute",
+      "label": "render scoped semantic content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "renderSemanticView"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "id": "vKEsyHFk#pRZRhE3w",
+      "order": 990100,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "warm the painter while a picture is prepared",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "warmPainter"
+      },
+      "to": "vKEsyHFk#hKrzJUPf"
+    },
+    {
+      "id": "vKEsyHFk#X9EXFsm9",
+      "order": 980110,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "load the icons before drawing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "prepareContentHere"
+      },
+      "to": "vKEsyHFk#pEFBxTks"
+    }
+  ],
   "order": 13004,
   "name": "Browser drawing",
   "kind": "module",
@@ -7,103 +107,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/ui/state/browser-renderer.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#F90402mH",
   "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
   "formerNames": [
     "Draw here"
-  ],
-  "outgoing": [
-    {
-      "order": 10000,
-      "kind": "call",
-      "label": "renderLegacyBoard, linked faces",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "renderLegacyBoard"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#NFop37Ak",
-      "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
-    },
-    {
-      "order": 11000,
-      "kind": "call",
-      "label": "installRendererHost",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "installRendererHost"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
-    },
-    {
-      "order": 28000,
-      "kind": "call",
-      "label": "Web Workers, as the host's solve",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "createEnginePool"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
-      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
-    },
-    {
-      "order": 60600,
-      "kind": "call",
-      "label": "serve solves in a Web Worker",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/workers/layout-worker.ts",
-        "symbol": "serveLayoutEngine"
-      },
-      "id": "vKEsyHFk#EwDGu9IN",
-      "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ"
-    },
-    {
-      "order": 74000,
-      "kind": "call",
-      "label": "render scoped semantic content",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "renderSemanticView"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
-      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "warm the painter while a picture is prepared",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "warmPainter"
-      },
-      "id": "vKEsyHFk#pRZRhE3w",
-      "to": "vKEsyHFk#hKrzJUPf"
-    },
-    {
-      "order": 980110,
-      "kind": "call",
-      "label": "load the icons before drawing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "prepareContentHere"
-      },
-      "to": "vKEsyHFk#pEFBxTks",
-      "id": "vKEsyHFk#X9EXFsm9"
-    }
   ]
 }

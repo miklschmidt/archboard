@@ -4,11 +4,11 @@
 // every pane draws again with the one chosen. The choice is presentation,
 // owned by this browser like the theme, remembered in its storage and never
 // written anywhere else (ADR 0023). A remembered engine that no longer exists
-// reads as the default.
+// reads as the default, and a remembered `track` reads as `lanes` (ADR 0096).
 
 import {
 	defaultLayoutEngine,
-	layoutEngineSchema,
+	savedLayoutEngineSchema,
 	type LayoutEngineName,
 } from "@archboard/model/render-reply";
 
@@ -18,7 +18,7 @@ const LAYOUT_ENGINE_KEY = "archboard.layout-engine";
 /** What each engine is, as the control offers it. */
 const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label: string }[] = [
 	{ name: "blocks", label: "Blocks" },
-	{ name: "track", label: "Tracks" },
+	{ name: "lanes", label: "Lanes" },
 ];
 
 /**
@@ -27,7 +27,7 @@ const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label
  */
 function remembered(): LayoutEngineName {
 	try {
-		const parsed = layoutEngineSchema().safeParse(
+		const parsed = savedLayoutEngineSchema().safeParse(
 			globalThis.localStorage.getItem(LAYOUT_ENGINE_KEY),
 		);
 		return parsed.success ? parsed.data : defaultLayoutEngine();

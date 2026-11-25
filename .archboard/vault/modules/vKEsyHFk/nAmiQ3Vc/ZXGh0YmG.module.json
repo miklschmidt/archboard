@@ -1,20 +1,10 @@
 {
-  "order": 5000,
-  "name": "Interruptible run",
-  "kind": "function",
-  "responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/routing/operations/session.ts",
-    "symbol": "runInterruptibleCommand"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "outgoing": [
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
       "order": 5000,
-      "kind": "call",
+      "kind": "async",
+      "effect": "mutation",
       "label": "contract + signal",
       "emphasis": "hero",
       "traffic": {
@@ -26,8 +16,19 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "runCommand"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
       "to": "vKEsyHFk/XppR9owz#gt1eCpcS"
     }
-  ]
+  ],
+  "order": 5000,
+  "name": "Interruptible run",
+  "kind": "function",
+  "responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/routing/operations/session.ts",
+    "symbol": "runInterruptibleCommand"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
 }

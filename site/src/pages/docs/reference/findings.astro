@@ -10,43 +10,44 @@ const groups: { slug: string; title: string; text: string; entries: FindingEntry
 	{
 		slug: "semantics",
 		title: "Semantics check",
-		text: "The semantics check reads the model against the vault's vocabulary. An error or a warning is a diagnostic, and each diagnostic fails the check.",
+		text: "Validates the model against the vault's vocabulary and structural rules. Every error or warning is a diagnostic that fails the check.",
 		entries: reference.findings.filter((entry) => entry.check === "semantics"),
 	},
 	{
 		slug: "code",
 		title: "Code check",
-		text: "The code check reads the code and infrastructure that bindings and anchors name. A warning fails the check. Information never does.",
+		text: "Validates bindings and anchors against source code and infrastructure files. Warnings fail the check. Information-level findings do not.",
 		entries: reference.findings.filter((entry) => entry.check === "code" && entry.severity !== "skip"),
 	},
 	{
 		slug: "skipped",
-		title: "What the code check skips",
-		text: "A skip is something the check did not read, with the reason. A skip never fails the check, and it is listed so that an unread subject never looks clean.",
+		title: "Skipped checks",
+		text: "Items the code check could not inspect, along with the reason. Skips never fail the check and are listed explicitly so unread code is not mistaken for clean code.",
 		entries: reference.findings.filter((entry) => entry.severity === "skip"),
 	},
 	{
 		slug: "embeds",
 		title: "Embeds check",
-		text: "The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws the recipe again and compares the result with the file. A warning fails the check. Information never does. A finding about a file of another repository is information, whatever its code, because that repository draws the file again only after the vault's change merges.",
+		text: "Finds Git-tracked SVG and PNG files containing a render recipe, re-renders them, and compares the output against the committed file. Warnings fail the check. Information-level findings do not. Findings for files in another repository stay at information severity because that repository regenerates them after the vault change merges.",
 		entries: reference.findings.filter((entry) => entry.check === "embeds"),
 	},
 ];
 const headings = groups.map((group) => ({ depth: 2, slug: group.slug, text: group.title }));
-const label = { warning: "Warning, fails", error: "Error, fails", information: "Information", skip: "Skip" };
+const label = { warning: "Warning (fails)", error: "Error (fails)", information: "Information", skip: "Skip" };
 ---
 
 <Docs
 	title="Check findings"
-	description="Every code that `archboard check` reports, what it means, and whether it fails the check. Link to a code with its anchor, such as `#relationship-undrawn`."
+	description="Reference for every code reported by `archboard check`, including severity and failure behavior. Link directly to a code with its anchor, such as `#relationship-undrawn`."
 	path="reference/findings"
 	headings={headings}
 	source="apps/cli/src/cli/commands/vault/operations/check-help.ts"
 >
 	<p>
-		<code>archboard check</code> exits <Exit outcome="issues" /> while a semantic diagnostic or a warning remains. Information
-		and skips print, and they never change the exit status. Each finding names its subject, and a
-		code finding names the evidence that it rests on, with its file and line.
+		<code>archboard check</code> exits <Exit outcome="issues" /> if any semantic diagnostic or
+		warning is reported. Information-level findings and skips print to standard error without
+		changing the exit code. Each finding identifies its subject, and code findings include supporting
+		file and line evidence.
 	</p>
 	{
 		groups.map((group) => (
@@ -76,9 +77,9 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 			</>
 		))
 	}
-	<Aside type="tip" title="Keep a finding visible without failing">
-		The check Action takes <code>allow-codes</code>. A listed code still shows on the pull request, and
-		it never fails the step.
+	<Aside type="tip" title="Report a finding without failing CI">
+		Pass finding codes to the check Action's <code>allow-codes</code> input to keep them visible on
+		pull requests without failing the job.
 	</Aside>
 </Docs>
 

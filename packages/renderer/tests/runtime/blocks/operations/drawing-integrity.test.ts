@@ -1,5 +1,4 @@
 import { test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -17,16 +16,24 @@ const fixtures = [
 ];
 
 for (const fixture of fixtures) {
-	for (const layout of layoutEngineSchema().options) {
-		test(`${fixture.name} (${layout}): complete parts and clear drawing`, async () => {
-			const content = orderedFixture(fixture.content);
-			const drawing = await renderArchitecture({
-				policy: defaultSemanticPolicy(),
-				content,
-				theme: "light",
-				layout,
-			});
-			expectDrawingIntact(drawing, content, layout);
+	test(`${fixture.name}: complete parts and clear drawing`, async () => {
+		const content = orderedFixture(fixture.content);
+		const drawing = await renderArchitecture({
+			policy: defaultSemanticPolicy(),
+			content,
+			theme: "light",
 		});
-	}
+		expectDrawingIntact(drawing, content);
+	});
 }
+
+test("Nested public API on Lanes: complete parts and clear drawing", async () => {
+	const content = orderedFixture(publicApi);
+	const drawing = await renderArchitecture({
+		policy: defaultSemanticPolicy(),
+		content,
+		theme: "light",
+		layout: "lanes",
+	});
+	expectDrawingIntact(drawing, content, "lanes");
+});

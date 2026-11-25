@@ -1,8 +1,7 @@
-//! The graph fixes its nesting and entry order before one Solver call.
+//! The graph fixes its entry order before one Solver call.
 
-use super::graph::Graph;
 use super::solving::{Solver, Unsolved};
-use crate::blocks::place::{nesting_option, told_drawing};
+use crate::blocks::place::told_drawing;
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
 use serde::Deserialize;
@@ -36,6 +35,12 @@ pub(crate) struct PlacedEdge {
     pub(crate) label: Option<Rect>,
 }
 
+/// The tab band a solver reserved at the top of a frame.
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct PlacedTitle {
+    pub(crate) band: Rect,
+}
+
 /// A whole drawing's geometry, as a solve answers it.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Placed {
@@ -45,6 +50,8 @@ pub(crate) struct Placed {
     pub(crate) height: f64,
     pub(crate) cards: Vec<PlacedCard>,
     pub(crate) frames: Vec<PlacedFrame>,
+    #[serde(default)]
+    pub(crate) titles: Vec<PlacedTitle>,
     pub(crate) edges: Vec<PlacedEdge>,
 }
 
@@ -55,19 +62,12 @@ struct Told {
     options: IndexMap<String, String>,
 }
 
-/// Lay one graph out with group nesting fixed by membership.
-pub(crate) async fn placed_blocks<S: Solver>(
-    solver: &S,
-    graph: &Graph,
-    inline: bool,
-) -> Result<Placed, String> {
-    let reply = solver
-        .solve(graph.with_options(&[nesting_option(inline)]))
-        .await
-        .map_err(|error| match error {
-            Unsolved::Failed(words) => words,
-            Unsolved::CalledOff => "The layout solve was called off.".to_owned(),
-        })?;
+/// Lay one graph out using its selected engine.
+pub(crate) async fn placed_drawing<S: Solver>(solver: &S, graph: String) -> Result<Placed, String> {
+    let reply = solver.solve(graph).await.map_err(|error| match error {
+        Unsolved::Failed(words) => words,
+        Unsolved::CalledOff => "The layout solve was called off.".to_owned(),
+    })?;
     let Told { mut options } = serde_json::from_str(&reply)
         .map_err(|error| format!("A solve's answer is unreadable: {error}"))?;
     let (placed, planned) = told_drawing(&mut options)

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 11006,
   "name": "Architecture inputs",
   "kind": "datastore",
@@ -8,7 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": ".archboard/vault"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
   "formerNames": [
     "Board vault"
@@ -18,6 +19,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#iBUsuXmL",
+      "order": 10,
+      "kind": "async",
+      "effect": "query",
+      "label": "name the owners of a file",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-files/operations/read-code-file.ts",
+        "symbol": "readCodeFile"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "id": "vKEsyHFk#MsDSuIFY",
+      "order": 20,
+      "kind": "spawn",
+      "effect": "query",
+      "label": "list the files Git tracks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-files/operations/checkout-files.ts",
+        "symbol": "git"
+      },
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    }
+  ],
   "order": 14500,
   "name": "Code files route",
   "kind": "route",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/code-files"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#fCXk4gkF",
-  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "call",
-      "label": "name the owners of a file",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-files/operations/read-code-file.ts",
-        "symbol": "readCodeFile"
-      },
-      "id": "vKEsyHFk#iBUsuXmL",
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
-    },
-    {
-      "order": 20,
-      "kind": "dependency",
-      "label": "list the files Git tracks",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-files/operations/checkout-files.ts",
-        "symbol": "git"
-      },
-      "id": "vKEsyHFk#MsDSuIFY",
-      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
-    }
-  ]
+  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
 }

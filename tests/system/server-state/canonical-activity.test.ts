@@ -20,7 +20,7 @@ function git(root: string, ...args: string[]): void {
 
 function fixture(root: string) {
 	const vault = join(root, ".archboard/vault");
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	git(root, "init", "--quiet");
 	const key = join(root, ".git/activity-key");
 	const generated = Bun.spawnSync(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", key]);

@@ -4,6 +4,7 @@ import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/model/content";
 import { ModelBreadcrumbs } from "#ui/architecture-drawing/model-reader/reading/components/ModelBreadcrumbs.tsx";
+import { ModelLensStatus } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
 import { ModelChanges } from "#ui/architecture-drawing/model-reader/reading/components/ModelChanges.tsx";
 import {
 	ModelColumn,
@@ -316,6 +317,19 @@ function ReadingColumn(props: { readonly reader: Reader; readonly code: boolean 
 }
 
 /**
+ * The lens the picture on screen draws through, and what it left out.
+ * @param props The reader.
+ * @param props.reader The reader.
+ * @returns The line, or nothing for a flow or a reading with one lens.
+ */
+function ReadingLens(props: { readonly reader: Reader }): JSX.Element | null {
+	const { shown } = props.reader.accepted;
+	if (shown.reading.grammar !== "architecture") return null;
+	if (Object.keys(shown.model.policy.lenses).length < 2) return null;
+	return <ModelLensStatus outcome={shown.projection} />;
+}
+
+/**
  * The way out of a focus, which narrows the reading.
  * @param props The reader.
  * @param props.reader The reader.
@@ -353,6 +367,7 @@ function ReadingHeading(props: {
 	const ending = endingOf(reader);
 	const reading = (
 		<>
+			<ReadingLens reader={reader} />
 			<ReadingFocus reader={reader} />
 			<ModelReadingControls>
 				{keepsRecord(model) && (

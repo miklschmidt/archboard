@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 11005,
   "name": "Browser",
   "kind": "app",
@@ -8,7 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
     {
@@ -34,6 +35,5 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

@@ -6,7 +6,7 @@ use std::task::Poll;
 
 use crate::blocks::place::{Across, Next, with_part};
 
-/// Where the picture's measured graph is laid out. The root options name its nesting.
+/// Where the picture's measured graph is laid out. Lanes is named in the root options.
 /// Dropping the returned future cancels work that the host has not completed.
 pub trait Solver {
     /// One solve under way.

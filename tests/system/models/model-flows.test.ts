@@ -20,7 +20,7 @@ const home = mkdtempSync(join(tmpdir(), "archboard-flow-surface-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Flow Author"],
@@ -234,7 +234,16 @@ function answer(stdout: string) {
 
 test("structural exports use canonical recursive scope and preserve reproducible selectors", async () => {
 	const out = join(home, "architecture.svg");
-	const rendered = cli(["model", "render", "--module", "Gateway", "--out", out]);
+	const rendered = cli([
+		"model",
+		"render",
+		"--module",
+		"Gateway",
+		"--layout",
+		"lanes",
+		"--out",
+		out,
+	]);
 	expect(rendered.status, rendered.stderr).toBe(0);
 	const receipt = answer(rendered.stdout);
 	expect(receipt).toMatchObject({ success: true, model: "Shop", grammar: "architecture" });
@@ -245,12 +254,21 @@ test("structural exports use canonical recursive scope and preserve reproducible
 		recipe: {
 			recipe: 2,
 			model: { id: "Shop" },
-			reading: { module: "Shop#Gateway", grammar: "architecture" },
+			reading: { module: "Shop#Gateway", grammar: "architecture", layout: "lanes" },
 			vault: { repo: "github.com/acme/shop" },
 		},
 	});
 	const png = join(home, "architecture.png");
-	const rasterized = cli(["model", "rasterize", "--module", "Gateway", "--out", png]);
+	const rasterized = cli([
+		"model",
+		"rasterize",
+		"--module",
+		"Gateway",
+		"--layout",
+		"lanes",
+		"--out",
+		png,
+	]);
 	expect(rasterized.status, rasterized.stderr).toBe(0);
 	expect(answer(rasterized.stdout)).toMatchObject({
 		success: true,
@@ -261,7 +279,7 @@ test("structural exports use canonical recursive scope and preserve reproducible
 	});
 	expect(readRenderRecipe(readFileSync(png))).toMatchObject({
 		kind: "recipe",
-		recipe: { recipe: 2, model: { id: "Shop" } },
+		recipe: { recipe: 2, model: { id: "Shop" }, reading: { layout: "lanes" } },
 	});
 	Bun.spawnSync(["git", "-C", home, "add", "architecture.svg", "architecture.png"]);
 	const embeds = cli(["check", "embeds"]);

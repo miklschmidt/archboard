@@ -244,7 +244,7 @@ async function drawnReply(
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
 	// The core draws only the variant's own reading when comparison is off.
-	// Blocks lays out that visible content; Track keeps comparison positions.
+	// Blocks and Lanes lay out that visible content.
 	const proposal = drawingOf(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -277,7 +277,6 @@ async function drawnReply(
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			paintStanding: how.comparison,
 			held: scopedContent(variant.content, reading.scope),
-			variant: variant.content,
 			grammar: reading.grammar,
 			theme: how.theme,
 			layout: how.layout,
@@ -396,17 +395,19 @@ function drawnBase(
 /**
  * The vault's vocabulary as a picture draws it. The evidence that a
  * relationship kind accepts belongs to the code check, and no picture draws it.
+ * The lenses are not drawn either: a reading names the one it is read through.
  * @param policy The vault's presentation policy.
- * @returns The policy without relationship evidence.
+ * @returns The policy without relationship evidence or lenses.
  */
 function drawnPolicy(policy: SemanticPolicy): unknown {
+	const { lenses: _lenses, defaultLens: _defaultLens, ...vocabulary } = policy;
 	const relationshipKinds = Object.fromEntries(
 		Object.entries(policy.relationshipKinds).map(([kind, { evidence: _checked, ...drawn }]) => [
 			kind,
 			drawn,
 		]),
 	);
-	return { ...policy, relationshipKinds };
+	return { ...vocabulary, relationshipKinds };
 }
 
 /**

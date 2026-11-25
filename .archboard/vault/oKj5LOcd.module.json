@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 40700,
   "name": "archboard-flows",
   "kind": "package",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-flows"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#oKj5LOcd",
-  "outgoing": [],
   "parent": "vKEsyHFk#HgZPVIE2"
 }

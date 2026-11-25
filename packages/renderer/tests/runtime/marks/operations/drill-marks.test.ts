@@ -14,7 +14,7 @@
 // its ring. A frame's name drawn from far away once kept no room for the
 // frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
-import type { DiagramBox, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import {
@@ -199,15 +199,11 @@ function boxOf(groups: readonly DrawnGroup[], group: DrawnGroup): DiagramBox {
 	return { x: x!, y: y!, width: width!, height: height! };
 }
 
-/** Each grammar, and for an architecture each engine that lays it out. */
-const DRAWINGS: readonly (readonly [DiagramGrammar, LayoutEngineName | undefined])[] = [
-	["architecture", "track"],
-	["architecture", "blocks"],
-	["sequence", undefined],
-];
+/** Each grammar the marks are drawn in. */
+const GRAMMARS: readonly DiagramGrammar[] = ["architecture", "sequence"];
 
-for (const [grammar, layout] of DRAWINGS) {
-	test(`${[grammar, layout].filter(Boolean).join(" ")} keeps each mark at one centre near and far, on its card and clear of the warning badge`, async () => {
+for (const grammar of GRAMMARS) {
+	test(`${grammar} keeps each mark at one centre near and far, on its card and clear of the warning badge`, async () => {
 		const parts = SIZED.map(({ id }) => id);
 		const drilled = grammar === "architecture" ? [...parts, "frame"] : parts;
 		const drawings = await Promise.all(
@@ -218,7 +214,6 @@ for (const [grammar, layout] of DRAWINGS) {
 					grammar,
 					theme: "light",
 					level: "service",
-					layout,
 					unsettled,
 				});
 				return { unsettled, svg };

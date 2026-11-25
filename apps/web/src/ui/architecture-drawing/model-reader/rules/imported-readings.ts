@@ -36,6 +36,7 @@ function originalReadingAddress(model: Model): ModelAddress | null {
 		legacyAddress: undefined,
 		against: undefined,
 		hideKinds: undefined,
+		hideEffects: undefined,
 	};
 }
 
