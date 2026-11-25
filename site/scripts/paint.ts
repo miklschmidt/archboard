@@ -20,6 +20,7 @@ import { join } from "node:path";
 import { projectModel } from "@archboard/model/content";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { renderArchitecture } from "@archboard/renderer/bun";
+import { themeColor } from "@archboard/renderer/theme";
 
 const OUT = join(import.meta.dir, "../src/paintings");
 
@@ -317,6 +318,27 @@ function stripHeroLayers(items: readonly Item[]): Item[] {
 }
 
 /**
+ * The renderer's dark-theme line colour, decoded to linear light for the hero's shader.
+ * @param name The relationship kind's palette colour, when it names one.
+ * @returns Red, green and blue in linear light.
+ */
+function beamColor(name: string | undefined): [number, number, number] {
+	const color = themeColor("dark", name === undefined ? "--diagram-edge" : `--semantic-${name}`);
+	if (!/^#[\da-f]{6}$/u.test(color))
+		throw new Error(`The hero's beam colour must be opaque: ${color}.`);
+	/**
+	 * Decode one channel from the exported sRGB colour.
+	 * @param offset Where the channel starts in the hex string.
+	 * @returns The channel in linear light.
+	 */
+	const channel = (offset: number) => {
+		const srgb = Number.parseInt(color.slice(offset, offset + 2), 16) / 255;
+		return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+	};
+	return [channel(1), channel(3), channel(5)];
+}
+
+/**
  * The hero's picture: the site model painted flat on no ground, with what the hero needs of it.
  * @returns The painting and its plan.
  */
@@ -387,7 +409,7 @@ async function hero() {
 			id,
 			from,
 			to,
-			color: facts?.appearance?.color ?? null,
+			color: beamColor(facts?.appearance?.color),
 			dash: facts?.appearance?.dash ?? "solid",
 			emphasis: edge.emphasis ?? "normal",
 			traffic: edge.traffic ?? null,

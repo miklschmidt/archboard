@@ -71,9 +71,6 @@ const RATES = { lift: 10, focus: 7, light: 9, look: 3 };
 /** How long the pointer rests on a card before it lights: a pointer passing over lights nothing. */
 const DWELL = 0.12;
 
-/** The fallback colour for a beam whose line carries no named palette colour. */
-const LIGHT = "sky";
-
 interface Camera {
 	x: number;
 	z: number;
@@ -83,35 +80,6 @@ interface Camera {
 	focal: number;
 	shiftX: number;
 	shiftY: number;
-}
-
-/**
- * A colour of the page's tokens, in linear light.
- * @param name The token, such as `teal`.
- * @returns Red, green and blue.
- */
-function token(name: string): [number, number, number] {
-	// The token is read as a computed colour, which the browser writes in one form: the build's
-	// minifier writes the token itself in another, such as oklch(75.35% .139 232.66).
-	const probe = document.createElement("i");
-	probe.style.color = `var(--${name})`;
-	document.body.append(probe);
-	const value = getComputedStyle(probe).color;
-	probe.remove();
-	const [l = 0.8, c = 0, h = 0] = (/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/u.exec(value) ?? [])
-		.slice(1)
-		.map(Number);
-	const [a, b] = [c * Math.cos((h * Math.PI) / 180), c * Math.sin((h * Math.PI) / 180)];
-	const lms = [
-		(l + 0.3963377774 * a + 0.2158037573 * b) ** 3,
-		(l - 0.1055613458 * a - 0.0638541728 * b) ** 3,
-		(l - 0.0894841775 * a - 1.291485548 * b) ** 3,
-	] as const;
-	return [
-		Math.max(0, 4.0767416621 * lms[0] - 3.3077115913 * lms[1] + 0.2309699292 * lms[2]),
-		Math.max(0, -1.2684380046 * lms[0] + 2.6097574011 * lms[1] - 0.3413193965 * lms[2]),
-		Math.max(0, -0.0041960863 * lms[0] - 0.7034186147 * lms[1] + 1.707614701 * lms[2]),
-	];
 }
 
 const easeOut = (t: number, power = 3) => 1 - (1 - Math.min(1, Math.max(0, t))) ** power;
@@ -459,15 +427,6 @@ export function lightTable(
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	const score = compose();
 	const routes = buildRoutes(plan);
-	const palette = new Map<string, [number, number, number]>();
-	const beamColor = (name: string | null): [number, number, number] => {
-		const key = name ?? LIGHT;
-		const cached = palette.get(key);
-		if (cached !== undefined) return cached;
-		const colour = token(key);
-		palette.set(key, colour);
-		return colour;
-	};
 
 	// The picture's images, the parts they were painted for, and new images on their way to the
 	// table. When the canvas comes to need a finer picture than it has, as when its window grows,
@@ -531,11 +490,11 @@ export function lightTable(
 	const trayBoxes = plan.trays.slice(0, LIMITS.trays).flatMap((tray) => footprint(tray.box));
 	const trayRegions = plan.trays.slice(0, LIMITS.trays).flatMap((tray) => edges(tray.region));
 	const labelBoxes = plan.labels.slice(0, LIMITS.labels).flatMap((label) => edges(label.box));
+	const lines = plan.lines.slice(0, LIMITS.lines);
 	const lineColours = (moving: boolean) =>
-		plan.lines.slice(0, LIMITS.lines).flatMap((line, index) => {
-			const [r, g, b] = beamColor(line.color);
+		lines.flatMap((line, index) => {
 			const speed = line.traffic && moving ? line.traffic.speed * 1.9 + (index % 3) * 9 : 0;
-			return [r, g, b, speed];
+			return [...line.color, speed];
 		});
 	// Still, the traffic's pulses stand where they are, so they do not run at all.
 	const colours = { moving: lineColours(true), still: lineColours(false) };
@@ -721,7 +680,6 @@ export function lightTable(
 			gl.uniform1fv(at("uCardLit"), cardLit.slice(0, LIMITS.cards));
 			gl.uniform1f(at("uCorner"), Math.max(...plan.cards.map((card) => card.radius)) * scale);
 
-			const lines = plan.lines.slice(0, LIMITS.lines);
 			// A beam meets each of its tiles part of the way up the tile's side, as the tile stands now,
 			// and never below what the tile stands on.
 			const plug = (card: number) => {
