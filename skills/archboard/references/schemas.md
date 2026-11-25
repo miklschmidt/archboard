@@ -4,8 +4,8 @@ Before preparing a request, print its schema with the installed archboard CLI.
 `archboard model schema` lists the names. `archboard model schema <name>` prints one schema.
 The CLI renders them from its own validation, so they match the program that reads and writes the vault.
 Neither command needs a server or a vault. Do not copy the schemas into the repository.
-Run `archboard model config` inside a vault to inspect its active `nodeKinds`, `relationshipKinds`, `groups`, `lenses`, and `codeCheck` rules.
-Use [canonical models](canonical-models.md) for operations and semantic rules beyond JSON structure, and [authoring](authoring.md) for choosing kinds, effects, bindings, and flows.
+Use [canonical models](canonical-models.md) for operations and semantic rules beyond JSON structure.
+Use [authoring](authoring.md#map-a-codebase-from-scratch) to inspect the active policy and choose kinds, effects, bindings, and flows.
 
 | Name               | Use                                                     |
 | ------------------ | ------------------------------------------------------- |

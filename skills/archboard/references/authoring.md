@@ -17,33 +17,34 @@ Tell the user which modules you combined and which code proved the match.
 
 ## Map a codebase from scratch
 
-Before authoring modules or relationships, inspect the vault's active vocabulary and registered checkouts:
+Inspect the active vocabulary and registered checkouts before authoring.
 
-1. Run `archboard model config` to read the active `nodeKinds`, `relationshipKinds` (with their evidence lists), `groups`, `lenses`, and `codeCheck` rules.
-2. Run `archboard repo list` to confirm the repository identity (`repo`) to use in bindings and anchors. Register missing checkouts with `archboard repo add`.
+1. Run `archboard model config` and read `policy.nodeKinds`, `policy.relationshipKinds`, `policy.groups`, `policy.lenses`, and `policy.codeCheck` when present.
+2. Run `archboard repo list` to confirm the repository identity (`repo`) for bindings and anchors. Register missing checkouts with `archboard repo add <directory>`.
 3. Read the repository layout, entry points, manifests, and key boundaries before naming modules.
 
-Start with five to nine root modules that explain the major responsibilities a new engineer needs to learn first.
-Model real ownership boundaries that callers use and architects reason about, not one module per file or thin directory mirror.
+Start with the few root modules that explain the major responsibilities a new engineer needs to learn first.
+Use the ownership boundaries that callers rely on to decide which files belong to each module.
 Give every module a concise `name`, a one-line `responsibility` that fits its card, and a `description` only where boundaries or architectural decisions need more explanation.
 Use `order` to give siblings a clear reading order.
 
 A vault created by `archboard model init` starts with an empty planning model (`current: null`).
-Author the first map in a planning proposal, then inspect it with `archboard check semantics --state <proposal-id>` and `archboard check code --state <proposal-id>`.
+Build the first map by [creating a planning proposal](canonical-models.md#create-and-compare-compact-proposals).
+Run `archboard check all --state <proposal-id>` to inspect its semantics and code evidence.
 Keep the proposal unadopted unless the request authorizes adoption, following [proposal completion](canonical-models.md#complete-a-proposal).
 
 ### Module kinds, external, and groups
 
-Pick `kind` from the vault's active `nodeKinds` (by default: `system`, `service`, `app`, `module`, `function`, `route`, `job`, `queue`, `datastore`, `cache`, `external`, `ui`, `config`, `test`, `package`, `other`).
+Pick `kind` from the vault's active `nodeKinds`.
 
 Use `external` only for systems, services, or packages outside this repository's ownership boundary.
 Leave an `external` module unbound except for vendored code inside a checkout Archboard reads.
-A bound `external` module keeps its depth counts in `check code` without triggering export or shallow-module findings.
-Do not mark an internal adapter, client wrapper, or port as `external`: that module is an owned door that talks to the `external` target.
+When `check code` can measure a bound `external` module, it reports depth counts and suppresses export and shallow-module findings.
+Model an owned adapter, client wrapper, or port as an internal module and draw its relationship to the `external` target.
 
 Use `groups` for cross-cutting concerns that span containment boundaries (for example a feature slice, compliance boundary, or runtime tier).
 Define groups under `groups` in `.archboard/config.yaml` with a display name and palette color.
-State `groups` explicitly on each module in canonical sorted order; membership is never inherited from `parent`.
+Set `groups` explicitly on each member. Canonical module files store the IDs once each in sorted order.
 
 ## Bind modules to code
 
@@ -54,25 +55,25 @@ Choose the binding granularity to match what the module owns:
 - Bind a narrower part to a specific file or `symbol` when it owns one implementation inside a larger module.
 - When `check code` reads a non-entry file or symbol binding, a measured module in the same model state and checkout whose directory contains that file covers it; otherwise `check code` skips depth measurement for that part with `binding-not-a-module`.
 
-Never put a local filesystem path in `repo`: always use the registered repository identity.
+Use the registered repository identity in `repo` and the repository-relative location in `path`.
 End a directory `path` with `/` if the directory name contains a dot.
 
 ## Author true relationships
 
-Author every relationship on its calling source module (`source` and `relationship.to` in `add-relationship`; `outgoing[].to` in module files).
-Point each relationship in the direction the mechanism travels: from caller to callee, producer to queue or consumer, or component to the child it renders.
+Author every relationship on its source module. In `add-relationship`, use `source` and `relationship.to`. In module files, use `outgoing[].to`.
+Follow the mechanism's direction, such as caller to callee, producer to queue or consumer, component to rendered child, or importer to declared dependency.
 
-- Do not turn sibling calls into a chain: if module A calls module B and then calls module C, author `A -> B` and `A -> C`, not `B -> C`.
-- Do not add reverse structural relationships for return values: keep returns inside flows.
+- If module A calls B and then C, author `A -> B` and `A -> C`.
+- Keep answers back to callers in flow `return` messages.
 - Keep `label` short (at most 60 characters), naming what the relationship carries or asks for.
-- Cite an optional `anchor` (`repo`, `path`, `symbol`, with no line number) on the sending code or contract when proof helps verification or resolves an ambiguous edge.
-- Use `emphasis` sparingly: `normal` by default, `hero` for the primary exchange in a view, and `muted` for secondary connections.
-- Set `traffic` only when illustrative ongoing pulse motion clarifies the picture; omit it when traffic is off.
+- Add an `anchor` when it helps verify the relationship. Give `repo`, `path`, and `symbol` for the definition or use that proves it.
+- Use `emphasis: hero` for the primary exchange and `emphasis: muted` for secondary connections. The default is `normal`.
+- Set `traffic` when ongoing pulse motion clarifies the picture. Its `speed` and `volume` are illustrative.
 - Put enduring architectural connections in relationships, and put step-by-step request ordering, branches, retries, and return messages in flows.
 
 ### Choose the kind and the effect
 
-Every relationship states its `kind`, how it travels between its two ends, and its `effect`, what it asks the target to do.
+Set the `kind` for how the relationship travels and the `effect` for what it asks the target to do. A declared-only `dependency` omits `effect`.
 The kind is the color of its line and the effect the decoration at its ends, and lenses select by both.
 Read the sending code and the callee or its contract before you choose either.
 
@@ -172,13 +173,9 @@ Done: every relationship that you author or touch names the kind whose row match
 
 ### Evidence kinds and check code
 
-`archboard check code` compares each relationship against source and infrastructure evidence using the active vault policy's `evidence` list for that kind.
-In the default policy:
-
-- `sync`, `async`, and `render` accept `call`.
-- `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, and `storage` accept `call` and `configured-path`.
-- `dependency` accepts `call`, `configured-path`, `import`, and `build-dependency`.
-- A vault-added kind that omits `evidence` accepts every evidence kind.
+Read `policy.relationshipKinds` from `archboard model config` for the `evidence` lists that `archboard check code` uses.
+A kind without an `evidence` list accepts every evidence kind.
+`DEPENDENCY_CALLED` reports runtime use even if the policy accepts `call` for `dependency`.
 
 The six evidence kinds are:
 
@@ -189,14 +186,11 @@ The six evidence kinds are:
 - `build-dependency`: a package, workspace, or build-graph requirement.
 - `provisioning`: infrastructure provisioning of one part by another.
 
-When `check code` inspects relationships, act on its findings from source:
+An anchor can cite a symbol defined in the bound code of either end or one of its parts. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
+For `ANCHOR_MISMATCH`, check the symbol's definition and how the file uses it. A definition outside both ends is a warning, and a declaration outside both is information. If the mismatch is about evidence kind, any resolved use makes it a warning and candidate uses alone make it information.
 
-- `ANCHOR_MISMATCH`: the anchor lies outside both bound ends, or the file uses the symbol only as an evidence kind the relationship kind does not accept. It is a warning when any evidence at the anchor is resolved, and information when every match is by name alone. Fix the anchor, bind the owning part, or correct the relationship kind.
-- `RELATIONSHIP_BACKWARDS`: an unanchored relationship whose evidence runs only the opposite way. Reverse it if the code runs that way, or anchor the proving code.
-- `RELATIONSHIP_UNSUPPORTED`: an unanchored relationship with no accepted evidence joining its ends. Anchor the proving code or fix the relationship.
-- `RELATIONSHIP_UNDRAWN`: bound parts call or construct each other with no drawn relationship (warning when resolved, information when matched by name or already represented at the boundary where their containers meet).
-- `DEPENDENCY_CALLED`: a `dependency` backed by a runtime call into the target. Replace it with the runtime kind and effect.
-- `CALL_TIMING_MISMATCH`: anchored calls disagree with `sync` vs `async`. Read the call site and fix the kind or anchor.
+For an unanchored relationship, `RELATIONSHIP_BACKWARDS` means accepted evidence runs only in the opposite direction, and `RELATIONSHIP_UNSUPPORTED` means no accepted evidence joins its ends. Read the source to correct the relationship or cite the code that proves it.
+For `RELATIONSHIP_UNDRAWN`, read the reported call, configured path, or build dependency and draw the relationship if it belongs in the model. A resolved use can produce a warning. If evidence is only tentative or the boundary already has a connection, the finding is information.
 
 ## Give each container a job
 
@@ -257,8 +251,7 @@ Model boundaries that callers name and architects need, not a part for every fil
 
 If two parts perform different jobs across a boundary, state two relationships.
 State each relationship once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind, effect and label say what the code does.
-Two parts meet at the children of their nearest shared container, so one relationship between those children represents deeper calls across that boundary.
-`RELATIONSHIP_UNDRAWN` reports those calls as information.
+For `RELATIONSHIP_UNDRAWN`, the check finds the two sides at the children of the nearest shared container, or at separate roots. A relationship or flow message joining those sides makes deeper undrawn calls across that boundary information.
 
 `CONTAINER_PASS_THROUGH` and `ROOT_UNCONNECTED` also identify shapes to inspect against source.
 Writes accept these shapes. Semantic inspection reports them.
@@ -275,17 +268,16 @@ Add `edit-flow` with `set.summary` for each named flow in the same intent.
 `FLOW_SUMMARY_MISSING` is an `archboard check` error for each current flow without a summary.
 Reads and writes that leave that flow alone still work. Retained readings keep their original content.
 
-For each step, read the sending code and put its file and symbol in `anchor`.
-Read that source again for behavior that the first pass missed.
+Read the sending code for each message, including messages inside decisions and loops. Cite its `repo`, file `path`, and `symbol` in the message's `anchor` when source exists.
 List `participants` in left-to-right reading order as the sequence columns should appear.
 Use these step forms:
 
 - Use `sync` (default) when the sender waits for the step, and `async` when it does not wait.
 - Use `self` for a self-call, with the same module at both ends.
-- Use `repeat` for a fixed count, such as retries or a known batch size. A note cannot replace it.
-- Use `loop` for repetition that depends on data.
-- Use `decision` for a branch.
-- Use `return` for answers back without adding reverse structural relationships.
+- Set `repeat` to the exact count when a message runs two or more times, such as a known batch size.
+- Use `loop` with a `condition` for steps that repeat together or a count that depends on data.
+- Use `decision` with a `question` and at least two uniquely labeled `alternatives`. Include a step in at least one alternative.
+- Use `return` for an answer to the caller.
 
 ## Say what each proposal changes
 
