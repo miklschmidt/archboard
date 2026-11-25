@@ -355,12 +355,14 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		return;
 	}
 	const vault = named.vault;
+	// Only a pane already in this vault has a reading to keep: another vault's scope and focus name
+	// subjects of another model.
 	const keptTarget = body.reading.keep === true ? tryPane(vault, body.pane) : null;
 	const mergedReading = mergeKeptReading(
 		body.reading,
-		keptTarget === null
-			? null
-			: (semanticPaneContextFor(keptTarget.clientId)?.architecture ?? null),
+		keptTarget?.vault === vault
+			? (semanticPaneContextFor(keptTarget.clientId)?.architecture ?? null)
+			: null,
 	);
 	const {
 		module,
