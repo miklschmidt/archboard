@@ -32,14 +32,14 @@ const views = [
 <div class="grammars table" data-grammars>
 	<div class="tabs" role="tablist" aria-label="Diagram grammar">
 		{
-			views.map((view, index) => (
+			views.map((view) => (
 				<button
 					type="button"
 					role="tab"
 					id={`grammar-tab-${view.key}`}
 					aria-controls={`grammar-panel-${view.key}`}
-					aria-selected={index === 1 ? "true" : "false"}
-					tabindex={index === 1 ? 0 : -1}
+					aria-selected={view.key === "flowchart" ? "true" : "false"}
+					tabindex={view.key === "flowchart" ? 0 : -1}
 					data-tab={view.key}
 				>
 					{view.label}
@@ -49,7 +49,7 @@ const views = [
 	</div>
 	<div class="panels">
 		{
-			views.map((view, index) => (
+			views.map((view) => (
 				<div
 					class="panel"
 					role="tabpanel"
@@ -57,7 +57,7 @@ const views = [
 					id={`grammar-panel-${view.key}`}
 					aria-labelledby={`grammar-tab-${view.key}`}
 					data-panel={view.key}
-					hidden={index !== 1}
+					hidden={view.key !== "flowchart"}
 				>
 					<div class="picture">
 						<img
