@@ -42,7 +42,7 @@ Failures return codes, source paths, affected identities, and recovery actions a
 
 ## Edit one module description
 
-Read the complete model with source-backed or initialized private history.
+Read the complete model. Use source-backed history or [initialize private history](history.md#initialize-private-history) before editing an untracked vault.
 Use the manifest's model ID and current state ID as the explicit target.
 Use qualified subject IDs for claims and edits.
 A claim reserves an authoring scope while leaving it readable.
@@ -131,7 +131,7 @@ That pair allocates a new identity and compares as one removal and one addition.
 Matching endpoints or labels never imply replacement.
 
 Archboard allocates new IDs in the model namespace and uses them for module filenames.
-Each relationship states its `kind` and its `effect`, chosen as [authoring](authoring.md#choose-the-kind-and-the-effect) says.
+Each relationship states its `kind` and, except for declared-only dependencies, its `effect`. Choose them using [authoring](authoring.md#choose-the-kind-and-the-effect).
 A batch that leaves a relationship without an effect is refused at `outgoing.<n>.effect`, unless its kind is `dependency`.
 Additions accept no supplied ID, schema version, former names, or outgoing array.
 Read allocated IDs from the result's subjects or the next model read.
@@ -532,21 +532,21 @@ Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, `--hide-kind` 
 
 A picture is read through a lens: a named question that chooses which relationships draw.
 `--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another, or through `all` where the default would draw no line.
-The built-in lenses, in the order a reader is offered them:
+The built-in lenses are listed below.
 
-| Lens           | Draws                                                                                                      |
-| -------------- | ---------------------------------------------------------------------------------------------------------- |
-| `main`         | Every mutation and all traffic between processes, without dependencies and in-process queries and computes |
-| `effects`      | Side effects: every mutation                                                                               |
-| `sync-compute` | Sync computes: where a caller waits for an answer, the first place to look for work to make async          |
-| `network`      | `http`, `rpc`, `queue`, `event` and `stream`                                                               |
-| `reads`        | Every query                                                                                                |
-| `dependencies` | Declared dependencies                                                                                      |
-| `all`          | Every relationship                                                                                         |
+| Lens           | Draws                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| `main`         | All relationships except `dependency`, `sync` or `async` queries, and `sync` or `async` computes |
+| `effects`      | Side effects: every mutation                                                                     |
+| `sync-compute` | `sync` relationships with the `compute` effect                                                   |
+| `network`      | `http`, `rpc`, `queue`, `event` and `stream`                                                     |
+| `reads`        | Every query                                                                                      |
+| `dependencies` | Every `dependency` relationship                                                                  |
+| `all`          | Every relationship                                                                               |
 
 Each relationship that a lens shows has a drawn line. A part whose every line the lens leaves out leaves the picture.
 Pass `--lens all` to draw every relationship. `--hide-kind <kind>` and `--hide-effect <effect>`, both repeatable, hide relationships beyond the lens. The effects are `mutation`, `query`, `compute` and `declared`, a dependency that states none.
-`call` is gone: a lens, `--hide-kind` or `relationshipKinds` that names it is refused, and the refusal names `sync` and `async`.
+New lens configuration, `relationshipKinds` entries, and render and rasterize `--hide-kind` flags refuse the retired kind `call`. Use `sync` or `async`.
 A sequence or a flowchart refuses `--lens`, because it draws its whole flow.
 A vault adds or replaces lenses under `lenses` in its configuration, and names its default with `defaultLens`.
 The legend is drawn under the picture. Use `--legend vertical` to draw it beside the picture, or `--legend none` to leave it out.

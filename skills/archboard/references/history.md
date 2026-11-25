@@ -8,7 +8,7 @@ A checkpoint preserves a reading and its exact architecture inputs.
 A baseline is the retained starting point for changes.
 Use a vault in a source Git repository, or [initialize private history](#initialize-private-history).
 `model retain` captures Current.
-For drafts or planning models without Current, use the completed proposal edit checkpoint.
+For a draft, use the checkpoint returned by its proposal edit. For an empty planning model, use the `model init` checkpoint.
 For Current retention, read the model and keep `revision.digest`.
 
 ```bash
@@ -160,7 +160,7 @@ Each evidence entry names its repository, commit, uncommitted status, and availa
 
 - `available`: The committed source revision is local.
 - `uncommitted`: The base exists, but exact uncommitted code needs separate recovery.
-- `unavailable`: The source revision is absent or no source commit existed.
+- `unavailable`: The source checkout or commit is unavailable, or no source commit existed.
 
 The latter two include recovery instructions.
 Architecture remains readable without source evidence, even when current model files are missing or invalid.
@@ -168,8 +168,8 @@ Architecture remains readable without source evidence, even when current model f
 Restore the archive from its owner or backup, using [fetch](#publish-and-fetch-history) when the owner publishes it.
 Exact reads never contact the network automatically.
 
-`ARCHIVE_IN_USE` means that a worktree has `archboard-history` checked out.
-Switch that worktree to another branch before retrying retention.
+If `ARCHIVE_IN_USE` says a worktree has `archboard-history` checked out, switch that worktree to another branch before retrying.
+If it names a private archive location inside a source repository, follow the diagnostic to use source-backed history or restore the private vault or state directory outside Git.
 `ARCHIVE_UNREADABLE` means damaged storage or an unrelated branch using the reserved name.
 Preserve that branch and resolve its ownership before retrying.
 `ARCHIVE_NEWER` means a newer Archboard wrote the history.
@@ -183,7 +183,7 @@ Read the current catalogue again for its complete `revision`.
 Claim the model, completed state, affected subjects, and following drafts affected by the correction.
 
 Inspect supporting source commits.
-Supply one available full Git commit ID per referenced repository. Uncommitted files cannot support historical corrections.
+Supply an available full Git commit ID for each repository named by the corrected state's bindings, anchors, or documents, including unchanged subjects. Uncommitted files cannot support historical corrections.
 
 Submit `model edit` with ordinary module or flow changes and a correction intent:
 
