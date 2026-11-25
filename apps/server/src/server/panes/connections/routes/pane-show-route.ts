@@ -59,7 +59,7 @@ function lensRefusal(model: Model, lens: string | undefined): NavigationError | 
 }
 
 /**
- * Refuse a missing scope or focus before pane navigation changes state.
+ * Refuse a missing scope, focus or expanded module before pane navigation changes state.
  * @param model The complete canonical reading.
  * @param request The requested presentation.
  * @returns Its refusal, when unavailable.
@@ -73,7 +73,13 @@ function structuralRefusal(model: Model, request: Reading): NavigationError | un
 	);
 	if (projection.missing || projection.missingFocus.length !== 0)
 		return { code: "MODULE_NOT_FOUND", error: "The requested scope or focus is unavailable." };
-	return undefined;
+	const unknown = request.expand?.find((id) => !model.modules.some((module) => module.id === id));
+	return unknown === undefined
+		? undefined
+		: {
+				code: "MODULE_NOT_FOUND",
+				error: `No module matches "${unknown}" in ${model.manifest.name}.`,
+			};
 }
 
 /**

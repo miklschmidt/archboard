@@ -519,8 +519,8 @@ function resolvePaneReading(
 	| { readonly ok: true; readonly reading: Reading }
 	| { readonly ok: false; readonly error: NavigationError } {
 	const subjects = knownSubjectIds(model);
-	// Only scope and focus pass through: the show's structural refusal checks them for an agent,
-	// and nothing checks an expanded or selected id afterwards.
+	// Scope, expand and focus pass through, because a reader's own address holds them and the
+	// show's structural refusal checks them for an agent. Nothing checks a selected id afterwards.
 	const resolvedScope =
 		request.scope === undefined
 			? { ok: true as const, id: undefined }
@@ -530,7 +530,10 @@ function resolvePaneReading(
 	const resolvedExpand =
 		request.expand === undefined
 			? { ok: true as const, ids: undefined }
-			: resolveList(request.expand, (raw) => resolveModuleRef(model, raw));
+			: resolveList(
+					request.expand,
+					orQualified((raw) => resolveModuleRef(model, raw)),
+				);
 	if (!resolvedExpand.ok) return resolvedExpand;
 
 	const resolvedFocus =
