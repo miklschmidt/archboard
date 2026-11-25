@@ -29,7 +29,10 @@ const MAX_STEP_LABEL = 60;
  * schema accepted and the document then refused would be a write that failed
  * for a reason the caller was told nothing about until afterwards.
  */
-const StepLabelSchema = z.string().trim().min(1).max(MAX_STEP_LABEL);
+const StepLabelSchema = z.string().trim().min(1).max(MAX_STEP_LABEL).meta({
+	description:
+		"Short phrase naming the step, question, alternative, or loop condition (max 60 characters).",
+});
 
 /**
  * One message in a flow: who sent it, who received it, and what it was.
@@ -48,8 +51,13 @@ const FlowMessageSchema = z
 		to: SemanticIdSchema,
 		label: StepLabelSchema,
 		kind: MessageKindSchema.default("sync"),
-		note: DescriptionSchema.optional(),
-		repeat: z.int().min(2).optional(),
+		note: DescriptionSchema.optional().meta({
+			description:
+				"Optional explanation of constraints, conditions, or supporting evidence for this step.",
+		}),
+		repeat: z.int().min(2).optional().meta({
+			description: "Fixed repetition count (at least 2) for retries or known batch sizes.",
+		}),
 		anchor: codeAnchorSchema().optional(),
 	})
 	.refine((step) => (step.kind === "self") === (step.from === step.to), {
@@ -175,9 +183,16 @@ const SemanticFlowSchema = z
 	.object({
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
-		summary: DescriptionSchema.optional(),
-		participants: z.array(SemanticIdSchema).min(1),
-		steps: z.array(FlowStepSchema).min(1),
+		summary: DescriptionSchema.optional().meta({
+			description:
+				"One or two sentences explaining what the exchange does and why it matters. Required on newly authored flows and checked on current architecture.",
+		}),
+		participants: z.array(SemanticIdSchema).min(1).meta({
+			description: "Ordered module IDs drawn left-to-right as sequence columns.",
+		}),
+		steps: z.array(FlowStepSchema).min(1).meta({
+			description: "Ordered steps (messages, decisions, and loops) describing the exchange.",
+		}),
 	})
 	.strict();
 type SemanticFlow = z.infer<typeof SemanticFlowSchema>;

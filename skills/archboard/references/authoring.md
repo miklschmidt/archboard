@@ -15,6 +15,61 @@ If they represent one module, keep the identity located with that code.
 In one intent, move relationships, flow steps, and walkthrough references to it, then remove the duplicate.
 Tell the user which modules you combined and which code proved the match.
 
+## Map a codebase from scratch
+
+Before authoring modules or relationships, inspect the vault's active vocabulary and registered checkouts:
+
+1. Run `archboard model config` to read the active `nodeKinds`, `relationshipKinds` (with their evidence lists), `groups`, `lenses`, and `codeCheck` rules.
+2. Run `archboard repo list` to confirm the repository identity (`repo`) to use in bindings and anchors. Register missing checkouts with `archboard repo add`.
+3. Read the repository layout, entry points, manifests, and key boundaries before naming modules.
+
+Start with five to nine root modules that explain the major responsibilities a new engineer needs to learn first.
+Model real ownership boundaries that callers use and architects reason about, not one module per file or thin directory mirror.
+Give every module a concise `name`, a one-line `responsibility` that fits its card, and a `description` only where boundaries or architectural decisions need more explanation.
+Use `order` to give siblings a clear reading order.
+
+A vault created by `archboard model init` starts with an empty planning model (`current: null`).
+Author the first map in a planning proposal, then inspect it with `archboard check semantics --state <proposal-id>` and `archboard check code --state <proposal-id>`.
+Keep the proposal unadopted unless the request authorizes adoption, following [proposal completion](canonical-models.md#complete-a-proposal).
+
+### Module kinds, external, and groups
+
+Pick `kind` from the vault's active `nodeKinds` (by default: `system`, `service`, `app`, `module`, `function`, `route`, `job`, `queue`, `datastore`, `cache`, `external`, `ui`, `config`, `test`, `package`, `other`).
+
+Use `external` only for systems, services, or packages outside this repository's ownership boundary.
+Leave an `external` module unbound except for vendored code inside a checkout Archboard reads.
+A bound `external` module keeps its depth counts in `check code` without triggering export or shallow-module findings.
+Do not mark an internal adapter, client wrapper, or port as `external`: that module is an owned door that talks to the `external` target.
+
+Use `groups` for cross-cutting concerns that span containment boundaries (for example a feature slice, compliance boundary, or runtime tier).
+Define groups under `groups` in `.archboard/config.yaml` with a display name and palette color.
+State `groups` explicitly on each module in canonical sorted order; membership is never inherited from `parent`.
+
+## Bind modules to code
+
+Bind every owned, implemented module to the code that implements its responsibility using `repo`, `path`, and optional `symbol`.
+Choose the binding granularity to match what the module owns:
+
+- Bind a root module or code container to the directory that holds its files, or to the entry file that stands for that folder (such as `index.ts`, `__init__.py`, or `mod.rs`), so `check code` can measure its interface and module depth (`MODULE_SHALLOW` and export findings; see [module depth](design-lens.md#module-depth)).
+- Bind a narrower part to a specific file or `symbol` when it owns one implementation inside a larger module.
+- When `check code` reads a non-entry file or symbol binding, a measured module in the same model state and checkout whose directory contains that file covers it; otherwise `check code` skips depth measurement for that part with `binding-not-a-module`.
+
+Never put a local filesystem path in `repo`: always use the registered repository identity.
+End a directory `path` with `/` if the directory name contains a dot.
+
+## Author true relationships
+
+Author every relationship on its calling source module (`source` and `relationship.to` in `add-relationship`; `outgoing[].to` in module files).
+Point each relationship in the direction the mechanism travels: from caller to callee, producer to queue or consumer, or component to the child it renders.
+
+- Do not turn sibling calls into a chain: if module A calls module B and then calls module C, author `A -> B` and `A -> C`, not `B -> C`.
+- Do not add reverse structural relationships for return values: keep returns inside flows.
+- Keep `label` short (at most 60 characters), naming what the relationship carries or asks for.
+- Cite an optional `anchor` (`repo`, `path`, `symbol`, with no line number) on the sending code or contract when proof helps verification or resolves an ambiguous edge.
+- Use `emphasis` sparingly: `normal` by default, `hero` for the primary exchange in a view, and `muted` for secondary connections.
+- Set `traffic` only when illustrative ongoing pulse motion clarifies the picture; omit it when traffic is off.
+- Put enduring architectural connections in relationships, and put step-by-step request ordering, branches, retries, and return messages in flows.
+
 ### Choose the kind and the effect
 
 Every relationship states its `kind`, how it travels between its two ends, and its `effect`, what it asks the target to do.
@@ -115,6 +170,34 @@ An entry with a built-in id replaces that kind whole.
 
 Done: every relationship that you author or touch names the kind whose row matches its code, and the effect that the three questions give.
 
+### Evidence kinds and check code
+
+`archboard check code` compares each relationship against source and infrastructure evidence using the active vault policy's `evidence` list for that kind.
+In the default policy:
+
+- `sync`, `async`, and `render` accept `call`.
+- `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, and `storage` accept `call` and `configured-path`.
+- `dependency` accepts `call`, `configured-path`, `import`, and `build-dependency`.
+- A vault-added kind that omits `evidence` accepts every evidence kind.
+
+The six evidence kinds are:
+
+- `call`: a runtime call, construction, value read, or component render in code.
+- `configured-path`: an infrastructure-only link (such as a Kubernetes Service selecting a workload or a Terraform resource reference) or an environment variable read in bound code joined to the compose service, Kubernetes workload, or Terraform resource that supplies the target's address.
+- `permission`: a declared access or IAM permission between parts.
+- `import`: a source import without a runtime call (for example a type-only import; choose a kind that accepts `import`, such as `dependency` in the default policy).
+- `build-dependency`: a package, workspace, or build-graph requirement.
+- `provisioning`: infrastructure provisioning of one part by another.
+
+When `check code` inspects relationships, act on its findings from source:
+
+- `ANCHOR_MISMATCH`: the anchor lies outside both bound ends, or the file uses the symbol only as an evidence kind the relationship kind does not accept. It is a warning when any evidence at the anchor is resolved, and information when every match is by name alone. Fix the anchor, bind the owning part, or correct the relationship kind.
+- `RELATIONSHIP_BACKWARDS`: an unanchored relationship whose evidence runs only the opposite way. Reverse it if the code runs that way, or anchor the proving code.
+- `RELATIONSHIP_UNSUPPORTED`: an unanchored relationship with no accepted evidence joining its ends. Anchor the proving code or fix the relationship.
+- `RELATIONSHIP_UNDRAWN`: bound parts call or construct each other with no drawn relationship (warning when resolved, information when matched by name or already represented at the boundary where their containers meet).
+- `DEPENDENCY_CALLED`: a `dependency` backed by a runtime call into the target. Replace it with the runtime kind and effect.
+- `CALL_TIMING_MISMATCH`: anchored calls disagree with `sync` vs `async`. Read the call site and fix the kind or anchor.
+
 ## Give each container a job
 
 A container is a module with parts.
@@ -174,7 +257,7 @@ Model boundaries that callers name and architects need, not a part for every fil
 
 If two parts perform different jobs across a boundary, state two relationships.
 State each relationship once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind, effect and label say what the code does.
-One relationship represents other calls across the same boundary.
+Two parts meet at the children of their nearest shared container, so one relationship between those children represents deeper calls across that boundary.
 `RELATIONSHIP_UNDRAWN` reports those calls as information.
 
 `CONTAINER_PASS_THROUGH` and `ROOT_UNCONNECTED` also identify shapes to inspect against source.
@@ -194,13 +277,15 @@ Reads and writes that leave that flow alone still work. Retained readings keep t
 
 For each step, read the sending code and put its file and symbol in `anchor`.
 Read that source again for behavior that the first pass missed.
+List `participants` in left-to-right reading order as the sequence columns should appear.
 Use these step forms:
 
+- Use `sync` (default) when the sender waits for the step, and `async` when it does not wait.
 - Use `self` for a self-call, with the same module at both ends.
 - Use `repeat` for a fixed count, such as retries or a known batch size. A note cannot replace it.
 - Use `loop` for repetition that depends on data.
 - Use `decision` for a branch.
-- Keep returns as messages without adding reverse structural relationships.
+- Use `return` for answers back without adding reverse structural relationships.
 
 ## Say what each proposal changes
 

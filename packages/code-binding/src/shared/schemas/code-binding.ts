@@ -10,14 +10,33 @@ import { NonemptyString } from "#shared/schemas/nonempty-string.ts";
  */
 const CodeBindingSchema = z
 	.object({
-		repo: NonemptyString,
-		path: z.string(),
-		symbol: NonemptyString.optional(),
-		branch: NonemptyString.optional(),
-		commit: NonemptyString.optional(),
-		confirmedAt: NonemptyString.optional(),
+		repo: NonemptyString.meta({
+			description:
+				"Repository identity as registered with `archboard repo add`, such as `github.com/acme/payments`, never a local filesystem path.",
+		}),
+		path: z.string().meta({
+			description:
+				"Repository-relative path to the bound directory or file, or empty string for the repository root. End directory names that contain a dot with `/`.",
+		}),
+		symbol: NonemptyString.optional().meta({
+			description:
+				"Optional qualified definition name in `path`, or an infrastructure or Nix declaration address. Omit to bind the whole file or directory.",
+		}),
+		branch: NonemptyString.optional().meta({
+			description: "Optional Git branch where the bound code was confirmed.",
+		}),
+		commit: NonemptyString.optional().meta({
+			description:
+				"Optional Git commit SHA where the bound code was confirmed; takes precedence over `branch`.",
+		}),
+		confirmedAt: NonemptyString.optional().meta({
+			description: "Optional timestamp when the binding was last confirmed against source.",
+		}),
 	})
-	.strict();
+	.strict()
+	.meta({
+		description: "Primary source location implementing a module's responsibility.",
+	});
 type CodeBinding = z.infer<typeof CodeBindingSchema>;
 /**
  * The one place in code an author cites as proof of a relationship or a flow
@@ -26,8 +45,22 @@ type CodeBinding = z.infer<typeof CodeBindingSchema>;
  * it, and the code check finds it from the symbol.
  */
 const CodeAnchorSchema = z
-	.object({ repo: NonemptyString, path: NonemptyString, symbol: NonemptyString })
-	.strict();
+	.object({
+		repo: NonemptyString.meta({
+			description: "Repository identity holding the cited file.",
+		}),
+		path: NonemptyString.meta({
+			description: "Repository-relative path to the file containing the cited symbol.",
+		}),
+		symbol: NonemptyString.meta({
+			description: "Qualified symbol name in `path` proving the relationship or flow step.",
+		}),
+	})
+	.strict()
+	.meta({
+		description:
+			"Source citation proving a relationship or flow step: repository, file path, and symbol name, with no line number. May cite a definition or a use; when a relationship kind declares an `evidence` list and the code check finds evidence kinds for the anchor, one accepted kind (resolved or candidate) satisfies the check.",
+	});
 type CodeAnchor = z.infer<typeof CodeAnchorSchema>;
 /**
  * One file in a repository that a variant draws, such as a design document, an
@@ -41,8 +74,23 @@ const DocumentReferenceSchema = CodeBindingSchema.pick({
 	branch: true,
 	commit: true,
 })
-	.extend({ path: NonemptyString })
-	.strict();
+	.extend({
+		path: NonemptyString.meta({
+			description: "Repository-relative path to the referenced document file.",
+		}),
+		branch: NonemptyString.optional().meta({
+			description: "Optional Git branch from which to read the document when `commit` is absent.",
+		}),
+		commit: NonemptyString.optional().meta({
+			description:
+				"Optional Git commit SHA pinning the exact document revision; takes precedence over `branch`.",
+		}),
+	})
+	.strict()
+	.meta({
+		description:
+			"Reference to a tracked document file such as a design doc, ADR, or task. Without `commit` or `branch`, reads from the checkout the vault uses for that repository.",
+	});
 type DocumentReference = z.infer<typeof DocumentReferenceSchema>;
 
 export {

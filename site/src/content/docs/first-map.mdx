@@ -6,7 +6,7 @@ description: Build an initial architecture model, three sequence flows, and an o
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 
-Coding agents lose their understanding of a codebase when a session ends. This guide walks through creating a persistent architecture model in about two hours, pairing a coding agent with an engineer who knows the system.
+Coding agents lose their understanding of a codebase when a session ends. This guide walks through creating a persistent architecture model by pairing a coding agent with an engineer who knows the system.
 
 ## Prerequisites
 
@@ -16,13 +16,13 @@ Coding agents lose their understanding of a codebase when a session ends. This g
 - A Codex sign-in, required only for voice narration and video recording in step 4.
 - An engineer who knows the system and can verify the agent's output. The agent extracts structure from code, and the engineer validates boundaries and intent.
 
-| Step                                | Time   | Output                                            |
-| ----------------------------------- | ------ | ------------------------------------------------- |
-| 1. Initialize the repository        | 15 min | Vault, skills, and language servers configured    |
-| 2. Draw the first map               | 40 min | Root modules bound to source code                 |
-| 3. Document three flows             | 30 min | Three sequence diagrams backed by source anchors  |
-| 4. Create an onboarding walkthrough | 20 min | Narrated walkthrough and optional video recording |
-| 5. Decide what fails CI             | 15 min | List of finding codes that block pull requests    |
+| Step                                | Output                                            |
+| ----------------------------------- | ------------------------------------------------- |
+| 1. Initialize the repository        | Vault, skills, and language servers configured    |
+| 2. Draw the first map               | Root modules bound to source code                 |
+| 3. Document three flows             | Three sequence diagrams backed by source anchors  |
+| 4. Create an onboarding walkthrough | Narrated walkthrough and optional video recording |
+| 5. Decide what fails CI             | List of finding codes that block pull requests    |
 
 ## 1. Initialize the repository
 
@@ -76,6 +76,14 @@ archboard check
 	Seven clear modules are more useful than forty granular ones. You can decompose any module into
 	child parts later, and the code check validates bindings at every level.
 </Aside>
+
+### What makes a good map
+
+- **Read the active vocabulary first.** Run `archboard model config` to see the vault's configured module kinds, relationship kinds, groups, lenses, and code-check rules.
+- **Bind modules to their owning code.** Bind root modules and containers to their directory or entry file (such as `index.ts`, `__init__.py`, or `mod.rs`) so code inspection can measure their interfaces and depth, and bind smaller parts to a specific file or symbol when needed.
+- **Reserve `external` for unowned systems.** Mark third-party services or unowned packages `external` and leave them unbound, except for vendored code inside a checkout Archboard reads.
+- **Match kind and effect to the mechanism.** Pick each relationship's `kind` by how it travels (`sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, `dependency`, or a vault-added kind) and its `effect` (`mutation`, `query`, or `compute`, omitting `effect` on a declared-only `dependency`). The active vault policy controls which code or configuration evidence proves each kind: by default, `sync`, `async`, and `render` expect a runtime call, while `dependency` also accepts imports and build requirements.
+- **Draw call direction, not call order.** Point each relationship from caller to callee. If one module calls two other modules in turn, draw two edges from the caller rather than a chain between the callees, and keep return values inside sequence flows.
 
 ## 3. Document three flows
 

@@ -24,10 +24,15 @@ const SemanticIdSchema = z
 	.regex(BLOCK_ID_RE, "must be one to eight characters of the block-id alphabet");
 
 /** A name a person reads. One line, trimmed, never empty. */
-const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME);
+const DisplayNameSchema = SingleLineTextSchema.max(MAX_NAME).meta({
+	description: "Human-readable name on a single line.",
+});
 
 /** A concise explanation of what a node is for; the renderer wraps its lines. */
-const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY);
+const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY).meta({
+	description:
+		"One-line statement of what the module is responsible for, drawn on its card (max 200 characters).",
+});
 
 /**
  * The id of one configured group, as the vault configuration keys it.
@@ -56,7 +61,11 @@ const GroupMembershipsSchema = z
 		(ids) => sameSemanticOrder(ids, normalizeGroupIds(ids)),
 		"group memberships must be unique and in canonical order",
 	)
-	.meta({ uniqueItems: true });
+	.meta({
+		uniqueItems: true,
+		description:
+			"Explicit configured group IDs this module belongs to, sorted in canonical order with no duplicates. Membership is not inherited from `parent`.",
+	});
 
 /**
  * The canonical spelling of a set of group ids: each once, in code-unit order.
@@ -78,7 +87,10 @@ function sameSemanticOrder(one: readonly string[], other: readonly string[]): bo
 }
 
 /** The longer explanation, reached by inspecting a node rather than drawn on it. */
-const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION);
+const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION).meta({
+	description:
+		"Longer plain-text explanation of responsibilities, boundaries, or design decisions shown when inspecting the subject (max 2000 characters).",
+});
 
 /** Model[/original-board]#local-id. Namespace segments preserve identity provenance. */
 const localIdPattern = BLOCK_ID_RE.source.slice(1, -1);
@@ -87,7 +99,10 @@ const QualifiedSubjectIdSchema = z
 	.regex(
 		new RegExp(`^${localIdPattern}(?:/${localIdPattern})?#${localIdPattern}$`, "u"),
 		"Use model[/original-board]#local-id, with one to eight characters per id",
-	);
+	)
+	.meta({
+		description: "Stable qualified subject identity in the form `model[/original-board]#local-id`.",
+	});
 
 export {
 	QualifiedSubjectIdSchema,

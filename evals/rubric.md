@@ -51,22 +51,22 @@ It authors no architecture.
 Use the installed skill catalogue when the source establishes a feature.
 Judge the same stable feature keys across retained reports.
 
-| Row            | Canonical evidence                                                |
-| -------------- | ----------------------------------------------------------------- |
-| `external`     | Mark a module outside the described ownership boundary.           |
-| `binding`      | Bind a module to the source that implements its responsibility.   |
-| `containment`  | State parent identities without a fixed level.                    |
-| `relationship` | Author each relationship on its source module.                    |
-| `traffic`      | State meaningful effective traffic properties.                    |
-| `emphasis`     | Mark the main exchange when it helps the reading.                 |
-| `repeat`       | Record repeated exchanges on authored steps.                      |
-| `note`         | Attach relevant evidence or constraints to a step.                |
-| `groups`       | Apply configured group identities.                                |
-| `flow`         | Author an independent collection and complete exchange.           |
-| `view`         | Select a content-free reading or imported bookmark.               |
-| `walkthrough`  | Author ordered beats with exact reading targets.                  |
-| `drillDown`    | Follow an explicit model reference or recursive module scope.     |
-| `description`  | Explain responsibilities and significant architectural decisions. |
+| Row            | Canonical evidence                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `external`     | Mark a module outside the described ownership boundary, and leave it unbound except for vendored code in a checkout Archboard reads. |
+| `binding`      | Bind a module to the directory, entry file, or symbol that implements its responsibility.                                            |
+| `containment`  | State parent identities without a fixed level, and bind each code container to the directory that holds its parts.                   |
+| `relationship` | Author each relationship on its source module with its kind, effect (except effectless `dependency`), and an optional anchor.        |
+| `traffic`      | State meaningful illustrative traffic properties when ongoing volume or speed clarifies the reading.                                 |
+| `emphasis`     | Mark the main exchange `hero` or secondary lines `muted` sparingly when it helps the reading.                                        |
+| `repeat`       | Record fixed repeated exchanges on authored steps with `repeat`, not only in a note.                                                 |
+| `note`         | Attach relevant evidence, conditions, or constraints to a step.                                                                      |
+| `groups`       | Apply configured group identities explicitly from the vault policy.                                                                  |
+| `flow`         | Author an independent collection and complete exchange with a summary and anchored steps.                                            |
+| `view`         | Select a content-free reading or imported bookmark.                                                                                  |
+| `walkthrough`  | Author ordered beats with exact reading targets.                                                                                     |
+| `drillDown`    | Follow an explicit model reference or recursive module scope.                                                                        |
+| `description`  | Explain responsibilities and significant architectural decisions concisely.                                                          |
 
 ## What the run inherited
 

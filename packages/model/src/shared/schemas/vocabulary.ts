@@ -17,12 +17,18 @@ import { VocabularyNameSchema } from "#shared/schemas/semantic-policy.ts";
 /**
  * What an architectural node is, named by the vault vocabulary.
  */
-const NodeKindSchema = VocabularyNameSchema;
+const NodeKindSchema = VocabularyNameSchema.meta({
+	description:
+		"Module kind ID defined in the vault's `nodeKinds` policy (for example `service`, `module`, `datastore`, `external`). Run `archboard model config` to see active kinds.",
+});
 
 /**
  * How one node reaches another.
  */
-const EdgeKindSchema = VocabularyNameSchema;
+const EdgeKindSchema = VocabularyNameSchema.meta({
+	description:
+		"Relationship kind ID describing how the connection travels: built-in (`sync`, `async`, `http`, `rpc`, `event`, `queue`, `stream`, `spawn`, `render`, `storage`, `dependency`) or a vault-added kind in `relationshipKinds`. The retired kind `call` is refused.",
+});
 
 /**
  * How much of the reader's attention a relationship is asking for. This is
@@ -30,7 +36,10 @@ const EdgeKindSchema = VocabularyNameSchema;
  * "hero" looks like, and an author who marks everything a hero has marked
  * nothing.
  */
-const EdgeEmphasisSchema = z.enum(["normal", "hero", "muted"]);
+const EdgeEmphasisSchema = z.enum(["normal", "hero", "muted"]).meta({
+	description:
+		"Visual attention intent for the relationship: `normal` (default), `hero` for the primary exchange, or `muted` for secondary connections.",
+});
 type EdgeEmphasis = z.infer<typeof EdgeEmphasisSchema>;
 
 /**
@@ -63,7 +72,10 @@ type DiagramGrammar = z.infer<typeof DiagramGrammarSchema>;
  * What one message in a flow does. `async` is sent and not waited for,
  * `return` carries an answer back, and `self` never leaves its sender.
  */
-const MessageKindSchema = z.enum(["sync", "async", "return", "self"]);
+const MessageKindSchema = z.enum(["sync", "async", "return", "self"]).meta({
+	description:
+		"Flow message form: `sync` (caller waits), `async` (fire-and-forget or non-blocking), `return` (answer back without adding a reverse structural relationship), or `self` (sender and receiver are the same module).",
+});
 
 /**
  * Where a variant stands. `current` is the architecture that is implemented,

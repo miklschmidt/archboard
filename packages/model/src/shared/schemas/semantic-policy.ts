@@ -72,7 +72,10 @@ const EvidenceKindSchema = z.enum([
  * its answer follows from what it hands over alone (`compute`). The kind says
  * how a relationship travels and the effect what it does (TASK-663).
  */
-const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]);
+const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]).meta({
+	description:
+		"What the relationship asks its target to do: `mutation` (observable side effect), `query` (reads held or fetched state), or `compute` (depends only on inputs passed by the caller). Required on every relationship except `dependency`, which omits it when it is a declared requirement only.",
+});
 /**
  * What a line's dash and head say it does: its effect, or `declared` for a
  * dependency that states none. A reader hides relationships by these tokens.
@@ -204,10 +207,17 @@ function vocabularyShape<Kinds extends z.ZodType>(
 		nodeKinds: z
 			.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
 			.refine((values) => Object.keys(values).length > 0, "Define at least one node kind")
-			.meta({ minProperties: 1 }),
+			.meta({
+				minProperties: 1,
+				description:
+					"Module kinds available in this vault, keyed by stable ID with display name, RemixIcon name, and optional palette color.",
+			}),
 		relationshipKinds,
 		/** Groups nodes may belong to, by stable id. None by default. */
-		groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
+		groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}).meta({
+			description:
+				"Cross-cutting groups modules may belong to, keyed by stable ID with display name and required palette color. None by default.",
+		}),
 		codeCheck: CodeCheckPolicySchema.optional().meta({
 			description:
 				"What the code check fails on beyond its warnings, and the level of each module-depth finding. Without it, every module-depth finding keeps its built-in level and no gate is on.",

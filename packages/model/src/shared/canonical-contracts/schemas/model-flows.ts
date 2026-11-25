@@ -58,15 +58,21 @@ const StepSchema = z.union([MessageSchema, DecisionSchema, LoopSchema]);
 const ModelFlowSchema = SemanticFlowSchema.omit({ steps: true }).extend({
 	id: QualifiedSubjectIdSchema,
 	formerNames: z.array(DisplayNameSchema).optional(),
-	participants: z.array(QualifiedSubjectIdSchema).min(1),
-	steps: z.array(StepSchema).min(1),
+	participants: z.array(QualifiedSubjectIdSchema).min(1).meta({
+		description: "Ordered qualified module IDs drawn left-to-right as sequence columns.",
+	}),
+	steps: z.array(StepSchema).min(1).meta({
+		description: "Ordered steps (messages, decisions, and loops) describing the exchange.",
+	}),
 });
 const FlowCollectionSchema = z.strictObject({
 	schemaVersion: z.literal(1),
 	id: SemanticIdSchema,
 	name: DisplayNameSchema,
 	formerNames: z.array(DisplayNameSchema).optional(),
-	flows: z.array(ModelFlowSchema),
+	flows: z.array(ModelFlowSchema).meta({
+		description: "Ordered flows belonging to this collection.",
+	}),
 });
 
 const NewAlternativeSchema = z.strictObject({

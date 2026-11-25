@@ -133,7 +133,9 @@ const ArchitectureManifestSchema = z
 
 const OwnedRelationshipSchema = SemanticEdgeSchema.omit({ id: true, from: true, to: true }).extend({
 	id: QualifiedSubjectIdSchema,
-	to: QualifiedSubjectIdSchema,
+	to: QualifiedSubjectIdSchema.meta({
+		description: "Qualified ID of the target module that receives or answers this relationship.",
+	}),
 });
 /**
  * The module file format every write produces. Format 2 states each
@@ -150,11 +152,22 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 }).extend({
 	schemaVersion: z.union([z.literal(MODULE_FORMAT), z.literal(OLD_MODULE_FORMAT)]),
 	id: QualifiedSubjectIdSchema,
-	parent: QualifiedSubjectIdSchema.optional(),
-	formerNames: z.array(DisplayNameSchema).optional(),
-	documents: z.array(documentReferenceSchema()).optional(),
-	references: z.array(ModelReferenceSchema).optional(),
-	outgoing: z.array(OwnedRelationshipSchema),
+	parent: QualifiedSubjectIdSchema.optional().meta({
+		description:
+			"Optional qualified ID of the containing parent module. Establishes structural containment without fixed levels.",
+	}),
+	formerNames: z.array(DisplayNameSchema).optional().meta({
+		description: "Previous display names retained for stable selection and history.",
+	}),
+	documents: z.array(documentReferenceSchema()).optional().meta({
+		description: "Tracked documents (such as ADRs, design docs, or tasks) attached to this module.",
+	}),
+	references: z.array(ModelReferenceSchema).optional().meta({
+		description: "Explicit cross-model references for drilling into another model.",
+	}),
+	outgoing: z.array(OwnedRelationshipSchema).meta({
+		description: "Directed relationships owned by this source module.",
+	}),
 });
 /**
  * A module file in the current format: every relationship states its effect,
