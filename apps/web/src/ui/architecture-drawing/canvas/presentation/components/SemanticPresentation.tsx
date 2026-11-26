@@ -4,7 +4,7 @@
 // A walkthrough used to be read in a scrolling rail beside the picture, where the step on
 // screen was whichever one had crossed a line a third of the way down, so the picture moved
 // because of where some text happened to sit. A presentation is stepped on purpose, with the
-// arrows, Space, the keys of the column or a step chosen on its rail, and the picture follows: the
+// arrows, the keys of the column or a step chosen on its rail, and the picture follows: the
 // camera glides to the step and what the step is not about recedes. Escape leaves, and gives the
 // reader back the camera and the view they had.
 //

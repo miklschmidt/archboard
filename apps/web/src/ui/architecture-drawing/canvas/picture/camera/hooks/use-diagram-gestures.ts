@@ -101,7 +101,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	const { camera, atlas, onSelect, onSelectArea, onHover, dismissTip, openDown } = inputs;
 	const [gesture, setGesture] = useState<Gesture>("idle");
 	const drag = useRef<CanvasDrag | null>(null);
-	const space = useSpacePan(onSelectArea !== undefined);
+	const space = useSpacePan();
 	// Whether the press under way holds the picture, and whether the pointer rests on a part.
 	const [grabbed, setGrabbed] = useState(false);
 	const [over, setOver] = useState(false);
@@ -355,14 +355,13 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 }
 
 /**
- * Track Space before the pointer gives the canvas keyboard focus.
- * @param enabled Whether this canvas supports primary rectangle selection.
+ * Track Space before the pointer gives the canvas keyboard focus. Every canvas
+ * answers it, a presented walkthrough's too, so the reader can look around a step.
  * @returns The held modifier without changing keyboard actions outside the canvas.
  */
-function useSpacePan(enabled: boolean): boolean {
+function useSpacePan(): boolean {
 	const [held, setHeld] = useState(false);
 	useEffect(() => {
-		if (!enabled) return undefined;
 		/**
 		 * Remember the physical modifier independently of the focused control. A space
 		 * typed into a field is a word gap, not a hand.
@@ -390,7 +389,7 @@ function useSpacePan(enabled: boolean): boolean {
 			window.removeEventListener("keyup", lift);
 			window.removeEventListener("blur", clear);
 		};
-	}, [enabled]);
+	}, []);
 	return held;
 }
 

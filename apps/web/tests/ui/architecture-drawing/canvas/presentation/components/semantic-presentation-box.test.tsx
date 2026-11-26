@@ -3,8 +3,8 @@
 // What is guarded: which step is shown is a matter of where every step stands against it, so a step
 // chosen out of order is handed over the same way as the next one (the stylesheet slides the places);
 // only the step shown can be reached; the gold of the rail and the live region follow the step; a key
-// that has nowhere to go stays a key, so keyboard focus is not left on nothing; Space presses a focused
-// control and steps from anywhere else; and the box takes keyboard focus when it opens.
+// that has nowhere to go stays a key, so keyboard focus is not left on nothing; Space never steps, because
+// held it is the hand that drags the picture; and the box takes keyboard focus when it opens.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -146,20 +146,11 @@ test("a key with nowhere to go is dimmed and stays a key, so focus is not left o
 	expect(document.activeElement?.getAttribute("data-slot")).toBe("semantic-presentation-next");
 });
 
-test("Space presses a control that has focus and steps from anywhere else", async () => {
+test("Space does not step, so it can hold the hand that drags the picture", async () => {
 	await present();
-	const segment = document.querySelector<HTMLElement>(
-		"[data-slot='semantic-presentation-step'][data-step='2']",
-	);
-	act(() => {
-		fireEvent.keyDown(segment ?? document.body, { key: " " });
-	});
-	await settle();
-	expect(current()).toBe("One");
-
 	press(" ");
 	await settle();
-	expect(current()).toBe("Two");
+	expect(current()).toBe("One");
 });
 
 /**

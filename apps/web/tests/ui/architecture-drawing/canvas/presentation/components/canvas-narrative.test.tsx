@@ -182,7 +182,7 @@ test("steps change only when the reader asks: keys, the controls, or a step chos
 	press("ArrowRight");
 	await settle();
 	expect(current()).toBe("One writer");
-	press(" ");
+	press("]");
 	await settle();
 	expect(current()).toBe("One edit, end to end");
 	press("ArrowLeft");
