@@ -4,6 +4,7 @@ title: 'Terraform: let a part bind a nested block of a resource'
 status: To Do
 assignee: []
 created_date: '2026-11-26T00:45:00Z'
+updated_date: '2026-11-26T00:48:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -114,6 +115,7 @@ Let a Terraform code binding and an anchor address a named direct child block of
 
 - Originating issue: https://github.com/miklschmidt/archboard/issues/166 (related context: https://github.com/miklschmidt/archboard/issues/165).
 - Design reviewed with Fable as advisor and aligned with ADR 0046.
+- **Coordination with #165 (`fix/issue-165-design`, proposal `eWn1Z5xB`):** Land #165 first, then rebase `feat/terraform-nested-blocks` onto `main` and reconcile proposal `klJZHla2` before implementing `TASK-682`. #165 introduces per-instance Terraform anchor judgement (listed joins + silent structural HCL reach for unlisted top-level declarations), `selfEnd` handling in `endOf`/`joinedBy`, and updates to the authoring reference and the descriptions of Fact analysis and Code check. Reconciling after #165 lands keeps anchor judgement in one unified Terraform path, avoids merge churn in evidence and authoring docs, and settles the description edits on Fact analysis and Code check cleanly.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
