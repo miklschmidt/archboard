@@ -1,0 +1,37 @@
+{
+  "id": "klJZHla2",
+  "name": "Terraform nested block bindings",
+  "summary": "Let Terraform parts and anchors bind named nested blocks of a resource, verify sibling-block anchors by intra-resource name links, and allow a direct child to share its infrastructure container address.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-26T00:42:11.037Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "96d3e4736b4610454053f2610be94409fa3887de1aa6f8e8162d529cdf621f8a",
+  "baseline": "9bc6f76e2c06b785af8f9842257ee0ce8c954e1f",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "description",
+      "value": "Local CLI and HTTP adapters share canonical reads, edits, subject claims, proposals, migration, archive retention, and recovery. Legacy decoding serves explicit migration and exact retained originals. Semantic checks recognize Terraform nested-block addresses in containment and exempt at most one direct child sharing its parent container infrastructure address from BINDING_SHARED."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "field": "description",
+      "value": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, module depth and document references with canonical identities. It reads the interface of every bound module, with or without parts, in every language that the module holds, and hands Module depth what it read. EXPOSED_UNUSED is a warning when the reader resolved every use in that language and the model draws no outside caller of the entry; otherwise it is information. The answer marks the modules that the branch touched and carries the selected model's shallow-module setting; severities in the answer never depend on the caller's flags. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read. For Terraform nested blocks, anchor support accepts 1-hop intra-resource name-linked sibling blocks (anchor-only, while still warning on whole-resource anchors for nested-block ends), ownership attributes references in bound nested blocks to those parts and prefers a direct child sharing its parent infrastructure address, duplicate literal names report ambiguity in symbol-missing warnings, and dynamic, computed-name, or plan-only nested selectors skip with expression-not-followed."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#bLpk2XKU",
+      "field": "description",
+      "value": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers. Check command help documents Terraform nested-block bindings, expression-not-followed skips for dynamic or plan-only nested selectors, and the direct-child infrastructure exception to BINDING_SHARED."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
+      "field": "description",
+      "value": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines. For Terraform, it parses addresses by position so trailing nested-block selectors (<resource>.<block_type>[\"name\"]) stay distinct from instance keys, emits depth-1 resource nested blocks with literal name as visibility \"block\" definitions without pulling references or runners off the enclosing resource, records 1-hop intra-resource sibling name links as resolved block symbols only, flags duplicate literal names as ambiguous, and marks dynamic, computed-name, or plan-only nested selectors as unfollowed."
+    }
+  ]
+}
