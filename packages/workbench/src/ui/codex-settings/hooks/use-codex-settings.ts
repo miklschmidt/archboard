@@ -101,6 +101,8 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 	const [busy, setBusy] = useState<CodexSettingsBusy>(IDLE_BUSY);
 	const [error, setError] = useState<DialogError | null>(null);
 	const mounted = useRef(true);
+	const activeRead = useRef<AbortController | null>(null);
+	const anyBusy = Object.values(busy).some(Boolean);
 
 	useEffect(() => {
 		mounted.current = true;
@@ -115,6 +117,7 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 			title: string,
 			request: () => Promise<CodexSettingsOutcome>,
 		): Promise<CodexSettingsReply | null> => {
+			activeRead.current?.abort();
 			setError(null);
 			setBusy((current) => ({ ...current, [flag]: true }));
 			try {
@@ -128,9 +131,13 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 		[],
 	);
 
-	const refresh = useCallback(async (signal?: AbortSignal): Promise<CodexSettingsReply | null> => {
-		const outcome = await fetchCodexSettings(signal);
-		if (signal?.aborted) return null;
+	const refresh = useCallback(async (): Promise<CodexSettingsReply | null> => {
+		activeRead.current?.abort();
+		const controller = new AbortController();
+		activeRead.current = controller;
+		const outcome = await fetchCodexSettings(controller.signal);
+		if (activeRead.current === controller) activeRead.current = null;
+		if (controller.signal.aborted) return null;
 		return commitSettingsOutcome(
 			outcome,
 			"Could not read Codex settings",
@@ -141,45 +148,24 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 	}, []);
 
 	useEffect(() => {
-		const controller = new AbortController();
-		void fetchCodexSettings(controller.signal).then((outcome) => {
-			if (!controller.signal.aborted) {
-				commitSettingsOutcome(
-					outcome,
-					"Could not read Codex settings",
-					mounted,
-					setError,
-					setSettings,
-				);
-			}
-			return undefined;
-		});
+		void refresh();
 		return () => {
-			controller.abort();
+			activeRead.current?.abort();
 		};
-	}, []);
+	}, [refresh]);
 
 	const shouldPoll =
 		settings?.auth.state === "login_pending" || settings?.auth.state === "starting";
 
 	useEffect(() => {
-		if (!shouldPoll) return undefined;
+		if (!shouldPoll || anyBusy) return undefined;
 		const timer = window.setInterval(() => {
-			void fetchCodexSettings().then((outcome) => {
-				commitSettingsOutcome(
-					outcome,
-					"Could not read Codex settings",
-					mounted,
-					setError,
-					setSettings,
-				);
-				return undefined;
-			});
+			if (activeRead.current === null) void refresh();
 		}, POLL_INTERVAL_MS);
 		return () => {
 			window.clearInterval(timer);
 		};
-	}, [shouldPoll]);
+	}, [anyBusy, refresh, shouldPoll]);
 
 	const pendingLoginId = settings?.auth.state === "login_pending" ? settings.auth.loginId : null;
 
@@ -232,6 +218,7 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 	return {
 		settings,
 		busy,
+		anyBusy,
 		error,
 		refresh,
 		signInChatgpt,

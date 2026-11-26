@@ -32,15 +32,6 @@ interface CodexModelFormProps {
 }
 
 /**
- * Tell whether any Codex settings mutation or sign-in request is currently in flight.
- * @param busy Granular busy flags.
- * @returns True when any operation is busy.
- */
-function isAnyBusy(busy: CodexSettingsBusy): boolean {
-	return Object.values(busy).some(Boolean);
-}
-
-/**
  * Compute form action availability flags from the current settings reply and draft.
  * @param settings Current settings reply.
  * @param draft Current editable draft.
@@ -172,6 +163,7 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 	const {
 		settings,
 		busy,
+		anyBusy,
 		error,
 		refresh,
 		signInChatgpt,
@@ -181,7 +173,6 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 		save,
 		reset,
 	} = useCodexSettings({ onSuccess: props.onSuccess });
-	const anyBusy = isAnyBusy(busy);
 
 	const handleRefresh = useCallback(() => {
 		void refresh();
