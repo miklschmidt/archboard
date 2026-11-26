@@ -459,18 +459,20 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			return settingsReply(saved.selection, loaded.auth, loaded.models);
 		},
 		/**
-		 * Reset persisted model selections to defaults after verifying Codex authentication and live models.
+		 * Reset persisted selections after verifying that the authenticated catalogue supports both defaults.
 		 * @returns The updated settings snapshot or failure.
 		 */
 		resetSettings: async (): Promise<CodexSettingsResult> => {
 			const loaded = await requireAuthenticatedModels();
 			if (!loaded.ok) return loaded;
+			const defaults = effectiveDefaults(loaded.models);
+			const validationError = validateBothRoles(defaults, loaded.models);
+			if (validationError !== null) {
+				return { ok: false, code: "MODEL_SELECTION_INVALID", error: validationError };
+			}
 			const reset = store.reset();
 			if (!reset.ok) return reset;
-			const { workhorse } = effectiveDefaults(loaded.models);
-			if (validateRoleSelection("Workhorse", workhorse, loaded.models) === null) {
-				await applyToLiveWorkhorses(loaded.scope, workhorse);
-			}
+			await applyToLiveWorkhorses(loaded.scope, defaults.workhorse);
 			return settingsReply(reset.selection, loaded.auth, loaded.models);
 		},
 		/**

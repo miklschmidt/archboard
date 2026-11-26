@@ -287,7 +287,8 @@ describe("codex settings HTTP routes and service", () => {
 			serviceTiers: [],
 			isDefault: true,
 		});
-		const fake = createFakeScope([[sol, hidden], [astra]]);
+		const pages = [[sol, hidden], [astra]];
+		const fake = createFakeScope(pages);
 		let activeScope: CodexSettingsScope | null = fake.scope;
 		const startup: CodexSettingsStartupState = {
 			state: "unavailable",
@@ -414,7 +415,29 @@ describe("codex settings HTTP routes and service", () => {
 			expect(readCodexModelPreferences()).toEqual({ ok: true, selection: savedBody.selection });
 			fake.failModelList = false;
 
+			// A successful catalogue read is insufficient when a default is unavailable.
+			pages.push([modelFixture({ id: "gpt-6.1-terra", model: "gpt-6.1-terra" })]);
+			const unavailableDefaultReset = await fetch(`${server.baseUrl}/api/settings/codex`, {
+				method: "DELETE",
+				headers: originHeaders,
+			});
+			expect(unavailableDefaultReset.status).toBe(422);
+			expect(await unavailableDefaultReset.json()).toMatchObject({
+				code: "MODEL_SELECTION_INVALID",
+				error: expect.stringContaining("Workhorse"),
+			});
+			expect(readCodexModelPreferences()).toEqual({ ok: true, selection: savedBody.selection });
+			expect(fake.settingsUpdates).toHaveLength(1);
+
 			// Reset clears overrides back to null.
+			pages.push([
+				modelFixture({
+					id: "gpt-6.2-sol",
+					model: "gpt-6.2-sol",
+					supportedReasoningEfforts: [{ reasoningEffort: "high", description: "Deep" }],
+					defaultReasoningEffort: "high",
+				}),
+			]);
 			const resetRes = await fetch(`${server.baseUrl}/api/settings/codex`, {
 				method: "DELETE",
 				headers: { Origin: server.baseUrl, "Sec-Fetch-Site": "same-origin" },
@@ -424,6 +447,11 @@ describe("codex settings HTTP routes and service", () => {
 				version: 1,
 				orchestrator: null,
 				workhorse: null,
+			});
+			expect(fake.settingsUpdates[1]).toMatchObject({
+				model: "gpt-6.2-sol",
+				effort: "high",
+				serviceTier: null,
 			});
 
 			// Logout signs out and clears models.
