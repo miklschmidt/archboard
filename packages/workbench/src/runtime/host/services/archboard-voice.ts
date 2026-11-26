@@ -36,14 +36,6 @@ function archboardPresentation(value: unknown): RealtimePresentation | null {
 function isArchboardRecording(value: unknown): boolean {
 	return archboardPresentation(value)?.recording != null;
 }
-/**
- * The name the voice is told a language by.
- * @param tag A BCP 47 language tag, or null to follow the user.
- * @returns Its English name, the tag when it has none, or null.
- */
-function spokenLanguage(tag: string | null): string | null {
-	return tag === null ? null : (languageName(tag) ?? tag);
-}
 
 /**
  * Supply Archboard persona and narration rules through the neutral voice port.
@@ -65,7 +57,8 @@ function createArchboardVoicePolicy(
 		start: (value: unknown) => {
 			const presentation = archboardPresentation(value);
 			const recording = presentation?.recording != null;
-			const language = recording ? null : spokenLanguage(voiceLanguage());
+			const tag = recording ? null : voiceLanguage();
+			const language = tag === null ? null : languageName(tag);
 			const base = recording ? ARCHBOARD_RECORDING_VOICE_PROMPT : archboardVoicePrompt(language);
 			return Object.freeze({
 				prompt:
