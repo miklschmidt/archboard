@@ -94,6 +94,13 @@ resource "azurerm_subnet_nat_gateway_association" "workers" {
   subnet_id      = azurerm_subnet.workers.id
   nat_gateway_id = azurerm_nat_gateway.egress.id
 }
+
+resource "azurerm_network_security_group" "workers" {}
+
+resource "azurerm_subnet_network_security_group_association" "filter" {
+  subnet_id                 = azurerm_subnet.workers.id
+  network_security_group_id = azurerm_network_security_group.workers.id
+}
 `;
 
 const AZURE_INSTANCES = `module "net_a" {
@@ -159,6 +166,10 @@ beforeAll(async () => {
 		"azure-joins/main.tf": AZURE_JOINS,
 		"azure-instances/main.tf": AZURE_INSTANCES,
 		"azure-instances/modules/net/main.tf": AZURE_NET_MODULE,
+		"azure-other-root/main.tf": `module "net" {
+  source = "../azure-instances/modules/net"
+}
+`,
 	});
 	write(scratch, { gitconfig: "" });
 	git(scratch, shop, "init", "-q", "-b", "main");
@@ -253,6 +264,19 @@ beforeAll(async () => {
 			]),
 		],
 	);
+	current(
+		"Azure separate roots",
+		[
+			part("S", "azure-instances", "module.net_a.azurerm_subnet.workers"),
+			part("F", "azure-other-root", "module.net.azurerm_network_security_group.workers"),
+		],
+		[
+			edge("e1", ["S", "F"], "dependency", [
+				"azure-instances/modules/net/main.tf",
+				"azurerm_subnet_network_security_group_association.filter",
+			]),
+		],
+	);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no documents");
@@ -319,4 +343,8 @@ test("Terraform joining anchors compare instance-qualified addresses across call
 	expect(
 		found("Azure module instances").map((each) => each.split(" | ").slice(0, 3).join(" ")),
 	).toEqual(["ANCHOR_MISMATCH e3 warning"]);
+});
+
+test("an unlisted join cannot combine addresses in separate roots that call the same module", () => {
+	expect(found("Azure separate roots")).toEqual(["ANCHOR_MISMATCH | e1 | warning"]);
 });

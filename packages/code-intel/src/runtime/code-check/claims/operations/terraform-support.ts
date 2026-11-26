@@ -123,8 +123,10 @@ async function symbolHoldsAddress(
 	configuration: TerraformConfiguration,
 	deps: TerraformSupportDeps,
 ): Promise<boolean> {
-	if (bound.root === configuration.root) {
-		return holdsAddress(declarationAddress(symbol), targetAddress);
+	if (bound.root !== undefined) {
+		return (
+			bound.root === configuration.root && holdsAddress(declarationAddress(symbol), targetAddress)
+		);
 	}
 	if (targetSite === undefined) return false;
 	return (await deps.holdingAt(bound, symbol, { ...targetSite, via: [] })) === "holds";
@@ -225,9 +227,11 @@ function joinSideAddresses(
  */
 function endBoundInRoot(holders: readonly HolderBinding[], root: string): boolean {
 	return holders.some(
-		({ bound }) =>
+		({ part, bound }) =>
 			typeof bound !== "string" &&
-			(bound.root === root || bound.files.some((file) => isTerraformFile(file))),
+			(part.binding?.symbol !== undefined && bound.root !== undefined
+				? bound.root === root
+				: bound.files.some((file) => isTerraformFile(file))),
 	);
 }
 
