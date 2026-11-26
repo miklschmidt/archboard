@@ -21,12 +21,16 @@
 // its rule names the arguments that name the end the join runs from (the part
 // that sends) and the end it runs to (the part whose work it starts): the
 // arguments that name the end, never a block around them that also names a
-// credential, such as the account a push subscription authenticates as. Its
-// evidence runs between those ends, never from the joining declaration to
-// each of them (terraform-evidence.ts). An end that its arguments name no
-// declaration for is the joining declaration itself: a Cloud Function's event
-// trigger starts the function's own work, and a pull subscription is where
-// its topic delivers.
+// credential, such as the account a push subscription authenticates as or an
+// Event Hub authorization rule. Its evidence runs between those ends, never
+// from the joining declaration to each of them (terraform-evidence.ts). Only a
+// declaration that can itself receive delivery — a trigger with no external
+// target or a pull subscription — stands in for an unresolved `to` end; a pure
+// link (an association, diagnostic setting, listener or grant) never falls back
+// to itself. A standalone declaration that routes traffic or data from one
+// declaration to another has a join rule; an undirected filter attachment such
+// as an NSG association stays unlisted so it never forces `RELATIONSHIP_UNDRAWN`
+// while still supporting an anchor whose references reach both ends.
 //
 // Terraform's meta-arguments (`depends_on`, `count`, `for_each`, `lifecycle`,
 // `provider` and the `provisioner` and `connection` blocks) and the
@@ -56,6 +60,12 @@ interface Join {
 	readonly from: readonly string[];
 	/** The arguments that name the end the join runs to. */
 	readonly to: readonly string[];
+	/**
+	 * Whether the declaration itself stands for its `to` end when none of its
+	 * `to` arguments resolves to a declaration: true for triggers (`to: []`)
+	 * and pull subscriptions, false for pure links.
+	 */
+	readonly selfTo: boolean;
 }
 
 /** The rule of one resource or data source type. */
@@ -83,6 +93,7 @@ interface Classified {
  * @param from The arguments that name the end it runs from.
  * @param to The arguments that name the end it runs to.
  * @param rest The kinds of its other arguments.
+ * @param selfTo Whether the declaration itself stands for an unresolved `to` end.
  * @returns The rule.
  */
 function join(
@@ -90,8 +101,9 @@ function join(
 	from: readonly string[],
 	to: readonly string[],
 	rest?: Readonly<Record<string, TerraformKind>>,
+	selfTo = to.length === 0,
 ): ResourceRule {
-	return { join: { kind, from, to }, ...(rest === undefined ? {} : { arguments: rest }) };
+	return { join: { kind, from, to, selfTo }, ...(rest === undefined ? {} : { arguments: rest }) };
 }
 
 /**
@@ -199,6 +211,7 @@ const GOOGLE_CLOUD: ProviderRules = {
 			["topic"],
 			["push_config.push_endpoint", "bigquery_config.table", "cloud_storage_config.bucket"],
 			{ dead_letter_policy: "configured-path" },
+			true,
 		),
 		google_cloudfunctions2_function: join(
 			"call",
@@ -291,9 +304,13 @@ const AZURE: ProviderRules = {
 			["source_arm_resource_id", "source_resource_id"],
 			[],
 		),
-		azurerm_servicebus_subscription: join("call", ["topic_id"], ["forward_to"], {
-			forward_dead_lettered_messages_to: "configured-path",
-		}),
+		azurerm_servicebus_subscription: join(
+			"call",
+			["topic_id"],
+			["forward_to"],
+			{ forward_dead_lettered_messages_to: "configured-path" },
+			true,
+		),
 		azurerm_servicebus_queue: {
 			arguments: {
 				forward_to: "configured-path",
@@ -327,6 +344,26 @@ const AZURE: ProviderRules = {
 			"configured-path",
 			["virtual_network_name"],
 			["remote_virtual_network_id"],
+		),
+		azurerm_subnet_nat_gateway_association: join(
+			"configured-path",
+			["subnet_id"],
+			["nat_gateway_id"],
+		),
+		azurerm_nat_gateway_public_ip_association: join(
+			"configured-path",
+			["nat_gateway_id"],
+			["public_ip_address_id"],
+		),
+		azurerm_private_dns_zone_virtual_network_link: join(
+			"configured-path",
+			["virtual_network_id"],
+			["private_dns_zone_name"],
+		),
+		azurerm_monitor_diagnostic_setting: join(
+			"configured-path",
+			["target_resource_id"],
+			["log_analytics_workspace_id", "storage_account_id", "eventhub_name", "partner_solution_id"],
 		),
 		azurerm_private_endpoint: { arguments: { private_service_connection: "configured-path" } },
 		azurerm_role_assignment: join("permission", ["principal_id"], ["scope"]),
@@ -466,23 +503,41 @@ function unreadModuleArgumentKind(argument: readonly string[]): TerraformKind {
 }
 
 /**
- * Whether a declaration joins two others by its provider's rules, as an
- * event source mapping joins a queue and a function.
- * @param address The declaration's address, as its module writes it:
- * `aws_lambda_event_source_mapping.jobs`.
- * @returns True when it does.
+ * The resource or data source type named by a declaration address, stripping
+ * any leading `module.<name>.` prefixes and `data.` or `ephemeral.` markers.
+ * @param address The declaration's address, module-local or root-relative.
+ * @returns The type, or undefined when the address names none.
  */
-function isJoiningDeclaration(address: string): boolean {
-	const [first, second] = address.split(".");
-	const type = first === "data" || first === "ephemeral" ? second : first;
-	return PROVIDERS.some((provider) => provider.types[type ?? ""]?.join !== undefined);
+function resourceTypeOf(address: string): string | undefined {
+	const names = address.split(".");
+	let index = 0;
+	while (names[index] === "module" && index + 2 < names.length) index += 2;
+	if (names[index] === "data" || names[index] === "ephemeral") index += 1;
+	return names[index];
+}
+
+/**
+ * The join rule of a declaration that joins two others by its provider's rules,
+ * as an event source mapping joins a queue and a function.
+ * @param address The declaration's address, module-local or root-relative.
+ * @returns Its join rule, or undefined when no provider rule joins it.
+ */
+function joinRuleOf(address: string): Join | undefined {
+	const type = resourceTypeOf(address);
+	if (type === undefined) return undefined;
+	for (const provider of PROVIDERS) {
+		const rule = provider.types[type]?.join;
+		if (rule !== undefined) return rule;
+	}
+	return undefined;
 }
 
 export {
 	type Classified,
+	type Join as JoinRule,
 	type JoinEnd,
 	classifyReference,
-	isJoiningDeclaration,
 	isMetaArgument,
+	joinRuleOf,
 	unreadModuleArgumentKind,
 };

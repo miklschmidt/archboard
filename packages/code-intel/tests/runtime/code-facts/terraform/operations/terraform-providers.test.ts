@@ -209,3 +209,68 @@ test("a plan that fills in a module the check does not read classifies an argume
 	]);
 	written.remove();
 });
+
+test("Azure joining declarations classify directed paths, keep credentials provisioning, and leave undirected NSG attachments unlisted", async () => {
+	const written = fixtureCheckout({
+		"main.tf": [
+			'resource "azurerm_subnet" "workers" {}',
+			'resource "azurerm_nat_gateway" "egress" {}',
+			'resource "azurerm_public_ip" "egress" {}',
+			'resource "azurerm_virtual_network" "core" {}',
+			'resource "azurerm_private_dns_zone" "internal" {}',
+			'resource "azurerm_application_gateway" "ingress" {}',
+			'resource "azurerm_log_analytics_workspace" "access" {}',
+			'resource "azurerm_eventhub_namespace_authorization_rule" "send" {}',
+			'resource "azurerm_network_security_group" "workers" {}',
+			'resource "azurerm_subnet_nat_gateway_association" "workers" {',
+			"  subnet_id      = azurerm_subnet.workers.id",
+			"  nat_gateway_id = azurerm_nat_gateway.egress.id",
+			"}",
+			'resource "azurerm_nat_gateway_public_ip_association" "egress" {',
+			"  nat_gateway_id       = azurerm_nat_gateway.egress.id",
+			"  public_ip_address_id = azurerm_public_ip.egress.id",
+			"}",
+			'resource "azurerm_private_dns_zone_virtual_network_link" "core" {',
+			"  virtual_network_id    = azurerm_virtual_network.core.id",
+			"  private_dns_zone_name = azurerm_private_dns_zone.internal.name",
+			"}",
+			'resource "azurerm_monitor_diagnostic_setting" "access" {',
+			"  target_resource_id             = azurerm_application_gateway.ingress.id",
+			"  log_analytics_workspace_id     = azurerm_log_analytics_workspace.access.id",
+			"  eventhub_authorization_rule_id = azurerm_eventhub_namespace_authorization_rule.send.id",
+			"}",
+			'resource "azurerm_subnet_network_security_group_association" "workers" {',
+			"  subnet_id                 = azurerm_subnet.workers.id",
+			"  network_security_group_id = azurerm_network_security_group.workers.id",
+			"}",
+		].join("\n"),
+	});
+	try {
+		const read = await facts.pass(new AbortController().signal).read(written, "main.tf");
+		if (read?.adapter !== "terraform") throw new Error("main.tf was not read as Terraform");
+		const entries = [
+			...new Set(
+				read.references
+					.filter((each) => each.via === "code")
+					.map((each) => `${each.symbol} ${each.kind} ${each.joins ?? "-"}`),
+			),
+		].toSorted();
+		expect(entries).toEqual(
+			[
+				"azurerm_subnet.workers configured-path from",
+				"azurerm_nat_gateway.egress configured-path to",
+				"azurerm_nat_gateway.egress configured-path from",
+				"azurerm_public_ip.egress configured-path to",
+				"azurerm_virtual_network.core configured-path from",
+				"azurerm_private_dns_zone.internal configured-path to",
+				"azurerm_application_gateway.ingress configured-path from",
+				"azurerm_log_analytics_workspace.access configured-path to",
+				"azurerm_eventhub_namespace_authorization_rule.send provisioning -",
+				"azurerm_subnet.workers provisioning -",
+				"azurerm_network_security_group.workers provisioning -",
+			].toSorted(),
+		);
+	} finally {
+		written.remove();
+	}
+});

@@ -16,7 +16,9 @@
 // its from-arguments reach to the owners of what its to-arguments reach, of
 // the join's kind, and the piece cites the joining declaration, which an
 // anchor names to prove the relationship (ADR 0046). An end its arguments
-// reach nothing for is the joining declaration itself.
+// reach nothing for is the joining declaration itself only when its provider
+// rule marks `selfTo` (triggers and pull subscriptions); a pure link produces
+// no evidence for an unresolved end.
 //
 // A declaration belongs to the part bound in the same root module to the
 // longest address that is it or holds it: `module.queue` holds every
@@ -37,6 +39,7 @@ import {
 	terraformConfiguration,
 	type TerraformConfiguration,
 } from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
+import { joinRuleOf } from "#runtime/code-facts/terraform/operations/terraform-providers.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 
 /** One declaration of a root module's address space. */
@@ -127,7 +130,8 @@ interface RootReading {
 
 /**
  * What one end of a joining declaration reaches: what the arguments that
- * name it reach, else the declaration itself.
+ * name it reach, else the declaration itself only when its provider rule lets
+ * the declaration stand in for that end.
  * @param declaration The joining declaration.
  * @param ends What its arguments that name an end reach.
  * @param end Which end.
@@ -135,7 +139,10 @@ interface RootReading {
  */
 function endOf(declaration: Declaration, ends: Reached, end: "from" | "to"): string[] {
 	const named = ends.filter(({ link }) => link.joins === end).map(({ to }) => to.address);
-	return named.length === 0 ? [declaration.address] : named;
+	if (named.length > 0) return named;
+	return end === "to" && joinRuleOf(declaration.address)?.selfTo === true
+		? [declaration.address]
+		: [];
 }
 
 /**
@@ -257,4 +264,4 @@ async function terraformEvidenceOf(
 	return firstPerPair(pieces);
 }
 
-export { holdsDeclarationAt, ownershipIn, terraformEvidenceOf };
+export { holds as holdsAddress, holdsDeclarationAt, ownershipIn, terraformEvidenceOf };

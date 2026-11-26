@@ -37,6 +37,8 @@ interface AnchorClaim {
 	readonly site: ClaimSite;
 	readonly anchor: CodeAnchor;
 	readonly ends: readonly SemanticNode[];
+	/** Each end and every part inside it, in the same order as `ends`. */
+	readonly endHolders: readonly (readonly SemanticNode[])[];
 	/** The parts at its ends and every part inside one: whose bound code counts as an end's. */
 	readonly holders: readonly SemanticNode[];
 	/**
@@ -125,7 +127,14 @@ function anchorClaim(
 	ends: { readonly from: string; readonly to: string },
 ): AnchorClaim {
 	const parts = endsOf(variant, ends.from, ends.to);
-	return { kind: "anchor", site, anchor, ends: parts, holders: holdersOf(variant, parts) };
+	return {
+		kind: "anchor",
+		site,
+		anchor,
+		ends: parts,
+		endHolders: parts.map((end) => holdersOf(variant, [end])),
+		holders: holdersOf(variant, parts),
+	};
 }
 
 /**

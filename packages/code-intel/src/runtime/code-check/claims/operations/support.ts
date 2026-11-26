@@ -24,10 +24,19 @@
 //
 // In infrastructure, the anchor is the declaration that joins the two parts
 // (ADR 0046), and a Terraform declaration that neither end binds, such as an
-// event source mapping, can be that declaration. A provider's rules say which
-// declarations join two others (TASK-367.18), so an anchor that names one is
-// not judged by where it is declared; any other Terraform declaration is, and
-// a part bound to an address holds what that address declares in its root
+// event source mapping or an association, can be that declaration. When
+// neither end holds the declaration directly, the check judges each instance
+// at its site in the root modules the ends bind:
+// - For a declaration listed by its provider's join rules (TASK-367.18), it
+//   checks the instance's `from` and `to` roles against the claimed ends and
+//   their descendants in either orientation, warns `ANCHOR_MISMATCH` when
+//   every instance rules out the claimed pair, and withholds the warning when
+//   an opaque or unresolved end leaves room for a match.
+// - For an unlisted Terraform declaration (such as an NSG filter attachment or
+//   an unlisted provider's association), it supports the anchor when one
+//   instance reaches code held by both claimed ends without emitting undrawn
+//   evidence.
+// A part bound to an address holds what that address declares in its root
 // module's address space. The check does not judge where a Kubernetes
 // anchor's symbol is declared: a Service, an Ingress, a route or a
 // NetworkPolicy joins two workloads that a document draws, and neither end need
@@ -42,11 +51,11 @@ import {
 	type Search,
 } from "#runtime/code-check/claims/operations/symbols.ts";
 import { holdsDeclarationAt } from "#runtime/code-check/evidence/operations/terraform-evidence.ts";
+import { judgeTerraformDeclaration } from "#runtime/code-check/claims/operations/terraform-support.ts";
 import {
 	definitionSite,
 	type DefinitionSite,
 } from "#runtime/code-facts/operations/definition-site.ts";
-import { isJoiningDeclaration } from "#runtime/code-facts/terraform/operations/terraform-providers.ts";
 import { isTerraformFile } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import { mergedDefinitions } from "#runtime/code-facts/compose/operations/compose-merged.ts";
@@ -84,7 +93,9 @@ interface SupportContext {
  * check can name matches by name only, a candidate.
  */
 type Site = Pick<DefinitionSite, "path" | "via"> & {
-	readonly definition: Pick<Definition, "start" | "end" | "declaration">;
+	readonly definition: Pick<Definition, "start" | "end" | "declaration"> & {
+		readonly symbol?: string;
+	};
 };
 
 /**
@@ -279,10 +290,7 @@ async function serverSite(
  * code facts find, else the line a language server names. Where code facts
  * find only a declaration whose code is in no file they can name, such as a C
  * prototype defined outside its header's pair, the line the server names
- * wins when it names one. A Terraform
- * declaration that joins two others by its provider's rules, such as an event
- * source mapping, is in neither end's code by design (ADR 0046), so it is not
- * judged.
+ * wins when it names one.
  * @param claim The anchor.
  * @param file The anchored file.
  * @param checkout Its checkout.
@@ -300,8 +308,50 @@ async function anchoredSite(
 	if (declared.definition.declaration === true) {
 		return (await serverSite(claim, file, checkout, context)) ?? declared;
 	}
-	const joins = isTerraformFile(declared.path) && isJoiningDeclaration(declared.definition.symbol);
-	return joins ? undefined : declared;
+	return declared;
+}
+
+/**
+ * Judge an anchor whose definition lies outside the bound code of both ends:
+ * Terraform declarations are checked per instance as joining declarations
+ * before falling back to an ordinary `ANCHOR_MISMATCH`.
+ * @param claim The anchor.
+ * @param site Where the symbol is defined.
+ * @param checkout Its checkout.
+ * @param context The pass.
+ * @param use The anchored use, if any.
+ * @returns The finding, or undefined when a Terraform declaration supports it.
+ */
+async function outsideMismatch(
+	claim: AnchorClaim,
+	site: Site,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+	use: CodeEvidence | undefined,
+): Promise<CodeFinding | undefined> {
+	if (!isTerraformFile(site.path) || site.definition.declaration === true) {
+		return anchorMismatch(claim, site, use);
+	}
+	const verdict = await judgeTerraformDeclaration(claim, site, use, {
+		facts: context.search.facts,
+		checkout,
+		/**
+		 * Resolve a holder part's bound files in the anchor's checkout.
+		 * @param part The holder part.
+		 * @returns The bound files, `elsewhere`, or `unknown`.
+		 */
+		boundFiles: (part) => boundFiles(part, checkout, context),
+		/**
+		 * Check whether a symbol-bound holder holds a reached site.
+		 * @param bound The bound files and root.
+		 * @param symbol The binding symbol.
+		 * @param target The reached site.
+		 * @returns Whether it holds it.
+		 */
+		holdingAt: (bound, symbol, target) => holdingAt(bound, symbol, target, context),
+	});
+	if (verdict === "supports" || verdict === "withhold") return undefined;
+	return verdict === "outside" ? anchorMismatch(claim, site, use) : verdict;
 }
 
 /**
@@ -319,14 +369,15 @@ async function judgeSupport(
 	context: SupportContext,
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
-	if (JOINED_BY_DECLARATION.has((await facts.read(checkout, file))?.adapter)) return undefined;
+	const fileFacts = await facts.read(checkout, file);
+	if (JOINED_BY_DECLARATION.has(fileFacts?.adapter)) return undefined;
 	const site = await anchoredSite(claim, file, checkout, context);
 	if (site === undefined) return undefined;
 	const holdings = await Promise.all(
 		claim.holders.map((part) => holding(part, site, checkout, context)),
 	);
 	if (holdings.some((each) => each !== "elsewhere")) return undefined;
-	return anchorMismatch(claim, site, anchoredUse(await facts.read(checkout, file), claim));
+	return outsideMismatch(claim, site, checkout, context, anchoredUse(fileFacts, claim));
 }
 
 export { judgeSupport };
