@@ -147,7 +147,7 @@ function CodexModelForm(props: CodexModelFormProps): JSX.Element {
 			<Dialog.Busy busy={busy.save} text="Saving Codex settings…" />
 			<Dialog.Busy busy={busy.reset} text="Restoring default Codex settings…" />
 
-			<Dialog.Footer className="bg-card sticky -bottom-5">
+			<Dialog.Footer sticky>
 				<Button variant="ghost" size="sm" disabled={!canReset} onClick={onReset}>
 					Reset
 				</Button>
@@ -180,7 +180,7 @@ function CodexSettingsPending(props: {
 					Reading Codex settings…
 				</p>
 			)}
-			<Dialog.Footer className="bg-card sticky -bottom-5">
+			<Dialog.Footer sticky>
 				<Dialog.Cancel>Close</Dialog.Cancel>
 				{props.error !== null && (
 					<Button size="sm" onClick={props.onRetry}>
