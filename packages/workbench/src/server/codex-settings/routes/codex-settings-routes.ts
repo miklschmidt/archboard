@@ -11,9 +11,10 @@ import {
 	type CodexSettingsFailureCode,
 } from "#shared/codex-settings/schemas/codex-settings.ts";
 
-interface CodexSettingsRouteGuards {
+interface CodexSettingsRouteHost {
 	readonly read: RequestHandler;
 	readonly mutation: RequestHandler;
+	readonly mutationEndpoint: typeof asyncEndpoint;
 }
 
 /**
@@ -50,6 +51,12 @@ function asyncEndpoint(
 	};
 }
 
+const TEST_ROUTE_HOST: CodexSettingsRouteHost = {
+	read: PASS_THROUGH,
+	mutation: PASS_THROUGH,
+	mutationEndpoint: asyncEndpoint,
+};
+
 /**
  * Write a structured Codex settings service result as an HTTP JSON response.
  * @param response Express response.
@@ -70,16 +77,15 @@ function sendResult(response: Response, result: CodexSettingsResult): void {
 /**
  * Build the Express router for Codex authentication and model selection settings.
  * @param service Settings service implementation (defaults to the live workbench service).
- * @param guards Optional origin guards supplied by the server host.
+ * @param host Origin guards and mutation tracking supplied by the server host.
  * @returns Express router mounting /api/settings/codex endpoints.
  */
 function createCodexSettingsRouter(
 	service: CodexSettingsService = defaultCodexSettingsService,
-	guards?: CodexSettingsRouteGuards,
+	host: CodexSettingsRouteHost = TEST_ROUTE_HOST,
 ): Router {
 	const router = Router();
-	const readGuard = guards?.read ?? PASS_THROUGH;
-	const mutationGuard = guards?.mutation ?? PASS_THROUGH;
+	const { read: readGuard, mutation: mutationGuard, mutationEndpoint } = host;
 
 	router.get(
 		"/api/settings/codex",
@@ -92,7 +98,7 @@ function createCodexSettingsRouter(
 	router.put(
 		"/api/settings/codex",
 		mutationGuard,
-		asyncEndpoint(async (request, response) => {
+		mutationEndpoint(async (request, response) => {
 			const parsed = CodexSettingsSaveRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
 				sendResult(response, {
@@ -109,7 +115,7 @@ function createCodexSettingsRouter(
 	router.delete(
 		"/api/settings/codex",
 		mutationGuard,
-		asyncEndpoint(async (_request, response) => {
+		mutationEndpoint(async (_request, response) => {
 			sendResult(response, await service.resetSettings());
 		}),
 	);
@@ -117,7 +123,7 @@ function createCodexSettingsRouter(
 	router.post(
 		"/api/settings/codex/login",
 		mutationGuard,
-		asyncEndpoint(async (request, response) => {
+		mutationEndpoint(async (request, response) => {
 			const parsed = CodexSettingsLoginRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
 				sendResult(response, {
@@ -134,7 +140,7 @@ function createCodexSettingsRouter(
 	router.post(
 		"/api/settings/codex/login/cancel",
 		mutationGuard,
-		asyncEndpoint(async (request, response) => {
+		mutationEndpoint(async (request, response) => {
 			const parsed = CodexSettingsCancelLoginRequestSchema.safeParse(request.body);
 			if (!parsed.success) {
 				sendResult(response, {
@@ -151,7 +157,7 @@ function createCodexSettingsRouter(
 	router.post(
 		"/api/settings/codex/logout",
 		mutationGuard,
-		asyncEndpoint(async (_request, response) => {
+		mutationEndpoint(async (_request, response) => {
 			sendResult(response, await service.logout());
 		}),
 	);
@@ -162,10 +168,10 @@ function createCodexSettingsRouter(
 /**
  * Mount Codex authentication and model selection settings routes on the Archboard server.
  * @param app Express application.
- * @param guards Optional origin guards supplied by the server host.
+ * @param host Origin guards and mutation tracking supplied by the server host.
  */
-function mountCodexSettingsRoutes(app: Express, guards?: CodexSettingsRouteGuards): void {
-	app.use(createCodexSettingsRouter(defaultCodexSettingsService, guards));
+function mountCodexSettingsRoutes(app: Express, host: CodexSettingsRouteHost): void {
+	app.use(createCodexSettingsRouter(defaultCodexSettingsService, host));
 }
 
-export { createCodexSettingsRouter, mountCodexSettingsRoutes, type CodexSettingsRouteGuards };
+export { createCodexSettingsRouter, mountCodexSettingsRoutes };

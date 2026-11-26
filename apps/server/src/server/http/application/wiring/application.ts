@@ -17,6 +17,7 @@ import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/co
 import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
 import { startServer } from "#server/start-stop/lifecycle/server-startup.ts";
 import {
+	asyncEndpoint as admittedMutationEndpoint,
 	mountMutationAdmission,
 	trackMutationWork,
 } from "#server/http/middleware/mutation-work.ts";
@@ -120,6 +121,7 @@ mountSemanticPaneContextRoutes(app);
 mountCodexSettingsRoutes(app, {
 	read: createBrowserOriginGuard("settings-read"),
 	mutation: createBrowserOriginGuard("mutation"),
+	mutationEndpoint: admittedMutationEndpoint,
 });
 mountVoiceStartTraceRoute(app);
 
