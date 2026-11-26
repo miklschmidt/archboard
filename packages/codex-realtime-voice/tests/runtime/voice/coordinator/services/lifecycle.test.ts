@@ -126,12 +126,11 @@ describe("coordinator lifecycle", () => {
 		expect(fixtureValue.epoch.records[0]?.provenance.threadSource).toBe("vscode");
 	});
 
-	test("confirms Standard when priority is not advertised", async () => {
+	test("confirms Standard when start reports null and the settings update reports default", async () => {
 		const fixtureValue = fixture({
 			model: coordinatorModel({ serviceTiers: [], defaultServiceTier: null }),
 			settingsOverrides: { serviceTier: "default" },
 		});
-		Object.assign(fixtureValue.session.started, { serviceTier: "default" });
 		const snapshot = await ready(fixtureValue, "fallback-operation");
 
 		expect(snapshot.configured?.serviceTier).toBeNull();

@@ -151,9 +151,8 @@ function isCurrentNotification(
 }
 
 /**
- * Why the confirmed model settings are not the reviewed selection: the wrong model or effort, a
- * provider or tier that changed since the start, or a priority tier that was advertised but not
- * applied.
+ * Check that the update preserves the start's directory and provider and confirms the selected
+ * model, effort, and service tier.
  * @param started - The thread/start response.
  * @param configured - The settings the coordinator was asked for.
  * @param settings - The settings Codex confirmed.
@@ -176,25 +175,8 @@ function modelSettingsMismatch(
 	if (settings.effort !== configured.effort) {
 		return `Coordinator settings did not confirm ${configured.effort} effort.`;
 	}
-	return tierMismatch(started, configured, settings);
-}
-
-/**
- * Why the confirmed service tier is not the one the thread started with, or not the advertised
- * service tier the coordinator asked for.
- * @param started - The thread/start response.
- * @param configured - The settings the coordinator was asked for.
- * @param settings - The settings Codex confirmed.
- * @returns The mismatch, or null when the tier matches.
- */
-function tierMismatch(
-	started: CoordinatorStartResponse,
-	configured: CoordinatorConfiguredSettings,
-	settings: CoordinatorThreadSettings,
-): string | null {
-	if (settings.serviceTier !== started.serviceTier) {
-		return "Coordinator settings did not confirm the effective service tier.";
-	}
+	// Start already confirmed the selection. Its effective tier and the update's selected tier
+	// can spell Standard differently.
 	return !matchesServiceTier(configured.serviceTier, settings.serviceTier)
 		? "Coordinator settings did not confirm the selected service tier."
 		: null;
