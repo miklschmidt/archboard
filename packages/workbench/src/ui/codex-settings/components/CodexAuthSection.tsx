@@ -26,23 +26,35 @@ const LAMP_BY_STATE: Readonly<Record<CodexAuthState["state"], string>> = {
 const SIGNED_OUT_FALLBACK =
 	"Archboard keeps its own Codex sign-in, separate from any Codex CLI you use elsewhere.";
 
-/**
- * Title, the signed-in email shown blurred after it, and secondary line for the current Codex
- * authentication state.
- * @param auth Current Codex auth state.
- * @returns Title, email when there is one, and optional subtitle.
- */
-function authSummary(auth: CodexAuthState): {
+interface AuthSummary {
 	readonly label: string;
 	readonly email?: string;
 	readonly detail: string | null;
-} {
+}
+
+/**
+ * Keep a signed-in email separate from the label so the toggle can hide it.
+ * @param auth The authenticated Codex state.
+ * @returns Label, email when present, and account details.
+ */
+function authenticatedSummary(
+	auth: Extract<CodexAuthState, { state: "authenticated" }>,
+): AuthSummary {
+	const formatted = formatAuthenticatedAccount(auth);
+	if (auth.account.type === "chatgpt" && auth.account.email !== null) {
+		return { label: "Signed in as", email: auth.account.email, detail: formatted.secondary };
+	}
+	return { label: `Signed in as ${formatted.primary}`, detail: formatted.secondary };
+}
+
+/**
+ * Summarize the current Codex authentication state.
+ * @param auth Current Codex auth state.
+ * @returns Title, email when there is one, and optional subtitle.
+ */
+function authSummary(auth: CodexAuthState): AuthSummary {
 	if (auth.state === "authenticated") {
-		const formatted = formatAuthenticatedAccount(auth);
-		if (auth.account.type === "chatgpt" && auth.account.email !== null) {
-			return { label: "Signed in as", email: auth.account.email, detail: formatted.secondary };
-		}
-		return { label: `Signed in as ${formatted.primary}`, detail: formatted.secondary };
+		return authenticatedSummary(auth);
 	}
 	if (auth.state === "login_pending") {
 		return {
