@@ -1,9 +1,10 @@
 ---
 id: TASK-681
 title: Judge Terraform joining anchors per instance and add missing Azure rules
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:43:00Z'
+updated_date: '2026-11-26T01:16:00Z'
 labels: []
 dependencies: []
 references:
@@ -19,11 +20,11 @@ Relationship anchors citing Azure joining declarations like azurerm_subnet_nat_g
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Azure provider table adds configured-path join rules for azurerm_subnet_nat_gateway_association, azurerm_monitor_diagnostic_setting (without eventhub_authorization_rule_id), azurerm_private_dns_zone_virtual_network_link, and azurerm_nat_gateway_public_ip_association
-- [ ] #2 Provider join rules distinguish genuine self-endpoints from pure-link declarations so endOf never falls back to the declaration itself when an external end is unresolved
-- [ ] #3 Anchor support judges Terraform declarations per instance: unlisted declarations reaching both claimed ends pass cleanly without emitting undrawn evidence, while listed joins validate their endpoint roles per instance and warn ANCHOR_MISMATCH when every instance resolves both sides to other bound parts
-- [ ] #4 Undirected Azure NSG associations stay unlisted so anchored dependencies pass cleanly without triggering RELATIONSHIP_UNDRAWN
-- [ ] #5 Integration tests cover all new rules, wrong-pair warnings, opaque external ends, module instances, and unlisted NSG associations; docs and proposal eWn1Z5xB stay aligned
+- [x] #1 Azure provider table adds configured-path join rules for azurerm_subnet_nat_gateway_association, azurerm_monitor_diagnostic_setting (without eventhub_authorization_rule_id), azurerm_private_dns_zone_virtual_network_link, and azurerm_nat_gateway_public_ip_association
+- [x] #2 Provider join rules distinguish genuine self-endpoints from pure-link declarations so endOf never falls back to the declaration itself when an external end is unresolved
+- [x] #3 Anchor support judges Terraform declarations per instance: unlisted declarations reaching both claimed ends pass cleanly without emitting undrawn evidence, while listed joins validate their endpoint roles per instance and warn ANCHOR_MISMATCH when every instance resolves both sides to other bound parts
+- [x] #4 Undirected Azure NSG associations stay unlisted so anchored dependencies pass cleanly without triggering RELATIONSHIP_UNDRAWN
+- [x] #5 Integration tests cover all new rules, wrong-pair warnings, opaque external ends, module instances, and unlisted NSG associations; docs and proposal eWn1Z5xB stay aligned
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -31,3 +32,15 @@ Relationship anchors citing Azure joining declarations like azurerm_subnet_nat_g
 <!-- SECTION:PLAN:BEGIN -->
 Proposal: Terraform joining anchors judged by what they reach (eWn1Z5xB, predecessor LzXvT7U7, model vKEsyHFk, vault .archboard/vault). Affected modules: Fact analysis (vKEsyHFk/6E6hL0Zk#3CaBjhIM) and Code check (vKEsyHFk/HBlhIeSD#5SMX69gS). 1. Update terraform-providers.ts with self-end metadata on Join and the 4 directed Azure rules. 2. Update terraform-evidence.ts endOf to use self-end metadata. 3. Update support.ts to judge Terraform declarations per instance for both listed joins and unlisted structural reach. 4. Update headers and skills/archboard/references/authoring.md. 5. Add integration tests in terraform-providers.test.ts and run full verification.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented per-instance Terraform joining anchor judging (terraform-support.ts), updated support.ts to route outside-ends Terraform anchors and match anchored uses by full declaration address, added 4 directed Azure configured-path join rules and selfTo metadata (terraform-providers.ts), updated endOf in terraform-evidence.ts, added unit and integration tests (terraform-providers.test.ts and terraform-joining-anchors.test.ts), updated skills/archboard/references/authoring.md, completed 2 rounds of sol-loop review (Round 1 fixes landed and verified, Round 2 approved with 0 findings), adopted proposal eWn1Z5xB (checkpoint c49605bb32d85e9baef712f2842415fbe26004c4), and refreshed tracked README embeds so check:model passes with zero warnings.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fixed issue #165: added four directed Azure configured-path joining rules, prevented pure-link declarations from falling back to self-endpoints when an external end is opaque, judged anchored Terraform declarations per instance across both listed joins and unlisted declarations, left undirected Azure NSG associations unlisted, adopted proposal eWn1Z5xB, and passed full sol-loop review and check:model.
+<!-- SECTION:FINAL_SUMMARY:END -->

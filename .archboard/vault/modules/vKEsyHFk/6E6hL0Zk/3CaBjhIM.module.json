@@ -1,25 +1,9 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk#J2g3pRdG",
-      "order": 1000,
-      "kind": "sync",
-      "effect": "compute",
-      "label": "the files of each grammar",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-facts/operations/adapters.ts",
-        "symbol": "GRAMMARS"
-      },
-      "to": "vKEsyHFk#DZGqA0Dn"
-    }
-  ],
   "order": 44000,
   "name": "Fact analysis",
   "kind": "module",
   "responsibility": "Parses each supported language or format, resolves references, finds definitions, and reads module exposure",
-  "description": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines.",
+  "description": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines. For Terraform, provider rules name the declarations that join two others: the evidence kind, the arguments for each end, and whether the declaration itself stands for an end that no argument resolves (true for triggers and pull subscriptions, false for pure links). Azure adds directed configured-path rules for subnet NAT gateway associations, diagnostic settings (excluding credential arguments), private DNS zone virtual network links, and NAT gateway public IP associations; undirected NSG filter attachments stay unlisted.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts"
@@ -41,6 +25,22 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "the files of each grammar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-facts/operations/adapters.ts",
+        "symbol": "GRAMMARS"
+      },
+      "id": "vKEsyHFk#J2g3pRdG",
+      "to": "vKEsyHFk#DZGqA0Dn"
     }
   ]
 }
