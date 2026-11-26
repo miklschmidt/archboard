@@ -3,9 +3,10 @@ id: TASK-682.02
 title: >-
   Recognize nested blocks in containment and exempt one direct child from
   BINDING_SHARED
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T00:50:00Z'
+updated_date: '2026-11-26T01:45:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -31,10 +32,10 @@ Reuse the shared infrastructure-binding predicate (covering Terraform/OpenTofu, 
 
 ## Architecture
 
-- Proposal: "Terraform nested block bindings", `klJZHla2`.
+- Proposal: "Terraform nested block bindings", `qkPB3Whk`.
 - Slice: `vKEsyHFk/6E6hL0Zk#wYcdVszt` (Architecture runtime API) — Terraform nested-block containment recognition and the single-direct-child infrastructure exception in duplicate-binding checks.
-- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=klJZHla2&focusA=vKEsyHFk/6E6hL0Zk%23wYcdVszt
-- Gate: before this ticket merges, `archboard model footprint --base feat/terraform-nested-blocks --head <ticket-branch> --state klJZHla2 --model-at checkout --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
+- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=qkPB3Whk&focusA=vKEsyHFk/6E6hL0Zk%23wYcdVszt
+- Gate: before this ticket merges, `archboard model footprint --base feat/terraform-nested-blocks --head <ticket-branch> --state qkPB3Whk --model-at checkout --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
 
 ## Blocked by
 

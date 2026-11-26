@@ -1,10 +1,10 @@
 ---
 id: TASK-682
 title: 'Terraform: let a part bind a nested block of a resource'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T00:45:00Z'
-updated_date: '2026-11-26T00:48:00Z'
+updated_date: '2026-11-26T01:44:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -76,9 +76,9 @@ Let a Terraform code binding and an anchor address a named direct child block of
 
 ## Architecture Proposal
 
-- Proposal: "Terraform nested block bindings", `klJZHla2`, in model `vKEsyHFk` (predecessor "Module depth from the code", `LzXvT7U7`).
-- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=klJZHla2 (or http://archboard.localhost:4242/?modelA=vKEsyHFk&stateA=klJZHla2 on a release server), compared with Current by default.
-- Picture: `archboard model render --state klJZHla2 --out <file>` draws it.
+- Proposal: "Terraform nested block bindings", `qkPB3Whk`, in model `vKEsyHFk` (predecessor "Terraform joining anchors judged by what they reach", `eWn1Z5xB`).
+- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=qkPB3Whk (or http://archboard.localhost:4242/?modelA=vKEsyHFk&stateA=qkPB3Whk on a release server), compared with Current by default.
+- Picture: `archboard model render --state qkPB3Whk --out <file>` draws it.
 - Changes:
   - Interface: no container interface changes across all 108 containers.
   - Changed: **Fact analysis** parses Terraform addresses by position to preserve trailing nested-block selectors, emits depth-1 `resource` nested blocks with literal `name` as `visibility: "block"` definitions without pulling references or runners off the enclosing resource, records 1-hop intra-resource sibling name links as resolved block symbols only, flags duplicate literal names as ambiguous, and marks dynamic, computed-name, or plan-only nested selectors as unfollowed.
@@ -115,7 +115,7 @@ Let a Terraform code binding and an anchor address a named direct child block of
 
 - Originating issue: https://github.com/miklschmidt/archboard/issues/166 (related context: https://github.com/miklschmidt/archboard/issues/165).
 - Design reviewed with Fable as advisor and aligned with ADR 0046.
-- **Coordination with #165 (`fix/issue-165-design`, proposal `eWn1Z5xB`):** Land #165 first, then rebase `feat/terraform-nested-blocks` onto `main` and reconcile proposal `klJZHla2` before implementing `TASK-682`. #165 introduces per-instance Terraform anchor judgement (listed joins + silent structural HCL reach for unlisted top-level declarations), `selfEnd` handling in `endOf`/`joinedBy`, and updates to the authoring reference and the descriptions of Fact analysis and Code check. Reconciling after #165 lands keeps anchor judgement in one unified Terraform path, avoids merge churn in evidence and authoring docs, and settles the description edits on Fact analysis and Code check cleanly.
+- **Coordination with #165 (`fix/issue-165-design`, proposal `eWn1Z5xB`):** Land #165 first, then rebase `feat/terraform-nested-blocks` onto `main` and reconcile proposal `qkPB3Whk` before implementing `TASK-682`. #165 introduces per-instance Terraform anchor judgement (listed joins + silent structural HCL reach for unlisted top-level declarations), `selfEnd` handling in `endOf`/`joinedBy`, and updates to the authoring reference and the descriptions of Fact analysis and Code check. Reconciling after #165 lands keeps anchor judgement in one unified Terraform path, avoids merge churn in evidence and authoring docs, and settles the description edits on Fact analysis and Code check cleanly.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

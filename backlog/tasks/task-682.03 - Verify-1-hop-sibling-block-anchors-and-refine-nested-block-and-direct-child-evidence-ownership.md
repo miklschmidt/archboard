@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
+updated_date: '2026-11-26T01:45:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -38,10 +39,10 @@ Note: if #165 has landed on `main`, integrate cleanly with its per-instance Terr
 
 ## Architecture
 
-- Proposal: "Terraform nested block bindings", `klJZHla2`.
+- Proposal: "Terraform nested block bindings", `qkPB3Whk`.
 - Slice: `vKEsyHFk/6E6hL0Zk#3CaBjhIM` (Fact analysis: 1-hop intra-resource sibling name links) and `vKEsyHFk/HBlhIeSD#5SMX69gS` (Code check: sibling-block anchor support, nested-block reference ownership, deeper-part direct-child ownership preference).
-- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=klJZHla2&focusA=vKEsyHFk/6E6hL0Zk%233CaBjhIM,vKEsyHFk/HBlhIeSD%235SMX69gS
-- Gate: before this ticket merges, `archboard model footprint --base feat/terraform-nested-blocks --head <ticket-branch> --state klJZHla2 --model-at checkout --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
+- Link: http://127.0.0.1:3000/?modelA=vKEsyHFk&stateA=qkPB3Whk&focusA=vKEsyHFk/6E6hL0Zk%233CaBjhIM,vKEsyHFk/HBlhIeSD%235SMX69gS
+- Gate: before this ticket merges, `archboard model footprint --base feat/terraform-nested-blocks --head <ticket-branch> --state qkPB3Whk --model-at checkout --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
 
 ## Blocked by
 
