@@ -249,13 +249,13 @@ function foundAnchorInRoot(
 	declared: Extract<Declared, { status: "found" }>,
 	file: string,
 ): Held | undefined {
-	const { site, declaration } = declared;
-	if (site === undefined || site.path !== file) return undefined;
+	const { declaration } = declared;
+	if (declaration.path !== file || declaration.definition === undefined) return undefined;
 	return {
 		status: "found",
-		file: site.path,
-		line: site.definition.start,
-		definition: site.definition,
+		file: declaration.path,
+		line: declaration.definition.start,
+		definition: declaration.definition,
 		address: declaration.address,
 		root: configuration.root,
 	};

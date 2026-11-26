@@ -20,6 +20,7 @@ import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import {
 	declarationAddress,
 	isTerraformFile,
+	parseTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
 	terraformConfiguration,
@@ -61,8 +62,8 @@ function instancesIn(
 	configuration: TerraformConfiguration,
 	site: TerraformSite,
 ): readonly string[] {
-	if (site.address !== undefined && (site.root === undefined || site.root === configuration.root)) {
-		return [site.address];
+	if (site.address !== undefined) {
+		return site.root === undefined || site.root === configuration.root ? [site.address] : [];
 	}
 	return configuration.addressesAt(site.path, site.definition.start);
 }
@@ -546,4 +547,46 @@ async function judgeTerraformDeclaration(
 	return judgeListedConfigurations(claim, site, configurations, rule, ends, use, deps);
 }
 
-export { judgeTerraformDeclaration };
+/**
+ * Convert a found Terraform declaration into a `TerraformSite` for support checks.
+ * @param found The configuration lookup result.
+ * @param root The Terraform root directory.
+ * @param qualified Whether the anchor symbol carried a `module.<name>` prefix.
+ * @returns The site, or undefined when the declaration has no source definition.
+ */
+function foundReferenceSite(
+	found: ReturnType<TerraformConfiguration["declared"]>,
+	root: string,
+	qualified: boolean,
+): TerraformSite | undefined {
+	if (found.status !== "found") return undefined;
+	const { path, definition, address } = found.declaration;
+	if (path === undefined || definition === undefined) return undefined;
+	return qualified ? { path, definition, address, root } : { path, definition };
+}
+
+/**
+ * Resolve a Terraform reference anchor (confirmed by `heldInFiles` in `file`)
+ * to its declared definition in `file`'s Terraform root so enclosing-resource
+ * and support checks still judge the referenced resource.
+ * @param symbol The anchored Terraform address symbol.
+ * @param file The cited `.tf` or `.tofu` file.
+ * @param checkout The anchor's checkout.
+ * @param facts The facts pass.
+ * @returns The definition site, or undefined when not a resolved Terraform declaration.
+ */
+async function terraformReferenceSite(
+	symbol: string,
+	file: string,
+	checkout: ReadCheckout,
+	facts: FactsPass,
+): Promise<TerraformSite | undefined> {
+	if (!isTerraformFile(file)) return undefined;
+	const parsed = parseTerraformAddress(symbol);
+	const root = parsed === undefined ? undefined : terraformRootOf(file, "file", checkout.files);
+	if (parsed === undefined || root === undefined) return undefined;
+	const configuration = await terraformConfiguration(facts, checkout, root);
+	return foundReferenceSite(configuration.declared(symbol), root, parsed.modules.length > 0);
+}
+
+export { judgeTerraformDeclaration, terraformReferenceSite };

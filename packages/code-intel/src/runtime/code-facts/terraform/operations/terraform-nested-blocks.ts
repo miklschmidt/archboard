@@ -89,45 +89,70 @@ function unwrapExpression(node: Node | undefined): Node | undefined {
 }
 
 /**
- * Count leading ASCII space characters on one line.
- * @param line The line text.
- * @returns The number of leading spaces.
+ * Split text into lines while preserving each line's original line ending (`\n` or `\r\n`).
+ * @param text The raw text.
+ * @returns The lines, each ending with its original newline sequence if present.
  */
-function leadingSpaces(line: string): number {
-	let count = 0;
-	while (count < line.length && line[count] === " ") count += 1;
-	return count;
+function splitLinesPreservingEndings(text: string): string[] {
+	const lines: string[] = [];
+	let start = 0;
+	for (let index = 0; index < text.length; index += 1) {
+		if (text[index] === "\n") {
+			lines.push(text.slice(start, index + 1));
+			start = index + 1;
+		}
+	}
+	if (start < text.length) lines.push(text.slice(start));
+	return lines;
 }
 
 /**
- * Strip the minimum common leading-space indentation from an indented HCL
- * heredoc (`<<-`), ignoring blank lines.
+ * Measure leading horizontal/Unicode whitespace before a line's newline ending
+ * and report whether the line contains only whitespace.
+ * @param line One line, including its trailing newline.
+ * @returns Leading whitespace count and whether the line is whitespace-only.
+ */
+function leadingIndent(line: string): { readonly count: number; readonly blank: boolean } {
+	const content = line.replace(/\r?\n$/u, "");
+	let count = 0;
+	while (count < content.length && /\s/u.test(content[count] ?? "")) count += 1;
+	return { count, blank: count === content.length };
+}
+
+/**
+ * Strip the minimum common leading whitespace from non-blank lines of an
+ * indented HCL heredoc (`<<-`), preserving whitespace-only lines and original
+ * line endings verbatim.
  * @param lines The raw body lines between opening and closing markers.
  * @returns The dedented lines.
  */
 function stripHeredocIndent(lines: readonly string[]): string[] {
-	const counts = lines.filter((line) => /[^ ]/u.test(line)).map(leadingSpaces);
-	if (counts.length === 0) return [...lines];
-	const min = Math.min(...counts);
-	return lines.map((line) => line.slice(Math.min(min, leadingSpaces(line))));
+	let min = Number.POSITIVE_INFINITY;
+	for (const line of lines) {
+		const info = leadingIndent(line);
+		if (!info.blank && info.count < min) min = info.count;
+	}
+	if (!Number.isFinite(min) || min === 0) return [...lines];
+	return lines.map((line) => (leadingIndent(line).blank ? line : line.slice(min)));
 }
 
 /**
  * Decode an interpolation-free HCL heredoc template (`<<EOF` or `<<-EOF`),
- * applying indentation stripping for `<<-`, preserving the trailing newline,
- * and unescaping `$${` / `%%{` template escapes without touching backslashes.
+ * applying HCL indentation stripping for `<<-`, preserving original line
+ * endings and trailing newline, and unescaping `$${` / `%%{` template escapes
+ * without touching backslashes.
  * @param heredoc The `heredoc_template` node.
  * @returns The decoded string, or undefined when dynamic or malformed.
  */
 function heredocLiteralValue(heredoc: Node): string | undefined {
 	if (hasDynamicTemplate(heredoc)) return undefined;
-	const lines = heredoc.text.replaceAll("\r\n", "\n").split("\n");
+	const lines = splitLinesPreservingEndings(heredoc.text);
 	if (lines.length < 2) return undefined;
 	const header = lines[0] ?? "";
 	const bodyLines = lines.slice(1, -1);
 	if (bodyLines.length === 0) return "";
-	const normalized = header.startsWith("<<-") ? stripHeredocIndent(bodyLines) : bodyLines;
-	return `${normalized.join("\n")}\n`.replaceAll("$${", "${").replaceAll("%%{", "%{");
+	const dedented = header.startsWith("<<-") ? stripHeredocIndent(bodyLines) : bodyLines;
+	return dedented.join("").replaceAll("$${", "${").replaceAll("%%{", "%{");
 }
 
 /**
@@ -152,17 +177,21 @@ function templateLiteralValue(template: Node): string | undefined {
 }
 
 /**
- * The unescaped string value of a plain literal HCL string or interpolation-free
- * heredoc expression (including parenthesized wrappers), rejecting dynamic
- * template interpolations and directives while decoding HCL escapes.
+ * The NFC-normalized unescaped string value of a plain literal HCL string or
+ * interpolation-free heredoc expression (including parenthesized wrappers),
+ * matching cty/HCL string normalization while rejecting dynamic templates.
  * @param expression The expression node.
- * @returns The decoded literal string, or undefined when not a plain literal.
+ * @returns The NFC-normalized literal string, or undefined when not a plain literal.
  */
 function literalStringValue(expression: Node | undefined): string | undefined {
 	const inner = onlyChild(unwrapExpression(expression), "expression");
-	if (inner?.type === "literal_value") return quotedLiteralValue(inner);
-	if (inner?.type === "template_expr") return templateLiteralValue(inner);
-	return undefined;
+	const raw =
+		inner?.type === "literal_value"
+			? quotedLiteralValue(inner)
+			: inner?.type === "template_expr"
+				? templateLiteralValue(inner)
+				: undefined;
+	return raw?.normalize("NFC");
 }
 
 /**

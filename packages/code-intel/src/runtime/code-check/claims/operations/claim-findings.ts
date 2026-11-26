@@ -12,7 +12,7 @@ import type {
 } from "#runtime/code-check/claims/operations/claims.ts";
 import type { Held } from "#runtime/code-check/claims/operations/symbols.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
-import type { CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
+import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import { describeSubject } from "@archboard/model/policy";
 
 /**
@@ -172,10 +172,43 @@ function unparsedSkip(
 	return unparsedSourceSkip(base, held);
 }
 
+/** Where a cited enclosing resource is defined. */
+interface EnclosingResourceSite {
+	readonly path: string;
+	readonly definition: { readonly start: number };
+}
+
+/**
+ * The warning for an anchor citing the enclosing Terraform resource of an end
+ * that binds a nested block of that resource (ADR 0046, TASK-682).
+ * @param claim The anchor.
+ * @param site Where the enclosing resource is defined.
+ * @param use The anchored use, if any.
+ * @returns The finding.
+ */
+function enclosingResourceMismatch(
+	claim: AnchorClaim,
+	site: EnclosingResourceSite,
+	use: CodeEvidence | undefined,
+): CodeFinding {
+	return {
+		...claim.site,
+		severity: "warning",
+		code: "ANCHOR_MISMATCH",
+		message:
+			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
+			`which ${site.path}:${site.definition.start} defines as the enclosing Terraform resource of a ` +
+			"nested-block end. A whole-resource anchor cannot stand for a relationship involving a nested " +
+			"block; cite the nested block or a 1-hop sibling block that links the ends instead.",
+		...(use === undefined ? {} : { evidence: [use] }),
+	};
+}
+
 export {
 	anchorPathMissing,
 	anchorSymbolMissing,
 	bindingPathMissing,
 	bindingSymbolMissing,
+	enclosingResourceMismatch,
 	unparsedSkip,
 };

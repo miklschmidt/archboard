@@ -42,6 +42,7 @@
 // NetworkPolicy joins two workloads that a document draws, and neither end need
 // bind it (TASK-367.19).
 
+import { enclosingResourceMismatch } from "#runtime/code-check/claims/operations/claim-findings.ts";
 import { readableOf, type ReadCheckout } from "#runtime/code-check/operations/checkouts.ts";
 import type { AnchorClaim } from "#runtime/code-check/claims/operations/claims.ts";
 import type { Resolve } from "#runtime/code-check/operations/resolution.ts";
@@ -51,7 +52,10 @@ import {
 	type Search,
 } from "#runtime/code-check/claims/operations/symbols.ts";
 import { holdsAddress } from "#runtime/code-check/evidence/operations/terraform-evidence.ts";
-import { judgeTerraformDeclaration } from "#runtime/code-check/claims/operations/terraform-support.ts";
+import {
+	judgeTerraformDeclaration,
+	terraformReferenceSite,
+} from "#runtime/code-check/claims/operations/terraform-support.ts";
 import {
 	definitionSite,
 	type DefinitionSite,
@@ -462,11 +466,37 @@ function siteFromResolved(resolved: ResolvedAnchorSite): Site {
 }
 
 /**
+ * Fallback definition site when code facts found no local definition in `file`:
+ * resolve a Terraform reference in its root module first, else ask the language server.
+ * @param claim The anchor.
+ * @param file The anchored file.
+ * @param checkout Its checkout.
+ * @param context The pass.
+ * @returns The resolved definition site, or undefined.
+ */
+async function fallbackAnchorSite(
+	claim: AnchorClaim,
+	file: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+): Promise<Site | undefined> {
+	const referenced = await terraformReferenceSite(
+		claim.anchor.symbol,
+		file,
+		checkout,
+		context.search.facts,
+	);
+	return referenced === undefined
+		? serverSite(claim, file, checkout, context)
+		: { ...referenced, via: [] };
+}
+
+/**
  * Where an anchor's symbol is defined, when the check judges it: a definition
- * code facts find, else the line a language server names. Where code facts
- * find only a declaration whose code is in no file they can name, such as a C
- * prototype defined outside its header's pair, the line the server names
- * wins when it names one.
+ * code facts find, else a Terraform reference resolved in its root, else the
+ * line a language server names. Where code facts find only a declaration whose
+ * code is in no file they can name, such as a C prototype defined outside its
+ * header's pair, the line the server names wins when it names one.
  * @param claim The anchor.
  * @param file The anchored file.
  * @param checkout Its checkout.
@@ -483,7 +513,7 @@ async function anchoredSite(
 ): Promise<Site | undefined> {
 	if (resolved !== undefined) return siteFromResolved(resolved);
 	const declared = await definitionSite(context.search.facts, checkout, file, claim.anchor.symbol);
-	if (declared === undefined) return serverSite(claim, file, checkout, context);
+	if (declared === undefined) return fallbackAnchorSite(claim, file, checkout, context);
 	if (declared.definition.declaration === true) {
 		return (await serverSite(claim, file, checkout, context)) ?? declared;
 	}
@@ -531,32 +561,6 @@ async function outsideMismatch(
 	});
 	if (verdict === "supports" || verdict === "withhold") return undefined;
 	return verdict === "outside" ? anchorMismatch(claim, site, use) : verdict;
-}
-
-/**
- * The warning for an anchor citing the enclosing Terraform resource of an end
- * that binds a nested block of that resource (ADR 0046, TASK-682).
- * @param claim The anchor.
- * @param site Where the enclosing resource is defined.
- * @param use The anchored use, if any.
- * @returns The finding.
- */
-function enclosingResourceMismatch(
-	claim: AnchorClaim,
-	site: Site,
-	use: CodeEvidence | undefined,
-): CodeFinding {
-	return {
-		...claim.site,
-		severity: "warning",
-		code: "ANCHOR_MISMATCH",
-		message:
-			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
-			`which ${site.path}:${site.definition.start} defines as the enclosing Terraform resource of a ` +
-			"nested-block end. A whole-resource anchor cannot stand for a relationship involving a nested " +
-			"block; cite the nested block or a 1-hop sibling block that links the ends instead.",
-		...(use === undefined ? {} : { evidence: [use] }),
-	};
 }
 
 /**

@@ -377,7 +377,10 @@ function parseNestedBlock(
 	block: AddressSegment,
 ): ParsedTerraformAddress | undefined {
 	if (block.key?.kind !== "string" || block.key.value === "") return undefined;
-	const nested: NestedBlockSelector = { blockType: block.name, name: block.key.value };
+	const nested: NestedBlockSelector = {
+		blockType: block.name,
+		name: block.key.value.normalize("NFC"),
+	};
 	const address = `${declaration}.${nested.blockType}[${JSON.stringify(nested.name)}]`;
 	return { address, modules, kind: "block", declaration, resourceType, nested };
 }
@@ -475,7 +478,10 @@ function isInfrastructureAddress(parsed: ParsedTerraformAddress): boolean {
  */
 function formatSegment(segment: AddressSegment): string {
 	if (segment.key === undefined) return segment.name;
-	const key = segment.key.kind === "numeric" ? segment.key.raw : JSON.stringify(segment.key.value);
+	const key =
+		segment.key.kind === "numeric"
+			? segment.key.raw
+			: JSON.stringify(segment.key.value.normalize("NFC"));
 	return `${segment.name}[${key}]`;
 }
 

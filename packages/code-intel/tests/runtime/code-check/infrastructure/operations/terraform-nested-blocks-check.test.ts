@@ -6,6 +6,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { readFileOwners as ReadFileOwnersFn } from "#runtime/code-check/operations/file-owners.ts";
 import { terraformRunners } from "#runtime/code-check/evidence/operations/terraform-runners.ts";
@@ -137,6 +138,78 @@ function part(id: string, symbol: string, path = "infra") {
 		order: id.charCodeAt(0) * 100 + id.length,
 		binding: { repo: SHOP, path, symbol },
 	};
+}
+
+function invNode(
+	id: string,
+	name: string,
+	order: number,
+	path: string,
+	symbol?: string,
+	parent?: string,
+) {
+	return {
+		id,
+		name,
+		kind: "module",
+		order,
+		...(parent === undefined ? {} : { parent }),
+		binding: { repo: "", path, ...(symbol === undefined ? {} : { symbol }) },
+	};
+}
+
+function makeInvarianceVariant(repoName: string) {
+	const bind = (n: ReturnType<typeof invNode>) => ({
+		...n,
+		binding: { ...n.binding, repo: repoName },
+	});
+	return [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current" as const,
+			content: {
+				nodes: [
+					bind(invNode("pDb", "DB", 10, "invariance", "azurerm_postgresql_flexible_server.db")),
+					bind(invNode("pApi", "API", 20, "invariance", "azurerm_container_group.api")),
+					bind(invNode("pApiCode", "API Code", 25, "invariance/app/api.ts", undefined, "pApi")),
+					bind(invNode("pJobs", "Jobs", 30, "invariance", "aws_sqs_queue.jobs")),
+					bind(invNode("pWorker", "Worker", 40, "invariance", "aws_lambda_function.worker")),
+				],
+				edges: [
+					{ id: "e1", order: 10, from: "pApiCode", to: "pDb", kind: "storage" },
+					{
+						id: "e2",
+						order: 20,
+						from: "pJobs",
+						to: "pWorker",
+						kind: "queue",
+						anchor: {
+							repo: repoName,
+							path: "invariance/main.tf",
+							symbol: "aws_lambda_event_source_mapping.trigger",
+						},
+					},
+				],
+			},
+		},
+	];
+}
+
+function normalizeFindings(items: CodeCheckOutcome["findings"]) {
+	return items.map(({ code, severity, subject, evidence }) => ({
+		code,
+		severity,
+		subject,
+		evidence: evidence?.map(({ kind, resolution, from, to, path, symbol }) => ({
+			kind,
+			resolution,
+			from,
+			to,
+			path,
+			symbol,
+		})),
+	}));
 }
 
 beforeAll(async () => {
@@ -300,79 +373,9 @@ test("invariance: named nested blocks with no nested-block bindings produce iden
 	git(scratch, withoutDir, "add", "-A");
 	git(scratch, withoutDir, "commit", "-q", "--no-gpg-sign", "-m", "without block names");
 
-	const makeVariant = (repoName: string) => [
-		{
-			id: "v1",
-			name: "Built",
-			lifecycle: "current" as const,
-			content: {
-				nodes: [
-					{
-						id: "pDb",
-						name: "DB",
-						kind: "module",
-						order: 10,
-						binding: {
-							repo: repoName,
-							path: "invariance",
-							symbol: "azurerm_postgresql_flexible_server.db",
-						},
-					},
-					{
-						id: "pApi",
-						name: "API",
-						kind: "module",
-						order: 20,
-						binding: {
-							repo: repoName,
-							path: "invariance",
-							symbol: "azurerm_container_group.api",
-						},
-					},
-					{
-						id: "pApiCode",
-						name: "API Code",
-						kind: "module",
-						order: 25,
-						parent: "pApi",
-						binding: { repo: repoName, path: "invariance/app/api.ts" },
-					},
-					{
-						id: "pJobs",
-						name: "Jobs",
-						kind: "module",
-						order: 30,
-						binding: { repo: repoName, path: "invariance", symbol: "aws_sqs_queue.jobs" },
-					},
-					{
-						id: "pWorker",
-						name: "Worker",
-						kind: "module",
-						order: 40,
-						binding: { repo: repoName, path: "invariance", symbol: "aws_lambda_function.worker" },
-					},
-				],
-				edges: [
-					{ id: "e1", order: 10, from: "pApiCode", to: "pDb", kind: "storage" },
-					{
-						id: "e2",
-						order: 20,
-						from: "pJobs",
-						to: "pWorker",
-						kind: "queue",
-						anchor: {
-							repo: repoName,
-							path: "invariance/main.tf",
-							symbol: "aws_lambda_event_source_mapping.trigger",
-						},
-					},
-				],
-			},
-		},
-	];
 	register(scratch, { [SHOP]: shop, "github.com/test/inv-without": withoutDir });
-	document(withVault, "Inv", makeVariant(SHOP));
-	document(withoutVault, "Inv", makeVariant("github.com/test/inv-without"));
+	document(withVault, "Inv", makeInvarianceVariant(SHOP));
+	document(withoutVault, "Inv", makeInvarianceVariant("github.com/test/inv-without"));
 	const readWith = check.readStatesToCheck(withVault, undefined);
 	const readWithout = check.readStatesToCheck(withoutVault, undefined);
 	if (!readWith.ok || !readWithout.ok) throw new Error("failed to read invariance vaults");
@@ -386,21 +389,9 @@ test("invariance: named nested blocks with no nested-block bindings produce iden
 		readWithout.states,
 		new AbortController().signal,
 	);
-	const normalize = (items: typeof outcomeWith.findings) =>
-		items.map(({ code, severity, subject, evidence }) => ({
-			code,
-			severity,
-			subject,
-			evidence: evidence?.map(({ kind, resolution, from, to, path, symbol }) => ({
-				kind,
-				resolution,
-				from,
-				to,
-				path,
-				symbol,
-			})),
-		}));
-	expect(normalize(outcomeWith.findings)).toEqual(normalize(outcomeWithout.findings));
+	expect(normalizeFindings(outcomeWith.findings)).toEqual(
+		normalizeFindings(outcomeWithout.findings),
+	);
 
 	// Verify runners directly on the with-names checkout: only top-level resources become runners.
 	const pass = createCodeFacts().pass(new AbortController().signal);

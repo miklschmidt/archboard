@@ -248,4 +248,25 @@ describe("open code at the bound symbol", () => {
 			],
 		});
 	});
+
+	test("does not parse a directly bound Git-ignored Terraform file for a symbol line", async () => {
+		await using resources = new AsyncDisposableStack();
+		const { fixture, invocation } = await openerAtLine(resources);
+		mkdirSync(join(fixture.checkout, "infra", "ignored"), { recursive: true });
+		writeFileSync(join(fixture.checkout, ".gitignore"), "infra/ignored/\n");
+		writeFileSync(
+			join(fixture.checkout, "infra", "ignored", "secret.tf"),
+			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "secret"\n  }\n}\n',
+		);
+		fixture.writeBinding({
+			repo: REPOSITORY,
+			path: "infra/ignored/secret.tf",
+			symbol: 'azurerm_application_gateway.ingress.http_listener["secret"]',
+		});
+		expect((await open(fixture)).status).toBe(200);
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "infra/ignored/secret.tf"),
+			extra: ["--at=1"],
+		});
+	});
 });
