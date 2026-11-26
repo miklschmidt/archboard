@@ -3,10 +3,10 @@ id: TASK-682.04
 title: >-
   Report duplicate-name ambiguity and skip dynamic, computed-name, and plan-only
   nested selectors
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T02:32:00Z'
+updated_date: '2026-11-26T02:50:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -47,9 +47,15 @@ When a binding or anchor names a nested-block selector that matches no static li
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Two or more direct child blocks of the same type with the same literal name in one resource emit no definition and produce a BINDING_SYMBOL_MISSING or ANCHOR_SYMBOL_MISSING warning explaining that multiple blocks share that name
-- [ ] #2 An unmatched nested-block selector on a resource with a dynamic "<type>" block skips with expression-not-followed naming the file and line
-- [ ] #3 An unmatched nested-block selector on a resource with a <type> block whose name is computed or interpolated skips with expression-not-followed naming the file and line
-- [ ] #4 A nested-block selector targeting a resource known only through --plan JSON skips with expression-not-followed naming the plan path without reading constant_value
-- [ ] #5 An unmatched nested-block selector on a static resource with no dynamic or computed-name block of that type still warns BINDING_SYMBOL_MISSING or ANCHOR_SYMBOL_MISSING
+- [x] #1 Two or more direct child blocks of the same type with the same literal name in one resource emit no definition and produce a BINDING_SYMBOL_MISSING or ANCHOR_SYMBOL_MISSING warning explaining that multiple blocks share that name
+- [x] #2 An unmatched nested-block selector on a resource with a dynamic "<type>" block skips with expression-not-followed naming the file and line
+- [x] #3 An unmatched nested-block selector on a resource with a <type> block whose name is computed or interpolated skips with expression-not-followed naming the file and line
+- [x] #4 A nested-block selector targeting a resource known only through --plan JSON skips with expression-not-followed naming the plan path without reading constant_value
+- [x] #5 An unmatched nested-block selector on a static resource with no dynamic or computed-name block of that type still warns BINDING_SYMBOL_MISSING or ANCHOR_SYMBOL_MISSING
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented duplicate literal name ambiguity detection and reporting (ambiguousSymbols on facts, prioritized ahead of unfollowed/unparsed in lookup.ts and terraform-configuration.ts, surfaced in BINDING_SYMBOL_MISSING and ANCHOR_SYMBOL_MISSING), expression-not-followed skips for dynamic blocks, computed/interpolated names, and plan-only remote resources (without reading constant_value), plus per-nested-block reach deduplication in terraform-reach.ts. Verified with 395 passing code-intel tests, lint:policy, lint:tests, types, and format:check.
+<!-- SECTION:FINAL_SUMMARY:END -->

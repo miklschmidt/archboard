@@ -3,10 +3,10 @@ id: TASK-682.05
 title: >-
   Document Terraform nested-block bindings in CLI help, authoring skill, and
   docs site
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T01:45:00Z'
+updated_date: '2026-11-26T02:50:00Z'
 labels:
   - ready-for-agent
   - enhancement
