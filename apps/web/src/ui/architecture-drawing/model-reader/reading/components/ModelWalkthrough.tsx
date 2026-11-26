@@ -13,6 +13,9 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
+import { ModelLegend } from "#ui/architecture-drawing/model-reader/reading/components/ModelLegend.tsx";
+import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { allLens, projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
@@ -140,6 +143,10 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 	);
 	useModelExplanation(props.vault, model, location, accepted.selected, reporting);
 	const ignore = useCallback((): void => {}, []);
+	const legend = useMemo(
+		() => (available ? <BeatLegend accepted={accepted} /> : null),
+		[available, accepted],
+	);
 	return (
 		<div
 			data-slot="model-walkthrough"
@@ -167,6 +174,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					onGo={position.goTo}
 					onLeave={props.onLeave}
 					narration={drawnNarration(props.narration, presentation, available)}
+					legend={legend}
 				/>
 			)}
 		</div>
@@ -217,6 +225,32 @@ function BeatStage(
 				</output>
 			)}
 		</>
+	);
+}
+
+/**
+ * What the marks of the beat on screen mean, in the looks the picture draws with: the beat that
+ * the picture shows, not the one on its way. A beat says what it draws, so its legend has no
+ * control.
+ * @param props The accepted beat.
+ * @param props.accepted The beat on screen and the beat on its way.
+ * @returns The legend, or nothing before a picture stands.
+ */
+function BeatLegend(props: {
+	readonly accepted: ReturnType<typeof useAcceptedScene>;
+}): JSX.Element | null {
+	const { scene, shown } = props.accepted;
+	const { model } = shown;
+	const appearances = useSceneAppearances(scene);
+	const look = useMemo(() => kindLookOf(model.policy, appearances), [model.policy, appearances]);
+	return (
+		<ModelLegend
+			model={model}
+			projection={shown.projection}
+			picture={scene?.picture.legend ?? null}
+			look={look}
+			filters={shown.reading.filters}
+		/>
 	);
 }
 

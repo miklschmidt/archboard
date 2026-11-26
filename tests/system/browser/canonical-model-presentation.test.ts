@@ -151,6 +151,26 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 		WAIT,
 	);
 
+	// The column keeps the legend that it took the place of, over the key that narrates, and the
+	// legend only explains: the step says what the picture draws.
+	const legend = await pollUntil(
+		() =>
+			browser.eval<{ kinds: string; switches: number; above: boolean } | null>(
+				`(() => { const column = document.querySelector('[data-slot="semantic-presentation"]');` +
+					` const legend = column?.querySelector('[data-slot="model-legend"]');` +
+					` const key = column?.querySelector('[data-slot="semantic-presentation-narrate"]');` +
+					` if (!legend || !key) return null;` +
+					` return { kinds: legend.querySelector('[data-slot="model-legend-kinds"]')?.textContent ?? "",` +
+					`  switches: legend.querySelectorAll('[role="switch"], button[data-group-id]').length,` +
+					`  above: legend.getBoundingClientRect().bottom <= key.getBoundingClientRect().top }; })()`,
+			),
+		(state) => state !== null && state.kinds !== "",
+		"the legend to stand in the presented column",
+		WAIT,
+	);
+	expect(legend).toMatchObject({ switches: 0, above: true });
+	expect(legend!.kinds).toContain("Data store");
+
 	// A key steps, wherever focus is; the camera moves there and lands.
 	await browser.run(["press", "ArrowRight"]);
 	await pollUntil(
