@@ -17,20 +17,21 @@ function HiddenEmail(props: { readonly email: string }): JSX.Element {
 	return (
 		<Tooltip>
 			<Tooltip.Trigger
-				render={
-					<button
-						type="button"
-						aria-pressed={shown}
-						onClick={toggle}
-						data-slot="codex-account-email"
-						className={cn(
-							"focus-visible:ring-ring cursor-pointer rounded-sm outline-none focus-visible:ring-2 motion-safe:transition-[filter]",
-							!shown && "blur-sm select-none",
-						)}
-					/>
-				}
+				type="button"
+				aria-label={shown ? `${props.email}, hide account email` : "Reveal account email"}
+				onClick={toggle}
+				data-slot="codex-account-email"
+				className="focus-visible:ring-ring cursor-pointer rounded-sm outline-none focus-visible:ring-2"
 			>
-				{props.email}
+				<span
+					aria-hidden="true"
+					className={cn(
+						"inline-block motion-safe:transition-[filter]",
+						!shown && "blur-sm select-none",
+					)}
+				>
+					{props.email}
+				</span>
 			</Tooltip.Trigger>
 			<Tooltip.Content>{shown ? "Click to hide" : "Click to reveal"}</Tooltip.Content>
 		</Tooltip>

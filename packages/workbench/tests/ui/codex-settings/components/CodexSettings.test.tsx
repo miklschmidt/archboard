@@ -4,6 +4,7 @@ import type { CodexSettingsReply } from "#shared/codex-settings/schemas/codex-se
 
 GlobalRegistrator.register();
 const { act, cleanup, fireEvent, render } = await import("@testing-library/react");
+const { default: userEvent } = await import("@testing-library/user-event");
 const { Dialog } = await import("@archboard/ui-kit/components");
 const { CodexSettings } = await import("#ui/codex-settings/components/CodexSettings.tsx");
 
@@ -54,7 +55,7 @@ test("retry loads the signed-out controls after the first read fails", async () 
 	expect(view.getByRole("group", { name: "Voice" })).toBeTruthy();
 });
 
-test("the signed-in email stays hidden until it is clicked, and a second click hides it again", async () => {
+test("the signed-in email can be revealed and hidden from the keyboard", async () => {
 	const signedIn: CodexSettingsReply = {
 		success: true,
 		auth: {
@@ -79,14 +80,15 @@ test("the signed-in email stays hidden until it is clicked, and a second click h
 			</Dialog.Content>
 		</Dialog>,
 	);
-	const email = await view.findByRole("button", { name: "dev@example.com" });
-	expect(email.getAttribute("aria-pressed")).toBe("false");
-	await act(async () => {
-		fireEvent.click(email);
+	const user = userEvent.setup();
+	const email = await view.findByRole("button", { name: /reveal account email/i });
+	expect(view.queryByRole("button", { name: /dev@example\.com/ })).toBeNull();
+	act(() => {
+		email.focus();
 	});
-	expect(email.getAttribute("aria-pressed")).toBe("true");
-	await act(async () => {
-		fireEvent.click(email);
-	});
-	expect(email.getAttribute("aria-pressed")).toBe("false");
+	await user.keyboard("{Enter}");
+	expect(view.getByRole("button", { name: /dev@example\.com.*hide account email/i })).toBe(email);
+	await user.keyboard(" ");
+	expect(view.getByRole("button", { name: /reveal account email/i })).toBe(email);
+	expect(view.queryByRole("button", { name: /dev@example\.com/ })).toBeNull();
 });
