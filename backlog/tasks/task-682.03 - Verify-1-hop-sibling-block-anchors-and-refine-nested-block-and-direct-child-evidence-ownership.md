@@ -3,10 +3,10 @@ id: TASK-682.03
 title: >-
   Verify 1-hop sibling-block anchors and refine nested-block and direct-child
   evidence ownership
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T02:10:00Z'
+updated_date: '2026-11-26T02:32:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -51,9 +51,15 @@ Note: if #165 has landed on `main`, integrate cleanly with its per-instance Terr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Anchoring Device listener -> Device backend on sibling request_routing_rule["device"] passes check code with no ANCHOR_MISMATCH when http_listener_name matches "device-https"
-- [ ] #2 Citing the wrong sibling block (such as request_routing_rule["public"] or http_listener["public-https"]), a block in another resource, or the enclosing whole resource when an end binds a nested block warns ANCHOR_MISMATCH
-- [ ] #3 Intra-resource name links store only resolved block symbols (never raw string values) and emit no configured-path relationship evidence or RELATIONSHIP_UNDRAWN warnings between co-located nested blocks
-- [ ] #4 HCL references inside a bound nested block are owned by that block part while references inside unbound nested blocks remain owned by the enclosing resource
-- [ ] #5 When a container and a direct child part share the same infrastructure binding, unallocated resource references are owned by the deeper child part so drawing the relationship on the child leaves no duplicate RELATIONSHIP_UNDRAWN finding on the container
+- [x] #1 Anchoring Device listener -> Device backend on sibling request_routing_rule["device"] passes check code with no ANCHOR_MISMATCH when http_listener_name matches "device-https"
+- [x] #2 Citing the wrong sibling block (such as request_routing_rule["public"] or http_listener["public-https"]), a block in another resource, or the enclosing whole resource when an end binds a nested block warns ANCHOR_MISMATCH
+- [x] #3 Intra-resource name links store only resolved block symbols (never raw string values) and emit no configured-path relationship evidence or RELATIONSHIP_UNDRAWN warnings between co-located nested blocks
+- [x] #4 HCL references inside a bound nested block are owned by that block part while references inside unbound nested blocks remain owned by the enclosing resource
+- [x] #5 When a container and a direct child part share the same infrastructure binding, unallocated resource references are owned by the deeper child part so drawing the relationship on the child leaves no duplicate RELATIONSHIP_UNDRAWN finding on the container
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented 1-hop intra-resource sibling name links in code-facts (storing only resolved canonical block symbols per ADR 0046, never emitting configured-path evidence), symmetric per-instance sibling-block anchor verification in support.ts (rejecting wrong siblings, 2-hop links, other resources, and whole-resource anchors on nested-block ends), bound nested-block HCL reference ownership in terraform-evidence.ts (with unbound blocks falling back to enclosing resource owners), and deeper-part direct-child ownership preference (deepestTied) across evidence modules while keeping runner inheritance intact. Verified with 387 passing code-intel tests, lint:policy, lint:tests, types, and format:check.
+<!-- SECTION:FINAL_SUMMARY:END -->

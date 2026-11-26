@@ -3,10 +3,10 @@ id: TASK-682.04
 title: >-
   Report duplicate-name ambiguity and skip dynamic, computed-name, and plan-only
   nested selectors
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T01:45:00Z'
+updated_date: '2026-11-26T02:32:00Z'
 labels:
   - ready-for-agent
   - enhancement
