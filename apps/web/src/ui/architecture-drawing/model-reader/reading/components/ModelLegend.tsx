@@ -588,4 +588,4 @@ function Groups(props: {
 	);
 }
 
-export { ModelLegend, type LegendControls };
+export { ModelLegend };
