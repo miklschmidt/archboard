@@ -120,6 +120,10 @@ describe("Terraform nested-block containment", () => {
 			"an ephemeral resource inside an indexed module",
 			at("infra/main.tf", 'module.sec[0].ephemeral.random_password.db["primary"]'),
 		],
+		[
+			"a Terraform resource with a Unicode HCL identifier",
+			at("infra/main.tf", 'aws_s3_bucket.café.cors_rule["edge"]'),
+		],
 	])("leaves source containment to the parts of %s", (_label, binding) => {
 		expect(containment(binding)).toEqual([]);
 	});
@@ -143,6 +147,10 @@ describe("Terraform nested-block containment", () => {
 		[
 			"an empty quoted nested-block name",
 			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener[""]'),
+		],
+		[
+			"an invalid escape sequence in a nested-block name",
+			at("infra/main.tf", String.raw`azurerm_application_gateway.ingress.http_listener["bad\q"]`),
 		],
 		[
 			"a nested block on a data source",
@@ -292,6 +300,31 @@ describe("BINDING_SHARED single-direct-child infrastructure exception", () => {
 		]);
 		expect(diagnostics).toMatchObject([
 			{ severity: "warning", file: `${first}.module.json`, id: first },
+		]);
+	});
+
+	test("canonicalizes equivalent quoted nested-block selector spellings before grouping", () => {
+		const canonical = at(
+			"infra/main.tf",
+			'azurerm_application_gateway.ingress.http_listener["device"]',
+		);
+		const escaped = at(
+			"infra/main.tf",
+			String.raw`azurerm_application_gateway.ingress.http_listener["dev\u0069ce"]`,
+		);
+		expect(
+			sharedBindings([
+				part(box, { binding: canonical }),
+				part(first, { parent: box, binding: escaped }),
+			]),
+		).toEqual([]);
+		const diagnostics = sharedBindings([
+			part(box, { binding: canonical }),
+			part(first, { parent: box, binding: canonical }),
+			part(second, { parent: box, binding: escaped }),
+		]);
+		expect(diagnostics).toMatchObject([
+			{ severity: "warning", file: `${second}.module.json`, id: second },
 		]);
 	});
 });

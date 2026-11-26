@@ -7,11 +7,12 @@
 import type {
 	AnchorClaim,
 	BindingClaim,
+	Claim,
 	ClaimSite,
 } from "#runtime/code-check/claims/operations/claims.ts";
 import type { Held } from "#runtime/code-check/claims/operations/symbols.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
-import type { CodeFinding } from "#shared/protocol/code-check.ts";
+import type { CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
 import { describeSubject } from "@archboard/model/policy";
 
 /**
@@ -128,4 +129,53 @@ function anchorSymbolMissing(claim: AnchorClaim, held: Held): CodeFinding {
 	);
 }
 
-export { anchorPathMissing, anchorSymbolMissing, bindingPathMissing, bindingSymbolMissing };
+/**
+ * Format the skip for a symbol found only inside unparsed or unfollowed source lines.
+ * @param base The shared skip site and repository.
+ * @param held The unparsed result.
+ * @returns The skip naming the file and line range.
+ */
+function unparsedSourceSkip(
+	base: Pick<CodeCheckSkip, "model" | "variant" | "subject" | "repo">,
+	held: Extract<Held, { status: "unparsed" }>,
+): CodeCheckSkip {
+	const { path: file, start, end } = held.unparsed.source ?? { path: held.file, ...held.unparsed };
+	const detail = `${file}:${start === end ? start : `${start}-${end}`}`;
+	const reason = held.unparsed.under === undefined ? "symbol-unparsed" : "expression-not-followed";
+	return { ...base, reason, detail };
+}
+
+/**
+ * The skip of a symbol found only in code that did not parse or below an
+ * expression it cannot follow, or of an address in a module it does not read.
+ * @param claim The claim.
+ * @param held Where it was found.
+ * @returns The skip, which names the file and its lines, plan path, or module call.
+ */
+function unparsedSkip(
+	claim: Claim,
+	held: Extract<Held, { status: "unparsed" | "module-unread" | "unfollowed" }>,
+): CodeCheckSkip {
+	const repo = claim.kind === "binding" ? claim.binding.repo : claim.anchor.repo;
+	const base = {
+		model: claim.site.model,
+		variant: claim.site.variant,
+		subject: claim.site.subject,
+		repo,
+	};
+	if (held.status === "module-unread") {
+		return { ...base, reason: "module-not-read", detail: held.module };
+	}
+	if (held.status === "unfollowed") {
+		return { ...base, reason: "expression-not-followed", detail: held.detail };
+	}
+	return unparsedSourceSkip(base, held);
+}
+
+export {
+	anchorPathMissing,
+	anchorSymbolMissing,
+	bindingPathMissing,
+	bindingSymbolMissing,
+	unparsedSkip,
+};

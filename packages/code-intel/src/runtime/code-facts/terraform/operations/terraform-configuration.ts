@@ -130,9 +130,17 @@ interface TerraformConfiguration extends NestedBlockQueries {
 	/**
 	 * What a declaration reaches, each with the reference of the declaration
 	 * that starts the way there, once for each thing those references prove.
+	 * Pass `{ perBlock: true }` when attributing direct relationship evidence
+	 * to bound nested-block owners so two distinct nested blocks reaching the
+	 * same target keep separate links.
 	 * @param address The declaration's address.
+	 * @param options Optional reach deduplication mode.
+	 * @param options.perBlock Keep separate links for distinct nested blocks reaching the same target.
 	 */
-	reached(address: string): readonly { readonly to: Declaration; readonly link: Link }[];
+	reached(
+		address: string,
+		options?: { readonly perBlock?: boolean },
+	): readonly { readonly to: Declaration; readonly link: Link }[];
 	/**
 	 * Where the checkout holds a declaration: its own block, else the call of
 	 * the module the checkout does not read that holds it.
@@ -491,10 +499,11 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 		/**
 		 * What a declaration reaches.
 		 * @param address Its address.
+		 * @param options Optional reach deduplication mode.
 		 * @returns Each declaration reached, with the link that starts the way.
 		 */
-		reached(address) {
-			return reachedFrom(declarations, links, address, PASSING);
+		reached(address, options) {
+			return reachedFrom(declarations, links, address, PASSING, options?.perBlock === true);
 		},
 		...nestedQueries(reading.nested),
 	};

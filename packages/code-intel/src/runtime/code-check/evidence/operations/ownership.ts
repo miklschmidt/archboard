@@ -18,6 +18,7 @@ import {
 } from "#runtime/code-check/operations/part-code.ts";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import type { DefinitionSite } from "#runtime/code-facts/operations/definition-site.ts";
+import { namesInfrastructure } from "@archboard/model/vault-policy";
 
 /** The parts that bind code in one repository, by how narrowly. */
 interface Owners {
@@ -168,18 +169,40 @@ function lineagesOf(codes: ReadonlyMap<string, PartCode>): Map<string, Set<strin
 }
 
 /**
+ * Whether a tied parent and direct child both carry infrastructure bindings
+ * (Terraform, Kubernetes, or Compose) eligible for deeper-child tie-breaking.
+ * @param parent The direct parent container.
+ * @param child The direct child part.
+ * @returns True when both bindings name infrastructure addresses.
+ */
+function isSharedInfraTie(parent: ReadPart | undefined, child: ReadPart): boolean {
+	return (
+		parent?.node.binding !== undefined &&
+		child.node.binding !== undefined &&
+		namesInfrastructure(parent.node.binding) &&
+		namesInfrastructure(child.node.binding)
+	);
+}
+
+/**
  * Break ties among co-equal owners by dropping any parent container whose
- * direct child is also among the tied owners, keeping sibling and unrelated
- * ties intact (ADR 0046, TASK-682.03).
+ * direct child is also among the tied owners when both share an infrastructure
+ * binding (Terraform, Kubernetes, or Compose), keeping ordinary source bindings,
+ * sibling ties, and unrelated ties intact (ADR 0046, TASK-682.03).
  * @param parts The tied owners at the same narrowest scope.
- * @returns The deepest owners across direct parent-child ties.
+ * @returns The deepest owners across direct infrastructure parent-child ties.
  */
 function deepestTied(parts: readonly ReadPart[]): ReadPart[] {
 	if (parts.length < 2) return [...parts];
-	const shadowed = new Set(
-		parts.flatMap((part) => (part.node.parent === undefined ? [] : [part.node.parent])),
-	);
-	return parts.filter((part) => !shadowed.has(part.node.id));
+	const byId = new Map(parts.map((part) => [part.node.id, part]));
+	const shadowed = new Set<string>();
+	for (const part of parts) {
+		const parentId = part.node.parent;
+		if (parentId !== undefined && isSharedInfraTie(byId.get(parentId), part)) {
+			shadowed.add(parentId);
+		}
+	}
+	return shadowed.size === 0 ? [...parts] : parts.filter((part) => !shadowed.has(part.node.id));
 }
 
 export { type Owners, deepestTied, lineagesOf, ownersAtLine, ownersOf, ownersOfFile, ownersOfSite };

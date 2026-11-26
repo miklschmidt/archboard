@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
@@ -137,5 +137,34 @@ describe("open code at the bound symbol", () => {
 			],
 		});
 		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
+	});
+
+	test("opens a Terraform local-module nested block at the module file and line from root directory or root file bindings", async () => {
+		await using resources = new AsyncDisposableStack();
+		const { fixture, invocation } = await openerAtLine(resources);
+		mkdirSync(join(fixture.checkout, "infra", "gw"), { recursive: true });
+		writeFileSync(
+			join(fixture.checkout, "infra", "main.tf"),
+			`module "gw" {\n  count  = 1\n  source = "./gw"\n}\n`,
+		);
+		writeFileSync(
+			join(fixture.checkout, "infra", "gw", "main.tf"),
+			`resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n`,
+		);
+		const symbol = 'module.gw[0].azurerm_application_gateway.ingress.http_listener["device"]';
+
+		fixture.writeBinding({ repo: REPOSITORY, path: "infra", symbol });
+		expect((await open(fixture)).status).toBe(200);
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "infra/gw/main.tf"),
+			extra: ["--at=2"],
+		});
+
+		fixture.writeBinding({ repo: REPOSITORY, path: "infra/main.tf", symbol });
+		expect((await open(fixture)).status).toBe(200);
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "infra/gw/main.tf"),
+			extra: ["--at=2"],
+		});
 	});
 });

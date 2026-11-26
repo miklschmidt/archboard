@@ -30,12 +30,14 @@ interface Way<L extends Step> {
 
 /**
  * What tells two ways apart: where they lead, what the reference that
- * starts each proves, and which depth-1 nested block starts it if any.
+ * starts each proves, and—when attributing nested-block relationship
+ * evidence—which depth-1 nested block starts it.
  * @param way The way.
+ * @param perBlock Whether distinct depth-1 nested blocks keep separate ways.
  * @returns Its key.
  */
-function wayKey(way: Way<Step>): string {
-	return `${way.to}\0${way.first.kind}\0${way.first.joins ?? ""}\0${way.first.block ?? ""}`;
+function wayKey(way: Way<Step>, perBlock: boolean): string {
+	return `${way.to}\0${way.first.kind}\0${way.first.joins ?? ""}\0${perBlock ? (way.first.block ?? "") : ""}`;
 }
 
 /** What the search of one declaration's reach collects. */
@@ -43,6 +45,7 @@ interface Search<D extends Reachable, L extends Step> {
 	readonly declarations: ReadonlyMap<string, D>;
 	readonly links: ReadonlyMap<string, readonly L[]>;
 	readonly passing: ReadonlySet<string>;
+	readonly perBlock: boolean;
 	readonly found: Map<string, { to: D; link: L }>;
 }
 
@@ -57,7 +60,7 @@ function step<D extends Reachable, L extends Step>(search: Search<D, L>, way: Wa
 	const declaration = search.declarations.get(way.to);
 	if (declaration === undefined) return [];
 	if (!search.passing.has(declaration.kind)) {
-		search.found.set(wayKey(way), { to: declaration, link: way.first });
+		search.found.set(wayKey(way, search.perBlock), { to: declaration, link: way.first });
 		return [];
 	}
 	return (search.links.get(way.to) ?? []).map((link) => ({ to: link.to, first: way.first }));
@@ -69,6 +72,7 @@ function step<D extends Reachable, L extends Step>(search: Search<D, L>, way: Wa
  * @param links The references of each declaration.
  * @param address The declaration's address.
  * @param passing The kinds of declaration that pass a value on.
+ * @param perBlock Whether distinct depth-1 nested blocks keep separate ways.
  * @returns Each declaration reached, with the reference that starts the way
  * there, once for each thing the references that start ways there prove.
  */
@@ -77,13 +81,15 @@ function reachedFrom<D extends Reachable, L extends Step>(
 	links: ReadonlyMap<string, readonly L[]>,
 	address: string,
 	passing: ReadonlySet<string>,
+	perBlock = false,
 ): { readonly to: D; readonly link: L }[] {
-	const search: Search<D, L> = { declarations, links, passing, found: new Map() };
+	const search: Search<D, L> = { declarations, links, passing, perBlock, found: new Map() };
 	const seen = new Set<string>();
 	const ways: Way<L>[] = (links.get(address) ?? []).map((link) => ({ to: link.to, first: link }));
 	for (let way = ways.shift(); way !== undefined; way = ways.shift()) {
-		if (way.to === address || seen.has(wayKey(way))) continue;
-		seen.add(wayKey(way));
+		const key = wayKey(way, perBlock);
+		if (way.to === address || seen.has(key)) continue;
+		seen.add(key);
 		ways.push(...step(search, way));
 	}
 	return [...search.found.values()];

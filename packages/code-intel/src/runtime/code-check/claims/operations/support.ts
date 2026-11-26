@@ -50,7 +50,7 @@ import {
 	terraformRootOfTarget,
 	type Search,
 } from "#runtime/code-check/claims/operations/symbols.ts";
-import { holdsDeclarationAt } from "#runtime/code-check/evidence/operations/terraform-evidence.ts";
+import { holdsAddress } from "#runtime/code-check/evidence/operations/terraform-evidence.ts";
 import { judgeTerraformDeclaration } from "#runtime/code-check/claims/operations/terraform-support.ts";
 import {
 	definitionSite,
@@ -102,8 +102,21 @@ interface SupportContext {
 type Site = Pick<DefinitionSite, "path" | "via"> & {
 	readonly definition: Pick<Definition, "start" | "end" | "declaration"> & {
 		readonly symbol?: string;
+		readonly visibility?: string;
 	};
+	/** When resolved through a Terraform root module, its specific root-relative address. */
+	readonly address?: string;
+	/** The Terraform root module that resolved `address`. */
+	readonly root?: string;
 };
+
+/** Pre-resolved Terraform anchor site carried from configuration lookup. */
+interface ResolvedAnchorSite {
+	readonly file: string;
+	readonly definition: Definition;
+	readonly address?: string;
+	readonly root?: string;
+}
 
 /**
  * Whether one definition lies inside another, as a method inside its class.
@@ -169,6 +182,21 @@ async function holding(
 }
 
 /**
+ * The root-relative Terraform addresses of an anchored site in one root module:
+ * the specific module-qualified address when the anchor named one in this root,
+ * else every declaration instance at the site's file and line.
+ * @param configuration The root module's address space.
+ * @param site Where the anchored definition is.
+ * @returns Its matching addresses in `configuration`.
+ */
+function siteAddressesIn(configuration: TerraformConfiguration, site: Site): readonly string[] {
+	if (site.address !== undefined && (site.root === undefined || site.root === configuration.root)) {
+		return [site.address];
+	}
+	return configuration.addressesAt(site.path, site.definition.start);
+}
+
+/**
  * Whether a Terraform binding symbol holds an anchored site directly or via a
  * 1-hop intra-resource sibling-block link in the same resource and module
  * instance (ADR 0046, TASK-682.03).
@@ -182,13 +210,86 @@ function holdsTerraformSite(
 	symbol: string,
 	site: Site,
 ): boolean {
-	const at = { path: site.path, line: site.definition.start };
-	if (holdsDeclarationAt(configuration, symbol, at)) return true;
-	const boundAddr = parseTerraformAddress(symbol);
-	if (boundAddr?.kind !== "block") return false;
-	return configuration
-		.addressesAt(site.path, site.definition.start)
-		.some((siteAddr) => configuration.areLinkedSiblings(boundAddr.address, siteAddr));
+	const addresses = siteAddressesIn(configuration, site);
+	const boundAddress = declarationAddress(symbol);
+	if (addresses.some((each) => holdsAddress(boundAddress, each))) return true;
+	const parsed = parseTerraformAddress(symbol);
+	if (parsed?.kind !== "block") return false;
+	return addresses.some((siteAddr) => configuration.areLinkedSiblings(parsed.address, siteAddr));
+}
+
+/**
+ * The enclosing resource declaration address when an end binds a nested block.
+ * @param end The claimed end part.
+ * @returns The parent resource address, or undefined when the end is not a nested block.
+ */
+function nestedBlockParentAddress(end: AnchorClaim["ends"][number]): string | undefined {
+	const symbol = end.binding?.symbol;
+	const parsed = symbol === undefined ? undefined : parseTerraformAddress(symbol);
+	return parsed?.kind === "block" ? parsed.declaration : undefined;
+}
+
+/**
+ * Whether one claimed end binds a Terraform nested block enclosed by `site`.
+ * @param end The claimed end part.
+ * @param site Where the anchor's symbol is defined.
+ * @param checkout The anchor's checkout.
+ * @param context The pass.
+ * @returns True when `end` binds a nested block inside `site`'s resource.
+ */
+async function endEnclosedBySite(
+	end: AnchorClaim["ends"][number],
+	site: Site,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+): Promise<boolean> {
+	const declaration = nestedBlockParentAddress(end);
+	if (declaration === undefined) return false;
+	const bound = boundFiles(end, checkout, context);
+	if (typeof bound === "string" || bound.root === undefined) return false;
+	const configuration = await terraformConfiguration(
+		context.search.facts,
+		context.search.checkout,
+		bound.root,
+	);
+	return siteAddressesIn(configuration, site).includes(declaration);
+}
+
+/**
+ * Whether a site names a top-level Terraform resource definition.
+ * @param site Where the anchor's symbol is defined.
+ * @returns True when `site` is a Terraform resource definition.
+ */
+function isTerraformResourceSite(site: Site): boolean {
+	if (!isTerraformFile(site.path)) return false;
+	if (site.definition.visibility === "resource") return true;
+	const symbol = site.address ?? site.definition.symbol;
+	return symbol !== undefined && parseTerraformAddress(symbol)?.kind === "resource";
+}
+
+/**
+ * Whether an anchored site names a top-level Terraform resource that encloses
+ * a nested-block binding on one of the relationship's claimed ends (ADR 0046,
+ * TASK-682). Anchoring on the enclosing whole resource when an end binds a
+ * nested block always warns `ANCHOR_MISMATCH`, even if the other end binds the
+ * whole resource.
+ * @param claim The anchor claim.
+ * @param site Where the anchor's symbol is defined.
+ * @param checkout The anchor's checkout.
+ * @param context The pass.
+ * @returns True when the anchor cites the enclosing whole resource of a nested-block end.
+ */
+async function isEnclosingResourceAnchor(
+	claim: AnchorClaim,
+	site: Site,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+): Promise<boolean> {
+	if (!isTerraformResourceSite(site)) return false;
+	const enclosed = await Promise.all(
+		claim.ends.map((end) => endEnclosedBySite(end, site, checkout, context)),
+	);
+	return enclosed.some(Boolean);
 }
 
 /**
@@ -323,6 +424,21 @@ async function serverSite(
 }
 
 /**
+ * Convert a pre-resolved qualified Terraform anchor into a `Site`.
+ * @param resolved The pre-resolved anchor site.
+ * @returns The corresponding `Site`.
+ */
+function siteFromResolved(resolved: ResolvedAnchorSite): Site {
+	return {
+		path: resolved.file,
+		definition: resolved.definition,
+		via: [],
+		...(resolved.address === undefined ? {} : { address: resolved.address }),
+		...(resolved.root === undefined ? {} : { root: resolved.root }),
+	};
+}
+
+/**
  * Where an anchor's symbol is defined, when the check judges it: a definition
  * code facts find, else the line a language server names. Where code facts
  * find only a declaration whose code is in no file they can name, such as a C
@@ -332,6 +448,7 @@ async function serverSite(
  * @param file The anchored file.
  * @param checkout Its checkout.
  * @param context The pass.
+ * @param resolved Pre-resolved Terraform anchor site, when qualified.
  * @returns The site, or undefined when the check does not judge it.
  */
 async function anchoredSite(
@@ -339,7 +456,9 @@ async function anchoredSite(
 	file: string,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
+	resolved?: ResolvedAnchorSite,
 ): Promise<Site | undefined> {
+	if (resolved !== undefined) return siteFromResolved(resolved);
 	const declared = await definitionSite(context.search.facts, checkout, file, claim.anchor.symbol);
 	if (declared === undefined) return serverSite(claim, file, checkout, context);
 	if (declared.definition.declaration === true) {
@@ -397,6 +516,7 @@ async function outsideMismatch(
  * @param file The anchored file, relative to its checkout.
  * @param checkout The anchor's checkout.
  * @param context The pass.
+ * @param resolved Pre-resolved Terraform anchor site, when qualified.
  * @returns The finding, or undefined when it supports it or the check cannot tell.
  */
 async function judgeSupport(
@@ -404,12 +524,16 @@ async function judgeSupport(
 	file: string,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
+	resolved?: ResolvedAnchorSite,
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
 	const fileFacts = await facts.read(checkout, file);
 	if (JOINED_BY_DECLARATION.has(fileFacts?.adapter)) return undefined;
-	const site = await anchoredSite(claim, file, checkout, context);
+	const site = await anchoredSite(claim, file, checkout, context, resolved);
 	if (site === undefined) return undefined;
+	if (await isEnclosingResourceAnchor(claim, site, checkout, context)) {
+		return anchorMismatch(claim, site, anchoredUse(fileFacts, claim));
+	}
 	const holdings = await Promise.all(
 		claim.holders.map((part) => holding(part, site, checkout, context)),
 	);
@@ -417,4 +541,4 @@ async function judgeSupport(
 	return outsideMismatch(claim, site, checkout, context, anchoredUse(fileFacts, claim));
 }
 
-export { judgeSupport };
+export { type ResolvedAnchorSite, judgeSupport };

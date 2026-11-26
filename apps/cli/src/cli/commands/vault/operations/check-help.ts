@@ -62,7 +62,7 @@ const CHECK_CODE_HELP = [
 	"A compose service runs the directory it builds, and each of them runs the code drawn inside the part bound to it. Where the infrastructure leaves a choice, the evidence is a candidate.",
 	"",
 	"What it reads of Terraform and OpenTofu:",
-	'A root module and the local modules it calls. A part bound to a root module names an address there as its symbol, such as `module.queue.aws_sqs_queue.this`, or a unique depth-1 named nested block of a `resource`, such as `azurerm_application_gateway.ingress.http_listener["device-https"]`. Module and resource instance keys normalize by position, while numeric indices on nested blocks are rejected.',
+	'A root module and the local modules it calls. A part bound to a root module names an address there as its symbol, such as `module.queue.aws_sqs_queue.this`, or a unique depth-1 named nested block of a `resource`, such as `azurerm_application_gateway.ingress.http_listener["device-https"]`. Module and resource instance keys normalize by position, while numeric indices on nested blocks are rejected. A nested-block binding is not a runner; bind runners to top-level resources, workloads or services.',
 	"",
 	"The check never reads state, a variable file or `.terraform`, and never runs `terraform` or `tofu`. A reference that joins two such parts is `configured-path` evidence; references inside a bound nested block belong to that part, while 1-hop intra-resource sibling name links support anchors only without emitting `configured-path` evidence. Duplicate literal block names in one resource emit no definition and report ambiguity in `BINDING_SYMBOL_MISSING` or `ANCHOR_SYMBOL_MISSING`. `--plan` names a plan for the addresses inside remote modules.",
 	"",

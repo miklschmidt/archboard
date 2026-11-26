@@ -274,16 +274,21 @@ test("terraformConfiguration reports ambiguous duplicates, local-module unparsed
 	).toEqual({ status: "absent" });
 });
 
-test("terraformConfiguration.reached preserves separate links from distinct nested blocks targeting the same resource", async () => {
+test("terraformConfiguration.reached stays resource-level by default and separates nested blocks with perBlock", async () => {
 	const config = await terraformConfiguration(
 		facts.pass(new AbortController().signal),
 		checkout,
 		"infra",
 	);
-	const reached = config
+	const resourceLevel = config
 		.reached("azurerm_application_gateway.ingress")
 		.filter(({ to }) => to.address === "azurerm_public_ip.shared");
-	expect(reached.map(({ link }) => ({ line: link.line, block: link.block }))).toEqual([
+	expect(resourceLevel.map(({ link }) => link.line)).toEqual([25]);
+
+	const perBlock = config
+		.reached("azurerm_application_gateway.ingress", { perBlock: true })
+		.filter(({ to }) => to.address === "azurerm_public_ip.shared");
+	expect(perBlock.map(({ link }) => ({ line: link.line, block: link.block }))).toEqual([
 		{
 			line: 25,
 			block: 'azurerm_application_gateway.ingress.backend_address_pool["device-pool"]',

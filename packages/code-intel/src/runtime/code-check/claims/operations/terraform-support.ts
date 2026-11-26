@@ -47,6 +47,24 @@ interface TerraformSite {
 	readonly definition: Pick<Definition, "start" | "end" | "declaration"> & {
 		readonly symbol?: string;
 	};
+	readonly address?: string;
+	readonly root?: string;
+}
+
+/**
+ * The declaration instances of an anchored site in one root module.
+ * @param configuration The root module's address space.
+ * @param site Where the declaration is defined.
+ * @returns The selected instance address when qualified for this root, else every instance at the line.
+ */
+function instancesIn(
+	configuration: TerraformConfiguration,
+	site: TerraformSite,
+): readonly string[] {
+	if (site.address !== undefined && (site.root === undefined || site.root === configuration.root)) {
+		return [site.address];
+	}
+	return configuration.addressesAt(site.path, site.definition.start);
 }
 
 /** A holder part paired with the files its binding names in the anchor's checkout. */
@@ -380,7 +398,7 @@ async function unlistedReachesBoth(
 ): Promise<boolean> {
 	const perRoot = await Promise.all(
 		configurations.map(async (configuration) => {
-			const instances = configuration.addressesAt(site.path, site.definition.start);
+			const instances = instancesIn(configuration, site);
 			const verdicts = await Promise.all(
 				instances.map(async (instanceAddress) => {
 					const targets = configuration.reached(instanceAddress).map(({ to }) => to.address);
@@ -421,7 +439,7 @@ async function judgeListedConfigurations(
 	const verdicts = (
 		await Promise.all(
 			configurations.map((configuration) => {
-				const instances = configuration.addressesAt(site.path, site.definition.start);
+				const instances = instancesIn(configuration, site);
 				const bothInRoot =
 					endBoundInRoot(ends[0], configuration.root) &&
 					endBoundInRoot(ends[1], configuration.root);

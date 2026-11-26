@@ -11,6 +11,10 @@ import { posix } from "node:path";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 import { nodeSubject } from "#runtime/check/operations/subject.ts";
+import {
+	isInfrastructureAddress,
+	parseTerraformAddress,
+} from "#runtime/check/operations/terraform-address.ts";
 
 type Module = ArchitectureModel["modules"][number];
 type Binding = NonNullable<Module["binding"]>;
@@ -32,29 +36,6 @@ function pathOf(binding: Binding): string {
 	return path === "." ? "" : path;
 }
 
-/** An optional Terraform instance key (`[0]` or `["key"]`). */
-const TERRAFORM_INSTANCE_KEY = String.raw`(?:\[(?:"(?:[^"\\]|\\.)*"|\d+)\])?`;
-
-/** One Terraform module-call path segment (`module.name` with an optional instance key). */
-const TERRAFORM_MODULE = String.raw`module\.[\w-]+${TERRAFORM_INSTANCE_KEY}`;
-
-/** A Terraform provider-qualified declaration address (`type.name` with an optional instance key). */
-const TERRAFORM_DECLARATION = String.raw`[a-z][a-z0-9]*_[a-z0-9_]+\.[\w-]+${TERRAFORM_INSTANCE_KEY}`;
-
-/** A single depth-1 named nested-block selector (`<block_type>["<name>"]`) on a resource. */
-const TERRAFORM_NESTED_BLOCK = String.raw`\.[a-zA-Z_][\w-]*\["(?:[^"\\]|\\.)+"\]`;
-
-/**
- * A Terraform or OpenTofu address parsed by grammar position (ADR 0046):
- * zero or more module segments, followed by a module call, a data or ephemeral
- * declaration, or a resource declaration with an optional depth-1 named
- * nested-block selector.
- */
-const TERRAFORM_ADDRESS = new RegExp(
-	`^(?:${TERRAFORM_MODULE}\\.)*(?:${TERRAFORM_MODULE}|(?:data|ephemeral)\\.${TERRAFORM_DECLARATION}|${TERRAFORM_DECLARATION}(?:${TERRAFORM_NESTED_BLOCK})?)$`,
-	"u",
-);
-
 /**
  * Whether a binding names a Terraform declaration, module call, or depth-1 nested block.
  * @param binding The binding.
@@ -65,9 +46,9 @@ function namesTerraform(binding: Binding, symbol: string): boolean {
 	const path = pathOf(binding);
 	const terraform =
 		/\.(tf|tofu)$/u.test(path) || binding.path.endsWith("/") || !/\.[^/]+$/u.test(path);
-	// Instance keys and a trailing named nested-block selector keep the address
-	// in infrastructure form (ADR 0046).
-	return terraform && TERRAFORM_ADDRESS.test(symbol);
+	if (!terraform) return false;
+	const parsed = parseTerraformAddress(symbol);
+	return parsed !== undefined && isInfrastructureAddress(parsed);
 }
 
 /**

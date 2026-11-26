@@ -172,6 +172,7 @@ test("positional address parser normalizes module/resource keys and preserves va
 		modules: ["api"],
 		kind: "block",
 		declaration: "module.api.azurerm_application_gateway.ingress",
+		resourceType: "azurerm_application_gateway",
 		nested: { blockType: "http_listener", name: "example.com" },
 	});
 	expect(

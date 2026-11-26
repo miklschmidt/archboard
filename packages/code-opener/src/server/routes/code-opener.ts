@@ -39,7 +39,7 @@ import { resolveInVault } from "#server/projections/resolve-target.ts";
 import { parseActivationRequest } from "#server/projections/activation-request.ts";
 import { canonicalModelTarget } from "#server/projections/model-target.ts";
 import { requestedPathBinding } from "#server/projections/named-path.ts";
-import { symbolLine } from "@archboard/code-intel/code-facts";
+import { symbolLocation } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
 	validateOpenerSelection,
@@ -49,28 +49,18 @@ import {
 
 type BindingLookup =
 	| { ok: true; binding: CodeBinding }
-	| {
-			ok: false;
-			code: "BINDING_UNAVAILABLE";
-			error: string;
-	  };
+	| { ok: false; code: "BINDING_UNAVAILABLE"; error: string };
 
 interface RouteFailure {
 	code: CodeTargetFailureCode;
 	error: string;
 }
 
-const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
-	"charset.unsupported",
-	"encoding.unsupported",
-	"entity.parse.failed",
-	"entity.too.large",
-	"entity.verify.failed",
-	"request.aborted",
-	"request.size.invalid",
-	"stream.encoding.set",
-	"stream.not.readable",
-]);
+const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set(
+	"charset.unsupported encoding.unsupported entity.parse.failed entity.too.large entity.verify.failed request.aborted request.size.invalid stream.encoding.set stream.not.readable".split(
+		" ",
+	),
+);
 
 /** HTTP statuses for the failure codes that are not a plain 422 refusal. */
 const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
@@ -199,6 +189,28 @@ async function activationTarget(
 }
 
 /**
+ * Launch the configured editor at the resolved symbol location or fallback target.
+ * @param target The resolved local target.
+ * @param launch The injected launcher, if any.
+ * @param location Optional symbol file and line.
+ * @param fallbackLine Optional fallback line when no symbol line resolved.
+ * @returns Launch outcome or opener configuration failure.
+ */
+async function launchAtTarget(
+	target: LocalCodeTarget,
+	launch: OpeningDependencies["launch"],
+	location: { readonly target: string; readonly line: number } | undefined,
+	fallbackLine?: number,
+) {
+	const current = readOpenerSelection();
+	if (!current.ok) return current;
+	return openInEditor(current.selection, location?.target ?? target.target, {
+		line: location?.line ?? fallbackLine,
+		launch,
+	});
+}
+
+/**
  * Opens the code a node or a module is bound to, at the line that defines its symbol.
  * @param request The legacy board or canonical module address.
  * @param vault The explicitly addressed vault.
@@ -215,25 +227,19 @@ async function openBound(
 	dependencies: OpeningDependencies,
 ): Promise<void> {
 	const found = await activationTarget(request, vault, signal, dependencies);
-	if (!found.ok)
-		return sendFailure(response, found, undefined, "binding" in found ? found.binding : undefined);
+	if (!found.ok) {
+		const binding = "binding" in found ? found.binding : undefined;
+		return sendFailure(response, found, undefined, binding);
+	}
 	const opening = openable(found.target, found.binding);
 	if (!opening.ok) return sendFailure(response, opening.failure, opening.status, found.binding);
-	const { target } = opening;
-	// The line is read from the working tree. A checkout on another ref than the binding pins
-	// was refused above, so the link names the line only where the checkout is on the pinned
-	// ref or the binding pins none (its link is GitHub's default branch).
-	const line = await symbolLine(found.binding, target, signal);
-	const current = readOpenerSelection();
-	if (!current.ok)
-		return sendFailure(response, current, statusFor(current.code), found.binding, line);
-	const launched = await openInEditor(current.selection, target.target, {
-		line,
-		launch: dependencies.launch,
-	});
-	if (!launched.ok)
-		return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
-	response.json(openedReply(target));
+	// Read from the working tree; another ref was refused above, so a fallback link names the line.
+	const location = await symbolLocation(found.binding, opening.target, signal);
+	const launched = await launchAtTarget(opening.target, dependencies.launch, location);
+	if (!launched.ok) {
+		return sendFailure(response, launched, statusFor(launched.code), found.binding, location?.line);
+	}
+	response.json(openedReply(opening.target));
 }
 
 /**
@@ -257,12 +263,8 @@ async function openNamedPath(
 	if (!named.ok) return sendFailure(response, named);
 	const target = await dependencies.resolveTarget(named.binding, signal, vault);
 	if (!target.ok) return sendFailure(response, target);
-	const current = readOpenerSelection();
-	if (!current.ok) return sendFailure(response, current);
-	const launched = await openInEditor(current.selection, target.target, {
-		line: (await symbolLine(named.binding, target, signal)) ?? request.line,
-		launch: dependencies.launch,
-	});
+	const location = await symbolLocation(named.binding, target, signal);
+	const launched = await launchAtTarget(target, dependencies.launch, location, request.line);
 	if (!launched.ok) return sendFailure(response, launched);
 	response.json(openedReply(target));
 }
@@ -507,15 +509,12 @@ export function createCodeOpenerRouter(
 				"GET /api/settings/opener checkout snapshot",
 				(signal) => snapshotCheckoutAccess({ vault: null, signal }),
 			);
-			const repositories = snapshot.entries.map((entry) => {
-				const resolved = resolveRegisteredCheckout(entry.repo, snapshot);
-				return {
-					repository: entry.repo,
-					root: entry.root,
-					exists: entry.exists,
-					identityMatches: resolved.ok,
-				};
-			});
+			const repositories = snapshot.entries.map((entry) => ({
+				repository: entry.repo,
+				root: entry.root,
+				exists: entry.exists,
+				identityMatches: resolveRegisteredCheckout(entry.repo, snapshot).ok,
+			}));
 			response.json({
 				success: true,
 				selection: current.selection,
@@ -534,13 +533,12 @@ export function createCodeOpenerRouter(
 		const current = readOpenerSelection();
 		if (!current.ok) return sendFailure(response, current);
 		const parsed = OpenerSelectionSchema.safeParse(request.body);
-		if (!parsed.success) {
+		if (!parsed.success)
 			return sendFailure(
 				response,
 				{ code: "REQUEST_INVALID", error: "The opener selection is invalid." },
 				400,
 			);
-		}
 		const validated = validateOpenerSelection(parsed.data);
 		if ("ok" in validated) return sendFailure(response, validated, 422);
 		const saved = saveOpenerSelection(parsed.data);
@@ -561,13 +559,12 @@ export function createCodeOpenerRouter(
 				const current = readOpenerSelection();
 				if (!current.ok) return sendFailure(response, current);
 				const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
-				if (!parsed.success) {
+				if (!parsed.success)
 					return sendFailure(
 						response,
 						{ code: "REQUEST_INVALID", error: "The opener test is invalid." },
 						400,
 					);
-				}
 				const checkout = resolveRegisteredCheckout(
 					parsed.data.repository,
 					await snapshotCheckoutAccess({ vault: null, signal }),

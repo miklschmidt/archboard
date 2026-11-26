@@ -45,6 +45,7 @@ import {
 	anchorSymbolMissing,
 	bindingPathMissing,
 	bindingSymbolMissing,
+	unparsedSkip,
 } from "#runtime/code-check/claims/operations/claim-findings.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import { documentsOf, judgeDocuments } from "#runtime/code-check/claims/operations/documents.ts";
@@ -83,15 +84,18 @@ import {
 	type Resolve,
 	type TokenType,
 } from "#runtime/code-check/operations/resolution.ts";
-import { judgeSupport } from "#runtime/code-check/claims/operations/support.ts";
 import {
-	heldInFiles,
+	judgeSupport,
+	type ResolvedAnchorSite,
+} from "#runtime/code-check/claims/operations/support.ts";
+import {
+	heldForClaim,
+	resolvedSiteOf,
 	terraformRootOfTarget,
 	type Held,
 } from "#runtime/code-check/claims/operations/symbols.ts";
 import { terraformEvidenceOf } from "#runtime/code-check/evidence/operations/terraform-evidence.ts";
 import { createCodeFacts, type FactsPass } from "#runtime/code-facts/services/reader.ts";
-import { type Accept } from "#runtime/code-facts/operations/lookup.ts";
 import {
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
@@ -194,30 +198,6 @@ function unreadable(claim: Claim, readable: Exclude<Readable, { status: "files" 
 }
 
 /**
- * The skip of a symbol found only in code that did not parse or below an
- * expression it cannot follow, or of an address in a module it does not read.
- * @param claim The claim.
- * @param held Where it was found.
- * @returns The skip, which names the file and its lines, plan path, or module call.
- */
-function unparsedSkip(
-	claim: Claim,
-	held: Extract<Held, { status: "unparsed" | "module-unread" | "unfollowed" }>,
-): CodeCheckSkip {
-	const repo = repoOf(claim);
-	if (held.status === "module-unread") {
-		return skipped(claim.site, { reason: "module-not-read", repo, detail: held.module });
-	}
-	if (held.status === "unfollowed") {
-		return skipped(claim.site, { reason: "expression-not-followed", repo, detail: held.detail });
-	}
-	const { path: file, start, end } = held.unparsed.source ?? { path: held.file, ...held.unparsed };
-	const detail = `${file}:${start === end ? start : `${start}-${end}`}`;
-	const reason = held.unparsed.under === undefined ? "symbol-unparsed" : "expression-not-followed";
-	return skipped(claim.site, { reason, repo, detail });
-}
-
-/**
  * Where the files of a path hold a symbol, or why they cannot be read: a path
  * Git ignores, one never read, a symbol found only in code that did not parse,
  * or an address inside a Terraform module the check does not read, each a skip.
@@ -241,8 +221,15 @@ async function findSymbolOf(
 		pass.outcome.skipped.push(unreadable(claim, readable));
 		return undefined;
 	}
-	const accept: Accept = claim.kind === "binding" ? "definition" : "definition-or-reference";
-	const held = await heldInFiles(searchOf(checkout, pass), readable.files, symbol, accept, root);
+	const held = await heldForClaim(
+		searchOf(checkout, pass),
+		readable.files,
+		claim,
+		symbol,
+		checkout,
+		pass,
+		root,
+	);
 	if (held.status === "found" || held.status === "absent") return held;
 	pass.outcome.skipped.push(unparsedSkip(claim, held));
 	return undefined;
@@ -352,19 +339,17 @@ async function judgeAnchorSymbol(
 	const held = await findSymbolOf(claim, readable, checkout, claim.anchor.symbol, pass);
 	if (held?.status === "absent") pass.outcome.findings.push(anchorSymbolMissing(claim, held));
 	if (held?.status !== "found") return;
-	const mismatch = await anchorMismatch(claim, held.file, checkout, pass);
+	const mismatch = await anchorMismatch(claim, held.file, checkout, pass, resolvedSiteOf(held));
 	if (mismatch !== undefined) pass.outcome.findings.push(mismatch);
 }
 
 /**
- * Whether an anchor that holds does not support its relationship or step: its
- * symbol is defined outside the bound code of both ends, or its uses are all
- * of an evidence kind its relationship kind does not accept; or, where it
- * supports it, whether its kind says how its call runs.
+ * Whether an anchor that holds does not support its relationship or step.
  * @param claim The anchor.
  * @param file The anchored file.
  * @param checkout Its checkout.
  * @param pass The pass.
+ * @param resolved Pre-resolved Terraform anchor site, when qualified.
  * @returns The finding, or undefined when it supports it or the check cannot tell.
  */
 async function anchorMismatch(
@@ -372,9 +357,15 @@ async function anchorMismatch(
 	file: string,
 	checkout: ClaimCheckout,
 	pass: Pass,
+	resolved?: ResolvedAnchorSite,
 ): Promise<CodeFinding | undefined> {
-	const context = { ...pass, search: searchOf(checkout, pass) };
-	const outside = await judgeSupport(claim, file, checkout, context);
+	const outside = await judgeSupport(
+		claim,
+		file,
+		checkout,
+		{ ...pass, search: searchOf(checkout, pass) },
+		resolved,
+	);
 	const facts = await pass.facts.read(checkout, file);
 	return (
 		outside ??
@@ -580,12 +571,13 @@ async function checkCode(
 	} finally {
 		pass.outcome.skipped.push(...(await resolution.close()));
 	}
-	pass.outcome.skipped.push(...noServerSkips(withoutServer));
-	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
-	const serverTimings = resolution.timings();
+	pass.outcome.skipped.push(
+		...noServerSkips(withoutServer),
+		...checkoutSkips(checkouts, pass.readAsText),
+	);
 	pass.outcome.timings.push(
 		{ check: "code-facts", elapsedMs: reading.elapsedMs() },
-		...serverTimings,
+		...resolution.timings(),
 	);
 	return pass.outcome;
 }

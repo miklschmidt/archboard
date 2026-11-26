@@ -11,8 +11,8 @@ import type { Definition, SiblingLink, Unparsed } from "#runtime/code-facts/oper
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 import { decodeHclString } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 
-/** A string template interpolation or directive marker. */
-const TEMPLATE_MARKER = /[$%]\{/u;
+/** AST node types that mark dynamic HCL template interpolation or directives. */
+const DYNAMIC_TEMPLATE_NODES = new Set(["template_interpolation", "template_directive"]);
 
 /** One attribute name and value expression node inside a block body. */
 interface AttributeExpr {
@@ -43,13 +43,34 @@ interface ResourceNestedFacts {
 }
 
 /**
- * The single named child of a node when the node has the expected type.
+ * The named children of a syntax node, excluding HCL comments.
+ * @param node The syntax node.
+ * @returns Non-comment named children in source order.
+ */
+function syntaxChildren(node: Node | undefined): Node[] {
+	return (node?.namedChildren ?? []).filter((child) => child.type !== "comment");
+}
+
+/**
+ * The single non-comment named child of a node when the node has the expected type.
  * @param node The parent node.
  * @param type The required node type of the parent.
- * @returns Its sole named child, or undefined.
+ * @returns Its sole meaningful child, or undefined.
  */
 function onlyChild(node: Node | undefined, type: string): Node | undefined {
-	return node?.type === type && node.namedChildren.length === 1 ? node.namedChildren[0] : undefined;
+	if (node?.type !== type) return undefined;
+	const children = syntaxChildren(node);
+	return children.length === 1 ? children[0] : undefined;
+}
+
+/**
+ * Whether a `string_lit` node contains any dynamic HCL template interpolation
+ * or directive (escaped `$${` and `%%{` stay inside `template_literal`).
+ * @param stringLit The string literal node.
+ * @returns True when the string contains dynamic template syntax.
+ */
+function hasDynamicTemplate(stringLit: Node): boolean {
+	return syntaxChildren(stringLit).some((child) => DYNAMIC_TEMPLATE_NODES.has(child.type));
 }
 
 /**
@@ -65,14 +86,15 @@ function literalStringNode(expression: Node | undefined): Node | undefined {
 
 /**
  * The unescaped string value of a plain literal double-quoted HCL expression,
- * rejecting template interpolations and directives.
+ * rejecting dynamic template interpolations and directives while decoding HCL
+ * escapes including `$${` and `%%{`.
  * @param expression The expression node.
  * @returns The decoded literal string, or undefined when not a plain literal.
  */
 function literalStringValue(expression: Node | undefined): string | undefined {
 	const stringLit = literalStringNode(expression);
-	if (stringLit === undefined || TEMPLATE_MARKER.test(stringLit.text)) return undefined;
-	return decodeHclString(stringLit.text);
+	if (stringLit === undefined || hasDynamicTemplate(stringLit)) return undefined;
+	return decodeHclString(stringLit.text, true);
 }
 
 /**
@@ -87,7 +109,7 @@ function literalStringsOf(expression: Node | undefined): string[] {
 	if (single !== undefined) return [single];
 	const tuple = onlyChild(onlyChild(expression, "expression"), "collection_value");
 	if (tuple?.type !== "tuple") return [];
-	return tuple.namedChildren.flatMap((child) => {
+	return syntaxChildren(tuple).flatMap((child) => {
 		const value = literalStringValue(child);
 		return value === undefined ? [] : [value];
 	});
@@ -99,11 +121,26 @@ function literalStringsOf(expression: Node | undefined): string[] {
  * @returns Its kind and body.
  */
 function blockParts(block: Node): { readonly kind: string; readonly body: Node | undefined } {
-	const [kind] = block.namedChildren;
+	const children = syntaxChildren(block);
+	const [kind] = children;
 	return {
 		kind: kind?.type === "identifier" ? kind.text : "",
-		body: block.namedChildren.find((node) => node.type === "body"),
+		body: children.find((node) => node.type === "body"),
 	};
+}
+
+/**
+ * An attribute node's identifier name and value expression, ignoring intervening comments.
+ * @param node An `attribute` node.
+ * @returns Its name and expression, or undefined when incomplete.
+ */
+function attributeExprOf(node: Node): AttributeExpr | undefined {
+	const children = syntaxChildren(node);
+	const name = children.find((child) => child.type === "identifier");
+	const expression = children.find((child) => child.type === "expression");
+	return name === undefined || expression === undefined
+		? undefined
+		: { name: name.text, expression };
 }
 
 /**
@@ -112,10 +149,10 @@ function blockParts(block: Node): { readonly kind: string; readonly body: Node |
  * @returns Each direct attribute's name and value expression.
  */
 function directAttributes(body: Node | undefined): AttributeExpr[] {
-	return (body?.namedChildren ?? []).flatMap((node) => {
+	return syntaxChildren(body).flatMap((node) => {
 		if (node.type !== "attribute") return [];
-		const [name, expression] = node.namedChildren;
-		return name === undefined || expression === undefined ? [] : [{ name: name.text, expression }];
+		const attr = attributeExprOf(node);
+		return attr === undefined ? [] : [attr];
 	});
 }
 
@@ -125,26 +162,26 @@ function directAttributes(body: Node | undefined): AttributeExpr[] {
  * @returns All attributes in document order.
  */
 function attributesDeep(body: Node | undefined): AttributeExpr[] {
-	return (body?.namedChildren ?? []).flatMap((node) => {
+	return syntaxChildren(body).flatMap((node) => {
 		if (node.type === "attribute") {
-			const [name, expression] = node.namedChildren;
-			return name === undefined || expression === undefined
-				? []
-				: [{ name: name.text, expression }];
+			const attr = attributeExprOf(node);
+			return attr === undefined ? [] : [attr];
 		}
 		return node.type === "block" ? attributesDeep(blockParts(node).body) : [];
 	});
 }
 
 /**
- * The unescaped value of a direct literal double-quoted `name` attribute on a
- * nested block body, rejecting template interpolations and directives.
+ * The non-empty unescaped value of a direct literal double-quoted `name`
+ * attribute on a nested block body, rejecting template interpolations,
+ * directives, and empty strings.
  * @param body The nested block's body.
- * @returns The unescaped literal string, or undefined when absent or non-literal.
+ * @returns The unescaped non-empty literal string, or undefined when absent, empty, or non-literal.
  */
 function literalBlockName(body: Node | undefined): string | undefined {
 	const found = directAttributes(body).find((attribute) => attribute.name === "name");
-	return literalStringValue(found?.expression);
+	const value = literalStringValue(found?.expression);
+	return value === undefined || value === "" ? undefined : value;
 }
 
 /**
@@ -208,13 +245,13 @@ function partitionNestedBlocks(
  * @returns The decoded label text, or empty string when missing or non-literal.
  */
 function firstBlockLabel(block: Node): string {
-	const label = block.namedChildren
+	const label = syntaxChildren(block)
 		.slice(1)
 		.find((node) => node.type === "string_lit" || node.type === "identifier");
 	if (label === undefined) return "";
 	if (label.type === "identifier") return label.text;
-	if (TEMPLATE_MARKER.test(label.text)) return "";
-	return decodeHclString(label.text) ?? "";
+	if (hasDynamicTemplate(label)) return "";
+	return decodeHclString(label.text, true) ?? "";
 }
 
 /**

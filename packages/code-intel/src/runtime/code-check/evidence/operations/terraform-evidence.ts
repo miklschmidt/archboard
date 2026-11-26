@@ -216,7 +216,8 @@ function piecesIn(
 	};
 	return configuration.endpoints.flatMap((declaration) => {
 		const reached = configuration.reached(declaration.address);
-		const direct = reached
+		const direct = configuration
+			.reached(declaration.address, { perBlock: true })
 			.filter(({ link }) => link.joins === undefined)
 			.flatMap(({ to, link }) => {
 				const source =

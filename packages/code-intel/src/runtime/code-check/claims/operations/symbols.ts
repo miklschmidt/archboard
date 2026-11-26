@@ -11,21 +11,28 @@
 // it, is neither held nor missing either.
 
 import path from "node:path";
+import type { AnchorClaim, Claim } from "#runtime/code-check/claims/operations/claims.ts";
 import type { ReadCheckout } from "#runtime/code-check/operations/checkouts.ts";
+import { readsSameCode, targetIn, type RefCodes } from "#runtime/code-check/operations/ref-code.ts";
+import type { CheckoutSnapshot, LocalCodeTarget } from "@archboard/code-binding/resolution";
 import { findSymbol, type Accept } from "#runtime/code-facts/operations/lookup.ts";
-import { isTerraformFile } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	isTerraformFile,
+	parseTerraformAddress,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
 	terraformConfiguration,
 	terraformRootOf,
 	type Declared,
+	type TerraformConfiguration,
 } from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
+import { directoryOf } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
 import {
 	type Definition,
 	type FileFacts,
 	type Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
-import type { LocalCodeTarget } from "@archboard/code-binding/resolution";
 
 /** Where the files of a path hold a symbol. */
 type Held =
@@ -35,6 +42,10 @@ type Held =
 			readonly file: string;
 			readonly line?: number;
 			readonly definition?: Definition;
+			/** When resolved through a Terraform root module, its canonical root-relative address. */
+			readonly address?: string;
+			/** The Terraform root directory that resolved `address`. */
+			readonly root?: string;
 	  }
 	| { readonly status: "unparsed"; readonly file: string; readonly unparsed: Unparsed }
 	/** An address inside a module the check does not read: the module call's address. */
@@ -218,4 +229,232 @@ async function heldByBinding(
 	return elsewhere.status === "absent" ? held : elsewhere;
 }
 
-export { type Held, type Search, heldInFiles, terraformRootOfTarget };
+/**
+ * Whether an anchor's cited `.tf` file matches a Terraform configuration
+ * lookup: either the cited file is in the root module itself or it is the
+ * defining module file of the target declaration (or its parent resource).
+ * @param file The anchor's cited file, relative to the checkout.
+ * @param root The Terraform root module directory.
+ * @param targetFile The defining file of the declaration, if known.
+ * @returns True when the anchor's cited file agrees with the lookup.
+ */
+function anchorFileMatches(file: string, root: string, targetFile: string | undefined): boolean {
+	return directoryOf(file) === root || targetFile === file;
+}
+
+/** Pass checkout snapshot and ref readings needed to resolve holder bindings. */
+interface AnchorContext {
+	readonly snapshot: CheckoutSnapshot;
+	readonly refs: RefCodes;
+}
+
+/**
+ * Convert a found Terraform declaration into a `Held` site when it matches `file`.
+ * @param configuration The root module's configuration.
+ * @param declared A found declaration from the configuration.
+ * @param file The anchor's cited file.
+ * @returns The resolved `Held`, or undefined when the file does not match.
+ */
+function foundAnchorInRoot(
+	configuration: TerraformConfiguration,
+	declared: Extract<Declared, { status: "found" }>,
+	file: string,
+): Held | undefined {
+	const { site, declaration } = declared;
+	if (site === undefined || !anchorFileMatches(file, configuration.root, site.path)) {
+		return undefined;
+	}
+	return {
+		status: "found",
+		file: site.path,
+		line: site.definition.start,
+		definition: site.definition,
+		address: declaration.address,
+		root: configuration.root,
+	};
+}
+
+/**
+ * Convert an unheld (unparsed, unread, or unfollowed) Terraform lookup into `Held`
+ * when the anchor's cited file agrees with the lookup target.
+ * @param configuration The root module's configuration.
+ * @param declared The unheld configuration lookup.
+ * @param file The anchor's cited file.
+ * @param parentDeclaration The enclosing resource address for a nested block.
+ * @returns The resolved `Held`, or undefined when the file does not match.
+ */
+function unheldAnchorInRoot(
+	configuration: TerraformConfiguration,
+	declared: Exclude<Declared, { status: "found" | "absent" }>,
+	file: string,
+	parentDeclaration: string,
+): Held | undefined {
+	const targetFile =
+		declared.status === "unparsed" ? declared.path : configuration.siteOf(parentDeclaration)?.path;
+	return anchorFileMatches(file, configuration.root, targetFile)
+		? unheldAddress(declared)
+		: undefined;
+}
+
+/**
+ * Convert a Terraform configuration lookup for a module-qualified or plan-only
+ * anchor into `Held` when the anchor's cited file agrees with the lookup.
+ * @param configuration The root module's configuration.
+ * @param declared What the configuration holds at the symbol.
+ * @param file The anchor's cited file.
+ * @param parentDeclaration The enclosing resource address for a nested block, if any.
+ * @param qualified Whether the anchor symbol carries a `module.<name>` prefix.
+ * @returns The resolved `Held`, or undefined when the lookup does not apply to `file`.
+ */
+function anchorHeldInRoot(
+	configuration: TerraformConfiguration,
+	declared: Declared,
+	file: string,
+	parentDeclaration: string,
+	qualified: boolean,
+): Held | undefined {
+	if (declared.status === "absent") return undefined;
+	if (!qualified) {
+		const inRoot = declared.status === "unfollowed" && directoryOf(file) === configuration.root;
+		return inRoot ? unheldAddress(declared) : undefined;
+	}
+	return declared.status === "found"
+		? foundAnchorInRoot(configuration, declared, file)
+		: unheldAnchorInRoot(configuration, declared, file, parentDeclaration);
+}
+
+/**
+ * Resolve one holder part's Terraform root directory in the anchor's checkout.
+ * @param part The holder part.
+ * @param checkout The anchor's checkout.
+ * @param context The pass snapshot and ref readings.
+ * @returns The root directory, or undefined when the holder binds another code or non-Terraform path.
+ */
+function holderTerraformRoot(
+	part: AnchorClaim["holders"][number],
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: AnchorContext,
+): string | undefined {
+	const { binding } = part;
+	if (binding === undefined || binding.repo !== checkout.repo) return undefined;
+	if (!readsSameCode(binding, checkout, context)) return undefined;
+	const target = targetIn(binding, checkout, context);
+	return target.ok ? terraformRootOfTarget(target, checkout.files) : undefined;
+}
+
+/**
+ * Candidate Terraform root modules to inspect for a Terraform anchor: the
+ * anchor file's own root first, then any roots bound by the anchor's holders.
+ * @param claim The anchor claim.
+ * @param file The anchor's cited file.
+ * @param checkout The anchor's checkout.
+ * @param context The pass snapshot and ref readings.
+ * @returns Unique root directories in priority order.
+ */
+function anchorTerraformRoots(
+	claim: AnchorClaim,
+	file: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: AnchorContext,
+): string[] {
+	const own = terraformRootOf(file, "file", checkout.files);
+	const fromHolders = claim.holders.map((part) => holderTerraformRoot(part, checkout, context));
+	return [...new Set([own, ...fromHolders].filter((root): root is string => root !== undefined))];
+}
+
+/**
+ * Parse a Terraform anchor symbol that requires root-module configuration lookup
+ * (either module-qualified or a nested-block selector).
+ * @param file The anchor's cited file.
+ * @param symbol The anchor symbol.
+ * @returns The parsed address and qualification flag, or undefined.
+ */
+function terraformAnchorTarget(file: string, symbol: string) {
+	if (!isTerraformFile(file)) return undefined;
+	const parsed = parseTerraformAddress(symbol);
+	if (parsed === undefined) return undefined;
+	const qualified = parsed.modules.length > 0;
+	return qualified || parsed.kind === "block" ? { parsed, qualified } : undefined;
+}
+
+/**
+ * Resolve a module-qualified or plan-only Terraform anchor across candidate
+ * root modules, checking that the cited file agrees and preserving the
+ * selected root-relative address for sibling-block support.
+ * @param search The pass and checkout.
+ * @param file The anchor's cited `.tf` or `.tofu` file.
+ * @param claim The anchor claim.
+ * @param checkout The anchor's checkout.
+ * @param context The pass snapshot and ref readings.
+ * @returns The resolved `Held`, or undefined when no candidate root answers for `file`.
+ */
+async function heldByTerraformAnchor(
+	search: Search,
+	file: string,
+	claim: AnchorClaim,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: AnchorContext,
+): Promise<Held | undefined> {
+	const target = terraformAnchorTarget(file, claim.anchor.symbol);
+	if (target === undefined) return undefined;
+	for (const root of anchorTerraformRoots(claim, file, checkout, context)) {
+		// oxlint-disable-next-line no-await-in-loop -- inspect candidate roots in priority order until one resolves
+		const configuration = await terraformConfiguration(search.facts, search.checkout, root);
+		const held = anchorHeldInRoot(
+			configuration,
+			configuration.declared(claim.anchor.symbol),
+			file,
+			target.parsed.declaration,
+			target.qualified,
+		);
+		if (held !== undefined) return held;
+	}
+	return undefined;
+}
+
+/**
+ * Resolve one claim's symbol across its readable files, using root-module
+ * configuration lookup for Terraform bindings and module-qualified or
+ * plan-only Terraform anchors.
+ * @param search The pass and checkout.
+ * @param files The readable files of the claim's path.
+ * @param claim The binding or anchor claim.
+ * @param symbol The symbol to resolve.
+ * @param checkout The claim's checkout.
+ * @param context The pass snapshot and ref readings.
+ * @param root For a binding, its Terraform root module directory.
+ * @returns Where the files hold the symbol, or why they do not.
+ */
+async function heldForClaim(
+	search: Search,
+	files: readonly string[],
+	claim: Claim,
+	symbol: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: AnchorContext,
+	root?: string,
+): Promise<Held> {
+	if (claim.kind === "anchor" && files[0] !== undefined) {
+		const tfAnchor = await heldByTerraformAnchor(search, files[0], claim, checkout, context);
+		if (tfAnchor !== undefined) return tfAnchor;
+	}
+	const accept: Accept = claim.kind === "binding" ? "definition" : "definition-or-reference";
+	return heldInFiles(search, files, symbol, accept, root);
+}
+
+/**
+ * Extract the pre-resolved Terraform anchor site from a found `Held`, when qualified.
+ * @param held A found symbol result.
+ * @returns The pre-resolved anchor site, or undefined.
+ */
+function resolvedSiteOf(held: Extract<Held, { status: "found" }>) {
+	if (held.address === undefined || held.definition === undefined) return undefined;
+	return {
+		file: held.file,
+		definition: held.definition,
+		address: held.address,
+		...(held.root === undefined ? {} : { root: held.root }),
+	};
+}
+
+export { type Held, type Search, heldForClaim, heldInFiles, resolvedSiteOf, terraformRootOfTarget };

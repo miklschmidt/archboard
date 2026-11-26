@@ -7,6 +7,7 @@ import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/mode
 import type { VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 import { namesInfrastructure, pathOf } from "#runtime/check/operations/containment.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";
+import { canonicalTerraformSymbol } from "#runtime/check/operations/terraform-address.ts";
 
 type Model = Pick<ArchitectureModel, "modules" | "relationships">;
 type Module = Model["modules"][number];
@@ -44,11 +45,15 @@ function codeOf(binding: Binding): string {
 
 /**
  * The canonical key that decides whether two bindings name the same code.
+ * Equivalent Terraform quoted-selector spellings (such as Unicode escapes)
+ * canonicalize to the same key so they cannot bypass `BINDING_SHARED`.
  * @param binding The binding.
  * @returns The key for grouping.
  */
 function bindingKey(binding: Binding): string {
-	return JSON.stringify([binding.repo, pathOf(binding), binding.symbol ?? ""]);
+	const raw = binding.symbol ?? "";
+	const symbol = namesInfrastructure(binding) ? canonicalTerraformSymbol(raw) : raw;
+	return JSON.stringify([binding.repo, pathOf(binding), symbol]);
 }
 
 /**
