@@ -94,15 +94,17 @@ const MULTI_TARGET_JOIN_ARGUMENTS = new Set([
 ]);
 
 /**
- * Whether a provider join side is a single scalar argument, so resolving it to
- * another declaration rules out an additional opaque target on that side.
+ * Whether a provider join side is the declaration itself or a single scalar
+ * argument, so a resolved side leaves no room for an additional target.
  * @param args The side's argument paths.
- * @returns True when the side accepts one scalar target.
+ * @returns True when the side accepts only one target.
  */
 function isClosedJoinSide(args: readonly string[]): boolean {
 	const [only] = args;
-	if (args.length !== 1 || only === undefined) return false;
-	return !only.endsWith("s") && !MULTI_TARGET_JOIN_ARGUMENTS.has(only);
+	return (
+		only === undefined ||
+		(args.length === 1 && !only.endsWith("s") && !MULTI_TARGET_JOIN_ARGUMENTS.has(only))
+	);
 }
 
 /**
@@ -245,39 +247,20 @@ function matchesPair(match: SideMatches): boolean {
 }
 
 /**
- * Whether either end matched a side.
- * @param first Whether the first claimed end matched.
- * @param second Whether the second claimed end matched.
- * @returns True when either matched.
- */
-function sideAny(first: boolean, second: boolean): boolean {
-	return first || second;
-}
-
-/**
- * Whether a matched side rules out the claim because the opposite side accepts
- * only one scalar target and already resolved elsewhere.
- * @param matched Whether this side matched one claimed end.
- * @param otherSide The opposite side's argument paths.
- * @returns True when the opposite side is closed.
- */
-function blockedBy(matched: boolean, otherSide: readonly string[]): boolean {
-	return matched && isClosedJoinSide(otherSide);
-}
-
-/**
  * Whether a non-matching listed join instance surely rules out the claimed pair.
  * @param match Which claimed ends matched each side.
  * @param rule The provider's join rule.
  * @returns True when no opaque target on an open side could still match.
  */
 function rulesOutPair(match: SideMatches, rule: JoinRule): boolean {
-	const matchedFrom = sideAny(match.from0, match.from1);
-	const matchedTo = sideAny(match.to0, match.to1);
-	if (matchedFrom || matchedTo) {
-		return blockedBy(matchedFrom, rule.to) || blockedBy(matchedTo, rule.from);
-	}
-	return true;
+	const fromOpen = !isClosedJoinSide(rule.from);
+	const toOpen = !isClosedJoinSide(rule.to);
+	return !matchesPair({
+		from0: match.from0 || fromOpen,
+		from1: match.from1 || fromOpen,
+		to0: match.to0 || toOpen,
+		to1: match.to1 || toOpen,
+	});
 }
 
 /**

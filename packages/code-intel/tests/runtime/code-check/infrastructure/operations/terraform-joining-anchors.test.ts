@@ -85,6 +85,10 @@ resource "azurerm_network_interface_security_group_association" "vm" {
   network_interface_id      = azurerm_network_interface.vm.id
   network_security_group_id = azurerm_network_security_group.workers.id
 }
+
+resource "azurerm_eventgrid_system_topic" "events" {
+  source_arm_resource_id = azurerm_application_gateway.ingress.id
+}
 `;
 
 const AZURE_NET_MODULE = `resource "azurerm_subnet" "workers" {}
@@ -109,6 +113,17 @@ const AZURE_INSTANCES = `module "net_a" {
 
 module "net_b" {
   source = "./modules/net"
+}
+`;
+
+const AZURE_SECURITY_RULE = `resource "azurerm_application_security_group" "worker" {}
+resource "azurerm_application_security_group" "database" {}
+resource "azurerm_application_security_group" "other_source" {}
+resource "azurerm_application_security_group" "other_destination" {}
+
+resource "azurerm_network_security_rule" "allowed" {
+  source_application_security_group_ids      = [azurerm_application_security_group.other_source.id, "opaque-source"]
+  destination_application_security_group_ids = [azurerm_application_security_group.other_destination.id, "opaque-destination"]
 }
 `;
 
@@ -170,6 +185,20 @@ beforeAll(async () => {
   source = "../azure-instances/modules/net"
 }
 `,
+		"azure-security/main.tf": AZURE_SECURITY_RULE,
+		"azure-opaque/ingress.tf":
+			'resource "azurerm_application_gateway" "ingress" {}\nresource "azurerm_log_analytics_workspace" "access" {}\n',
+		"azure-opaque/diagnostics.tf": [
+			'variable "archive_storage_id" {}',
+			'resource "azurerm_storage_account" "archive" {}',
+			'resource "azurerm_monitor_diagnostic_setting" "access" {',
+			'  name                       = "access"',
+			"  target_resource_id         = azurerm_application_gateway.ingress.id",
+			"  log_analytics_workspace_id = azurerm_log_analytics_workspace.access.id",
+			"  storage_account_id         = var.archive_storage_id",
+			"}",
+			"",
+		].join("\n"),
 	});
 	write(scratch, { gitconfig: "" });
 	git(scratch, shop, "init", "-q", "-b", "main");
@@ -239,6 +268,11 @@ beforeAll(async () => {
 			"azure-joins/main.tf",
 			"azurerm_subnet_nat_gateway_association.workers",
 		]),
+		// Implicit self-endpoint is closed: system topic joining G -> itself does not join G -> A.
+		edge("e11", ["G", "A"], "async", [
+			"azure-joins/main.tf",
+			"azurerm_eventgrid_system_topic.events",
+		]),
 	]);
 	current(
 		"Azure module instances",
@@ -274,6 +308,38 @@ beforeAll(async () => {
 			edge("e1", ["S", "F"], "dependency", [
 				"azure-instances/modules/net/main.tf",
 				"azurerm_subnet_network_security_group_association.filter",
+			]),
+		],
+	);
+	current(
+		"Azure opaque security groups",
+		[
+			part("W", "azure-security/main.tf", "azurerm_application_security_group.worker"),
+			part("D", "azure-security/main.tf", "azurerm_application_security_group.database"),
+		],
+		[
+			edge("e1", ["W", "D"], "dependency", [
+				"azure-security/main.tf",
+				"azurerm_network_security_rule.allowed",
+			]),
+		],
+	);
+	current(
+		"Azure opaque destination",
+		[
+			{
+				id: "G",
+				name: "G",
+				kind: "module",
+				order: 10,
+				binding: { repo: SHOP, path: "azure-opaque/ingress.tf" },
+			},
+			part("A", "azure-opaque/diagnostics.tf", "azurerm_storage_account.archive"),
+		],
+		[
+			edge("e1", ["G", "A"], "storage", [
+				"azure-opaque/diagnostics.tf",
+				"azurerm_monitor_diagnostic_setting.access",
 			]),
 		],
 	);
@@ -331,12 +397,14 @@ test("anchored listed joins and unlisted NSG attachments pass when an instance c
 	const findings = found("Azure joins anchored");
 	expect(findings.map((each) => each.split(" | ").slice(0, 3).join(" "))).toEqual([
 		"ANCHOR_MISMATCH e10 warning",
+		"ANCHOR_MISMATCH e11 warning",
 		"ANCHOR_MISMATCH e8 warning",
 		"ANCHOR_MISMATCH e9 warning",
 	]);
 	expect(findings.find((each) => each.includes(" e10 "))).toContain(
 		"configured-path azure-joins/main.tf:16 azurerm_subnet_nat_gateway_association.workers",
 	);
+	expect(findings.find((each) => each.includes(" e8 "))).toBe("ANCHOR_MISMATCH | e8 | warning");
 });
 
 test("Terraform joining anchors compare instance-qualified addresses across calls of the same module", () => {
@@ -347,4 +415,9 @@ test("Terraform joining anchors compare instance-qualified addresses across call
 
 test("an unlisted join cannot combine addresses in separate roots that call the same module", () => {
 	expect(found("Azure separate roots")).toEqual(["ANCHOR_MISMATCH | e1 | warning"]);
+});
+
+test("open join sides leave room for opaque targets in either orientation", () => {
+	expect(found("Azure opaque security groups")).toEqual([]);
+	expect(found("Azure opaque destination")).toEqual([]);
 });

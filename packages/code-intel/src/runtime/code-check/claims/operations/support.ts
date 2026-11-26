@@ -56,7 +56,10 @@ import {
 	definitionSite,
 	type DefinitionSite,
 } from "#runtime/code-facts/operations/definition-site.ts";
-import { isTerraformFile } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	declarationAddress,
+	isTerraformFile,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import { mergedDefinitions } from "#runtime/code-facts/compose/operations/compose-merged.ts";
 import { terraformConfiguration } from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
@@ -200,11 +203,18 @@ async function holdingAt(
  * type.
  * @param references The file's references.
  * @param symbol The symbol.
+ * @param matchAddress Whether the reference must name the full declaration address.
  * @returns The uses, in that order.
  */
-function usesOf(references: readonly Reference[], symbol: string): Reference[] {
+function usesOf(
+	references: readonly Reference[],
+	symbol: string,
+	matchAddress = false,
+): Reference[] {
+	const spelling = matchAddress ? declarationAddress(symbol) : symbol;
+	const exact = references.filter((each) => each.kind !== undefined && each.symbol === spelling);
+	if (matchAddress) return exact;
 	const name = lastName(symbol);
-	const exact = references.filter((each) => each.kind !== undefined && each.symbol === symbol);
 	const named = references.filter(
 		(each) => each.kind !== undefined && lastName(each.symbol) === name,
 	);
@@ -216,6 +226,7 @@ function usesOf(references: readonly Reference[], symbol: string): Reference[] {
 /**
  * The anchored use of a symbol, as evidence. A symbol the anchored file only
  * defines has no use, and no evidence kind (ADR 0046).
+ * A Terraform use names the full declaration address.
  * @param facts The anchored file's facts.
  * @param claim The anchor.
  * @returns The evidence, or undefined.
@@ -223,7 +234,7 @@ function usesOf(references: readonly Reference[], symbol: string): Reference[] {
 function anchoredUse(facts: FileFacts | undefined, claim: AnchorClaim): CodeEvidence | undefined {
 	if (facts === undefined || facts.adapter === "text") return undefined;
 	const { symbol, repo } = claim.anchor;
-	const use = usesOf(facts.references, symbol)[0];
+	const use = usesOf(facts.references, symbol, facts.adapter === "terraform")[0];
 	if (use?.kind === undefined) return undefined;
 	return { kind: use.kind, resolution: "resolved", repo, path: facts.path, line: use.line, symbol };
 }
