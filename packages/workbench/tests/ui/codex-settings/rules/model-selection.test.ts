@@ -132,9 +132,27 @@ describe("codex model selection rules", () => {
 			"priority",
 		]);
 		expect(serviceTierChoicesForModel(EXPLICIT_TIER_MODEL).map((c) => c.value)).toEqual([
+			DEFAULT_TIER_VALUE,
 			"standard",
 			"priority",
 		]);
+	});
+
+	test("keeps the default workhorse tier unset when the catalog names a default", () => {
+		const reply = makeReply({
+			models: [SOL, EXPLICIT_TIER_MODEL],
+			defaults: {
+				orchestrator: { model: SOL.model, effort: "low", serviceTier: "priority" },
+				workhorse: { model: EXPLICIT_TIER_MODEL.model, effort: "medium", serviceTier: null },
+			},
+		});
+		expect(resolveCodexModelDraft(reply).workhorse).toEqual(reply.defaults.workhorse);
+		expect(
+			reconcileRoleForModelChange(
+				{ model: ASTRA.model, effort: "medium", serviceTier: null },
+				EXPLICIT_TIER_MODEL,
+			),
+		).toEqual(reply.defaults.workhorse);
 	});
 
 	test("formats effort labels and authenticated account summaries", () => {

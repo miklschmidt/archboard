@@ -15,6 +15,8 @@ interface RoleModelDraft {
 	readonly serviceTier: string | null;
 }
 
+const EMPTY_ROLE_DRAFT: RoleModelDraft = { model: "", effort: "", serviceTier: null };
+
 /** Editable selection draft for both roles in the Codex settings form. */
 interface CodexModelDraft {
 	readonly orchestrator: RoleModelDraft;
@@ -65,31 +67,20 @@ function formatEffortLabel(effort: string): string {
 }
 
 /**
- * Pick the default reasoning effort and service tier for a newly selected model.
+ * Pick the advertised default reasoning effort for a newly selected model.
  * @param model Model entry from model/list.
- * @returns Valid draft for that model.
+ * @returns The default reasoning effort.
  */
-function defaultDraftForModel(model: CodexModelOption): RoleModelDraft {
-	const effort = model.supportedReasoningEfforts.some(
+function defaultEffortForModel(model: CodexModelOption): string {
+	return model.supportedReasoningEfforts.some(
 		(entry) => entry.reasoningEffort === model.defaultReasoningEffort,
 	)
 		? model.defaultReasoningEffort
 		: (model.supportedReasoningEfforts[0]?.reasoningEffort ?? model.defaultReasoningEffort);
-	const serviceTier =
-		model.defaultServiceTier !== null &&
-		model.serviceTiers.some((tier) => tier.id === model.defaultServiceTier)
-			? model.defaultServiceTier
-			: null;
-	return {
-		model: model.model,
-		effort,
-		serviceTier,
-	};
 }
 
 /**
- * Build the service tier options for one model strictly from its advertised service tiers.
- * Includes a "Standard (default)" option only when tiers are advertised and the default tier is null/unlisted.
+ * Offer the model's advertised tiers and a choice that leaves the tier unset.
  * @param model Selected model entry, or undefined when unavailable.
  * @returns Dropdown choices (empty when the model advertises no service tiers).
  */
@@ -104,41 +95,14 @@ function serviceTierChoicesForModel(
 		label: tier.name,
 		description: tier.description,
 	}));
-	const includesDefault =
-		model.defaultServiceTier !== null &&
-		model.serviceTiers.some((tier) => tier.id === model.defaultServiceTier);
-	if (includesDefault) {
-		return advertised;
-	}
 	return [
 		{
 			value: DEFAULT_TIER_VALUE,
-			label: "Standard (default)",
-			description: "Use the model's default service tier.",
+			label: model.defaultServiceTier === null ? "Standard (default)" : "Model default",
+			description: "Let Codex choose the service tier.",
 		},
 		...advertised,
 	];
-}
-
-/**
- * Resolve the service tier for a matched model against the preferred tier.
- * @param matched Advertised model entry.
- * @param preferredTier Saved or default service tier.
- * @returns Valid service tier id or null.
- */
-function resolveMatchedServiceTier(
-	matched: CodexModelOption,
-	preferredTier: string | null,
-): string | null {
-	if (preferredTier !== null) {
-		return matched.serviceTiers.some((tier) => tier.id === preferredTier)
-			? preferredTier
-			: defaultDraftForModel(matched).serviceTier;
-	}
-	const defaultTier = matched.defaultServiceTier;
-	return defaultTier !== null && matched.serviceTiers.some((tier) => tier.id === defaultTier)
-		? defaultTier
-		: null;
 }
 
 /**
@@ -154,21 +118,15 @@ function resolveRoleDraft(
 	models: readonly CodexModelOption[],
 ): RoleModelDraft {
 	if (models.length === 0) {
-		return { model: "", effort: "", serviceTier: null };
+		return EMPTY_ROLE_DRAFT;
 	}
 	const preferred = saved ?? fallback;
 	const matched = models.find((entry) => entry.model === preferred.model);
 	if (matched === undefined) {
-		return defaultDraftForModel(models.find((entry) => entry.isDefault) ?? models[0]!);
+		const defaultModel = models.find((entry) => entry.isDefault) ?? models[0]!;
+		return reconcileRoleForModelChange(EMPTY_ROLE_DRAFT, defaultModel);
 	}
-	const effortSupported = matched.supportedReasoningEfforts.some(
-		(entry) => entry.reasoningEffort === preferred.effort,
-	);
-	return {
-		model: matched.model,
-		effort: effortSupported ? preferred.effort : defaultDraftForModel(matched).effort,
-		serviceTier: resolveMatchedServiceTier(matched, preferred.serviceTier),
-	};
+	return reconcileRoleForModelChange(preferred, matched);
 }
 
 /**
@@ -189,7 +147,7 @@ function resolveCodexModelDraft(reply: CodexSettingsReply): CodexModelDraft {
 
 /**
  * Reconcile reasoning effort and service tier when the user switches a role to another model.
- * Keeps the previous effort/tier when supported by the new model; otherwise falls back to the new model's defaults.
+ * Keeps supported preferences and leaves an unset or unsupported tier for Codex to choose.
  * @param current Current draft before switching.
  * @param nextModel Newly chosen model entry.
  * @returns Reconciled draft valid for the new model.
@@ -198,20 +156,14 @@ function reconcileRoleForModelChange(
 	current: RoleModelDraft,
 	nextModel: CodexModelOption,
 ): RoleModelDraft {
-	const fallback = defaultDraftForModel(nextModel);
 	const effort = nextModel.supportedReasoningEfforts.some(
 		(entry) => entry.reasoningEffort === current.effort,
 	)
 		? current.effort
-		: fallback.effort;
-	let serviceTier: string | null;
-	if (current.serviceTier !== null) {
-		serviceTier = nextModel.serviceTiers.some((tier) => tier.id === current.serviceTier)
-			? current.serviceTier
-			: fallback.serviceTier;
-	} else {
-		serviceTier = fallback.serviceTier;
-	}
+		: defaultEffortForModel(nextModel);
+	const serviceTier = nextModel.serviceTiers.some((tier) => tier.id === current.serviceTier)
+		? current.serviceTier
+		: null;
 	return {
 		model: nextModel.model,
 		effort,
@@ -298,7 +250,6 @@ function formatAuthenticatedAccount(
 
 export {
 	DEFAULT_TIER_VALUE,
-	defaultDraftForModel,
 	formatAuthenticatedAccount,
 	formatEffortLabel,
 	isCodexModelDraftValid,
