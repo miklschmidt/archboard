@@ -3,10 +3,10 @@ id: TASK-682.02
 title: >-
   Recognize nested blocks in containment and exempt one direct child from
   BINDING_SHARED
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:50:00Z'
-updated_date: '2026-11-26T01:45:00Z'
+updated_date: '2026-11-26T01:58:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -44,7 +44,13 @@ Reuse the shared infrastructure-binding predicate (covering Terraform/OpenTofu, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Containment diagnostics recognize Terraform nested-block bindings (including inside modules and with instance keys) as infrastructure addresses and emit no CONTAINER_PARTS_OUTSIDE warning for a container bound to one
-- [ ] #2 Duplicate-binding diagnostics emit no BINDING_SHARED warning when a single direct child shares its parent container infrastructure address (Terraform, Kubernetes, or Compose)
-- [ ] #3 Duplicate-binding diagnostics still warn BINDING_SHARED when a second sibling shares that same infrastructure address, when an indirect descendant shares it, or when non-infrastructure modules share a binding
+- [x] #1 Containment diagnostics recognize Terraform nested-block bindings (including inside modules and with instance keys) as infrastructure addresses and emit no CONTAINER_PARTS_OUTSIDE warning for a container bound to one
+- [x] #2 Duplicate-binding diagnostics emit no BINDING_SHARED warning when a single direct child shares its parent container infrastructure address (Terraform, Kubernetes, or Compose)
+- [x] #3 Duplicate-binding diagnostics still warn BINDING_SHARED when a second sibling shares that same infrastructure address, when an indirect descendant shares it, or when non-infrastructure modules share a binding
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Extended Terraform address parsing in containment.ts to recognize depth-1 named nested-block selectors by grammar position (exporting namesInfrastructure) and updated sharedBindings in duplicates.ts to exempt at most one direct child sharing its parent container's infrastructure address (order-independent) while still warning on second siblings, indirect descendants, unrelated modules, and non-infrastructure duplicates. Verified with 109 passing tests (including 25 new tests in packages/model/tests/runtime/check/operations/infrastructure.test.ts), full lint (0 warnings/errors), and type-check.
+<!-- SECTION:FINAL_SUMMARY:END -->
