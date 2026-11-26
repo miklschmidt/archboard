@@ -213,7 +213,7 @@ function CodexAuthSection(props: CodexAuthSectionProps): JSX.Element {
 							{summary.email !== undefined && (
 								<>
 									{" "}
-									<HiddenEmail email={summary.email} />
+									<HiddenEmail key={summary.email} email={summary.email} />
 								</>
 							)}
 						</span>
