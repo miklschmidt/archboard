@@ -479,8 +479,7 @@ function isInfrastructureAddress(parsed: ParsedTerraformAddress): boolean {
  */
 function formatSegment(segment: AddressSegment): string {
 	if (segment.key === undefined) return segment.name;
-	const key =
-		segment.key.kind === "numeric" ? segment.key.raw : JSON.stringify(segment.key.value);
+	const key = segment.key.kind === "numeric" ? segment.key.raw : JSON.stringify(segment.key.value);
 	return `${segment.name}[${key}]`;
 }
 
