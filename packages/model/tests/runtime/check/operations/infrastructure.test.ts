@@ -342,12 +342,6 @@ describe("BINDING_SHARED single-direct-child infrastructure exception", () => {
 		expect(sameInfrastructureBinding(canonical, escaped)).toBe(true);
 		expect(
 			sameInfrastructureBinding(
-				at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener["café"]'),
-				at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener["cafe\u0301"]'),
-			),
-		).toBe(true);
-		expect(
-			sameInfrastructureBinding(
 				at("infra/main.tf", "azurerm_application_gateway.café"),
 				at("infra/main.tf", "azurerm_application_gateway.cafe\u0301"),
 			),

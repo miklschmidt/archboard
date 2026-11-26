@@ -63,7 +63,7 @@ function namesInfrastructure(binding: Binding): boolean {
 	const { symbol } = binding;
 	if (symbol === undefined) return false;
 	const path = pathOf(binding);
-	if (/\.ya?ml$/u.test(path)) {
+	if (!binding.path.endsWith("/") && /\.ya?ml$/u.test(path)) {
 		const compose = /^(docker-)?compose(\.override)?\.ya?ml$/u.test(posix.basename(path));
 		return (
 			/^[A-Z][A-Za-z0-9]*\/[^/]+$/u.test(symbol) || (compose && /^services\.[\w.-]+$/u.test(symbol))

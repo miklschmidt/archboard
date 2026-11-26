@@ -2,7 +2,7 @@
 // (ADR 0046, TASK-682): cross-root qualified join isolation, plan-only
 // resource anchors not passing as source definitions, whole-resource reference
 // anchors still warning ANCHOR_MISMATCH while preserving browser use lines,
-// HCL heredoc tab/CRLF/whitespace-only fidelity, and NFC string normalization.
+// same-name distinct block types, and empty-name duplicate handling.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -60,29 +60,6 @@ const INFRA_MAIN_TF = [
 	'    name = "device"',
 	"  }",
 	"  http_listener {",
-	'    name = "café"',
-	"  }",
-	"  http_listener {",
-	'    name = "cafe\u0301"',
-	"  }",
-	"  http_listener {",
-	"    name = <<-EOF",
-	"\t\tdevice-tab",
-	"    ",
-	"\t\t  more",
-	"    EOF",
-	"  }",
-	"  http_listener {",
-	"    name = <<-EOF",
-	"\u0085nel-stripped",
-	"    EOF",
-	"  }",
-	"  http_listener {",
-	"    name = <<-EOF",
-	"\ufeffbom-kept",
-	"    EOF",
-	"  }",
-	"  http_listener {",
 	'    name = ""',
 	"  }",
 	"  frontend_port {",
@@ -93,20 +70,6 @@ const INFRA_MAIN_TF = [
 	"  }",
 	"}",
 ].join("\n");
-
-// CRLF heredoc file to verify CRLF endings and whitespace-only lines are preserved verbatim.
-const INFRA_CRLF_TF = [
-	'resource "azurerm_application_gateway" "crlf" {',
-	'  name = "crlf"',
-	"  http_listener {",
-	"    name = <<-EOF",
-	"      first",
-	"    ",
-	"      second",
-	"    EOF",
-	"  }",
-	"}",
-].join("\r\n");
 
 const INFRA_CONSUMER_TF = [
 	'resource "azurerm_log_analytics_workspace" "logs" {',
@@ -167,7 +130,6 @@ beforeAll(async () => {
 		"root-b/main.tf": ROOT_B_TF,
 		"mod/main.tf": MOD_TF,
 		"infra/main.tf": INFRA_MAIN_TF,
-		"infra/crlf.tf": INFRA_CRLF_TF,
 		"infra/consumer.tf": INFRA_CONSUMER_TF,
 	});
 	symlinkSync("main.tf", join(repoDir, "infra", "alias.tf"));
@@ -213,34 +175,6 @@ beforeAll(async () => {
 						"GwBox",
 					),
 					node(
-						"GwNfc",
-						"GW NFC dup",
-						"infra/main.tf",
-						'azurerm_application_gateway.gw.http_listener["café"]',
-						"GwBox",
-					),
-					node(
-						"GwTab",
-						"GW tab heredoc",
-						"infra/main.tf",
-						'azurerm_application_gateway.gw.http_listener["device-tab\\n    \\n  more\\n"]',
-						"GwBox",
-					),
-					node(
-						"GwNel",
-						"GW NEL heredoc",
-						"infra/main.tf",
-						'azurerm_application_gateway.gw.http_listener["nel-stripped\\n"]',
-						"GwBox",
-					),
-					node(
-						"GwBom",
-						"GW BOM heredoc",
-						"infra/main.tf",
-						'azurerm_application_gateway.gw.http_listener["\ufeffbom-kept\\n"]',
-						"GwBox",
-					),
-					node(
 						"GwEmp",
 						"GW empty unique",
 						"infra/main.tf",
@@ -253,12 +187,6 @@ beforeAll(async () => {
 						"infra/main.tf",
 						'azurerm_application_gateway.gw.frontend_port[""]',
 						"GwBox",
-					),
-					node(
-						"GwCrlf",
-						"GW CRLF heredoc",
-						"infra/crlf.tf",
-						'azurerm_application_gateway.crlf.http_listener["first\\r\\n    \\r\\nsecond\\r\\n"]',
 					),
 				],
 				edges: [
@@ -462,19 +390,13 @@ test("R3 #1: judgeTerraformDeclaration refuses to borrow a join from another roo
 	expect(verdict).toBe("outside");
 });
 
-test("R3 #5, #6 & R4 #1, #4, #5: cross-root evidence stays isolated, heredocs match HCL White_Space/tabs/CRLF, NFC and empty-name duplicates warn, unique empty name resolves", () => {
+test("R3 #5 & R4 #5: cross-root evidence stays isolated, same-name distinct block types resolve, and empty-name uniqueness/duplicates behave consistently", () => {
 	expect(
 		outcome.findings.filter((f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "IpB"),
 	).toEqual([]);
 	expect(findingsFor("GwLst")).toEqual([]);
 	expect(findingsFor("GwPool")).toEqual([]);
-	expect(findingsFor("GwTab")).toEqual([]);
-	expect(findingsFor("GwNel")).toEqual([]);
-	expect(findingsFor("GwBom")).toEqual([]);
 	expect(findingsFor("GwEmp")).toEqual([]);
-	expect(findingsFor("GwCrlf")).toEqual([]);
-	expect(findingsFor("GwNfc").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
-	expect(findingsFor("GwNfc")[0]?.message).toContain("ambiguous");
 	expect(findingsFor("GwEmpD").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
 	expect(findingsFor("GwEmpD")[0]?.message).toContain("ambiguous");
 });

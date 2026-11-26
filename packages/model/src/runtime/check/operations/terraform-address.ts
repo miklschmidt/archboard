@@ -379,7 +379,7 @@ function parseNestedBlock(
 	if (block.key?.kind !== "string") return undefined;
 	const nested: NestedBlockSelector = {
 		blockType: block.name,
-		name: block.key.value.normalize("NFC"),
+		name: block.key.value,
 	};
 	const address = `${declaration}.${nested.blockType}[${JSON.stringify(nested.name)}]`;
 	return { address, modules, kind: "block", declaration, resourceType, nested };
@@ -480,9 +480,7 @@ function isInfrastructureAddress(parsed: ParsedTerraformAddress): boolean {
 function formatSegment(segment: AddressSegment): string {
 	if (segment.key === undefined) return segment.name;
 	const key =
-		segment.key.kind === "numeric"
-			? segment.key.raw
-			: JSON.stringify(segment.key.value.normalize("NFC"));
+		segment.key.kind === "numeric" ? segment.key.raw : JSON.stringify(segment.key.value);
 	return `${segment.name}[${key}]`;
 }
 
@@ -511,6 +509,78 @@ function declarationAddress(symbol: string): string {
 	return parseTerraformAddress(symbol)?.address ?? symbol;
 }
 
+/**
+ * Read one or more consecutive bracket keys (`[0]`, `["a"]`) cleanly to the end of `text`.
+ * @param text The address string.
+ * @param start Index of the first `[`.
+ * @returns True when at least one valid bracket key runs to `text.length`.
+ */
+function hasTrailingKeys(text: string, start: number): boolean {
+	if (text[start] !== "[") return false;
+	let at = start;
+	while (at < text.length) {
+		if (text[at] !== "[") return false;
+		const keyed = readKey(text, at);
+		if (keyed === undefined) return false;
+		at = keyed.next;
+	}
+	return true;
+}
+
+/**
+ * Read a leading `module.<name>.` pair (with optional instance key on `<name>`).
+ * @param text The address string.
+ * @param start Index where `module.` should begin.
+ * @returns The module name and index after the trailing `.`, or undefined.
+ */
+function readModulePair(
+	text: string,
+	start: number,
+): { readonly name: string; readonly next: number } | undefined {
+	if (!text.startsWith("module.", start)) return undefined;
+	const mod = readSegment(text, start + "module.".length);
+	if (mod === undefined || text[mod.next] !== ".") return undefined;
+	return { name: mod.segment.name, next: mod.next + 1 };
+}
+
+/**
+ * Read a trailing indexed output segment (`<ident>[...][...]*`) to the end of `text`.
+ * @param text The address string.
+ * @param start Index where the output identifier begins.
+ * @returns The output identifier, or undefined when not an indexed output running to end.
+ */
+function readIndexedOutput(text: string, start: number): string | undefined {
+	const match = IDENT_PREFIX.exec(text.slice(start));
+	if (match === null) return undefined;
+	const [name] = match;
+	return hasTrailingKeys(text, start + name.length) ? name : undefined;
+}
+
+/**
+ * Normalize an indexed module-output reference such as
+ * `module.api[0].endpoint["blue"]` or `module.api[0].endpoint["blue"][0]` to
+ * the canonical reference spelling `module.api.endpoint`. Returns undefined for
+ * non-module addresses, unindexed outputs (handled by `parseTerraformAddress`),
+ * and multi-segment resource or nested-block addresses.
+ * @param symbol The anchor or reference spelling.
+ * @returns The normalized `module.<name>.<output>` reference address, or undefined.
+ */
+function moduleOutputReferenceAddress(symbol: string): string | undefined {
+	const prefix: string[] = [];
+	let at = 0;
+	for (
+		let pair = readModulePair(symbol, at);
+		pair !== undefined;
+		pair = readModulePair(symbol, at)
+	) {
+		prefix.push(`module.${pair.name}`);
+		at = pair.next;
+	}
+	if (prefix.length === 0) return undefined;
+	const output = readIndexedOutput(symbol, at);
+	return output === undefined ? undefined : `${prefix.join(".")}.${output}`;
+}
+
 export {
 	type NestedBlockSelector,
 	type ParsedTerraformAddress,
@@ -518,6 +588,7 @@ export {
 	declarationAddress,
 	decodeHclString,
 	isInfrastructureAddress,
+	moduleOutputReferenceAddress,
 	parseTerraformAddress,
 	splitAddressSegments,
 };

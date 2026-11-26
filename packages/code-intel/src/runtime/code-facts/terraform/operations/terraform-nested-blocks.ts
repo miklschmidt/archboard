@@ -89,113 +89,6 @@ function unwrapExpression(node: Node | undefined): Node | undefined {
 }
 
 /**
- * Split text into lines while preserving each line's original line ending (`\n` or `\r\n`).
- * @param text The raw text.
- * @returns The lines, each ending with its original newline sequence if present.
- */
-function splitLinesPreservingEndings(text: string): string[] {
-	const lines: string[] = [];
-	let start = 0;
-	for (let index = 0; index < text.length; index += 1) {
-		if (text[index] === "\n") {
-			lines.push(text.slice(start, index + 1));
-			start = index + 1;
-		}
-	}
-	if (start < text.length) lines.push(text.slice(start));
-	return lines;
-}
-
-/** Extended grapheme cluster segmenter matching HCL's `textseg.TokenGraphemeClusters`. */
-const GRAPHEME_SEGMENTER = new Intl.Segmenter("en", { granularity: "grapheme" });
-
-/**
- * Count leading Unicode whitespace code points on one heredoc line and report
- * whether the entire line is whitespace-only, matching HCL's flush-heredoc
- * `countIndent` (which inspects `unicode.IsSpace` runes before trimming
- * grapheme clusters).
- * @param content The line without its trailing newline.
- * @returns Leading whitespace code-point count and blankness flag.
- */
-function heredocLineIndent(content: string): { readonly indent: number; readonly blank: boolean } {
-	let indent = 0;
-	for (const cp of content) {
-		if (!/\p{White_Space}/u.test(cp)) return { indent, blank: false };
-		indent += 1;
-	}
-	return { indent, blank: true };
-}
-
-/**
- * Split one heredoc body line into its grapheme clusters before the newline
- * ending, its leading whitespace code-point count, whether it is whitespace-only,
- * and its original trailing newline sequence.
- * @param line One line, including its trailing newline.
- * @returns Segmented line info for HCL flush-heredoc indentation stripping.
- */
-function segmentHeredocLine(line: string): {
-	readonly clusters: readonly string[];
-	readonly ending: string;
-	readonly indent: number;
-	readonly blank: boolean;
-} {
-	const match = /\r?\n$/u.exec(line);
-	const ending = match ? match[0] : "";
-	const content = line.slice(0, line.length - ending.length);
-	const clusters = Array.from(GRAPHEME_SEGMENTER.segment(content), ({ segment }) => segment);
-	const { indent, blank } = heredocLineIndent(content);
-	return { clusters, ending, indent, blank };
-}
-
-/**
- * Minimum leading whitespace grapheme count across non-blank heredoc lines.
- * @param segmented The segmented heredoc lines.
- * @returns The minimum indent, or 0 when no non-blank lines have leading whitespace.
- */
-function minHeredocIndent(segmented: readonly ReturnType<typeof segmentHeredocLine>[]): number {
-	let min = Number.POSITIVE_INFINITY;
-	for (const each of segmented) {
-		if (!each.blank && each.indent < min) min = each.indent;
-	}
-	return Number.isFinite(min) ? min : 0;
-}
-
-/**
- * Strip the minimum common leading whitespace grapheme clusters from non-blank
- * lines of an indented HCL heredoc (`<<-`), preserving whitespace-only lines
- * and original line endings verbatim.
- * @param lines The raw body lines between opening and closing markers.
- * @returns The dedented lines.
- */
-function stripHeredocIndent(lines: readonly string[]): string[] {
-	const segmented = lines.map(segmentHeredocLine);
-	const min = minHeredocIndent(segmented);
-	if (min === 0) return [...lines];
-	return segmented.map((each, index) =>
-		each.blank ? (lines[index] ?? "") : `${each.clusters.slice(min).join("")}${each.ending}`,
-	);
-}
-
-/**
- * Decode an interpolation-free HCL heredoc template (`<<EOF` or `<<-EOF`),
- * applying HCL indentation stripping for `<<-`, preserving original line
- * endings and trailing newline, and unescaping `$${` / `%%{` template escapes
- * without touching backslashes.
- * @param heredoc The `heredoc_template` node.
- * @returns The decoded string, or undefined when dynamic or malformed.
- */
-function heredocLiteralValue(heredoc: Node): string | undefined {
-	if (hasDynamicTemplate(heredoc)) return undefined;
-	const lines = splitLinesPreservingEndings(heredoc.text);
-	if (lines.length < 2) return undefined;
-	const header = lines[0] ?? "";
-	const bodyLines = lines.slice(1, -1);
-	if (bodyLines.length === 0) return "";
-	const dedented = header.startsWith("<<-") ? stripHeredocIndent(bodyLines) : bodyLines;
-	return dedented.join("").replaceAll("$${", "${").replaceAll("%%{", "%{");
-}
-
-/**
  * Decode a double-quoted `literal_value` node when it holds no dynamic template.
  * @param literal The `literal_value` node.
  * @returns The decoded string, or undefined.
@@ -207,31 +100,15 @@ function quotedLiteralValue(literal: Node): string | undefined {
 }
 
 /**
- * Decode a `template_expr` node when it is an interpolation-free heredoc.
- * @param template The `template_expr` node.
- * @returns The decoded heredoc string, or undefined.
- */
-function templateLiteralValue(template: Node): string | undefined {
-	const heredoc = onlyChild(template, "template_expr");
-	return heredoc?.type === "heredoc_template" ? heredocLiteralValue(heredoc) : undefined;
-}
-
-/**
- * The NFC-normalized unescaped string value of a plain literal HCL string or
- * interpolation-free heredoc expression (including parenthesized wrappers),
- * matching cty/HCL string normalization while rejecting dynamic templates.
+ * The unescaped string value of a plain quoted literal HCL string (including
+ * parenthesized wrappers), rejecting dynamic templates and heredocs so
+ * non-plain-string names are treated as computed (`expression-not-followed`).
  * @param expression The expression node.
- * @returns The NFC-normalized literal string, or undefined when not a plain literal.
+ * @returns The literal string, or undefined when not a plain quoted string literal.
  */
 function literalStringValue(expression: Node | undefined): string | undefined {
 	const inner = onlyChild(unwrapExpression(expression), "expression");
-	const raw =
-		inner?.type === "literal_value"
-			? quotedLiteralValue(inner)
-			: inner?.type === "template_expr"
-				? templateLiteralValue(inner)
-				: undefined;
-	return raw?.normalize("NFC");
+	return inner?.type === "literal_value" ? quotedLiteralValue(inner) : undefined;
 }
 
 /**

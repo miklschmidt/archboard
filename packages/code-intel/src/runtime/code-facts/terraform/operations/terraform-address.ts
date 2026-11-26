@@ -11,6 +11,7 @@ import {
 	type ParsedTerraformAddress,
 	declarationAddress,
 	decodeHclString,
+	moduleOutputReferenceAddress,
 	parseTerraformAddress,
 	splitAddressSegments,
 } from "@archboard/model/vault-policy";
@@ -74,6 +75,7 @@ export {
 	declarationAddress,
 	decodeHclString,
 	isTerraformFile,
+	moduleOutputReferenceAddress,
 	namesOf,
 	parseTerraformAddress,
 	splitAddressSegments,

@@ -24,6 +24,7 @@ import type {
 	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
 import {
+	moduleOutputReferenceAddress,
 	parseTerraformAddress,
 	type ParsedTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
@@ -216,6 +217,23 @@ function terraformNotFound(facts: SyntaxFacts, parsed: ParsedTerraformAddress): 
 }
 
 /**
+ * Match an indexed module-output reference anchor such as
+ * `module.api[0].endpoint["blue"]` against the file's normalized
+ * `module.api.endpoint` references without loosening binding or nested-block grammar.
+ * @param facts The file's facts.
+ * @param symbol The anchor symbol.
+ * @returns Where the reference was found, unparsed, or absent.
+ */
+function indexedModuleOutputFound(facts: SyntaxFacts, symbol: string): Found {
+	const address = moduleOutputReferenceAddress(symbol);
+	if (address === undefined) return { status: "absent" };
+	const used = facts.references.find((each) => each.symbol === address);
+	return used === undefined
+		? notFound(facts.unparsed, address)
+		: { status: "found", line: used.line };
+}
+
+/**
  * What a Terraform file holds of an address: the declaration, or with
  * `definition-or-reference` a reference too, matched whole.
  * @param facts The file's facts.
@@ -225,7 +243,9 @@ function terraformNotFound(facts: SyntaxFacts, parsed: ParsedTerraformAddress): 
  */
 function addressFound(facts: SyntaxFacts, symbol: string, accept: Accept): Found {
 	const parsed = parseTerraformAddress(symbol);
-	if (parsed === undefined) return { status: "absent" };
+	if (parsed === undefined) {
+		return accept === "definition" ? { status: "absent" } : indexedModuleOutputFound(facts, symbol);
+	}
 	const { address } = parsed;
 	const declared = facts.definitions.find((each) => each.symbol === address);
 	if (declared !== undefined)

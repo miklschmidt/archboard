@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
@@ -139,221 +139,36 @@ describe("open code at the bound symbol", () => {
 		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
 	});
 
-	test("opens a Terraform local-module nested block at the module file and line from root directory or root file bindings", async () => {
+	test("opens a file-bound Terraform nested block at its defining line", async () => {
 		await using resources = new AsyncDisposableStack();
 		const { fixture, invocation } = await openerAtLine(resources);
-		mkdirSync(join(fixture.checkout, "infra", "gw"), { recursive: true });
 		writeFileSync(
-			join(fixture.checkout, "infra", "main.tf"),
-			`module "gw" {\n  count  = 1\n  source = "./gw"\n}\n`,
-		);
-		writeFileSync(
-			join(fixture.checkout, "infra", "gw", "main.tf"),
-			`resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n`,
-		);
-		const symbol = 'module.gw[0].azurerm_application_gateway.ingress.http_listener["device"]';
-
-		fixture.writeBinding({ repo: REPOSITORY, path: "infra", symbol });
-		const dirOpened = await open(fixture);
-		expect(dirOpened.status).toBe(200);
-		expect(CodeTargetOpenReplySchema.parse(dirOpened.body)).toMatchObject({
-			success: true,
-			path: "infra/gw/main.tf",
-			kind: "file",
-		});
-		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/gw/main.tf"),
-			extra: ["--at=2"],
-		});
-
-		fixture.writeBinding({ repo: REPOSITORY, path: "infra/main.tf", symbol });
-		const fileOpened = await open(fixture);
-		expect(fileOpened.status).toBe(200);
-		expect(CodeTargetOpenReplySchema.parse(fileOpened.body)).toMatchObject({
-			success: true,
-			path: "infra/gw/main.tf",
-			kind: "file",
-		});
-		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/gw/main.tf"),
-			extra: ["--at=2"],
-		});
-	});
-
-	test("excludes Git-ignored Terraform local modules and uses the resolved module path in the GitHub fallback", async () => {
-		await using resources = new AsyncDisposableStack();
-		const { fixture, invocation } = await openerAtLine(resources);
-		mkdirSync(join(fixture.checkout, "infra", "gw"), { recursive: true });
-		mkdirSync(join(fixture.checkout, "infra", "ignored"), { recursive: true });
-		writeFileSync(join(fixture.checkout, ".gitignore"), "infra/ignored/\n");
-		writeFileSync(
-			join(fixture.checkout, "infra", "main.tf"),
+			join(fixture.checkout, "main.tf"),
 			[
-				'module "gw" {',
-				"  count  = 1",
-				'  source = "./gw"',
+				'resource "azurerm_application_gateway" "ingress" {',
+				'  name = "ingress"',
+				"  http_listener {",
+				'    name = "device"',
+				"  }",
 				"}",
-				'module "hidden" {',
-				'  source = "./ignored"',
-				"}",
+				"",
 			].join("\n"),
 		);
-		writeFileSync(
-			join(fixture.checkout, "infra", "gw", "main.tf"),
-			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n',
-		);
-		writeFileSync(
-			join(fixture.checkout, "infra", "ignored", "secret.tf"),
-			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "secret"\n  }\n}\n',
-		);
-
-		// R2 #3: Git-ignored local module must not resolve or open ignored/secret.tf.
 		fixture.writeBinding({
 			repo: REPOSITORY,
-			path: "infra/main.tf",
-			symbol: 'module.hidden.azurerm_application_gateway.ingress.http_listener["secret"]',
-		});
-		expect((await open(fixture)).status).toBe(200);
-		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/main.tf"),
-			extra: ["--at=1"],
-		});
-
-		// R2 #5: Unavailable editor falls back to GitHub using the resolved child module file + line and binding ref.
-		for (const args of [
-			["checkout", "-q", "-b", "work"],
-			["add", ".gitignore", "infra/main.tf", "infra/gw/main.tf"],
-			["commit", "-q", "--no-gpg-sign", "-m", "infra"],
-		]) {
-			const run = Bun.spawnSync(
-				["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
-				{ cwd: fixture.checkout },
-			);
-			expect(run.exitCode).toBe(0);
-		}
-		const missing = {
-			version: 1,
-			kind: "custom",
-			executable: join(fixture.root, "no-such-editor"),
-			argv: ["{path}"],
-		};
-		expect(
-			(await fixture.request("/api/settings/opener", { method: "PUT", body: jsonBody(missing) }))
-				.status,
-		).toBe(200);
-		fixture.writeBinding({
-			repo: REPOSITORY,
-			path: "infra/main.tf",
-			branch: "work",
-			symbol: 'module.gw[0].azurerm_application_gateway.ingress.http_listener["device"]',
-		});
-		const unavailable = await open(fixture);
-		expect(unavailable.status).toBe(422);
-		expect(CodeTargetOpenReplySchema.parse(unavailable.body)).toMatchObject({
-			code: "OPENER_UNAVAILABLE",
-			actions: [
-				{ kind: "settings" },
-				{
-					kind: "github",
-					href: "https://github.com/acme/payments/blob/work/infra/gw/main.tf#L2",
-				},
-			],
-		});
-	});
-
-	test("does not parse a directly bound Git-ignored Terraform file for a symbol line", async () => {
-		await using resources = new AsyncDisposableStack();
-		const { fixture, invocation } = await openerAtLine(resources);
-		mkdirSync(join(fixture.checkout, "infra", "ignored"), { recursive: true });
-		writeFileSync(join(fixture.checkout, ".gitignore"), "infra/ignored/\n");
-		writeFileSync(
-			join(fixture.checkout, "infra", "ignored", "secret.tf"),
-			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "secret"\n  }\n}\n',
-		);
-		fixture.writeBinding({
-			repo: REPOSITORY,
-			path: "infra/ignored/secret.tf",
-			symbol: 'azurerm_application_gateway.ingress.http_listener["secret"]',
-		});
-		expect((await open(fixture)).status).toBe(200);
-		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/ignored/secret.tf"),
-			extra: ["--at=1"],
-		});
-	});
-
-	test("ignores a stale tracked .tf path replaced by a directory in the working tree", async () => {
-		await using resources = new AsyncDisposableStack();
-		const { fixture, invocation } = await openerAtLine(resources);
-		mkdirSync(join(fixture.checkout, "infra", "gw"), { recursive: true });
-		writeFileSync(
-			join(fixture.checkout, "infra", "old.tf"),
-			'resource "azurerm_resource_group" "old" {\n  name = "old"\n}\n',
-		);
-		writeFileSync(
-			join(fixture.checkout, "infra", "main.tf"),
-			'module "gw" {\n  count  = 1\n  source = "./gw"\n}\n',
-		);
-		writeFileSync(
-			join(fixture.checkout, "infra", "gw", "main.tf"),
-			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n',
-		);
-		for (const args of [
-			["add", "infra"],
-			["commit", "-q", "--no-gpg-sign", "-m", "commit old.tf"],
-		]) {
-			const run = Bun.spawnSync(
-				["git", "-c", "user.name=t", "-c", "user.email=t@example.com", ...args],
-				{ cwd: fixture.checkout },
-			);
-			expect(run.exitCode).toBe(0);
-		}
-		// Replace committed infra/old.tf with a directory in the working tree.
-		const oldPath = join(fixture.checkout, "infra", "old.tf");
-		(await import("node:fs")).unlinkSync(oldPath);
-		mkdirSync(oldPath);
-
-		fixture.writeBinding({
-			repo: REPOSITORY,
-			path: "infra",
-			symbol: 'module.gw[0].azurerm_application_gateway.ingress.http_listener["device"]',
-		});
-		const reply = await open(fixture);
-		expect(reply.status).toBe(200);
-		expect(CodeTargetOpenReplySchema.parse(reply.body)).toMatchObject({
-			success: true,
-			path: "infra/gw/main.tf",
-			kind: "file",
-		});
-		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/gw/main.tf"),
-			extra: ["--at=2"],
-		});
-	});
-
-	test("resolves a Terraform nested block in a file whose name starts with double dots", async () => {
-		await using resources = new AsyncDisposableStack();
-		const { fixture, invocation } = await openerAtLine(resources);
-		mkdirSync(join(fixture.checkout, "infra"), { recursive: true });
-		writeFileSync(
-			join(fixture.checkout, "infra", "..hidden.tf"),
-			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n',
-		);
-		fixture.writeBinding({
-			repo: REPOSITORY,
-			path: "infra",
+			path: "main.tf",
 			symbol: 'azurerm_application_gateway.ingress.http_listener["device"]',
 		});
 		const reply = await open(fixture);
 		expect(reply.status).toBe(200);
 		expect(CodeTargetOpenReplySchema.parse(reply.body)).toMatchObject({
 			success: true,
-			path: "infra/..hidden.tf",
+			path: "main.tf",
 			kind: "file",
 		});
 		expect(await invocation.waitForCapture()).toMatchObject({
-			target: join(fixture.checkout, "infra/..hidden.tf"),
-			extra: ["--at=2"],
+			target: join(fixture.checkout, "main.tf"),
+			extra: ["--at=3"],
 		});
 	});
 });

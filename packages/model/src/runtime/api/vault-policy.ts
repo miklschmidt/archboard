@@ -6,6 +6,7 @@ export {
 	type ParsedTerraformAddress,
 	declarationAddress,
 	decodeHclString,
+	moduleOutputReferenceAddress,
 	parseTerraformAddress,
 	splitAddressSegments,
 } from "#runtime/check/operations/terraform-address.ts";

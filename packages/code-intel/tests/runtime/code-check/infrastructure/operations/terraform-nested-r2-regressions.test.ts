@@ -1,9 +1,9 @@
 // Regressions for sol-loop Round 2 findings on Terraform nested-block bindings
 // (ADR 0046, TASK-682): wrong-module definition anchor rejection, unrelated
 // root-file anchor rejection, distinct instance key ownership preservation,
-// parenthesized and heredoc literal names + duplicate detection, Unicode NFD
-// identifiers, readFileOwners qualified anchor lines, and enclosing-resource
-// ANCHOR_MISMATCH messaging.
+// parenthesized literal names + duplicate detection, heredoc names skipped as
+// expression-not-followed, Unicode NFD identifiers, readFileOwners qualified
+// anchor lines, and enclosing-resource ANCHOR_MISMATCH messaging.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -56,30 +56,11 @@ const MAIN_TF = [
 	'    name = "dup"',
 	"  }",
 	"  http_listener {",
+	'    name = "plain"',
+	"  }",
+	"  http_listener {",
 	"    name = <<-EOF",
 	"      indented",
-	"        nested",
-	"    EOF",
-	"  }",
-	"  http_listener {",
-	"    name = <<EOF",
-	"raw",
-	"EOF",
-	"  }",
-	"  http_listener {",
-	"    name = <<-EOF",
-	"      hello $${world} %%{if}",
-	"    EOF",
-	"  }",
-	"  http_listener {",
-	"    name = (<<-EOF",
-	"      paren-heredoc",
-	"    EOF",
-	"    )",
-	"  }",
-	"  http_listener {",
-	"    name = <<-EOF",
-	"      dyn-${var.env}",
 	"    EOF",
 	"  }",
 	"}",
@@ -215,31 +196,17 @@ beforeAll(async () => {
 						"NfdBox",
 					),
 					node(
-						"NfdInd",
-						"NFD indented",
+						"NfdPlain",
+						"NFD plain",
 						"infra/main.tf",
-						'azurerm_application_gateway.cafe\u0301.http_listener["indented\\n  nested\\n"]',
+						'azurerm_application_gateway.cafe\u0301.http_listener["plain"]',
 						"NfdBox",
 					),
 					node(
-						"NfdRaw",
-						"NFD raw",
+						"NfdHere",
+						"NFD heredoc",
 						"infra/main.tf",
-						'azurerm_application_gateway.cafe\u0301.http_listener["raw\\n"]',
-						"NfdBox",
-					),
-					node(
-						"NfdEsc",
-						"NFD escaped",
-						"infra/main.tf",
-						'azurerm_application_gateway.cafe\u0301.http_listener["hello ${world} %{if}\\n"]',
-						"NfdBox",
-					),
-					node(
-						"NfdPar",
-						"NFD paren heredoc",
-						"infra/main.tf",
-						'azurerm_application_gateway.cafe\u0301.http_listener["paren-heredoc\\n"]',
+						'azurerm_application_gateway.cafe\u0301.http_listener["indented\\n"]',
 						"NfdBox",
 					),
 				],
@@ -281,7 +248,7 @@ beforeAll(async () => {
 					// R2 #9: enclosing-resource anchor with whole-resource child explains enclosing resource.
 					edge(
 						"e6",
-						"NfdRaw",
+						"NfdPlain",
 						"NfdWhole",
 						"infra/main.tf",
 						"azurerm_application_gateway.cafe\u0301",
@@ -325,7 +292,7 @@ test("R2 #1, #2, #9: wrong-module definition anchor, unrelated root-file anchors
 	expect(JSON.stringify(outcome)).not.toContain("r2-secret");
 });
 
-test("R2 #4, #6, #7: distinct instance keys preserve parent evidence, parens/heredocs resolve and detect duplicates, and NFD identifiers parse", () => {
+test("R2 #4, #6, #7: distinct instance keys preserve parent evidence, parenthesized names detect duplicates, heredoc names skip as computed, and NFD identifiers parse", () => {
 	const jobsUndrawn = outcome.findings.filter(
 		(f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "Jobs",
 	);
@@ -335,9 +302,11 @@ test("R2 #4, #6, #7: distinct instance keys preserve parent evidence, parens/her
 	expect(dup?.code).toBe("BINDING_SYMBOL_MISSING");
 	expect(dup?.message).toContain("ambiguous");
 
-	for (const id of ["NfdInd", "NfdRaw", "NfdEsc", "NfdPar"]) {
-		expect(outcome.findings.filter((f) => f.subject?.id === id)).toEqual([]);
-	}
+	expect(findingsFor("NfdPlain")).toEqual([]);
+	expect(findingsFor("NfdHere")).toEqual([]);
+	expect(outcome.skipped.filter((s) => s.subject?.id === "NfdHere").map((s) => s.reason)).toEqual([
+		"expression-not-followed",
+	]);
 });
 
 test("R2 #8: readFileOwners resolves qualified Terraform nested-block anchor lines in local module files", async () => {

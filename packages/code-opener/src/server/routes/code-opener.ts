@@ -25,6 +25,7 @@ import {
 	snapshotCheckoutAccess,
 	type LocalCodeTarget,
 	type LocalCodeTargetResult,
+	type OtherRef,
 } from "@archboard/code-binding/resolution";
 import { githubUrlForBinding } from "#server/projections/github-link.ts";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
@@ -38,8 +39,7 @@ import { resolveInVault } from "#server/projections/resolve-target.ts";
 import { parseActivationRequest } from "#server/projections/activation-request.ts";
 import { canonicalModelTarget } from "#server/projections/model-target.ts";
 import { requestedPathBinding } from "#server/projections/named-path.ts";
-import { isBodyParserFailure, statusFor } from "#server/projections/route-status.ts";
-import { symbolLocation } from "@archboard/code-intel/code-facts";
+import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
 	validateOpenerSelection,
@@ -49,17 +49,43 @@ import {
 
 type BindingLookup =
 	| { ok: true; binding: CodeBinding }
-	| { ok: false; code: "BINDING_UNAVAILABLE"; error: string };
+	| {
+			ok: false;
+			code: "BINDING_UNAVAILABLE";
+			error: string;
+	  };
 
 interface RouteFailure {
 	code: CodeTargetFailureCode;
 	error: string;
 }
 
+const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
+	"charset.unsupported",
+	"encoding.unsupported",
+	"entity.parse.failed",
+	"entity.too.large",
+	"entity.verify.failed",
+	"request.aborted",
+	"request.size.invalid",
+	"stream.encoding.set",
+	"stream.not.readable",
+]);
+
+/** HTTP statuses for the failure codes that are not a plain 422 refusal. */
+const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
+	CROSS_ORIGIN_REFUSED: 403,
+	MODEL_UNAVAILABLE: 404,
+	CHECKOUT_IDENTITY_CHANGED: 409,
+	CHECKOUT_ON_OTHER_REF: 409,
+	OPENER_SPAWN_FAILED: 500,
+	OPENER_CONFIG_INVALID: 500,
+};
+
 /**
  * Hands the request to the next handler; the preguard only refuses, it never answers a success.
- * @param _request Unused.
- * @param _response Unused.
+ * @param _request The request, unused here.
+ * @param _response The response, unused here.
  * @param next Continues to the Archboard server's own handler.
  */
 const pass: RequestHandler = (_request, _response, next) => {
@@ -112,27 +138,27 @@ function canonicalBinding(_vault: string, _paneKey: string, _subjectId: string):
 
 const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {
 	/**
-	 * Resolves a binding against a fresh checkout snapshot.
+	 * Resolves a binding against a fresh checkout snapshot limited to that binding.
 	 * @param binding The code binding to resolve.
-	 * @param signal Cancels the snapshot when abandoned.
+	 * @param signal Cancels the snapshot when the request is abandoned.
 	 * @param vault The vault the binding was read from.
-	 * @returns The local code target, or why it failed.
+	 * @returns The local code target, or why it could not be resolved.
 	 */
 	resolveTarget: (binding, signal, vault) => resolveInVault(vault, binding, signal),
 	launch: launchOpener,
 	/**
-	 * Runs checkout work directly.
-	 * @param _request Unused.
-	 * @param _response Unused.
-	 * @param _name Unused.
+	 * Runs checkout work directly; the Archboard server supplies request-scoped scheduling in production.
+	 * @param _request The request, unused here.
+	 * @param _response The response, unused here.
+	 * @param _name The work's name, unused here.
 	 * @param work The checkout work.
 	 * @returns The work's result.
 	 */
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	/**
-	 * Runs mutation work directly.
-	 * @param _request Unused.
-	 * @param _name Unused.
+	 * Runs mutation work directly; the Archboard server supplies request-scoped scheduling in production.
+	 * @param _request The request, unused here.
+	 * @param _name The work's name, unused here.
 	 * @param work The mutation work.
 	 * @returns The work's result.
 	 */
@@ -173,53 +199,6 @@ async function activationTarget(
 }
 
 /**
- * Launch the configured editor at the resolved symbol location or fallback target.
- * @param target The resolved local target.
- * @param launch The injected launcher, if any.
- * @param location Optional symbol file and line.
- * @param fallbackLine Optional fallback line when no symbol line resolved.
- * @returns Launch outcome or opener configuration failure.
- */
-async function launchAtTarget(
-	target: LocalCodeTarget,
-	launch: OpeningDependencies["launch"],
-	location: { readonly target: string; readonly line: number } | undefined,
-	fallbackLine?: number,
-) {
-	const current = readOpenerSelection();
-	if (!current.ok) return current;
-	return openInEditor(current.selection, location?.target ?? target.target, {
-		line: location?.line ?? fallbackLine,
-		launch,
-	});
-}
-
-/**
- * Resolve a bound symbol's working-tree location and launch the editor, or report failure.
- * @param binding The resolved binding.
- * @param target The local checkout target.
- * @param signal Cancels location lookup when abandoned.
- * @param response The response to write.
- * @param launch The injected launcher, if any.
- * @returns Once the response is written.
- */
-async function launchBoundTarget(
-	binding: CodeBinding,
-	target: LocalCodeTarget,
-	signal: AbortSignal,
-	response: Response,
-	launch: OpeningDependencies["launch"],
-): Promise<void> {
-	const location = await symbolLocation(binding, target, signal);
-	const launched = await launchAtTarget(target, launch, location);
-	if (!launched.ok) {
-		const fallback = location ? { ...binding, path: location.relativePath } : binding;
-		return sendFailure(response, launched, statusFor(launched.code), fallback, location?.line);
-	}
-	response.json(openedReply(target, location));
-}
-
-/**
  * Opens the code a node or a module is bound to, at the line that defines its symbol.
  * @param request The legacy board or canonical module address.
  * @param vault The explicitly addressed vault.
@@ -236,13 +215,25 @@ async function openBound(
 	dependencies: OpeningDependencies,
 ): Promise<void> {
 	const found = await activationTarget(request, vault, signal, dependencies);
-	if (!found.ok) {
-		const binding = "binding" in found ? found.binding : undefined;
-		return sendFailure(response, found, undefined, binding);
-	}
+	if (!found.ok)
+		return sendFailure(response, found, undefined, "binding" in found ? found.binding : undefined);
 	const opening = openable(found.target, found.binding);
 	if (!opening.ok) return sendFailure(response, opening.failure, opening.status, found.binding);
-	await launchBoundTarget(found.binding, opening.target, signal, response, dependencies.launch);
+	const { target } = opening;
+	// The line is read from the working tree. A checkout on another ref than the binding pins
+	// was refused above, so the link names the line only where the checkout is on the pinned
+	// ref or the binding pins none (its link is GitHub's default branch).
+	const line = await symbolLine(found.binding, target, signal);
+	const current = readOpenerSelection();
+	if (!current.ok)
+		return sendFailure(response, current, statusFor(current.code), found.binding, line);
+	const launched = await openInEditor(current.selection, target.target, {
+		line,
+		launch: dependencies.launch,
+	});
+	if (!launched.ok)
+		return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
+	response.json(openedReply(target));
 }
 
 /**
@@ -266,10 +257,14 @@ async function openNamedPath(
 	if (!named.ok) return sendFailure(response, named);
 	const target = await dependencies.resolveTarget(named.binding, signal, vault);
 	if (!target.ok) return sendFailure(response, target);
-	const location = await symbolLocation(named.binding, target, signal);
-	const launched = await launchAtTarget(target, dependencies.launch, location, request.line);
+	const current = readOpenerSelection();
+	if (!current.ok) return sendFailure(response, current);
+	const launched = await openInEditor(current.selection, target.target, {
+		line: (await symbolLine(named.binding, target, signal)) ?? request.line,
+		launch: dependencies.launch,
+	});
 	if (!launched.ok) return sendFailure(response, launched);
-	response.json(openedReply(target, location));
+	response.json(openedReply(target));
 }
 
 /**
@@ -283,6 +278,15 @@ function asyncEndpoint(
 	return (request, response, next) => {
 		void handler(request, response).catch((error) => setImmediate(next, error));
 	};
+}
+
+/**
+ * Maps a failure code to the HTTP status a route answers with.
+ * @param code The failure code.
+ * @returns The status; refusals without a specific status are 422.
+ */
+function statusFor(code: CodeTargetFailureCode): number {
+	return FAILURE_STATUSES[code] ?? 422;
 }
 
 /**
@@ -334,38 +338,53 @@ function openable(
 	}
 	const { otherRef } = target;
 	if (otherRef !== undefined && githubUrlForBinding(binding) !== undefined) {
-		return {
-			ok: false,
-			failure: {
-				code: "CHECKOUT_ON_OTHER_REF",
-				error: `The checkout of ${target.repository} is on ${otherRef.checkedOut}, and this binding names ${otherRef.named}.`,
-			},
-			status: 409,
-		};
+		return { ok: false, failure: otherRefFailure(target.repository, otherRef), status: 409 };
 	}
 	return { ok: true, target };
-}
-
-/** Resolved file location returned by `symbolLocation`. */
-interface OpenedLocation {
-	readonly relativePath: string;
 }
 
 /**
  * What the browser is told about code that was opened.
  * @param target The local target that was opened.
- * @param location Optional resolved symbol file location.
  * @returns The success reply, with the two refs when the checkout was on another one.
  */
-function openedReply(target: LocalCodeTarget, location?: OpenedLocation): CodeTargetOpenSuccess {
+function openedReply(target: LocalCodeTarget): CodeTargetOpenSuccess {
 	return {
 		success: true,
 		code: "CODE_TARGET_OPENED",
 		repository: target.repository,
-		path: location?.relativePath ?? target.path,
-		kind: location ? "file" : target.kind,
+		path: target.path,
+		kind: target.kind,
 		...(target.otherRef === undefined ? {} : { otherRef: target.otherRef }),
 	};
+}
+
+/**
+ * The refusal for a local target whose checkout is on another ref than the binding names.
+ * @param repository The repository the checkout is of.
+ * @param otherRef The ref the binding names and the one the checkout has out.
+ * @returns The failure the person is shown, with both refs.
+ */
+function otherRefFailure(repository: string, otherRef: OtherRef): RouteFailure {
+	return {
+		code: "CHECKOUT_ON_OTHER_REF",
+		error: `The checkout of ${repository} is on ${otherRef.checkedOut}, and this binding names ${otherRef.named}.`,
+	};
+}
+
+/**
+ * Tells whether a thrown value is one of the body parser's own failures.
+ * @param error The value the body parser passed to the error pipeline.
+ * @returns True when the error's type is a known body-parser failure.
+ */
+function isBodyParserFailure(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"type" in error &&
+		typeof error.type === "string" &&
+		BODY_PARSER_FAILURES.has(error.type)
+	);
 }
 
 /**
@@ -374,7 +393,10 @@ function openedReply(target: LocalCodeTarget, location?: OpenedLocation): CodeTa
  */
 function bodyFailure(): ErrorRequestHandler {
 	return (error, _request, response, next) => {
-		if (!isBodyParserFailure(error)) return next(error);
+		if (!isBodyParserFailure(error)) {
+			next(error);
+			return;
+		}
 		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
 	};
 }
@@ -405,7 +427,18 @@ export function createCodeOpenerPreguard(): Router {
 	router.delete("/api/settings/opener", createBrowserOriginGuard("mutation"), pass);
 	router.post("/api/settings/opener/test", createBrowserOriginGuard("mutation"), body, pass);
 	router.post("/api/code-targets/open", createBrowserOriginGuard("mutation"), body, pass);
-	return router.use(bodyFailure());
+	router.use(bodyFailure());
+	return router;
+}
+
+/**
+ * The command a selection runs, as the opener settings show it: with `{path}` and
+ * `{line}` where they go, as a custom command is written.
+ * @param selection The opener selection.
+ * @returns The planned command, or why the selection cannot be planned here.
+ */
+function shownCommand(selection: OpenerSelection): OpenerPlan {
+	return planOpenerCommand(selection, PATH_TOKEN, { line: LINE_TOKEN });
 }
 
 /**
@@ -458,17 +491,13 @@ export function createCodeOpenerRouter(
 		asyncEndpoint(async (request, response) => {
 			const current = readOpenerSelection();
 			if (!current.ok) return sendFailure(response, current);
-			const plannedCurrent = planOpenerCommand(current.selection, PATH_TOKEN, { line: LINE_TOKEN });
+			const plannedCurrent = shownCommand(current.selection);
 			const effective = plannedCurrent.ok
 				? resolveOpenerCommand(plannedCurrent.command)
 				: plannedCurrent;
-			const native = planOpenerCommand({ version: 1, kind: "platform" }, PATH_TOKEN, {
-				line: LINE_TOKEN,
-			});
+			const native = shownCommand({ version: 1, kind: "platform" });
 			const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
-				const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, PATH_TOKEN, {
-					line: LINE_TOKEN,
-				});
+				const planned = shownCommand({ version: 1, kind: "preset", preset });
 				if (!planned.ok) throw new Error(planned.error);
 				return { preset, command: planned.command };
 			});
@@ -478,12 +507,15 @@ export function createCodeOpenerRouter(
 				"GET /api/settings/opener checkout snapshot",
 				(signal) => snapshotCheckoutAccess({ vault: null, signal }),
 			);
-			const repositories = snapshot.entries.map((entry) => ({
-				repository: entry.repo,
-				root: entry.root,
-				exists: entry.exists,
-				identityMatches: resolveRegisteredCheckout(entry.repo, snapshot).ok,
-			}));
+			const repositories = snapshot.entries.map((entry) => {
+				const resolved = resolveRegisteredCheckout(entry.repo, snapshot);
+				return {
+					repository: entry.repo,
+					root: entry.root,
+					exists: entry.exists,
+					identityMatches: resolved.ok,
+				};
+			});
 			response.json({
 				success: true,
 				selection: current.selection,
@@ -502,12 +534,13 @@ export function createCodeOpenerRouter(
 		const current = readOpenerSelection();
 		if (!current.ok) return sendFailure(response, current);
 		const parsed = OpenerSelectionSchema.safeParse(request.body);
-		if (!parsed.success)
+		if (!parsed.success) {
 			return sendFailure(
 				response,
 				{ code: "REQUEST_INVALID", error: "The opener selection is invalid." },
 				400,
 			);
+		}
 		const validated = validateOpenerSelection(parsed.data);
 		if ("ok" in validated) return sendFailure(response, validated, 422);
 		const saved = saveOpenerSelection(parsed.data);
@@ -528,12 +561,13 @@ export function createCodeOpenerRouter(
 				const current = readOpenerSelection();
 				if (!current.ok) return sendFailure(response, current);
 				const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
-				if (!parsed.success)
+				if (!parsed.success) {
 					return sendFailure(
 						response,
 						{ code: "REQUEST_INVALID", error: "The opener test is invalid." },
 						400,
 					);
+				}
 				const checkout = resolveRegisteredCheckout(
 					parsed.data.repository,
 					await snapshotCheckoutAccess({ vault: null, signal }),

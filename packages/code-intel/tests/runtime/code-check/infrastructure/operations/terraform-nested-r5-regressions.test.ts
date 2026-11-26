@@ -1,7 +1,7 @@
-// Regressions for sol-loop Round 5 findings on Terraform nested-block bindings
-// (ADR 0046, TASK-682): direction-independent qualified anchor support across
-// multiple roots calling the same local module, grapheme-cluster flush heredoc
-// indentation, and Object.prototype keyword safety in address parsing.
+// Regressions for Terraform nested-block bindings (ADR 0046, TASK-682):
+// direction-independent qualified anchor support across multiple roots calling
+// the same local module, Object.prototype keyword safety in address parsing,
+// and indexed/chained module-output reference anchors.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -51,17 +51,21 @@ const EDGE_CASES_TF = [
 	"  listener {",
 	'    name = "api"',
 	"  }",
-	"  listener {",
-	"    name = <<-EOF",
-	" \u0301first",
-	"  second",
-	"    EOF",
-	"  }",
-	"  listener {",
-	"    name = <<-EOF",
-	" \u0301",
-	"  second",
-	"    EOF",
+	"}",
+].join("\n");
+
+const OUT_TF = [
+	'module "api" {',
+	"  count  = 1",
+	'  source = "../other"',
+	"}",
+	'resource "aws_lambda_function" "caller" {',
+	'  function_name = "caller"',
+	"  environment {",
+	"    variables = {",
+	'      API_URL   = module.api[0].endpoint["blue"]',
+	'      API_CHAIN = module.api[0].endpoint["blue"][0]',
+	"    }",
 	"  }",
 	"}",
 ].join("\n");
@@ -96,6 +100,7 @@ beforeAll(async () => {
 		"other/main.tf": OTHER_TF,
 		"mod/main.tf": MOD_TF,
 		"edges/main.tf": EDGE_CASES_TF,
+		"out/main.tf": OUT_TF,
 	});
 	git(scratch, repoDir, "init", "-q", "-b", "main");
 	git(scratch, repoDir, "remote", "add", "origin", `https://${REPO}.git`);
@@ -119,22 +124,27 @@ beforeAll(async () => {
 						'module.gateway.azurerm_application_gateway.ingress.request_routing_rule["route-api"]',
 					),
 					node("CtorApi", "Ctor API", "edges/main.tf", 'constructor.gateway.listener["api"]'),
-					node(
-						"Grapheme",
-						"Grapheme heredoc",
-						"edges/main.tf",
-						'constructor.gateway.listener["first\\n second\\n"]',
-					),
-					node(
-						"GraphAcc",
-						"Grapheme accent-only line heredoc",
-						"edges/main.tf",
-						'constructor.gateway.listener["\\n second\\n"]',
-					),
+					node("OutCall", "Out Caller", "out/main.tf", "aws_lambda_function.caller"),
+					node("OutApi", "Out Api", "out", "module.api"),
 				],
 				edges: [
 					edge("eFwd", "OtherA", "RuleB", "mod/main.tf", anchorSym),
 					edge("eRev", "RuleB", "OtherA", "mod/main.tf", anchorSym),
+					edge("eOut", "OutCall", "OutApi", "out/main.tf", 'module.api[0].endpoint["blue"]'),
+					edge(
+						"eOutCh",
+						"OutCall",
+						"OutApi",
+						"out/main.tf",
+						'module.api[0].endpoint["blue"][0]',
+					),
+					edge(
+						"eNumRej",
+						"CtorApi",
+						"OutApi",
+						"edges/main.tf",
+						"constructor.gateway.listener[0]",
+					),
 				],
 			},
 		},
@@ -157,8 +167,9 @@ test("R5 #1: qualified anchor support across two roots calling the same local mo
 	expect(findingsFor("eRev")).toEqual([]);
 });
 
-test("R5 #3, #4, R6 #2: flush heredoc counts indent by code point, strips by grapheme cluster, and constructor resource type parses cleanly", () => {
+test("R5 #4 & R7/R8: constructor resource type parses cleanly and indexed/chained module-output anchors resolve while numeric nested-block selectors stay invalid", () => {
 	expect(findingsFor("CtorApi")).toEqual([]);
-	expect(findingsFor("Grapheme")).toEqual([]);
-	expect(findingsFor("GraphAcc")).toEqual([]);
+	expect(findingsFor("eOut")).toEqual([]);
+	expect(findingsFor("eOutCh")).toEqual([]);
+	expect(findingsFor("eNumRej").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
 });
