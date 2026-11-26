@@ -160,8 +160,11 @@ async function settleGenerationOwners(
 ): Promise<void> {
 	owners.timeline?.dispose();
 	owners.coordinatorTimeline?.dispose();
-	await owners.domain?.shutdown?.(cause);
-	releaseGenerationOwners(owners);
+	try {
+		await owners.domain?.shutdown?.(cause);
+	} finally {
+		releaseGenerationOwners(owners);
+	}
 }
 
 /**

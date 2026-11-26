@@ -425,7 +425,31 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			};
 		}
 		const listed = await readCatalogue(scope, snapshot);
-		return listed.ok ? { ...listed, scope, auth } : listed;
+		return listed.ok ? { ...listed, scope, auth, snapshot } : listed;
+	}
+
+	/**
+	 * Return the validated write snapshot, or refresh current state if the account changed during workhorse updates.
+	 * @param loaded Authenticated scope, snapshot, auth state, and models used for the write.
+	 * @param loaded.scope Generation scope used for the write.
+	 * @param loaded.snapshot Account snapshot captured when loading models.
+	 * @param loaded.auth Authenticated state from the write.
+	 * @param loaded.models Validated model catalogue from the write.
+	 * @param selection Persisted preferences written to disk.
+	 * @returns Current settings reply without returning a stale authenticated catalogue.
+	 */
+	async function finishWriteReply(
+		loaded: {
+			readonly scope: CodexSettingsScope;
+			readonly snapshot: AccountSnapshot;
+			readonly auth: CodexAuthState;
+			readonly models: readonly CodexModelOption[];
+		},
+		selection: CodexModelPreferences,
+	): Promise<CodexSettingsResult> {
+		return staleCatalogue(loaded.scope, loaded.snapshot) === null
+			? settingsReply(selection, loaded.auth, loaded.models)
+			: buildReply(selection, false, dependencies.getScope());
 	}
 
 	return Object.freeze({
@@ -449,6 +473,8 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			if (validationError !== null) {
 				return { ok: false, code: "MODEL_SELECTION_INVALID", error: validationError };
 			}
+			const stale = staleCatalogue(loaded.scope, loaded.snapshot);
+			if (stale !== null) return stale;
 			const saved = store.save({
 				version: 1,
 				orchestrator: input.orchestrator,
@@ -456,7 +482,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			});
 			if (!saved.ok) return saved;
 			await applyToLiveWorkhorses(loaded.scope, input.workhorse);
-			return settingsReply(saved.selection, loaded.auth, loaded.models);
+			return finishWriteReply(loaded, saved.selection);
 		},
 		/**
 		 * Reset persisted selections after verifying that the authenticated catalogue supports both defaults.
@@ -470,10 +496,12 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			if (validationError !== null) {
 				return { ok: false, code: "MODEL_SELECTION_INVALID", error: validationError };
 			}
+			const stale = staleCatalogue(loaded.scope, loaded.snapshot);
+			if (stale !== null) return stale;
 			const reset = store.reset();
 			if (!reset.ok) return reset;
 			await applyToLiveWorkhorses(loaded.scope, defaults.workhorse);
-			return settingsReply(reset.selection, loaded.auth, loaded.models);
+			return finishWriteReply(loaded, reset.selection);
 		},
 		/**
 		 * Start a Codex sign-in (ChatGPT OAuth or OpenAI API key) through the shared generation account owner.

@@ -138,7 +138,7 @@ function authStateFromSnapshot(snap: AccountSnapshot): CodexAuthState {
 		return { state: "signed_out", requiresOpenaiAuth: true, reason: loginReason };
 	}
 	if (snap.account.state === "failed") {
-		return { state: "signed_out", requiresOpenaiAuth: true, reason: snap.account.reason };
+		return { state: "unavailable", reason: snap.account.reason };
 	}
 	return {
 		state: "starting",

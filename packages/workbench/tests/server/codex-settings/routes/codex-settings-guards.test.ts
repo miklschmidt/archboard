@@ -223,4 +223,34 @@ describe("codex settings guardrails", () => {
 			expect(fs.existsSync(config)).toBe(false);
 		},
 	);
+
+	test("reports failed account reads as unavailable instead of signed out", async () => {
+		process.env["ARCHBOARD_CODEX_MODELS_CONFIG"] = tempConfigPath();
+		const { scope } = makeScope({ modelList: async () => ({ data: [], nextCursor: null }) });
+		const failingScope: CodexSettingsScope = {
+			...scope,
+			account: {
+				...scope.account,
+				snapshot: () => ({
+					...scope.account.snapshot(),
+					account: {
+						kind: "account",
+						state: "failed",
+						reason: "Workspace routing request timed out.",
+					},
+				}),
+			},
+		};
+		const service = createCodexSettingsService({
+			getScope: () => failingScope,
+			getStartupState: () => ({ state: "ready", reason: "Ready" }),
+		});
+		expect(await service.readSettings()).toMatchObject({
+			ok: true,
+			reply: {
+				auth: { state: "unavailable", reason: "Workspace routing request timed out." },
+				models: [],
+			},
+		});
+	});
 });

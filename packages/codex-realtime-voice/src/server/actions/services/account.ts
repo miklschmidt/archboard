@@ -441,6 +441,8 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	 */
 	const logout = async (): Promise<void> => {
 		const attempt = ++revision;
+		starting = false;
+		earlyCompletion = null;
 		loggingOut = true;
 		try {
 			await components.session.accountLogout();

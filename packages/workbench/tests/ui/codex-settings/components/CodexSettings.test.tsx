@@ -49,4 +49,6 @@ test("retry loads the signed-out controls after the first read fails", async () 
 	const fields = view.getAllByRole("combobox");
 	expect(fields).toHaveLength(6);
 	expect(fields.every((field) => field.hasAttribute("disabled"))).toBe(true);
+	expect(view.getByRole("group", { name: "Orchestrator" })).toBeTruthy();
+	expect(view.getByRole("group", { name: "Workhorse" })).toBeTruthy();
 });

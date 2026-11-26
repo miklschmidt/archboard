@@ -260,12 +260,15 @@ function RoleModelFields(props: RoleModelFieldsProps): JSX.Element {
 
 	return (
 		<Field.Set data-slot={`codex-role-${agentRole}`} disabled={disabled} className="gap-3">
-			<div className={cn("flex flex-col gap-0.5", disabled && "opacity-60")}>
-				<Field.Legend variant="label" className="mb-0 text-sm font-semibold">
-					{title}
-				</Field.Legend>
-				<p className="text-body text-muted-foreground">{description}</p>
-			</div>
+			<Field.Legend
+				variant="label"
+				className={cn("mb-0 text-sm font-semibold", disabled && "opacity-60")}
+			>
+				{title}
+			</Field.Legend>
+			<p className={cn("text-body text-muted-foreground -mt-2.5", disabled && "opacity-60")}>
+				{description}
+			</p>
 
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
 				<ModelSelectField
