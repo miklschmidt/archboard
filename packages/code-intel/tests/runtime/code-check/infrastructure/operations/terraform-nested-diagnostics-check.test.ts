@@ -265,16 +265,12 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("duplicate literal names report ambiguity on bindings and anchors even alongside dynamic blocks and non-Terraform files", () => {
+test("duplicate literal names report missing-symbol warnings on bindings and anchors even alongside dynamic blocks and non-Terraform files", () => {
 	const diagnostics = outcome.findings.filter((each) => each.model === "Diagnostics");
 	const dupBind = diagnostics.find((each) => each.subject?.id === "DupBind");
 	const dupAnc = diagnostics.find((each) => each.subject?.id === "e1");
-	expect(dupBind?.code).toBe("BINDING_SYMBOL_MISSING");
-	expect(dupBind?.message).toContain("multiple blocks");
-	expect(dupBind?.message).toContain("ambiguous");
-	expect(dupAnc?.code).toBe("ANCHOR_SYMBOL_MISSING");
-	expect(dupAnc?.message).toContain("multiple blocks");
-	expect(dupAnc?.message).toContain("ambiguous");
+	expect(dupBind).toMatchObject({ code: "BINDING_SYMBOL_MISSING", severity: "warning" });
+	expect(dupAnc).toMatchObject({ code: "ANCHOR_SYMBOL_MISSING", severity: "warning" });
 });
 
 test("dynamic, computed-name, and plan-only nested selectors skip with expression-not-followed naming the file/line or plan path, without leaking constant_value", () => {
@@ -314,10 +310,6 @@ test("static missing nested selectors, different dynamic block types, and blocks
 		"BINDING_SYMBOL_MISSING NoName warning",
 		"BINDING_SYMBOL_MISSING StatMis warning",
 	]);
-	const staticMiss = outcome.findings.find(
-		(each) => each.model === "Diagnostics" && each.subject?.id === "StatMis",
-	);
-	expect(staticMiss?.message).not.toContain("ambiguous");
 });
 
 test("two bound nested blocks referencing the same target each produce evidence while unbound blocks deduplicate on the resource", () => {

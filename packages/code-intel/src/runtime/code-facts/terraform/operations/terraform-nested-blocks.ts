@@ -113,7 +113,7 @@ function literalStringValue(expression: Node | undefined): string | undefined {
 
 /**
  * Literal string values carried by an attribute's expression: either a single
- * literal string/heredoc (with optional parentheses) or the literal string
+ * quoted literal string (with optional parentheses) or the literal string
  * elements of a literal HCL tuple, ignoring non-literal elements.
  * @param expression The attribute's value node.
  * @returns The decoded literal strings in order.
@@ -189,11 +189,11 @@ function attributesDeep(body: Node | undefined): AttributeExpr[] {
 }
 
 /**
- * The unescaped value of a direct literal `name` attribute on a nested block
- * body (including `""` and interpolation-free heredocs), rejecting dynamic
- * template interpolations and directives.
+ * The unescaped value of a direct quoted literal `name` attribute on a nested
+ * block body (including `""`), rejecting dynamic template interpolations,
+ * directives, and heredocs.
  * @param body The nested block's body.
- * @returns The NFC-normalized literal string, or undefined when absent or non-literal.
+ * @returns The literal string, or undefined when absent or non-literal.
  */
 function literalBlockName(body: Node | undefined): string | undefined {
 	const found = directAttributes(body).find((attribute) => attribute.name === "name");

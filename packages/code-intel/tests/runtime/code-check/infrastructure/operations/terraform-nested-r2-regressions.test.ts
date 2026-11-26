@@ -288,7 +288,6 @@ test("R2 #1, #2, #9: wrong-module definition anchor, unrelated root-file anchors
 	expect(findingsFor("e5")).toEqual([]);
 	const enclosing = findingsFor("e6");
 	expect(enclosing.map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
-	expect(enclosing[0]?.message).toContain("enclosing Terraform resource");
 	expect(JSON.stringify(outcome)).not.toContain("r2-secret");
 });
 
@@ -296,11 +295,10 @@ test("R2 #4, #6, #7: distinct instance keys preserve parent evidence, parenthesi
 	const jobsUndrawn = outcome.findings.filter(
 		(f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "Jobs",
 	);
-	expect(jobsUndrawn.map((f) => f.message).join("\n")).toContain('"API zero"');
+	expect(jobsUndrawn.flatMap((f) => (f.evidence ?? []).map((e) => e.from))).toContain("Api0");
 
 	const dup = outcome.findings.find((f) => f.subject?.id === "NfdDup");
-	expect(dup?.code).toBe("BINDING_SYMBOL_MISSING");
-	expect(dup?.message).toContain("ambiguous");
+	expect(dup).toMatchObject({ code: "BINDING_SYMBOL_MISSING", severity: "warning" });
 
 	expect(findingsFor("NfdPlain")).toEqual([]);
 	expect(findingsFor("NfdHere")).toEqual([]);

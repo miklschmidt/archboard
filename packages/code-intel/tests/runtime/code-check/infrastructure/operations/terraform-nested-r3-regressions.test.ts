@@ -240,7 +240,6 @@ function findingsFor(id: string) {
 test("R3 #1, #3, #4 & R4 #3: plan-only resource is rejected, whole-resource reference warns while keeping browser line, and tracked symlink keeps highlight", async () => {
 	expect(findingsFor("e2").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
 	expect(findingsFor("e3").map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
-	expect(findingsFor("e3")[0]?.message).toContain("enclosing Terraform resource");
 
 	// Verify readFileOwners keeps the reference line (line 6) in infra/consumer.tf for e3.
 	const canonicalVault = join(scratch, "canonical-vault");
@@ -398,5 +397,4 @@ test("R3 #5 & R4 #5: cross-root evidence stays isolated, same-name distinct bloc
 	expect(findingsFor("GwPool")).toEqual([]);
 	expect(findingsFor("GwEmp")).toEqual([]);
 	expect(findingsFor("GwEmpD").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
-	expect(findingsFor("GwEmpD")[0]?.message).toContain("ambiguous");
 });

@@ -427,7 +427,7 @@ subpaths with 11 names, where code outside imported 7 module paths. It imports `
   `./history` owns `ArchitectureHistoryRequestSchema` and `ArchitectureHistoryResultSchema`.
   The selected canonical state remains separate from the analyzed source refs.
   These operations neither fetch nor retain source-code history.
-  `./code-facts` exposes `symbolLocation` (checkout-contained file path, relative path, and 1-based line) for the existing code opener.
+  `./code-facts` exposes `symbolLine` for the existing code opener.
 - The steps of a pass, behind, the code facts reader and the language servers have no api file. The
   code check opens the language servers through its own session. The package's tests reach the
   steps and the readings through `tests/runtime/support/code-check/pass.ts` and

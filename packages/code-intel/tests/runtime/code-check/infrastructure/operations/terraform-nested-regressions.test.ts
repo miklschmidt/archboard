@@ -363,8 +363,10 @@ test("enclosing whole-resource anchor warns even with a whole-resource child, co
 	const tsUndrawn = outcome.findings.filter(
 		(f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "TsTgt",
 	);
-	expect(tsUndrawn.map((f) => f.message).join("\n")).toContain('"TS parent"');
-	expect(tsUndrawn.map((f) => f.message).join("\n")).toContain('"TS child"');
+	expect(tsUndrawn.flatMap((f) => (f.evidence ?? []).map((e) => e.from)).toSorted()).toEqual([
+		"TsChd",
+		"TsPar",
+	]);
 });
 
 test("runner evidence keeps resource-level reach invariance with two named container blocks", async () => {

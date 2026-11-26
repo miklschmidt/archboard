@@ -12,7 +12,7 @@
 // Optional instance keys (`[0]`, `["blue"]`) on leading `module.<ident>`
 // segments and on the declaration itself are stripped in `address`, while a
 // depth-1 resource nested-block selector uses a quoted string (which may be
-// empty `""`) and is canonically NFC-normalized and JSON-quoted. Numeric
+// empty `""`) and is canonically JSON-quoted. Numeric
 // selectors on nested blocks, depth-2 blocks, invalid string escapes, and
 // nested selectors on non-resource declarations are rejected.
 
