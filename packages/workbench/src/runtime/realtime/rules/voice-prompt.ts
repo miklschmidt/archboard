@@ -70,7 +70,7 @@ A walkthrough is narrated when the user presses Narrate beside it: they step thr
 function languageRule(language: string | null): string {
 	return language === null
 		? "Always speak the user's language, humor included."
-		: `Speak only ${language}, from your first word to your last, humor included, whatever language the user speaks or the coordinator's results are written in. Switch to another language only when the user asks you outright.`;
+		: `Speak only ${language}, from your first word to your last, humor included, whatever language the user speaks or the coordinator's results are written in.`;
 }
 
 /**
