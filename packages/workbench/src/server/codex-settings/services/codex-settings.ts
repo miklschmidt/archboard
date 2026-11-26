@@ -339,6 +339,8 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			const afterStale = staleCatalogue(scope, snapshot);
 			return afterStale ?? { ok: true as const, models };
 		} catch (error) {
+			const afterStale = staleCatalogue(scope, snapshot);
+			if (afterStale !== null) return afterStale;
 			return {
 				ok: false as const,
 				code: "MODEL_LIST_FAILED" as const,

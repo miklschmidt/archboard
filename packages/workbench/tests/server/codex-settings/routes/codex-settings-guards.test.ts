@@ -176,9 +176,14 @@ describe("codex settings guardrails", () => {
 		}
 	});
 
-	test.each(["sign-out", "generation replacement"] as const)(
-		"discards an in-flight catalogue after %s",
-		async (change) => {
+	test.each([
+		["sign-out", "returns"],
+		["generation replacement", "returns"],
+		["sign-out", "fails"],
+		["generation replacement", "fails"],
+	] as const)(
+		"discards an in-flight catalogue after %s when model/list %s",
+		async (change, outcome) => {
 			const config = tempConfigPath();
 			process.env["ARCHBOARD_CODEX_MODELS_CONFIG"] = config;
 			const listed = Promise.withResolvers<void>();
@@ -191,6 +196,7 @@ describe("codex settings guardrails", () => {
 					requests += 1;
 					if (requests === 2) listed.resolve();
 					await release.promise;
+					if (outcome === "fails") throw new Error("Model catalogue offline");
 					return { data: [model], nextCursor: null };
 				},
 			});
