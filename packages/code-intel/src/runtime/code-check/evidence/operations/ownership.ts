@@ -167,4 +167,19 @@ function lineagesOf(codes: ReadonlyMap<string, PartCode>): Map<string, Set<strin
 	);
 }
 
-export { type Owners, lineagesOf, ownersAtLine, ownersOf, ownersOfFile, ownersOfSite };
+/**
+ * Break ties among co-equal owners by dropping any parent container whose
+ * direct child is also among the tied owners, keeping sibling and unrelated
+ * ties intact (ADR 0046, TASK-682.03).
+ * @param parts The tied owners at the same narrowest scope.
+ * @returns The deepest owners across direct parent-child ties.
+ */
+function deepestTied(parts: readonly ReadPart[]): ReadPart[] {
+	if (parts.length < 2) return [...parts];
+	const shadowed = new Set(
+		parts.flatMap((part) => (part.node.parent === undefined ? [] : [part.node.parent])),
+	);
+	return parts.filter((part) => !shadowed.has(part.node.id));
+}
+
+export { type Owners, deepestTied, lineagesOf, ownersAtLine, ownersOf, ownersOfFile, ownersOfSite };

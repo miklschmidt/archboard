@@ -59,10 +59,14 @@ import {
 import {
 	declarationAddress,
 	isTerraformFile,
+	parseTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import { mergedDefinitions } from "#runtime/code-facts/compose/operations/compose-merged.ts";
-import { terraformConfiguration } from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
+import {
+	terraformConfiguration,
+	type TerraformConfiguration,
+} from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
 import {
 	type Definition,
 	type FileFacts,
@@ -165,10 +169,33 @@ async function holding(
 }
 
 /**
+ * Whether a Terraform binding symbol holds an anchored site directly or via a
+ * 1-hop intra-resource sibling-block link in the same resource and module
+ * instance (ADR 0046, TASK-682.03).
+ * @param configuration The root module's address space.
+ * @param symbol The part's binding symbol.
+ * @param site Where the anchored definition is.
+ * @returns True when the binding holds or is 1-hop linked to the site.
+ */
+function holdsTerraformSite(
+	configuration: TerraformConfiguration,
+	symbol: string,
+	site: Site,
+): boolean {
+	const at = { path: site.path, line: site.definition.start };
+	if (holdsDeclarationAt(configuration, symbol, at)) return true;
+	const boundAddr = parseTerraformAddress(symbol);
+	if (boundAddr?.kind !== "block") return false;
+	return configuration
+		.addressesAt(site.path, site.definition.start)
+		.some((siteAddr) => configuration.areLinkedSiblings(boundAddr.address, siteAddr));
+}
+
+/**
  * Whether the definition a binding's symbol names holds another one, in its
  * file or in a file its tool merges with it. In a Terraform root module, the
  * symbol is an address of its address space, and it holds every declaration
- * of the module instance it names.
+ * of the module instance it names, as well as any 1-hop linked sibling block.
  * @param bound The bound files, and their Terraform root module.
  * @param symbol The binding's symbol.
  * @param site Where the other definition is.
@@ -184,8 +211,7 @@ async function holdingAt(
 	const { search } = context;
 	if (bound.root !== undefined) {
 		const configuration = await terraformConfiguration(search.facts, search.checkout, bound.root);
-		const at = { path: site.path, line: site.definition.start };
-		if (holdsDeclarationAt(configuration, symbol, at)) return "holds";
+		if (holdsTerraformSite(configuration, symbol, site)) return "holds";
 	}
 	const held = await heldInFiles(search, bound.files, symbol, "definition", bound.root);
 	if (held.status !== "found" || held.definition === undefined) return "unknown";

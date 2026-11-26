@@ -16,6 +16,7 @@
 
 import { piecesBetween, type Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import {
+	deepestTied,
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
@@ -44,7 +45,7 @@ interface RepoParts {
  * @returns The narrowest parts that hold it.
  */
 function ownersOfObject(repo: RepoParts, site: ManifestSite): ReadPart[] {
-	return ownersOfSite(repo.owners, { ...site, via: [] });
+	return deepestTied(ownersOfSite(repo.owners, { ...site, via: [] }));
 }
 
 /**
@@ -85,7 +86,7 @@ function throughService(
 			link.from.path === target.path &&
 			link.from.definition.symbol === target.symbol,
 	);
-	const from = ownersAtLine(repo.owners, facts.path, line);
+	const from = deepestTied(ownersAtLine(repo.owners, facts.path, line));
 	const evidence = { repo: checkout.repo, path: facts.path, kind, line, symbol };
 	return picked.flatMap((link) =>
 		piecesBetween(

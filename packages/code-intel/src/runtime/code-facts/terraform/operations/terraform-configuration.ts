@@ -51,6 +51,15 @@ import {
 	directoryOf,
 	terraformModules,
 } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
+import {
+	createNestedIndex,
+	holderAt,
+	nestedQueries,
+	recordNestedBlocks,
+	siteIn,
+	type NestedBlockIndex,
+	type NestedBlockQueries,
+} from "#runtime/code-facts/terraform/operations/terraform-siblings.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
@@ -98,7 +107,7 @@ type Declared =
 	| { readonly status: "absent" };
 
 /** The address space of one root module. */
-interface TerraformConfiguration {
+interface TerraformConfiguration extends NestedBlockQueries {
 	/** The root module's directory, relative to the checkout. */
 	readonly root: string;
 	/**
@@ -168,18 +177,8 @@ interface Reading {
 	 * variable that a module call's argument already declares at its address too.
 	 */
 	readonly sites: Map<string, string[]>;
-}
-
-/**
- * The narrowest top-level declaration of a file that holds a line, ignoring nested blocks.
- * @param facts The file's facts.
- * @param line The line.
- * @returns The definition, or undefined outside every declaration.
- */
-function holderAt(facts: SyntaxFacts, line: number): Definition | undefined {
-	return facts.definitions
-		.filter((each) => each.visibility !== "block" && each.start <= line && line <= each.end)
-		.toSorted((left, right) => left.end - left.start - (right.end - right.start))[0];
+	/** Depth-1 nested block spans and 1-hop intra-resource sibling adjacency. */
+	readonly nested: NestedBlockIndex;
 }
 
 /**
@@ -227,6 +226,7 @@ function readFile(reading: Reading, facts: SyntaxFacts, scope: string): void {
 		const at = `${facts.path}\0${definition.start}`;
 		reading.sites.set(at, [...(reading.sites.get(at) ?? []), address]);
 	}
+	recordNestedBlocks(reading.nested, facts, scope);
 	reading.written.push(...writtenIn(facts, scope));
 	const parts = facts.unparsed.map((unparsed) => ({ path: facts.path, unparsed }));
 	reading.unparsed.set(scope, [...(reading.unparsed.get(scope) ?? []), ...parts]);
@@ -425,24 +425,6 @@ function scopeOf(reading: Reading, address: string): string {
 }
 
 /**
- * Where the checkout holds an address: its own block, else the block of the
- * nearest module call that holds it.
- * @param declarations The address space.
- * @param address The address.
- * @returns The site, or undefined when no declaration of the checkout holds it.
- */
-function siteIn(declarations: ReadonlyMap<string, Declaration>, address: string): Site | undefined {
-	const names = splitAddressSegments(address);
-	for (let count = names.length; count > 0; count -= 1) {
-		const held = declarations.get(names.slice(0, count).join("."));
-		if (held?.path !== undefined && held.definition !== undefined) {
-			return { path: held.path, definition: held.definition };
-		}
-	}
-	return undefined;
-}
-
-/**
  * Check whether an absent address is unread or appears in unparsed code.
  * @param reading What the reading collected.
  * @param address The normalized address.
@@ -519,6 +501,7 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 		reached(address) {
 			return reachedFrom(declarations, links, address, PASSING);
 		},
+		...nestedQueries(reading.nested),
 	};
 }
 
@@ -547,6 +530,7 @@ async function readConfiguration(
 		unread: new Set(),
 		unparsed: new Map(),
 		sites: new Map(),
+		nested: createNestedIndex(),
 	};
 	if (reading.modules.has(root)) await readScope(reading, root, "", []);
 	for (const plan of pass.plans) {

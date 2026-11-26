@@ -32,7 +32,11 @@
 // plan that names it.
 
 import { piecesBetween, type Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
-import { ownersOf, ownersOfSite } from "#runtime/code-check/evidence/operations/ownership.ts";
+import {
+	deepestTied,
+	ownersOf,
+	ownersOfSite,
+} from "#runtime/code-check/evidence/operations/ownership.ts";
 import type { PartCode, ReadPart } from "#runtime/code-check/operations/part-code.ts";
 import { declarationAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
@@ -179,6 +183,21 @@ function joinedBy(declaration: Declaration, reached: Reached, reading: RootReadi
 }
 
 /**
+ * Evidence owners of each address in one root module, breaking direct
+ * parent-child ties in favor of the deeper child part (TASK-682.03).
+ * @param configuration The root module's address space.
+ * @param parts The read parts of the document in its checkout.
+ * @returns The evidence owners of an address.
+ */
+function evidenceOwnersIn(
+	configuration: TerraformConfiguration,
+	parts: readonly ReadPart[],
+): (address: string) => ReadPart[] {
+	const raw = ownershipIn(configuration, parts);
+	return (address) => deepestTied(raw(address));
+}
+
+/**
  * The evidence one root module gives between the parts of a document.
  * @param configuration The root module's address space.
  * @param parts The read parts of the document in its checkout.
@@ -191,18 +210,20 @@ function piecesIn(
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): Piece[] {
 	const reading: RootReading = {
-		ownersAt: ownershipIn(configuration, parts),
+		ownersAt: evidenceOwnersIn(configuration, parts),
 		lineages,
 		repo: parts[0].checkout.repo,
 	};
 	return configuration.endpoints.flatMap((declaration) => {
 		const reached = configuration.reached(declaration.address);
-		const from = reading.ownersAt(declaration.address);
 		const direct = reached
 			.filter(({ link }) => link.joins === undefined)
-			.flatMap(({ to, link }) =>
-				piecesBetween(
-					from,
+			.flatMap(({ to, link }) => {
+				const source =
+					configuration.nestedBlockAt(declaration.address, link.path, link.line) ??
+					declaration.address;
+				return piecesBetween(
+					reading.ownersAt(source),
 					{ to: reading.ownersAt(to.address), resolution: "resolved" },
 					lineages,
 					{
@@ -212,8 +233,8 @@ function piecesIn(
 						line: link.line,
 						symbol: link.symbol,
 					},
-				),
-			);
+				);
+			});
 		return [...direct, ...joinedBy(declaration, reached, reading)];
 	});
 }

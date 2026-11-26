@@ -44,6 +44,7 @@ import {
 	passedDefinition,
 } from "#runtime/code-check/evidence/operations/module-level.ts";
 import {
+	deepestTied,
 	lineagesOf,
 	ownersAtLine,
 	ownersOf,
@@ -200,9 +201,11 @@ function ownersOfTarget(
 	target: Target,
 ): readonly ReadPart[] {
 	const other = site?.path === facts.path && site.definition.symbol !== target.symbol;
-	return site === undefined || other
-		? ownersOfFile(repo.owners, target.path)
-		: ownersOfSite(repo.owners, site);
+	return deepestTied(
+		site === undefined || other
+			? ownersOfFile(repo.owners, target.path)
+			: ownersOfSite(repo.owners, site),
+	);
 }
 
 /**
@@ -263,7 +266,7 @@ async function serverReached(
 ): Promise<Reached | undefined> {
 	const candidate = candidateReached(repo, facts, reference, imported);
 	if (candidate === undefined) return undefined;
-	const from = ownersAtLine(repo.owners, facts.path, reference.line);
+	const from = deepestTied(ownersAtLine(repo.owners, facts.path, reference.line));
 	const lineages = repo.lineages;
 	if (!from.some((start) => candidate.to.some((end) => joins(start, end, lineages)))) {
 		return candidate;
@@ -293,7 +296,7 @@ async function serverResolved(
 	const definition = { start: resolved.line, end: resolved.line };
 	const site = { path: resolved.path, definition, via: [] };
 	return {
-		to: ownersOfSite(repo.owners, site),
+		to: deepestTied(ownersOfSite(repo.owners, site)),
 		resolution: "resolved",
 		definition: await passedDefinition(repo.reading.facts, repo.checkout, resolved.path, reference),
 	};
@@ -317,7 +320,7 @@ function candidateReached(
 	const definition = moduleLevelDefinition(facts, reference.symbol, imported);
 	if (definition === undefined) return undefined;
 	const site = { path: facts.path, definition, via: [] };
-	return { to: ownersOfSite(repo.owners, site), resolution: "candidate", definition };
+	return { to: deepestTied(ownersOfSite(repo.owners, site)), resolution: "candidate", definition };
 }
 
 /**
@@ -379,7 +382,7 @@ async function piecesOfUse(
 	imported: ReadonlySet<string>,
 ): Promise<Piece[]> {
 	const { kind, line, symbol } = reference;
-	const from = kind === undefined ? [] : ownersAtLine(repo.owners, facts.path, line);
+	const from = kind === undefined ? [] : deepestTied(ownersAtLine(repo.owners, facts.path, line));
 	if (kind === undefined || from.length === 0) return [];
 	const reached = await reachedBy(repo, facts, reference, imported);
 	if (reached === undefined) return [];
@@ -422,8 +425,8 @@ function piecesOfLoads(repo: RepoReading, facts: SyntaxFacts): Piece[] {
 	return facts.imports.flatMap((found) => {
 		const loads = !found.reexport && !found.typeOnly && found.names.length === 0;
 		if (!loads || found.resolved === undefined) return [];
-		const to = ownersOfFile(repo.owners, found.resolved);
-		const from = ownersAtLine(repo.owners, facts.path, found.line);
+		const to = deepestTied(ownersOfFile(repo.owners, found.resolved));
+		const from = deepestTied(ownersAtLine(repo.owners, facts.path, found.line));
 		const evidence = {
 			repo: repo.checkout.repo,
 			path: facts.path,

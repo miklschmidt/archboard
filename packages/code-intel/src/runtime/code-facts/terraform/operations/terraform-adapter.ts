@@ -39,14 +39,13 @@ import type {
 	Import,
 	ParsedFacts,
 	Reference,
+	SiblingLink,
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { sourceRange, spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
-import {
-	addressOf,
-	decodeHclString,
-} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import { addressOf } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { environmentOf } from "#runtime/code-facts/terraform/operations/terraform-environment.ts";
+import { resourceNestedFacts } from "#runtime/code-facts/terraform/operations/terraform-nested-blocks.ts";
 import { classifyReference } from "#runtime/code-facts/terraform/operations/terraform-providers.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -167,109 +166,46 @@ function declared(symbol: string, node: Node, visibility: string): Definition {
 	};
 }
 
-/** A string template interpolation or directive marker. */
-const TEMPLATE_MARKER = /[$%]\{/u;
-
-/**
- * The single named child of a node when the node has the expected type.
- * @param node The parent node.
- * @param type The required node type of the parent.
- * @returns Its sole named child, or undefined.
- */
-function onlyChild(node: Node | undefined, type: string): Node | undefined {
-	return node?.type === type && node.namedChildren.length === 1 ? node.namedChildren[0] : undefined;
-}
-
-/**
- * The `string_lit` node inside a plain literal expression, if any.
- * @param expression An attribute's value node.
- * @returns The `string_lit` node, or undefined when the expression is not a single literal string.
- */
-function literalStringNode(expression: Node | undefined): Node | undefined {
-	const literal = onlyChild(expression, "expression");
-	const stringLit = onlyChild(literal, "literal_value");
-	return stringLit?.type === "string_lit" ? stringLit : undefined;
-}
-
-/**
- * The unescaped value of a direct literal double-quoted `name` attribute on a
- * nested block body, rejecting template interpolations and directives.
- * @param body The nested block's body.
- * @returns The unescaped literal string, or undefined when absent or non-literal.
- */
-function literalBlockName(body: Node | undefined): string | undefined {
-	const found = attributesOf(body).find((attribute) => attribute.name === "name");
-	const stringLit = literalStringNode(found?.node.namedChildren[1]);
-	if (stringLit === undefined || TEMPLATE_MARKER.test(stringLit.text)) return undefined;
-	return decodeHclString(stringLit.text);
-}
-
-/** One candidate depth-1 named nested block inside a resource body. */
-interface NamedNestedBlock {
-	readonly blockType: string;
-	readonly name: string;
-	readonly key: string;
-	readonly node: Node;
-}
-
-/**
- * Candidate depth-1 named nested blocks directly inside a resource body,
- * skipping `dynamic` blocks and blocks without a direct literal `name`.
- * @param body The resource block's body.
- * @returns Each candidate nested block in document order.
- */
-function namedNestedBlocks(body: Node | undefined): NamedNestedBlock[] {
-	return (body?.namedChildren ?? []).flatMap((node) => {
-		if (node.type !== "block") return [];
-		const { kind: blockType, body: inner } = partsOf(node);
-		if (blockType === "" || blockType === "dynamic") return [];
-		const name = literalBlockName(inner);
-		return name === undefined ? [] : [{ blockType, name, key: `${blockType}\0${name}`, node }];
-	});
-}
-
-/**
- * Unique depth-1 named nested block definitions of a top-level `resource`
- * block; duplicated `(blockType, literalName)` pairs within the same resource
- * emit no definition.
- * @param resourceSymbol The enclosing resource's address.
- * @param body The resource block's body.
- * @returns Its unique nested-block definitions.
- */
-function nestedBlockDefinitions(resourceSymbol: string, body: Node | undefined): Definition[] {
-	const candidates = namedNestedBlocks(body);
-	const counts = new Map<string, number>();
-	for (const candidate of candidates) {
-		counts.set(candidate.key, (counts.get(candidate.key) ?? 0) + 1);
-	}
-	return candidates.flatMap(({ blockType, name, key, node }) =>
-		counts.get(key) === 1
-			? [declared(`${resourceSymbol}.${blockType}[${JSON.stringify(name)}]`, node, "block")]
-			: [],
-	);
+/** What one top-level block declares: its definitions and any intra-resource sibling links. */
+interface BlockFacts {
+	readonly definitions: readonly Definition[];
+	readonly siblingLinks: readonly SiblingLink[];
 }
 
 /**
  * What one top-level block declares.
  * @param block The block.
- * @returns Its definitions.
+ * @returns Its definitions and any resolved sibling-block links.
  */
-function blockDefinitions(block: Node): Definition[] {
+function blockFacts(block: Node): BlockFacts {
 	const { kind, labels, body } = partsOf(block);
 	if (kind === "locals") {
-		return attributesOf(body).map(({ name, node }) => declared(`local.${name}`, node, "local"));
+		return {
+			definitions: attributesOf(body).map(({ name, node }) =>
+				declared(`local.${name}`, node, "local"),
+			),
+			siblingLinks: [],
+		};
 	}
 	const declares = DECLARES[kind];
-	if (declares === undefined || labels.length < declares.labels) return [];
+	if (declares === undefined || labels.length < declares.labels) {
+		return { definitions: [], siblingLinks: [] };
+	}
 	const symbol = `${declares.prefix}${labels.slice(0, declares.labels).join(".")}`;
 	const own = declared(symbol, block, kind);
-	if (kind === "resource") return [own, ...nestedBlockDefinitions(symbol, body)];
-	if (kind !== "module") return [own];
+	if (kind === "resource") {
+		const nested = resourceNestedFacts(symbol, body);
+		return { definitions: [own, ...nested.definitions], siblingLinks: nested.siblingLinks };
+	}
+	if (kind !== "module") return { definitions: [own], siblingLinks: [] };
 	const passed = attributesOf(body).filter(({ name }) => !META_ARGUMENTS.has(name));
-	return [
-		own,
-		...passed.map(({ name, node }) => declared(`${symbol}.var.${name}`, node, "argument")),
-	];
+	return {
+		definitions: [
+			own,
+			...passed.map(({ name, node }) => declared(`${symbol}.var.${name}`, node, "argument")),
+		],
+		siblingLinks: [],
+	};
 }
 
 /**
@@ -540,6 +476,22 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 }
 
 /**
+ * Collect deduplicated code references from captured first-name nodes.
+ * @param nodes The captured reference first-name nodes.
+ * @param unparsed The file's unparsed spans.
+ * @returns The deduplicated code references.
+ */
+function codeReferences(nodes: readonly Node[], unparsed: Spans): Reference[] {
+	const references = new Map<string, Reference>();
+	for (const first of nodes) {
+		const reference = referenceAt(first, unparsed);
+		const key = `${reference?.symbol}\0${reference?.line}`;
+		if (reference !== undefined && !references.has(key)) references.set(key, reference);
+	}
+	return [...references.values()];
+}
+
+/**
  * The code facts of one parsed Terraform or OpenTofu file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -548,17 +500,17 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 function terraformFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const captured = sorted(grammar.query.captures(tree.rootNode));
 	const unparsed = spansOf(captured.unparsed);
-	const references = new Map<string, Reference>();
-	for (const first of captured.reference) {
-		const reference = referenceAt(first, unparsed);
-		const key = `${reference?.symbol}\0${reference?.line}`;
-		if (reference !== undefined && !references.has(key)) references.set(key, reference);
-	}
+	const blocks = captured.block.map(blockFacts);
+	const siblingLinks = blocks.flatMap((each) => each.siblingLinks);
 	return {
-		definitions: captured.block.flatMap(blockDefinitions),
-		references: [...references.values(), ...captured.block.flatMap(environmentOf)],
+		definitions: blocks.flatMap((each) => each.definitions),
+		references: [
+			...codeReferences(captured.reference, unparsed),
+			...captured.block.flatMap(environmentOf),
+		],
 		imports: captured.block.flatMap((block) => moduleImport(block) ?? []),
 		unparsed: unparsedOf(captured.unparsed),
+		...(siblingLinks.length > 0 ? { siblingLinks } : {}),
 	};
 }
 

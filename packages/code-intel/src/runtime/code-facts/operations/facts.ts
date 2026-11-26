@@ -320,6 +320,17 @@ interface ReferenceThroughImport {
 }
 
 /**
+ * A 1-hop intra-resource link between two unique depth-1 named nested blocks
+ * of the same Terraform resource (ADR 0046, TASK-682.03). Stores only resolved
+ * canonical block symbols, never raw attribute string values, and supports
+ * anchors without emitting relationship evidence.
+ */
+interface SiblingLink {
+	readonly from: string;
+	readonly to: string;
+}
+
+/**
  * The facts an adapter gives one file, before its imports are resolved. These
  * depend on the file's bytes and the reading that selects its grammar and
  * blanks SDK macros, so the cache keeps them (reader.ts).
@@ -344,6 +355,8 @@ interface ParsedFacts {
 	readonly logic?: number;
 	/** The math the file writes on the names it imports, where its adapter reads it (TASK-646.06). */
 	readonly computations?: readonly Computation[];
+	/** Resolved 1-hop intra-resource nested-block sibling links for anchor support only. */
+	readonly siblingLinks?: readonly SiblingLink[];
 }
 
 /**
@@ -449,6 +462,8 @@ interface SyntaxFacts {
 	readonly logic?: number;
 	/** The math the file writes on the names it imports (`ParsedFacts.computations`). */
 	readonly computations?: readonly Computation[];
+	/** Resolved 1-hop intra-resource nested-block sibling links (`ParsedFacts.siblingLinks`). */
+	readonly siblingLinks?: readonly SiblingLink[];
 }
 
 /** A file no adapter reads: its text, which the text reading tests (ADR 0046). */
@@ -478,6 +493,7 @@ export type {
 	ReferenceThroughImport,
 	ReferenceVia,
 	ResolvedImport,
+	SiblingLink,
 	Switchboard,
 	SyntaxFacts,
 	Target,

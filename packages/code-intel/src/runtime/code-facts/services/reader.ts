@@ -199,14 +199,18 @@ async function resolved(
 
 /**
  * What an adapter read of a file's code beyond its names, where it reads it:
- * its pieces of logic and the math it writes on the names it imports.
+ * its pieces of logic, the math it writes on the names it imports, and
+ * resolved intra-resource sibling block links.
  * @param parsed The file's facts.
  * @returns Those of them the adapter gives.
  */
-function codeReading(parsed: ParsedFacts): Pick<SyntaxFacts, "logic" | "computations"> {
+function codeReading(
+	parsed: ParsedFacts,
+): Pick<SyntaxFacts, "logic" | "computations" | "siblingLinks"> {
 	return {
 		...(parsed.logic === undefined ? {} : { logic: parsed.logic }),
 		...(parsed.computations === undefined ? {} : { computations: parsed.computations }),
+		...(parsed.siblingLinks === undefined ? {} : { siblingLinks: parsed.siblingLinks }),
 	};
 }
 
