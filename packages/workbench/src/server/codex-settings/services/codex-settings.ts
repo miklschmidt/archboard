@@ -421,7 +421,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			return {
 				ok: false as const,
 				code: "CODEX_UNAUTHENTICATED" as const,
-				error: "Sign in to Codex before choosing models.",
+				error: "Sign in to Codex before changing settings.",
 			};
 		}
 		const listed = await readCatalogue(scope, snapshot);
