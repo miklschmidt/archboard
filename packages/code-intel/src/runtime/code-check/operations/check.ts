@@ -194,24 +194,26 @@ function unreadable(claim: Claim, readable: Exclude<Readable, { status: "files" 
 }
 
 /**
- * The skip of a symbol found only in code that did not parse or below a Nix
+ * The skip of a symbol found only in code that did not parse or below an
  * expression it cannot follow, or of an address in a module it does not read.
  * @param claim The claim.
  * @param held Where it was found.
- * @returns The skip, which names the file and its lines, or the module call.
+ * @returns The skip, which names the file and its lines, plan path, or module call.
  */
 function unparsedSkip(
 	claim: Claim,
-	held: Extract<Held, { status: "unparsed" | "module-unread" }>,
+	held: Extract<Held, { status: "unparsed" | "module-unread" | "unfollowed" }>,
 ): CodeCheckSkip {
 	const repo = repoOf(claim);
 	if (held.status === "module-unread") {
 		return skipped(claim.site, { reason: "module-not-read", repo, detail: held.module });
 	}
-	const { under } = held.unparsed;
+	if (held.status === "unfollowed") {
+		return skipped(claim.site, { reason: "expression-not-followed", repo, detail: held.detail });
+	}
 	const { path: file, start, end } = held.unparsed.source ?? { path: held.file, ...held.unparsed };
 	const detail = `${file}:${start === end ? start : `${start}-${end}`}`;
-	const reason = under === undefined ? "symbol-unparsed" : "expression-not-followed";
+	const reason = held.unparsed.under === undefined ? "symbol-unparsed" : "expression-not-followed";
 	return skipped(claim.site, { reason, repo, detail });
 }
 
@@ -241,7 +243,7 @@ async function findSymbolOf(
 	}
 	const accept: Accept = claim.kind === "binding" ? "definition" : "definition-or-reference";
 	const held = await heldInFiles(searchOf(checkout, pass), readable.files, symbol, accept, root);
-	if (held.status !== "unparsed" && held.status !== "module-unread") return held;
+	if (held.status === "found" || held.status === "absent") return held;
 	pass.outcome.skipped.push(unparsedSkip(claim, held));
 	return undefined;
 }

@@ -13,11 +13,12 @@ interface Reachable {
 	readonly kind: string;
 }
 
-/** What the search needs of a reference: where it leads, and what it proves. */
+/** What the search needs of a reference: where it leads, what it proves, and its nested block if any. */
 interface Step {
 	readonly to: string;
 	readonly kind: string;
 	readonly joins?: string;
+	readonly block?: string;
 }
 
 /** One way the search still has to follow. */
@@ -28,13 +29,13 @@ interface Way<L extends Step> {
 }
 
 /**
- * What tells two ways apart: where they lead, and what the reference that
- * starts each proves.
+ * What tells two ways apart: where they lead, what the reference that
+ * starts each proves, and which depth-1 nested block starts it if any.
  * @param way The way.
  * @returns Its key.
  */
 function wayKey(way: Way<Step>): string {
-	return `${way.to}\0${way.first.kind}\0${way.first.joins ?? ""}`;
+	return `${way.to}\0${way.first.kind}\0${way.first.joins ?? ""}\0${way.first.block ?? ""}`;
 }
 
 /** What the search of one declaration's reach collects. */

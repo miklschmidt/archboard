@@ -39,10 +39,14 @@ type Held =
 	| { readonly status: "unparsed"; readonly file: string; readonly unparsed: Unparsed }
 	/** An address inside a module the check does not read: the module call's address. */
 	| { readonly status: "module-unread"; readonly module: string }
+	/** A selector whose target cannot be statically followed, such as a plan-only resource's nested block. */
+	| { readonly status: "unfollowed"; readonly detail: string }
 	| {
 			readonly status: "absent";
 			/** Every file was read as text, so only the symbol's last name was looked for. */
 			readonly asText?: boolean;
+			/** Multiple nested blocks of the same type share that literal name in one resource. */
+			readonly ambiguous?: true;
 	  };
 
 /** What a search reports beside where it found the symbol: the files it read as text. */
@@ -95,9 +99,23 @@ function heldInFiles(
 }
 
 /**
+ * Pick the highest-precedence per-file result: found, ambiguous, unparsed, else absent.
+ * @param held Each file's search result.
+ * @param asText Whether every file was read as text.
+ * @returns The combined result.
+ */
+function pickHeld(held: readonly Held[], asText: boolean): Held {
+	const found = held.find((each) => each.status === "found");
+	if (found !== undefined) return found;
+	const ambiguous = held.find((each) => each.status === "absent" && each.ambiguous === true);
+	if (ambiguous !== undefined) return ambiguous;
+	return held.find((each) => each.status === "unparsed") ?? { status: "absent", asText };
+}
+
+/**
  * Where the files of a path hold a symbol, each as its language defines and
- * uses names: the first file that holds it, else the first that holds it only
- * in unparsed code, else nowhere.
+ * uses names: the first file that holds it, else an ambiguous match, else the
+ * first that holds it only in unparsed code, else nowhere.
  * @param search The pass, the checkout, and where files read as text are noted.
  * @param files The files of the path, relative to the checkout.
  * @param symbol The symbol.
@@ -113,10 +131,9 @@ async function heldInEach(
 	const read = await Promise.all(files.map((file) => search.facts.read(search.checkout, file)));
 	for (const facts of read) if (facts?.adapter === "text") search.readAsText(facts.path);
 	const held = read.map((facts) => heldIn(facts, symbol, accept));
-	const asText = read.every((facts) => facts?.adapter === "text");
-	return (
-		held.find((each) => each.status === "found") ??
-		held.find((each) => each.status === "unparsed") ?? { status: "absent", asText }
+	return pickHeld(
+		held,
+		read.every((facts) => facts?.adapter === "text"),
 	);
 }
 
@@ -135,16 +152,32 @@ function terraformRootOfTarget(
 }
 
 /**
+ * Convert a non-found, non-plain-absent Terraform declaration lookup into `Held`.
+ * @param declared The non-found diagnosis.
+ * @returns The matching `Held` result.
+ */
+function unheldAddress(
+	declared: Extract<Declared, { status: "unread" | "unparsed" | "unfollowed" | "ambiguous" }>,
+): Held {
+	if (declared.status === "unread") return { status: "module-unread", module: declared.module };
+	if (declared.status === "unparsed") {
+		return { status: "unparsed", file: declared.path, unparsed: declared.unparsed };
+	}
+	if (declared.status === "unfollowed") {
+		return { status: "unfollowed", detail: declared.detail };
+	}
+	return { status: "absent", ambiguous: true };
+}
+
+/**
  * Where an address space holds an address, as a binding's search says it.
  * @param declared What the address space holds there.
  * @returns Where the checkout holds it, or why it does not.
  */
 function heldAtAddress(declared: Declared): Held {
-	if (declared.status === "unread") return { status: "module-unread", module: declared.module };
-	if (declared.status === "unparsed") {
-		return { status: "unparsed", file: declared.path, unparsed: declared.unparsed };
-	}
-	const site = declared.status === "found" ? declared.site : undefined;
+	if (declared.status === "absent") return { status: "absent" };
+	if (declared.status !== "found") return unheldAddress(declared);
+	const { site } = declared;
 	return site === undefined
 		? { status: "absent" }
 		: {
@@ -175,7 +208,7 @@ async function heldByBinding(
 ): Promise<Held> {
 	const configuration = await terraformConfiguration(search.facts, search.checkout, root);
 	const held = heldAtAddress(configuration.declared(symbol));
-	if (held.status !== "absent") return held;
+	if (held.status !== "absent" || held.ambiguous === true) return held;
 	const others = files.filter((file) => !isTerraformFile(file));
 	const read = await Promise.all(others.map((file) => search.facts.read(search.checkout, file)));
 	const parsed = read.flatMap((facts) =>

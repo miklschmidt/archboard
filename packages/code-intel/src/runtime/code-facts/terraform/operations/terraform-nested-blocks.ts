@@ -7,7 +7,7 @@
 // attribute string values.
 
 import type { Node } from "web-tree-sitter";
-import type { Definition, SiblingLink } from "#runtime/code-facts/operations/facts.ts";
+import type { Definition, SiblingLink, Unparsed } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 import { decodeHclString } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 
@@ -34,10 +34,12 @@ interface UniqueNestedBlock extends NamedNestedBlock {
 	readonly symbol: string;
 }
 
-/** Nested-block definitions and 1-hop sibling links of one resource block. */
+/** Nested-block definitions, sibling links, ambiguous duplicates, and unfollowed blocks of one resource. */
 interface ResourceNestedFacts {
 	readonly definitions: readonly Definition[];
 	readonly siblingLinks: readonly SiblingLink[];
+	readonly ambiguousSymbols: readonly string[];
+	readonly unparsed: readonly Unparsed[];
 }
 
 /**
@@ -164,29 +166,130 @@ function namedNestedBlocks(body: Node | undefined): NamedNestedBlock[] {
 }
 
 /**
- * Unique depth-1 named nested blocks of a top-level `resource` block;
- * duplicated `(blockType, literalName)` pairs within the same resource emit no
- * definition and participate in no sibling links.
+ * The canonical block symbol for a depth-1 nested block inside a resource.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param blockType The nested block's type identifier.
+ * @param name The unescaped literal block name.
+ * @returns The canonical block address.
+ */
+function blockSymbol(resourceSymbol: string, blockType: string, name: string): string {
+	return `${resourceSymbol}.${blockType}[${JSON.stringify(name)}]`;
+}
+
+/**
+ * Partition depth-1 named nested blocks of a resource into unique blocks and
+ * deduplicated canonical symbols for duplicated `(blockType, literalName)` pairs.
  * @param resourceSymbol The enclosing resource's canonical address.
  * @param body The resource block's body.
- * @returns Its unique nested blocks in document order.
+ * @returns Its unique nested blocks and ambiguous duplicate block symbols.
  */
-function uniqueNestedBlocks(resourceSymbol: string, body: Node | undefined): UniqueNestedBlock[] {
+function partitionNestedBlocks(
+	resourceSymbol: string,
+	body: Node | undefined,
+): { readonly unique: UniqueNestedBlock[]; readonly ambiguousSymbols: string[] } {
 	const candidates = namedNestedBlocks(body);
 	const counts = new Map<string, number>();
 	for (const candidate of candidates) {
 		counts.set(candidate.key, (counts.get(candidate.key) ?? 0) + 1);
 	}
-	return candidates.flatMap((candidate) =>
-		counts.get(candidate.key) === 1
-			? [
-					{
-						...candidate,
-						symbol: `${resourceSymbol}.${candidate.blockType}[${JSON.stringify(candidate.name)}]`,
-					},
-				]
-			: [],
-	);
+	const unique: UniqueNestedBlock[] = [];
+	const ambiguous = new Set<string>();
+	for (const candidate of candidates) {
+		const symbol = blockSymbol(resourceSymbol, candidate.blockType, candidate.name);
+		if (counts.get(candidate.key) === 1) unique.push({ ...candidate, symbol });
+		else ambiguous.add(symbol);
+	}
+	return { unique, ambiguousSymbols: [...ambiguous] };
+}
+
+/**
+ * The first static label of a nested block (`string_lit` or `identifier`).
+ * @param block The block node.
+ * @returns The decoded label text, or empty string when missing or non-literal.
+ */
+function firstBlockLabel(block: Node): string {
+	const label = block.namedChildren
+		.slice(1)
+		.find((node) => node.type === "string_lit" || node.type === "identifier");
+	if (label === undefined) return "";
+	if (label.type === "identifier") return label.text;
+	if (TEMPLATE_MARKER.test(label.text)) return "";
+	return decodeHclString(label.text) ?? "";
+}
+
+/**
+ * An unparsed `under` entry spanning one block node for a nested block type.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param blockType The unfollowed nested block type.
+ * @param node The block node.
+ * @returns The unparsed entry.
+ */
+function unfollowedEntry(resourceSymbol: string, blockType: string, node: Node): Unparsed {
+	return {
+		start: node.startPosition.row + 1,
+		end: node.endPosition.row + 1,
+		names: [],
+		under: `${resourceSymbol}.${blockType}`,
+	};
+}
+
+/**
+ * An unfollowed entry for a `dynamic "<type>"` nested block, if its label is static.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param node The `dynamic` block node.
+ * @returns The unparsed entry, or undefined.
+ */
+function unfollowedDynamic(resourceSymbol: string, node: Node): Unparsed | undefined {
+	const target = firstBlockLabel(node);
+	return target === "" ? undefined : unfollowedEntry(resourceSymbol, target, node);
+}
+
+/**
+ * An unfollowed entry for a direct child block with a non-literal `name` attribute.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param blockType The nested block's type.
+ * @param inner The nested block's body.
+ * @param node The block node.
+ * @returns The unparsed entry, or undefined when unnamed or statically named.
+ */
+function unfollowedComputed(
+	resourceSymbol: string,
+	blockType: string,
+	inner: Node | undefined,
+	node: Node,
+): Unparsed | undefined {
+	const nameAttr = directAttributes(inner).find((attribute) => attribute.name === "name");
+	if (nameAttr === undefined || literalStringValue(nameAttr.expression) !== undefined) {
+		return undefined;
+	}
+	return unfollowedEntry(resourceSymbol, blockType, node);
+}
+
+/**
+ * An unfollowed entry for a direct child block when it is a `dynamic "<type>"`
+ * block or has a direct non-literal `name` attribute.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param node A direct child node of the resource body.
+ * @returns The unparsed entry, or undefined when statically handled or unnamed.
+ */
+function unfollowedBlock(resourceSymbol: string, node: Node): Unparsed | undefined {
+	if (node.type !== "block") return undefined;
+	const { kind: blockType, body: inner } = blockParts(node);
+	if (blockType === "dynamic") return unfollowedDynamic(resourceSymbol, node);
+	return blockType === "" ? undefined : unfollowedComputed(resourceSymbol, blockType, inner, node);
+}
+
+/**
+ * Unfollowed `dynamic` and computed-name depth-1 nested blocks of a resource.
+ * @param resourceSymbol The enclosing resource's canonical address.
+ * @param body The resource block's body.
+ * @returns Unparsed entries in document order.
+ */
+function unfollowedNestedBlocks(resourceSymbol: string, body: Node | undefined): Unparsed[] {
+	return (body?.namedChildren ?? []).flatMap((node) => {
+		const entry = unfollowedBlock(resourceSymbol, node);
+		return entry === undefined ? [] : [entry];
+	});
 }
 
 /**
@@ -291,17 +394,20 @@ function blockDefinition(block: UniqueNestedBlock): Definition {
 }
 
 /**
- * Extract unique depth-1 named nested-block definitions and 1-hop intra-resource
- * sibling links for one top-level `resource` block.
+ * Extract unique depth-1 named nested-block definitions, 1-hop intra-resource
+ * sibling links, duplicate-name ambiguous symbols, and unfollowed dynamic or
+ * computed-name entries for one top-level `resource` block.
  * @param resourceSymbol The enclosing resource's canonical address.
  * @param body The resource block's body.
- * @returns Its nested-block definitions and resolved sibling links.
+ * @returns Its nested-block facts.
  */
 function resourceNestedFacts(resourceSymbol: string, body: Node | undefined): ResourceNestedFacts {
-	const blocks = uniqueNestedBlocks(resourceSymbol, body);
+	const { unique, ambiguousSymbols } = partitionNestedBlocks(resourceSymbol, body);
 	return {
-		definitions: blocks.map(blockDefinition),
-		siblingLinks: siblingLinksIn(blocks),
+		definitions: unique.map(blockDefinition),
+		siblingLinks: siblingLinksIn(unique),
+		ambiguousSymbols,
+		unparsed: unfollowedNestedBlocks(resourceSymbol, body),
 	};
 }
 

@@ -37,6 +37,7 @@ import {
 	namesOf,
 	parseTerraformAddress,
 	splitAddressSegments,
+	type ParsedTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import type {
 	PlanModule,
@@ -53,14 +54,15 @@ import {
 } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
 import {
 	createNestedIndex,
-	holderAt,
 	nestedQueries,
+	planOnlyParentPath,
 	recordNestedBlocks,
 	siteIn,
+	unparsedPartIn,
+	writtenIn,
 	type NestedBlockIndex,
 	type NestedBlockQueries,
 } from "#runtime/code-facts/terraform/operations/terraform-siblings.ts";
-import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
@@ -75,6 +77,8 @@ interface Declaration {
 	/** Where the checkout declares it; absent for a declaration only a plan names. */
 	readonly path?: string;
 	readonly definition?: Definition;
+	/** The plan JSON file that declared it when absent from disk. */
+	readonly planPath?: string;
 }
 
 /** One reference from a declaration to an address. */
@@ -90,6 +94,8 @@ interface Link {
 	readonly kind: EvidenceKind;
 	/** The end of the joining declaration it is written in that it names, if any. */
 	readonly joins?: JoinEnd;
+	/** The depth-1 nested block holding the reference, if any. */
+	readonly block?: string;
 }
 
 /** Where the checkout declares an address, or the module call that holds it. */
@@ -104,6 +110,10 @@ type Declared =
 	/** It is inside a module the check does not read: the module call's address. */
 	| { readonly status: "unread"; readonly module: string }
 	| { readonly status: "unparsed"; readonly path: string; readonly unparsed: Unparsed }
+	/** A selector whose target cannot be statically followed, such as a plan-only resource's nested block. */
+	| { readonly status: "unfollowed"; readonly detail: string }
+	/** Multiple blocks of the same type share that literal name in one resource. */
+	| { readonly status: "ambiguous" }
 	| { readonly status: "absent" };
 
 /** The address space of one root module. */
@@ -157,6 +167,8 @@ interface Written {
 	readonly joins?: JoinEnd;
 	/** The path of the argument it sits in, for a reference a file writes. */
 	readonly argument?: string;
+	/** The depth-1 nested block holding the reference, if any. */
+	readonly block?: string;
 }
 
 /** What the reading of one root module collects. */
@@ -193,27 +205,6 @@ function declare(reading: Reading, declaration: Declaration): void {
 }
 
 /**
- * The references one file of a module instance writes, each from the
- * narrowest declaration that holds it.
- * @param facts The file's facts.
- * @param scope The module instance.
- * @returns The references; one outside every declaration, and the name of an
- * environment value, which names no address, are none.
- */
-function writtenIn(facts: SyntaxFacts, scope: string): Written[] {
-	return facts.references.flatMap((reference) => {
-		const holder = holderAt(facts, reference.line);
-		if (holder === undefined || reference.via !== "code") return [];
-		const { symbol, line, joins, argument } = reference;
-		const names = symbol.split(".");
-		const kind = reference.kind ?? "configured-path";
-		const from = `${scope}${holder.symbol}`;
-		const where = { path: facts.path, line, symbol, ...(argument !== undefined && { argument }) };
-		return [{ from, scope, names, ...where, kind, ...(joins && { joins }) }];
-	});
-}
-
-/**
  * Read one file of a module instance into the address space.
  * @param reading What the reading collects.
  * @param facts The file's facts.
@@ -227,7 +218,7 @@ function readFile(reading: Reading, facts: SyntaxFacts, scope: string): void {
 		reading.sites.set(at, [...(reading.sites.get(at) ?? []), address]);
 	}
 	recordNestedBlocks(reading.nested, facts, scope);
-	reading.written.push(...writtenIn(facts, scope));
+	reading.written.push(...writtenIn(facts, scope, reading.nested));
 	const parts = facts.unparsed.map((unparsed) => ({ path: facts.path, unparsed }));
 	reading.unparsed.set(scope, [...(reading.unparsed.get(scope) ?? []), ...parts]);
 }
@@ -316,7 +307,7 @@ function readPlanScope(
 		reading.unread.delete(scope.slice(0, -1));
 		reading.scopes.set(scope, []);
 		for (const { address, kind } of module.declarations) {
-			declare(reading, { address: `${scope}${address}`, kind });
+			declare(reading, { address: `${scope}${address}`, kind, planPath: plan.path });
 		}
 		reading.written.push(
 			...module.links.flatMap((link) => {
@@ -425,17 +416,21 @@ function scopeOf(reading: Reading, address: string): string {
 }
 
 /**
- * Check whether an absent address is unread or appears in unparsed code.
+ * Check why an absent parsed address is missing: duplicate-name ambiguity,
+ * unread module, plan-only resource block, dynamic/computed-name or syntax
+ * unparsed code, or absence.
  * @param reading What the reading collected.
- * @param address The normalized address.
- * @returns Unread, unparsed, or absent.
+ * @param parsed The parsed Terraform address.
+ * @returns The diagnosis.
  */
-function missingDeclared(reading: Reading, address: string): Declared {
-	const module = unreadModuleOf(reading, address);
+function missingDeclared(reading: Reading, parsed: ParsedTerraformAddress): Declared {
+	if (reading.nested.ambiguous.has(parsed.address)) return { status: "ambiguous" };
+	const module = unreadModuleOf(reading, parsed.address);
 	if (module !== undefined) return { status: "unread", module };
-	const name = lastName(address);
-	const parts = reading.unparsed.get(scopeOf(reading, address)) ?? [];
-	const part = parts.find((each) => each.unparsed.names.includes(name));
+	const planPath = planOnlyParentPath(reading.declarations, parsed);
+	if (planPath !== undefined) return { status: "unfollowed", detail: planPath };
+	const scope = scopeOf(reading, parsed.address);
+	const part = unparsedPartIn(parsed, scope, reading.unparsed.get(scope) ?? []);
 	return part === undefined ? { status: "absent" } : { status: "unparsed", ...part };
 }
 
@@ -449,7 +444,7 @@ function declaredIn(reading: Reading, symbol: string): Declared {
 	const parsed = parseTerraformAddress(symbol);
 	if (parsed === undefined) return { status: "absent" };
 	const declaration = reading.declarations.get(parsed.address);
-	if (declaration === undefined) return missingDeclared(reading, parsed.address);
+	if (declaration === undefined) return missingDeclared(reading, parsed);
 	const site = siteIn(reading.declarations, parsed.address);
 	return { status: "found", declaration, ...(site === undefined ? {} : { site }) };
 }

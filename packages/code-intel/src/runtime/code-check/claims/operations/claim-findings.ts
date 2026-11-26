@@ -45,6 +45,9 @@ const LACKS = {
  * @returns The phrase.
  */
 function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: string): string {
+	if (held.status === "absent" && held.ambiguous === true) {
+		return "multiple blocks of that type share that name in the same resource, so the symbol is ambiguous";
+	}
 	const asText = held.status === "absent" && held.asText === true;
 	return asText ? `${lacks.text} ${JSON.stringify(lastName(symbol))}` : lacks.code;
 }

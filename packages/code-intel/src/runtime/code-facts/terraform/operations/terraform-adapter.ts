@@ -40,6 +40,7 @@ import type {
 	ParsedFacts,
 	Reference,
 	SiblingLink,
+	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { sourceRange, spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
@@ -166,16 +167,25 @@ function declared(symbol: string, node: Node, visibility: string): Definition {
 	};
 }
 
-/** What one top-level block declares: its definitions and any intra-resource sibling links. */
+/** What one top-level block declares: its definitions and nested-block metadata. */
 interface BlockFacts {
 	readonly definitions: readonly Definition[];
 	readonly siblingLinks: readonly SiblingLink[];
+	readonly ambiguousSymbols: readonly string[];
+	readonly unparsed: readonly Unparsed[];
 }
+
+/** Empty nested-block metadata for blocks other than top-level `resource`. */
+const NO_NESTED: Omit<BlockFacts, "definitions"> = {
+	siblingLinks: [],
+	ambiguousSymbols: [],
+	unparsed: [],
+};
 
 /**
  * What one top-level block declares.
  * @param block The block.
- * @returns Its definitions and any resolved sibling-block links.
+ * @returns Its definitions and any nested-block metadata.
  */
 function blockFacts(block: Node): BlockFacts {
 	const { kind, labels, body } = partsOf(block);
@@ -184,27 +194,32 @@ function blockFacts(block: Node): BlockFacts {
 			definitions: attributesOf(body).map(({ name, node }) =>
 				declared(`local.${name}`, node, "local"),
 			),
-			siblingLinks: [],
+			...NO_NESTED,
 		};
 	}
 	const declares = DECLARES[kind];
 	if (declares === undefined || labels.length < declares.labels) {
-		return { definitions: [], siblingLinks: [] };
+		return { definitions: [], ...NO_NESTED };
 	}
 	const symbol = `${declares.prefix}${labels.slice(0, declares.labels).join(".")}`;
 	const own = declared(symbol, block, kind);
 	if (kind === "resource") {
 		const nested = resourceNestedFacts(symbol, body);
-		return { definitions: [own, ...nested.definitions], siblingLinks: nested.siblingLinks };
+		return {
+			definitions: [own, ...nested.definitions],
+			siblingLinks: nested.siblingLinks,
+			ambiguousSymbols: nested.ambiguousSymbols,
+			unparsed: nested.unparsed,
+		};
 	}
-	if (kind !== "module") return { definitions: [own], siblingLinks: [] };
+	if (kind !== "module") return { definitions: [own], ...NO_NESTED };
 	const passed = attributesOf(body).filter(({ name }) => !META_ARGUMENTS.has(name));
 	return {
 		definitions: [
 			own,
 			...passed.map(({ name, node }) => declared(`${symbol}.var.${name}`, node, "argument")),
 		],
-		siblingLinks: [],
+		...NO_NESTED,
 	};
 }
 
@@ -502,6 +517,7 @@ function terraformFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const unparsed = spansOf(captured.unparsed);
 	const blocks = captured.block.map(blockFacts);
 	const siblingLinks = blocks.flatMap((each) => each.siblingLinks);
+	const ambiguousSymbols = blocks.flatMap((each) => each.ambiguousSymbols);
 	return {
 		definitions: blocks.flatMap((each) => each.definitions),
 		references: [
@@ -509,8 +525,9 @@ function terraformFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 			...captured.block.flatMap(environmentOf),
 		],
 		imports: captured.block.flatMap((block) => moduleImport(block) ?? []),
-		unparsed: unparsedOf(captured.unparsed),
+		unparsed: [...unparsedOf(captured.unparsed), ...blocks.flatMap((each) => each.unparsed)],
 		...(siblingLinks.length > 0 ? { siblingLinks } : {}),
+		...(ambiguousSymbols.length > 0 ? { ambiguousSymbols } : {}),
 	};
 }
 

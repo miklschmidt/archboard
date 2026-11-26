@@ -357,6 +357,8 @@ interface ParsedFacts {
 	readonly computations?: readonly Computation[];
 	/** Resolved 1-hop intra-resource nested-block sibling links for anchor support only. */
 	readonly siblingLinks?: readonly SiblingLink[];
+	/** Canonical nested-block symbols suppressed because multiple blocks share the same literal name. */
+	readonly ambiguousSymbols?: readonly string[];
 }
 
 /**
@@ -464,6 +466,8 @@ interface SyntaxFacts {
 	readonly computations?: readonly Computation[];
 	/** Resolved 1-hop intra-resource nested-block sibling links (`ParsedFacts.siblingLinks`). */
 	readonly siblingLinks?: readonly SiblingLink[];
+	/** Duplicate literal-name nested-block symbols (`ParsedFacts.ambiguousSymbols`). */
+	readonly ambiguousSymbols?: readonly string[];
 }
 
 /** A file no adapter reads: its text, which the text reading tests (ADR 0046). */

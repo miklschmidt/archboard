@@ -5,10 +5,18 @@
 // declaration reach graph: they support anchors between co-located nested
 // blocks without emitting relationship evidence.
 
-import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
+import type {
+	Definition,
+	Reference,
+	SiblingLink,
+	SyntaxFacts,
+	Unparsed,
+} from "#runtime/code-facts/operations/facts.ts";
+import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
 import {
 	parseTerraformAddress,
 	splitAddressSegments,
+	type ParsedTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 
 /** One emitted depth-1 nested block's canonical address and file span. */
@@ -19,12 +27,14 @@ interface NestedBlockSpan {
 	readonly end: number;
 }
 
-/** Per-root index of depth-1 nested block spans and 1-hop sibling adjacency. */
+/** Per-root index of depth-1 nested block spans, sibling adjacency, and ambiguous duplicates. */
 interface NestedBlockIndex {
 	/** Symmetric 1-hop sibling adjacency, keyed by module-scoped canonical block address. */
 	readonly edges: Map<string, Set<string>>;
 	/** Depth-1 nested blocks belonging to each resource declaration address. */
 	readonly blocksByDeclaration: Map<string, NestedBlockSpan[]>;
+	/** Module-scoped canonical block addresses suppressed due to duplicate literal names. */
+	readonly ambiguous: Set<string>;
 }
 
 /** Nested-block and sibling-link queries exposed on `TerraformConfiguration`. */
@@ -51,7 +61,7 @@ interface NestedBlockQueries {
  * @returns An empty index.
  */
 function createNestedIndex(): NestedBlockIndex {
-	return { edges: new Map(), blocksByDeclaration: new Map() };
+	return { edges: new Map(), blocksByDeclaration: new Map(), ambiguous: new Set() };
 }
 
 /**
@@ -89,8 +99,27 @@ function recordBlockSpan(
 }
 
 /**
- * Record a file's depth-1 nested block spans and 1-hop sibling links under one
- * module instance scope.
+ * Record symmetric 1-hop sibling links under a module instance scope.
+ * @param edges The adjacency map.
+ * @param links The file's sibling links.
+ * @param scope The module instance scope.
+ */
+function recordSiblingLinks(
+	edges: Map<string, Set<string>>,
+	links: readonly SiblingLink[],
+	scope: string,
+): void {
+	for (const { from, to } of links) {
+		const scopedFrom = `${scope}${from}`;
+		const scopedTo = `${scope}${to}`;
+		addEdge(edges, scopedFrom, scopedTo);
+		addEdge(edges, scopedTo, scopedFrom);
+	}
+}
+
+/**
+ * Record a file's depth-1 nested block spans, ambiguous duplicates, and 1-hop
+ * sibling links under one module instance scope.
  * @param index The root module's nested-block index.
  * @param facts The file's parsed Terraform facts.
  * @param scope The module instance scope (`""` or `module.<name>.`).
@@ -99,12 +128,8 @@ function recordNestedBlocks(index: NestedBlockIndex, facts: SyntaxFacts, scope: 
 	for (const definition of facts.definitions) {
 		if (definition.visibility === "block") recordBlockSpan(index, facts.path, scope, definition);
 	}
-	for (const { from, to } of facts.siblingLinks ?? []) {
-		const scopedFrom = `${scope}${from}`;
-		const scopedTo = `${scope}${to}`;
-		addEdge(index.edges, scopedFrom, scopedTo);
-		addEdge(index.edges, scopedTo, scopedFrom);
-	}
+	for (const symbol of facts.ambiguousSymbols ?? []) index.ambiguous.add(`${scope}${symbol}`);
+	recordSiblingLinks(index.edges, facts.siblingLinks ?? [], scope);
 }
 
 /**
@@ -118,6 +143,69 @@ function holderAt(facts: SyntaxFacts, line: number): Definition | undefined {
 	return facts.definitions
 		.filter((each) => each.visibility !== "block" && each.start <= line && line <= each.end)
 		.toSorted((left, right) => left.end - left.start - (right.end - right.start))[0];
+}
+
+/**
+ * The depth-1 nested block of a declaration spanning a file line in an index.
+ * @param index The root module's nested-block index.
+ * @param declarationAddress The enclosing resource's canonical address.
+ * @param path The file, relative to the checkout.
+ * @param line The 1-based line number.
+ * @returns The nested block's canonical address, or undefined.
+ */
+function nestedBlockAtIn(
+	index: NestedBlockIndex,
+	declarationAddress: string,
+	path: string,
+	line: number,
+): string | undefined {
+	return index.blocksByDeclaration
+		.get(declarationAddress)
+		?.find((block) => block.path === path && block.start <= line && line <= block.end)?.address;
+}
+
+/**
+ * Find an unfollowed dynamic/computed-name block or syntax-error entry in a
+ * scope's unparsed list matching a parsed Terraform address.
+ * @param parsed The parsed Terraform address.
+ * @param scope The scope holding `parts`.
+ * @param parts The unparsed entries recorded in `scope`.
+ * @returns The matching file and unparsed entry, or undefined.
+ */
+function unparsedPartIn(
+	parsed: ParsedTerraformAddress,
+	scope: string,
+	parts: readonly { readonly path: string; readonly unparsed: Unparsed }[],
+): { readonly path: string; readonly unparsed: Unparsed } | undefined {
+	if (parsed.kind === "block" && parsed.nested !== undefined) {
+		const target = `${parsed.declaration}.${parsed.nested.blockType}`;
+		const match = parts.find(
+			(each) => each.unparsed.under !== undefined && `${scope}${each.unparsed.under}` === target,
+		);
+		if (match !== undefined) return match;
+	}
+	const name = lastName(parsed.address);
+	return parts.find(
+		(each) => each.unparsed.under === undefined && each.unparsed.names.includes(name),
+	);
+}
+
+/**
+ * The plan JSON path when a nested-block selector targets a resource known only from a plan.
+ * @param declarations The address space's declarations.
+ * @param parsed The parsed Terraform address.
+ * @returns The plan path, or undefined.
+ */
+function planOnlyParentPath(
+	declarations: ReadonlyMap<
+		string,
+		{ readonly kind: string; readonly path?: string; readonly planPath?: string }
+	>,
+	parsed: ParsedTerraformAddress,
+): string | undefined {
+	if (parsed.kind !== "block") return undefined;
+	const parent = declarations.get(parsed.declaration);
+	return parent?.kind === "resource" && parent.path === undefined ? parent.planPath : undefined;
 }
 
 /**
@@ -144,9 +232,7 @@ function nestedQueries(index: NestedBlockIndex): NestedBlockQueries {
 		 * @returns The nested block's canonical address, or undefined.
 		 */
 		nestedBlockAt(declarationAddress, path, line) {
-			return index.blocksByDeclaration
-				.get(declarationAddress)
-				?.find((block) => block.path === path && block.start <= line && line <= block.end)?.address;
+			return nestedBlockAtIn(index, declarationAddress, path, line);
 		},
 	};
 }
@@ -172,12 +258,69 @@ function siteIn(
 	return undefined;
 }
 
+/**
+ * Optional metadata attached to a written reference from a Terraform file.
+ * @param reference The file reference.
+ * @param block The nested block spanning the reference, if any.
+ * @returns The optional fields present on the reference.
+ */
+function writtenExtras(
+	reference: Reference,
+	block: string | undefined,
+): {
+	readonly argument?: string;
+	readonly joins?: NonNullable<Reference["joins"]>;
+	readonly block?: string;
+} {
+	return {
+		...(reference.argument === undefined ? {} : { argument: reference.argument }),
+		...(reference.joins === undefined ? {} : { joins: reference.joins }),
+		...(block === undefined ? {} : { block }),
+	};
+}
+
+/**
+ * The references one file of a module instance writes, each from the
+ * narrowest top-level declaration that holds it, tagged with its depth-1
+ * nested block when written inside one.
+ * @param facts The file's facts.
+ * @param scope The module instance.
+ * @param nested The root module's nested-block index.
+ * @returns The references; one outside every declaration or non-code is none.
+ */
+function writtenIn(facts: SyntaxFacts, scope: string, nested: NestedBlockIndex) {
+	return facts.references.flatMap((reference) => {
+		const holder = holderAt(facts, reference.line);
+		if (holder === undefined || reference.via !== "code") return [];
+		const { symbol, line } = reference;
+		const from = `${scope}${holder.symbol}`;
+		const block = nestedBlockAtIn(nested, from, facts.path, line);
+		const kind = reference.kind ?? ("configured-path" as const);
+		return [
+			{
+				from,
+				scope,
+				names: symbol.split("."),
+				path: facts.path,
+				line,
+				symbol,
+				kind,
+				...writtenExtras(reference, block),
+			},
+		];
+	});
+}
+
 export {
 	type NestedBlockIndex,
 	type NestedBlockQueries,
 	createNestedIndex,
 	holderAt,
+	nestedBlockAtIn,
 	nestedQueries,
+	planOnlyParentPath,
 	recordNestedBlocks,
 	siteIn,
+	unparsedPartIn,
+	writtenIn,
 };

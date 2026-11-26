@@ -23,7 +23,10 @@ import type {
 	SyntaxFacts,
 	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
-import { parseTerraformAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	parseTerraformAddress,
+	type ParsedTerraformAddress,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { lastName, textTest } from "#runtime/code-facts/operations/text-reading.ts";
 
 /** What a file holds of a symbol. */
@@ -36,7 +39,11 @@ type Found =
 			readonly definition?: Definition;
 	  }
 	| { readonly status: "unparsed"; readonly unparsed: Unparsed }
-	| { readonly status: "absent" };
+	| {
+			readonly status: "absent";
+			/** Multiple nested blocks of the same type share that literal name in one resource. */
+			readonly ambiguous?: true;
+	  };
 
 /** Whether the symbol must be a definition, or may be a use too. */
 type Accept = "definition" | "definition-or-reference";
@@ -175,6 +182,40 @@ function textFound(text: string, symbol: string): Found {
 }
 
 /**
+ * An unfollowed dynamic or computed-name block entry matching a parsed nested-block address.
+ * @param unparsed The file's unparsed parts.
+ * @param parsed The parsed Terraform address.
+ * @returns The matching unparsed entry, or undefined.
+ */
+function unfollowedBlockInFile(
+	unparsed: readonly Unparsed[],
+	parsed: ParsedTerraformAddress,
+): Unparsed | undefined {
+	if (parsed.kind !== "block" || parsed.nested === undefined) return undefined;
+	const under = `${parsed.declaration}.${parsed.nested.blockType}`;
+	return unparsed.find((each) => each.under === under);
+}
+
+/**
+ * Why a Terraform file does not hold a parsed address: duplicate literal-name
+ * ambiguity, an unfollowed dynamic or computed-name block, syntax-error code,
+ * or absence.
+ * @param facts The file's facts.
+ * @param parsed The parsed Terraform address.
+ * @returns Ambiguous absent, unparsed, or absent.
+ */
+function terraformNotFound(facts: SyntaxFacts, parsed: ParsedTerraformAddress): Found {
+	if (facts.ambiguousSymbols?.includes(parsed.address) === true) {
+		return { status: "absent", ambiguous: true };
+	}
+	const name = lastName(parsed.address);
+	const part =
+		unfollowedBlockInFile(facts.unparsed, parsed) ??
+		facts.unparsed.find((each) => each.under === undefined && each.names.includes(name));
+	return part === undefined ? { status: "absent" } : { status: "unparsed", unparsed: part };
+}
+
+/**
  * What a Terraform file holds of an address: the declaration, or with
  * `definition-or-reference` a reference too, matched whole.
  * @param facts The file's facts.
@@ -192,7 +233,7 @@ function addressFound(facts: SyntaxFacts, symbol: string, accept: Accept): Found
 	const used =
 		accept === "definition" ? undefined : facts.references.find((each) => each.symbol === address);
 	return used === undefined
-		? notFound(facts.unparsed, address)
+		? terraformNotFound(facts, parsed)
 		: { status: "found", line: used.line };
 }
 
