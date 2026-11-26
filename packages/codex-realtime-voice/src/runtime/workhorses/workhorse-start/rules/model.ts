@@ -30,20 +30,21 @@ function createWorkhorseThreadStartParams(
 	selection: RoleModelSelection | null = null,
 ): SessionParams<"thread/start"> {
 	const { model, effort, serviceTier } = resolvedWorkhorseSelection(selection);
-	const common = {
+	return {
+		model,
+		serviceTier,
 		config: { model_reasoning_effort: effort },
 		cwd: checkoutRoot,
 		runtimeWorkspaceRoots: [checkoutRoot],
 		serviceName: profile.identity.serviceName,
 		developerInstructions: profile.instructions.text,
 		ephemeral: false,
-		historyMode: "paginated" as const,
-		sessionStartSource: "startup" as const,
+		historyMode: "paginated",
+		sessionStartSource: "startup",
 		threadSource: profile.identity.threadSource,
 		dynamicTools: [...profile.dynamicTools],
 		experimentalRawEvents: false,
 	};
-	return serviceTier === null ? { model, ...common } : { model, serviceTier, ...common };
 }
 
 export {

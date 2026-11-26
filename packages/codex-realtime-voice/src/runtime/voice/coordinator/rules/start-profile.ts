@@ -1,4 +1,5 @@
 import { CodexCoordinatorError } from "#runtime/voice/coordinator/protocol/contract.ts";
+import { matchesServiceTier } from "#runtime/host/protocol/models.ts";
 import type {
 	CodexCoordinatorOptions,
 	CoordinatorConfiguredSettings,
@@ -65,7 +66,7 @@ function assertStartedResponse(
 		model: response.model !== configured.model,
 		modelProvider: response.modelProvider.length === 0,
 		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
-		serviceTier: configured.serviceTier !== null && response.serviceTier !== configured.serviceTier,
+		serviceTier: !matchesServiceTier(configured.serviceTier, response.serviceTier),
 		cwd: response.cwd !== workingDirectory,
 		runtimeWorkspaceRoots:
 			response.runtimeWorkspaceRoots.length !== 1 ||
@@ -185,8 +186,8 @@ function tierMismatch(
 	if (settings.serviceTier !== started.serviceTier) {
 		return "Coordinator settings did not confirm the effective service tier.";
 	}
-	return configured.serviceTier !== null && settings.serviceTier !== configured.serviceTier
-		? `Coordinator settings did not confirm advertised ${configured.serviceTier}.`
+	return !matchesServiceTier(configured.serviceTier, settings.serviceTier)
+		? "Coordinator settings did not confirm the selected service tier."
 		: null;
 }
 

@@ -2,7 +2,7 @@ import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions
 import { defaultVoiceAgentModels, type RoleModelSelection } from "#runtime/host/protocol/models.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import { deepFreeze } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
-import type { CodexSession, SessionParams } from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import {
 	CodexCoordinatorError,
 	type CoordinatorModel,
@@ -212,8 +212,8 @@ function selectCoordinatorModel(
 }
 
 /**
- * The authored coordinator thread/start body. A service tier is only named when non-null,
- * because naming a tier the account does not have is refused by Codex.
+ * The authored coordinator thread/start body. An explicit null chooses Standard even when the
+ * Codex configuration supplies a different tier.
  * @param workingDirectory - The directory of its own the coordinator works in, which is no checkout.
  * @param serviceTier - The advertised service tier, or null.
  * @param profile - The host policy for this operation.
@@ -226,27 +226,10 @@ function createCoordinatorThreadStartParams(
 	profile: WorkbenchThreadProfile,
 	model: string = COORDINATOR_MODEL,
 ): CoordinatorThreadStartParams {
-	if (serviceTier !== null) {
-		return {
-			model,
-			allowProviderModelFallback: false,
-			serviceTier,
-			cwd: workingDirectory,
-			runtimeWorkspaceRoots: [workingDirectory],
-			config: COORDINATOR_THREAD_CONFIG,
-			serviceName: profile.identity.serviceName,
-			developerInstructions: profile.instructions.text,
-			ephemeral: false,
-			historyMode: "paginated",
-			sessionStartSource: "startup",
-			threadSource: profile.identity.threadSource,
-			dynamicTools: [...profile.dynamicTools],
-			experimentalRawEvents: false,
-		} satisfies SessionParams<"thread/start">;
-	}
 	return {
 		model,
 		allowProviderModelFallback: false,
+		serviceTier,
 		cwd: workingDirectory,
 		runtimeWorkspaceRoots: [workingDirectory],
 		config: COORDINATOR_THREAD_CONFIG,
@@ -258,7 +241,7 @@ function createCoordinatorThreadStartParams(
 		threadSource: profile.identity.threadSource,
 		dynamicTools: [...profile.dynamicTools],
 		experimentalRawEvents: false,
-	} satisfies SessionParams<"thread/start">;
+	};
 }
 
 /**
@@ -276,19 +259,12 @@ function createCoordinatorSettingsUpdateParams(
 	model: string = COORDINATOR_MODEL,
 	effort: string = COORDINATOR_EFFORT,
 ): CoordinatorSettingsUpdateParams {
-	if (serviceTier !== null) {
-		return {
-			threadId,
-			model,
-			serviceTier,
-			effort,
-		} satisfies SessionParams<"thread/settings/update">;
-	}
 	return {
 		threadId,
 		model,
+		serviceTier,
 		effort,
-	} satisfies SessionParams<"thread/settings/update">;
+	};
 }
 
 export {

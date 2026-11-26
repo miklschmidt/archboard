@@ -12,6 +12,7 @@ describe("codex workhorse start profile", () => {
 
 		expect(Object.keys(params)).toEqual([
 			"model",
+			"serviceTier",
 			"config",
 			"cwd",
 			"runtimeWorkspaceRoots",
@@ -26,6 +27,7 @@ describe("codex workhorse start profile", () => {
 		]);
 		expect(params).toMatchObject({
 			model: "gpt-6.2-sol",
+			serviceTier: null,
 			config: { model_reasoning_effort: "high" },
 			cwd: CHECKOUT_ROOT,
 			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
@@ -45,7 +47,6 @@ describe("codex workhorse start profile", () => {
 		const intentionallyOmitted = [
 			"modelProvider",
 			"allowProviderModelFallback",
-			"serviceTier",
 			"approvalPolicy",
 			"approvalsReviewer",
 			"sandbox",
@@ -84,6 +85,6 @@ describe("codex workhorse start profile", () => {
 		);
 		expect(withoutTier.model).toBe("gpt-custom-workhorse");
 		expect(withoutTier.config).toEqual({ model_reasoning_effort: "low" });
-		expect(Object.hasOwn(withoutTier, "serviceTier")).toBe(false);
+		expect(withoutTier.serviceTier).toBeNull();
 	});
 });

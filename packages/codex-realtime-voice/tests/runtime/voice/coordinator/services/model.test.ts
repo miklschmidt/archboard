@@ -132,7 +132,7 @@ describe("coordinator model and literal profile", () => {
 		await expectCoordinatorCode(listCoordinatorModels(port), "repeated_cursor");
 	});
 
-	test("omits serviceTier when priority is not advertised", () => {
+	test("sets Standard explicitly when priority is not advertised", () => {
 		const params = createCoordinatorThreadStartParams(
 			WORKING_DIRECTORY,
 			null,
@@ -143,6 +143,7 @@ describe("coordinator model and literal profile", () => {
 			JSON.stringify({
 				model: reviewedCoordinatorModel(),
 				allowProviderModelFallback: false,
+				serviceTier: null,
 				cwd: WORKING_DIRECTORY,
 				runtimeWorkspaceRoots: [WORKING_DIRECTORY],
 				// Project docs are off: AGENTS.md is for the workhorse, never the coordinator.
@@ -157,7 +158,6 @@ describe("coordinator model and literal profile", () => {
 				experimentalRawEvents: false,
 			}),
 		);
-		expect(Object.hasOwn(params, "serviceTier")).toBe(false);
 		for (const key of [
 			"modelProvider",
 			"approvalPolicy",
@@ -211,6 +211,7 @@ describe("coordinator model and literal profile", () => {
 		expect(createCoordinatorSettingsUpdateParams(threadId, null)).toEqual({
 			threadId,
 			model: reviewedCoordinatorModel(),
+			serviceTier: null,
 			effort: reviewedCoordinatorEffort(),
 		});
 	});

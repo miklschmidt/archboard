@@ -1,5 +1,6 @@
 import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
+import { matchesServiceTier } from "#runtime/host/protocol/models.ts";
 import type { ThreadLinkClassification } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
 	CodexCoordinatorError,
@@ -483,7 +484,7 @@ function effectiveSettingsMatch(
 	const checks = [
 		effective.model === configured.model,
 		effective.effort === configured.effort,
-		configured.serviceTier === null || effective.serviceTier === configured.serviceTier,
+		matchesServiceTier(configured.serviceTier, effective.serviceTier),
 	];
 	return checks.every((matched) => matched);
 }

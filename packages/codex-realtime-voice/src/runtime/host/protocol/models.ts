@@ -11,6 +11,16 @@ export interface VoiceAgentModelPreferences {
 	readonly workhorse: RoleModelSelection | null;
 }
 
+/**
+ * Compare a requested tier with the effective Codex tier, which can spell Standard as "default".
+ * @param requested The selected tier, with null for Standard.
+ * @param effective The tier Codex reports.
+ * @returns Whether the effective tier confirms the selection.
+ */
+export function matchesServiceTier(requested: string | null, effective: string | null): boolean {
+	return effective === requested || (requested === null && effective === "default");
+}
+
 /** The reviewed default model settings used when no host override is configured. */
 const DEFAULT_VOICE_AGENT_MODELS: Readonly<{
 	readonly coordinator: RoleModelSelection;

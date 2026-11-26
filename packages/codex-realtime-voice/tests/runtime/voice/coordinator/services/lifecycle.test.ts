@@ -126,16 +126,18 @@ describe("coordinator lifecycle", () => {
 		expect(fixtureValue.epoch.records[0]?.provenance.threadSource).toBe("vscode");
 	});
 
-	test("keeps configured and effective service tier absent when priority is not advertised", async () => {
+	test("confirms Standard when priority is not advertised", async () => {
 		const fixtureValue = fixture({
 			model: coordinatorModel({ serviceTiers: [], defaultServiceTier: null }),
+			settingsOverrides: { serviceTier: "default" },
 		});
+		Object.assign(fixtureValue.session.started, { serviceTier: "default" });
 		const snapshot = await ready(fixtureValue, "fallback-operation");
 
 		expect(snapshot.configured?.serviceTier).toBeNull();
-		expect(snapshot.effective?.serviceTier).toBeNull();
-		expect(Object.hasOwn(fixtureValue.session.startParams[0] ?? {}, "serviceTier")).toBe(false);
-		expect(Object.hasOwn(fixtureValue.session.updateParams[0] ?? {}, "serviceTier")).toBe(false);
+		expect(snapshot.effective?.serviceTier).toBe("default");
+		expect(fixtureValue.session.startParams[0]?.serviceTier).toBeNull();
+		expect(fixtureValue.session.updateParams[0]?.serviceTier).toBeNull();
 	});
 
 	test("refuses while model/list lacks the coordinator model, then starts once it is listed", async () => {
