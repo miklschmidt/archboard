@@ -23,7 +23,7 @@ import type {
 	SyntaxFacts,
 	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
-import { declarationAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import { parseTerraformAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { lastName, textTest } from "#runtime/code-facts/operations/text-reading.ts";
 
 /** What a file holds of a symbol. */
@@ -183,7 +183,9 @@ function textFound(text: string, symbol: string): Found {
  * @returns Where it was found, that it is only in unparsed code, or that it is absent.
  */
 function addressFound(facts: SyntaxFacts, symbol: string, accept: Accept): Found {
-	const address = declarationAddress(symbol);
+	const parsed = parseTerraformAddress(symbol);
+	if (parsed === undefined) return { status: "absent" };
+	const { address } = parsed;
 	const declared = facts.definitions.find((each) => each.symbol === address);
 	if (declared !== undefined)
 		return { status: "found", line: declared.start, definition: declared };

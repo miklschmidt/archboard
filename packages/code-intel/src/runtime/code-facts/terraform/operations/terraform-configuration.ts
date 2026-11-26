@@ -33,9 +33,10 @@ import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/modul
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 import {
 	addressOf,
-	declarationAddress,
 	isTerraformFile,
 	namesOf,
+	parseTerraformAddress,
+	splitAddressSegments,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import type {
 	PlanModule,
@@ -60,7 +61,7 @@ type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 interface Declaration {
 	/** Its address, relative to the root module. */
 	readonly address: string;
-	/** `resource`, `data`, `ephemeral`, `module`, `variable`, `argument`, `output` or `local`. */
+	/** `resource`, `block`, `data`, `ephemeral`, `module`, `variable`, `argument`, `output` or `local`. */
 	readonly kind: string;
 	/** Where the checkout declares it; absent for a declaration only a plan names. */
 	readonly path?: string;
@@ -170,14 +171,14 @@ interface Reading {
 }
 
 /**
- * The narrowest declaration of a file that holds a line.
+ * The narrowest top-level declaration of a file that holds a line, ignoring nested blocks.
  * @param facts The file's facts.
  * @param line The line.
  * @returns The definition, or undefined outside every declaration.
  */
 function holderAt(facts: SyntaxFacts, line: number): Definition | undefined {
 	return facts.definitions
-		.filter((definition) => definition.start <= line && line <= definition.end)
+		.filter((each) => each.visibility !== "block" && each.start <= line && line <= each.end)
 		.toSorted((left, right) => left.end - left.start - (right.end - right.start))[0];
 }
 
@@ -396,7 +397,7 @@ function linksOf(reading: Reading): Map<string, Link[]> {
  * @returns The module call's address.
  */
 function unreadModuleOf(reading: Reading, address: string): string | undefined {
-	const names = address.split(".");
+	const names = splitAddressSegments(address);
 	for (let index = 0; index + 1 < names.length; index += 1) {
 		if (names[index] !== "module") continue;
 		const call = names.slice(0, index + 2).join(".");
@@ -413,7 +414,7 @@ function unreadModuleOf(reading: Reading, address: string): string | undefined {
  * @returns Its scope.
  */
 function scopeOf(reading: Reading, address: string): string {
-	const names = address.split(".");
+	const names = splitAddressSegments(address);
 	let scope = "";
 	for (let index = 0; index + 1 < names.length && names[index] === "module"; index += 2) {
 		const inner = `${names.slice(0, index + 2).join(".")}.`;
@@ -431,7 +432,7 @@ function scopeOf(reading: Reading, address: string): string {
  * @returns The site, or undefined when no declaration of the checkout holds it.
  */
 function siteIn(declarations: ReadonlyMap<string, Declaration>, address: string): Site | undefined {
-	const names = address.split(".");
+	const names = splitAddressSegments(address);
 	for (let count = names.length; count > 0; count -= 1) {
 		const held = declarations.get(names.slice(0, count).join("."));
 		if (held?.path !== undefined && held.definition !== undefined) {
@@ -442,24 +443,33 @@ function siteIn(declarations: ReadonlyMap<string, Declaration>, address: string)
 }
 
 /**
- * What the address space holds at a symbol.
+ * Check whether an absent address is unread or appears in unparsed code.
  * @param reading What the reading collected.
- * @param symbol The address, with or without an instance key.
- * @returns The declaration and its site, or why there is none.
+ * @param address The normalized address.
+ * @returns Unread, unparsed, or absent.
  */
-function declaredIn(reading: Reading, symbol: string): Declared {
-	const address = declarationAddress(symbol);
-	const declaration = reading.declarations.get(address);
-	if (declaration !== undefined) {
-		const site = siteIn(reading.declarations, address);
-		return { status: "found", declaration, ...(site === undefined ? {} : { site }) };
-	}
+function missingDeclared(reading: Reading, address: string): Declared {
 	const module = unreadModuleOf(reading, address);
 	if (module !== undefined) return { status: "unread", module };
 	const name = lastName(address);
 	const parts = reading.unparsed.get(scopeOf(reading, address)) ?? [];
 	const part = parts.find((each) => each.unparsed.names.includes(name));
 	return part === undefined ? { status: "absent" } : { status: "unparsed", ...part };
+}
+
+/**
+ * What the address space holds at a symbol.
+ * @param reading What the reading collected.
+ * @param symbol The address, with or without an instance key.
+ * @returns The declaration and its site, or why there is none.
+ */
+function declaredIn(reading: Reading, symbol: string): Declared {
+	const parsed = parseTerraformAddress(symbol);
+	if (parsed === undefined) return { status: "absent" };
+	const declaration = reading.declarations.get(parsed.address);
+	if (declaration === undefined) return missingDeclared(reading, parsed.address);
+	const site = siteIn(reading.declarations, parsed.address);
+	return { status: "found", declaration, ...(site === undefined ? {} : { site }) };
 }
 
 /**
@@ -473,7 +483,9 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 	const { declarations } = reading;
 	return {
 		root,
-		endpoints: [...declarations.values()].filter((each) => !PASSING.has(each.kind)),
+		endpoints: [...declarations.values()].filter(
+			(each) => !PASSING.has(each.kind) && each.kind !== "block",
+		),
 		/**
 		 * Where the checkout holds an address.
 		 * @param address The address.

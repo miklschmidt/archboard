@@ -26,6 +26,7 @@ import {
 	definitionsNamedIn,
 	usesNamed,
 } from "#runtime/code-facts/modules/operations/name-index.ts";
+import { parseTerraformAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 
 /** How many files a chain of re-exports may pass through before the search gives up. */
@@ -100,6 +101,20 @@ function ownSpelling(definitions: readonly Definition[], symbol: string): string
 }
 
 /**
+ * Where a Terraform file defines an address, matched whole after stripping
+ * optional instance keys and canonically quoting any depth-1 nested-block name.
+ * @param facts The file's facts.
+ * @param symbol The address, with or without an instance key.
+ * @returns The site, or undefined when the address is invalid or not defined here.
+ */
+function terraformSiteIn(facts: SyntaxFacts, symbol: string): DefinitionSite | undefined {
+	const address = parseTerraformAddress(symbol)?.address;
+	if (address === undefined) return undefined;
+	const exact = facts.definitions.find((each) => each.symbol === address);
+	return exact === undefined ? undefined : { path: facts.path, definition: exact, via: [] };
+}
+
+/**
  * Where a file defines a symbol, or where its imports lead it: a definition
  * spelled as the symbol first, then where `elsewhere` finds it, and only then
  * one that ends with the symbol's names, as the member `Item.Group` ends with
@@ -115,6 +130,7 @@ async function siteIn(
 	symbol: string,
 	elsewhere: () => Promise<DefinitionSite | undefined>,
 ): Promise<DefinitionSite | undefined> {
+	if (facts.adapter === "terraform") return terraformSiteIn(facts, symbol);
 	const named = definitionsNamedIn(facts.definitions, symbol);
 	const exact = named.find((each) => dotted(each.symbol) === dotted(symbol));
 	if (exact !== undefined) return { path: facts.path, definition: exact, via: [] };

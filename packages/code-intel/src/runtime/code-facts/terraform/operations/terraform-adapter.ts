@@ -42,7 +42,10 @@ import type {
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { sourceRange, spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
-import { addressOf } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	addressOf,
+	decodeHclString,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { environmentOf } from "#runtime/code-facts/terraform/operations/terraform-environment.ts";
 import { classifyReference } from "#runtime/code-facts/terraform/operations/terraform-providers.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
@@ -164,6 +167,88 @@ function declared(symbol: string, node: Node, visibility: string): Definition {
 	};
 }
 
+/** A string template interpolation or directive marker. */
+const TEMPLATE_MARKER = /[$%]\{/u;
+
+/**
+ * The single named child of a node when the node has the expected type.
+ * @param node The parent node.
+ * @param type The required node type of the parent.
+ * @returns Its sole named child, or undefined.
+ */
+function onlyChild(node: Node | undefined, type: string): Node | undefined {
+	return node?.type === type && node.namedChildren.length === 1 ? node.namedChildren[0] : undefined;
+}
+
+/**
+ * The `string_lit` node inside a plain literal expression, if any.
+ * @param expression An attribute's value node.
+ * @returns The `string_lit` node, or undefined when the expression is not a single literal string.
+ */
+function literalStringNode(expression: Node | undefined): Node | undefined {
+	const literal = onlyChild(expression, "expression");
+	const stringLit = onlyChild(literal, "literal_value");
+	return stringLit?.type === "string_lit" ? stringLit : undefined;
+}
+
+/**
+ * The unescaped value of a direct literal double-quoted `name` attribute on a
+ * nested block body, rejecting template interpolations and directives.
+ * @param body The nested block's body.
+ * @returns The unescaped literal string, or undefined when absent or non-literal.
+ */
+function literalBlockName(body: Node | undefined): string | undefined {
+	const found = attributesOf(body).find((attribute) => attribute.name === "name");
+	const stringLit = literalStringNode(found?.node.namedChildren[1]);
+	if (stringLit === undefined || TEMPLATE_MARKER.test(stringLit.text)) return undefined;
+	return decodeHclString(stringLit.text);
+}
+
+/** One candidate depth-1 named nested block inside a resource body. */
+interface NamedNestedBlock {
+	readonly blockType: string;
+	readonly name: string;
+	readonly key: string;
+	readonly node: Node;
+}
+
+/**
+ * Candidate depth-1 named nested blocks directly inside a resource body,
+ * skipping `dynamic` blocks and blocks without a direct literal `name`.
+ * @param body The resource block's body.
+ * @returns Each candidate nested block in document order.
+ */
+function namedNestedBlocks(body: Node | undefined): NamedNestedBlock[] {
+	return (body?.namedChildren ?? []).flatMap((node) => {
+		if (node.type !== "block") return [];
+		const { kind: blockType, body: inner } = partsOf(node);
+		if (blockType === "" || blockType === "dynamic") return [];
+		const name = literalBlockName(inner);
+		return name === undefined ? [] : [{ blockType, name, key: `${blockType}\0${name}`, node }];
+	});
+}
+
+/**
+ * Unique depth-1 named nested block definitions of a top-level `resource`
+ * block; duplicated `(blockType, literalName)` pairs within the same resource
+ * emit no definition.
+ * @param resourceSymbol The enclosing resource's address.
+ * @param body The resource block's body.
+ * @returns Its unique nested-block definitions.
+ */
+function nestedBlockDefinitions(resourceSymbol: string, body: Node | undefined): Definition[] {
+	const candidates = namedNestedBlocks(body);
+	const counts = new Map<string, number>();
+	for (const candidate of candidates) {
+		counts.set(candidate.key, (counts.get(candidate.key) ?? 0) + 1);
+	}
+	return candidates.flatMap(({ blockType, name, key, node }) =>
+		counts.get(key) === 1
+			? [declared(`${resourceSymbol}.${blockType}[${JSON.stringify(name)}]`, node, "block")]
+			: [],
+	);
+}
+
 /**
  * What one top-level block declares.
  * @param block The block.
@@ -178,6 +263,7 @@ function blockDefinitions(block: Node): Definition[] {
 	if (declares === undefined || labels.length < declares.labels) return [];
 	const symbol = `${declares.prefix}${labels.slice(0, declares.labels).join(".")}`;
 	const own = declared(symbol, block, kind);
+	if (kind === "resource") return [own, ...nestedBlockDefinitions(symbol, body)];
 	if (kind !== "module") return [own];
 	const passed = attributesOf(body).filter(({ name }) => !META_ARGUMENTS.has(name));
 	return [
