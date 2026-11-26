@@ -42,7 +42,10 @@
 // NetworkPolicy joins two workloads that a document draws, and neither end need
 // bind it (TASK-367.19).
 
-import { enclosingResourceMismatch } from "#runtime/code-check/claims/operations/claim-findings.ts";
+import {
+	anchorMismatch,
+	enclosingResourceMismatch,
+} from "#runtime/code-check/claims/operations/claim-findings.ts";
 import { readableOf, type ReadCheckout } from "#runtime/code-check/operations/checkouts.ts";
 import type { AnchorClaim } from "#runtime/code-check/claims/operations/claims.ts";
 import type { Resolve } from "#runtime/code-check/operations/resolution.ts";
@@ -80,7 +83,6 @@ import { readsSameCode, targetIn, type RefCodes } from "#runtime/code-check/oper
 import type { CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import type { SemanticNode } from "@archboard/model/content";
-import { describeSubject } from "@archboard/model/policy";
 
 /** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
 const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>(["kubernetes"]);
@@ -394,36 +396,6 @@ function anchoredUse(facts: FileFacts | undefined, claim: AnchorClaim): CodeEvid
 }
 
 /**
- * The warning for an anchor whose symbol is defined outside both ends.
- * @param claim The anchor.
- * @param site Where the symbol is defined.
- * @param use The anchored use, if the file uses the symbol.
- * @returns The finding.
- */
-function anchorMismatch(
-	claim: AnchorClaim,
-	site: Site,
-	use: CodeEvidence | undefined,
-): CodeFinding {
-	const ends = claim.ends.map((end) => JSON.stringify(end.name)).join(" nor ");
-	const candidate = site.definition.declaration === true;
-	return {
-		...claim.site,
-		severity: candidate ? "information" : "warning",
-		code: "ANCHOR_MISMATCH",
-		message:
-			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
-			`which ${site.path}:${site.definition.start} ${candidate ? "declares" : "defines"}, and that ` +
-			`${candidate ? "declaration" : "definition"} is in the bound code of neither ${ends}, nor of ` +
-			"a part inside one. Cite the symbol in the code of an end that proves the relationship, " +
-			"bind the part whose code it is, or change the relationship to what the code does.",
-		...(use === undefined
-			? {}
-			: { evidence: [{ ...use, resolution: candidate ? "candidate" : use.resolution }] }),
-	};
-}
-
-/**
  * Where the language server of the anchored file says the anchored use is
  * defined, when that is in a file of the checkout.
  * @param claim The anchor.
@@ -492,16 +464,13 @@ async function fallbackAnchorSite(
 }
 
 /**
- * Where an anchor's symbol is defined, when the check judges it: a definition
- * code facts find, else a Terraform reference resolved in its root, else the
- * line a language server names. Where code facts find only a declaration whose
- * code is in no file they can name, such as a C prototype defined outside its
- * header's pair, the line the server names wins when it names one.
+ * Where an anchor's symbol is defined when not pre-resolved through a qualified
+ * Terraform root: a definition code facts find, else a Terraform reference
+ * resolved in its root, else the line a language server names.
  * @param claim The anchor.
  * @param file The anchored file.
  * @param checkout Its checkout.
  * @param context The pass.
- * @param resolved Pre-resolved Terraform anchor site, when qualified.
  * @returns The site, or undefined when the check does not judge it.
  */
 async function anchoredSite(
@@ -509,9 +478,7 @@ async function anchoredSite(
 	file: string,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
-	resolved?: ResolvedAnchorSite,
 ): Promise<Site | undefined> {
-	if (resolved !== undefined) return siteFromResolved(resolved);
 	const declared = await definitionSite(context.search.facts, checkout, file, claim.anchor.symbol);
 	if (declared === undefined) return fallbackAnchorSite(claim, file, checkout, context);
 	if (declared.definition.declaration === true) {
@@ -564,26 +531,21 @@ async function outsideMismatch(
 }
 
 /**
- * Judge whether an anchor that holds supports its relationship or step.
+ * Judge one resolved anchor site against the claim's ends and holders.
  * @param claim The anchor.
- * @param file The anchored file, relative to its checkout.
+ * @param site The resolved definition site.
+ * @param fileFacts The anchored file's facts.
  * @param checkout The anchor's checkout.
  * @param context The pass.
- * @param resolved Pre-resolved Terraform anchor site, when qualified.
- * @returns The finding, or undefined when it supports it or the check cannot tell.
+ * @returns The finding, or undefined when `site` supports or withholds judgment.
  */
-async function judgeSupport(
+async function judgeSiteSupport(
 	claim: AnchorClaim,
-	file: string,
+	site: Site,
+	fileFacts: FileFacts | undefined,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
-	resolved?: ResolvedAnchorSite,
 ): Promise<CodeFinding | undefined> {
-	const { facts } = context.search;
-	const fileFacts = await facts.read(checkout, file);
-	if (JOINED_BY_DECLARATION.has(fileFacts?.adapter)) return undefined;
-	const site = await anchoredSite(claim, file, checkout, context, resolved);
-	if (site === undefined) return undefined;
 	if (await isEnclosingResourceAnchor(claim, site, checkout, context)) {
 		return enclosingResourceMismatch(claim, site, anchoredUse(fileFacts, claim));
 	}
@@ -592,6 +554,39 @@ async function judgeSupport(
 	);
 	if (holdings.some((each) => each !== "elsewhere")) return undefined;
 	return outsideMismatch(claim, site, checkout, context, anchoredUse(fileFacts, claim));
+}
+
+/**
+ * Judge whether an anchor that holds supports its relationship or step. When a
+ * qualified Terraform anchor resolves across multiple candidate roots, each
+ * candidate is judged in its own root and a warning emits only when every
+ * candidate rules out support.
+ * @param claim The anchor.
+ * @param file The anchored file, relative to its checkout.
+ * @param checkout The anchor's checkout.
+ * @param context The pass.
+ * @param resolved Pre-resolved Terraform anchor candidate sites, when qualified.
+ * @returns The finding, or undefined when it supports it or the check cannot tell.
+ */
+async function judgeSupport(
+	claim: AnchorClaim,
+	file: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+	resolved: readonly ResolvedAnchorSite[],
+): Promise<CodeFinding | undefined> {
+	const fileFacts = await context.search.facts.read(checkout, file);
+	if (JOINED_BY_DECLARATION.has(fileFacts?.adapter)) return undefined;
+	const sites =
+		resolved.length > 0
+			? resolved.map(siteFromResolved)
+			: [await anchoredSite(claim, file, checkout, context)].filter(
+					(each): each is Site => each !== undefined,
+				);
+	const verdicts = await Promise.all(
+		sites.map((each) => judgeSiteSupport(claim, each, fileFacts, checkout, context)),
+	);
+	return verdicts.includes(undefined) ? undefined : verdicts[0];
 }
 
 export { type ResolvedAnchorSite, judgeSupport };

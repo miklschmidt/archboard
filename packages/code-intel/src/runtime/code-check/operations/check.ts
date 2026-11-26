@@ -90,7 +90,7 @@ import {
 } from "#runtime/code-check/claims/operations/support.ts";
 import {
 	heldForClaim,
-	resolvedSiteOf,
+	resolvedSitesOf,
 	terraformRootOfTarget,
 	type Held,
 } from "#runtime/code-check/claims/operations/symbols.ts";
@@ -339,7 +339,7 @@ async function judgeAnchorSymbol(
 	const held = await findSymbolOf(claim, readable, checkout, claim.anchor.symbol, pass);
 	if (held?.status === "absent") pass.outcome.findings.push(anchorSymbolMissing(claim, held));
 	if (held?.status !== "found") return;
-	const mismatch = await anchorMismatch(claim, held.file, checkout, pass, resolvedSiteOf(held));
+	const mismatch = await anchorMismatch(claim, held.file, checkout, pass, resolvedSitesOf(held));
 	if (mismatch !== undefined) pass.outcome.findings.push(mismatch);
 }
 
@@ -349,7 +349,7 @@ async function judgeAnchorSymbol(
  * @param file The anchored file.
  * @param checkout Its checkout.
  * @param pass The pass.
- * @param resolved Pre-resolved Terraform anchor site, when qualified.
+ * @param resolved Pre-resolved Terraform anchor candidate sites, when qualified.
  * @returns The finding, or undefined when it supports it or the check cannot tell.
  */
 async function anchorMismatch(
@@ -357,7 +357,7 @@ async function anchorMismatch(
 	file: string,
 	checkout: ClaimCheckout,
 	pass: Pass,
-	resolved?: ResolvedAnchorSite,
+	resolved: readonly ResolvedAnchorSite[],
 ): Promise<CodeFinding | undefined> {
 	const outside = await judgeSupport(
 		claim,

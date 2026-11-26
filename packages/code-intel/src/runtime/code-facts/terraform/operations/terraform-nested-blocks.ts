@@ -106,34 +106,67 @@ function splitLinesPreservingEndings(text: string): string[] {
 	return lines;
 }
 
+/** Extended grapheme cluster segmenter matching HCL's `textseg.TokenGraphemeClusters`. */
+const GRAPHEME_SEGMENTER = new Intl.Segmenter("en", { granularity: "grapheme" });
+
 /**
- * Measure leading horizontal/Unicode whitespace before a line's newline ending
- * and report whether the line contains only whitespace.
- * @param line One line, including its trailing newline.
- * @returns Leading whitespace count and whether the line is whitespace-only.
+ * Count leading whitespace grapheme clusters on one segmented heredoc line.
+ * @param clusters The grapheme clusters of the line without its trailing newline.
+ * @returns Number of leading clusters whose first code point is Unicode whitespace.
  */
-function leadingIndent(line: string): { readonly count: number; readonly blank: boolean } {
-	const content = line.replace(/\r?\n$/u, "");
-	let count = 0;
-	while (count < content.length && /\p{White_Space}/u.test(content[count] ?? "")) count += 1;
-	return { count, blank: count === content.length };
+function leadingWhitespaceClusters(clusters: readonly string[]): number {
+	const firstNonSpace = clusters.findIndex((cluster) => !/^\p{White_Space}/u.test(cluster));
+	return firstNonSpace === -1 ? clusters.length : firstNonSpace;
 }
 
 /**
- * Strip the minimum common leading whitespace from non-blank lines of an
- * indented HCL heredoc (`<<-`), preserving whitespace-only lines and original
- * line endings verbatim.
+ * Split one heredoc body line into its grapheme clusters before the newline
+ * ending, its leading whitespace grapheme count, whether it is whitespace-only,
+ * and its original trailing newline sequence.
+ * @param line One line, including its trailing newline.
+ * @returns Segmented line info for HCL flush-heredoc indentation stripping.
+ */
+function segmentHeredocLine(line: string): {
+	readonly clusters: readonly string[];
+	readonly ending: string;
+	readonly indent: number;
+	readonly blank: boolean;
+} {
+	const match = /\r?\n$/u.exec(line);
+	const ending = match ? match[0] : "";
+	const content = line.slice(0, line.length - ending.length);
+	const clusters = Array.from(GRAPHEME_SEGMENTER.segment(content), ({ segment }) => segment);
+	const indent = leadingWhitespaceClusters(clusters);
+	return { clusters, ending, indent, blank: indent === clusters.length };
+}
+
+/**
+ * Minimum leading whitespace grapheme count across non-blank heredoc lines.
+ * @param segmented The segmented heredoc lines.
+ * @returns The minimum indent, or 0 when no non-blank lines have leading whitespace.
+ */
+function minHeredocIndent(segmented: readonly ReturnType<typeof segmentHeredocLine>[]): number {
+	let min = Number.POSITIVE_INFINITY;
+	for (const each of segmented) {
+		if (!each.blank && each.indent < min) min = each.indent;
+	}
+	return Number.isFinite(min) ? min : 0;
+}
+
+/**
+ * Strip the minimum common leading whitespace grapheme clusters from non-blank
+ * lines of an indented HCL heredoc (`<<-`), preserving whitespace-only lines
+ * and original line endings verbatim.
  * @param lines The raw body lines between opening and closing markers.
  * @returns The dedented lines.
  */
 function stripHeredocIndent(lines: readonly string[]): string[] {
-	let min = Number.POSITIVE_INFINITY;
-	for (const line of lines) {
-		const info = leadingIndent(line);
-		if (!info.blank && info.count < min) min = info.count;
-	}
-	if (!Number.isFinite(min) || min === 0) return [...lines];
-	return lines.map((line) => (leadingIndent(line).blank ? line : line.slice(min)));
+	const segmented = lines.map(segmentHeredocLine);
+	const min = minHeredocIndent(segmented);
+	if (min === 0) return [...lines];
+	return segmented.map((each, index) =>
+		each.blank ? (lines[index] ?? "") : `${each.clusters.slice(min).join("")}${each.ending}`,
+	);
 }
 
 /**

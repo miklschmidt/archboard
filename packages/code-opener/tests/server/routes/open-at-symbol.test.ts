@@ -330,4 +330,30 @@ describe("open code at the bound symbol", () => {
 			extra: ["--at=2"],
 		});
 	});
+
+	test("resolves a Terraform nested block in a file whose name starts with double dots", async () => {
+		await using resources = new AsyncDisposableStack();
+		const { fixture, invocation } = await openerAtLine(resources);
+		mkdirSync(join(fixture.checkout, "infra"), { recursive: true });
+		writeFileSync(
+			join(fixture.checkout, "infra", "..hidden.tf"),
+			'resource "azurerm_application_gateway" "ingress" {\n  http_listener {\n    name = "device"\n  }\n}\n',
+		);
+		fixture.writeBinding({
+			repo: REPOSITORY,
+			path: "infra",
+			symbol: 'azurerm_application_gateway.ingress.http_listener["device"]',
+		});
+		const reply = await open(fixture);
+		expect(reply.status).toBe(200);
+		expect(CodeTargetOpenReplySchema.parse(reply.body)).toMatchObject({
+			success: true,
+			path: "infra/..hidden.tf",
+			kind: "file",
+		});
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "infra/..hidden.tf"),
+			extra: ["--at=2"],
+		});
+	});
 });

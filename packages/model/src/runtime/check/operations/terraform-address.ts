@@ -11,10 +11,10 @@
 // `azurerm_application_gateway.ingress.http_listener["device-https"]`.
 // Optional instance keys (`[0]`, `["blue"]`) on leading `module.<ident>`
 // segments and on the declaration itself are stripped in `address`, while a
-// depth-1 resource nested-block name must be non-empty and is canonically
-// unescaped and JSON-quoted. Numeric selectors on nested blocks, empty nested
-// block names, depth-2 blocks, invalid string escapes, and nested selectors on
-// non-resource declarations are rejected.
+// depth-1 resource nested-block selector uses a quoted string (which may be
+// empty `""`) and is canonically NFC-normalized and JSON-quoted. Numeric
+// selectors on nested blocks, depth-2 blocks, invalid string escapes, and
+// nested selectors on non-resource declarations are rejected.
 
 /** An HCL identifier at the start of a slice (Unicode ID_Start/ID_Continue, `_`, `-`). */
 const IDENT_PREFIX = /^[\p{ID_Start}_][\p{ID_Continue}_-]*/u;
@@ -41,11 +41,11 @@ const SIMPLE_ESCAPES: Readonly<Record<string, string>> = {
 };
 
 /** Single-segment keyword declarations whose form is `<prefix>.<name>`. */
-const NAMED_DECLARATIONS: Readonly<Record<string, "variable" | "local" | "output">> = {
-	var: "variable",
-	local: "local",
-	output: "output",
-};
+const NAMED_DECLARATIONS: ReadonlyMap<string, "variable" | "local" | "output"> = new Map([
+	["var", "variable"],
+	["local", "local"],
+	["output", "output"],
+]);
 
 /** A bracket selector on one address segment. */
 type SegmentKey =
@@ -368,7 +368,7 @@ function parseNamedDeclaration(
  * @param resourceType The enclosing resource's type.
  * @param modules Enclosing module names.
  * @param block The nested-block segment.
- * @returns The parsed nested-block address, or undefined unless keyed by a non-empty quoted string.
+ * @returns The parsed nested-block address, or undefined unless keyed by a quoted string (which may be empty).
  */
 function parseNestedBlock(
 	declaration: string,
@@ -423,7 +423,7 @@ function parseTail(
 	if (head.name === "data" || head.name === "ephemeral") {
 		return parseTypedDeclaration(prefix, modules, head.name, rest);
 	}
-	const namedKind = NAMED_DECLARATIONS[head.name];
+	const namedKind = NAMED_DECLARATIONS.get(head.name);
 	if (namedKind !== undefined) return parseNamedDeclaration(prefix, modules, namedKind, rest);
 	return parseResourceDeclaration(prefix, modules, rest);
 }

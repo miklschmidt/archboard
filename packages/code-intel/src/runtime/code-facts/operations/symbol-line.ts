@@ -45,7 +45,7 @@ interface SymbolLocation {
  * @returns True when non-empty and not escaping upward.
  */
 function isInsideRoot(rel: string): boolean {
-	return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+	return rel !== "" && rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
 }
 
 /**

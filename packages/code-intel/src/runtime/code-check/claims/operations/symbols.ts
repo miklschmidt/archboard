@@ -34,6 +34,14 @@ import {
 } from "#runtime/code-facts/operations/facts.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 
+/** One resolved Terraform anchor candidate within a specific root module. */
+interface ResolvedCandidate {
+	readonly file: string;
+	readonly definition: Definition;
+	readonly address: string;
+	readonly root?: string;
+}
+
 /** Where the files of a path hold a symbol. */
 type Held =
 	| {
@@ -46,6 +54,8 @@ type Held =
 			readonly address?: string;
 			/** The Terraform root directory that resolved `address`. */
 			readonly root?: string;
+			/** All root-module candidates that resolved a qualified Terraform anchor in this file. */
+			readonly candidates?: readonly ResolvedCandidate[];
 	  }
 	| { readonly status: "unparsed"; readonly file: string; readonly unparsed: Unparsed }
 	/** An address inside a module the check does not read: the module call's address. */
@@ -400,9 +410,44 @@ function terraformAnchorTarget(file: string, symbol: string) {
 }
 
 /**
- * Resolve a module-qualified or plan-only Terraform anchor across candidate
- * root modules, checking that the cited file agrees and preserving the
- * selected root-relative address for sibling-block support.
+ * Convert a found Terraform `Held` into a `ResolvedCandidate` when qualified.
+ * @param held A found symbol result.
+ * @returns The candidate site, or undefined.
+ */
+function candidateOf(held: Extract<Held, { status: "found" }>): ResolvedCandidate | undefined {
+	if (held.address === undefined || held.definition === undefined) return undefined;
+	return {
+		file: held.file,
+		definition: held.definition,
+		address: held.address,
+		...(held.root === undefined ? {} : { root: held.root }),
+	};
+}
+
+/**
+ * Combine per-root Terraform anchor lookups: when one or more roots resolve a
+ * definition in the cited file, return them all as candidates so support
+ * judging does not depend on root order or relationship direction.
+ * @param matches Non-undefined results across candidate roots.
+ * @returns The combined `Held`, or undefined when no root matched.
+ */
+function combineAnchorMatches(matches: readonly Held[]): Held | undefined {
+	const found = matches.filter(
+		(each): each is Extract<Held, { status: "found" }> => each.status === "found",
+	);
+	const first = found[0];
+	if (first === undefined) return matches[0];
+	const candidates = found.flatMap((each) => {
+		const candidate = candidateOf(each);
+		return candidate === undefined ? [] : [candidate];
+	});
+	return candidates.length > 0 ? { ...first, candidates } : first;
+}
+
+/**
+ * Resolve a module-qualified or plan-only Terraform anchor across all candidate
+ * root modules, checking that the cited file agrees and preserving every
+ * matching root-relative address for direction-independent support judging.
  * @param search The pass and checkout.
  * @param file The anchor's cited `.tf` or `.tofu` file.
  * @param claim The anchor claim.
@@ -419,8 +464,9 @@ async function heldByTerraformAnchor(
 ): Promise<Held | undefined> {
 	const target = terraformAnchorTarget(file, claim.anchor.symbol);
 	if (target === undefined) return undefined;
+	const matches: Held[] = [];
 	for (const root of anchorTerraformRoots(claim, file, checkout, context)) {
-		// oxlint-disable-next-line no-await-in-loop -- inspect candidate roots in priority order until one resolves
+		// oxlint-disable-next-line no-await-in-loop -- inspect every candidate root in deterministic order
 		const configuration = await terraformConfiguration(search.facts, search.checkout, root);
 		const held = anchorHeldInRoot(
 			configuration,
@@ -429,9 +475,9 @@ async function heldByTerraformAnchor(
 			target.parsed.declaration,
 			target.qualified,
 		);
-		if (held !== undefined) return held;
+		if (held !== undefined) matches.push(held);
 	}
-	return undefined;
+	return combineAnchorMatches(matches);
 }
 
 /**
@@ -465,18 +511,21 @@ async function heldForClaim(
 }
 
 /**
- * Extract the pre-resolved Terraform anchor site from a found `Held`, when qualified.
+ * Extract all pre-resolved Terraform anchor candidate sites from a found `Held`.
  * @param held A found symbol result.
- * @returns The pre-resolved anchor site, or undefined.
+ * @returns The pre-resolved anchor sites, or an empty array when not qualified.
  */
-function resolvedSiteOf(held: Extract<Held, { status: "found" }>) {
-	if (held.address === undefined || held.definition === undefined) return undefined;
-	return {
-		file: held.file,
-		definition: held.definition,
-		address: held.address,
-		...(held.root === undefined ? {} : { root: held.root }),
-	};
+function resolvedSitesOf(held: Extract<Held, { status: "found" }>): readonly ResolvedCandidate[] {
+	if (held.candidates !== undefined && held.candidates.length > 0) return held.candidates;
+	const single = candidateOf(held);
+	return single === undefined ? [] : [single];
 }
 
-export { type Held, type Search, heldForClaim, heldInFiles, resolvedSiteOf, terraformRootOfTarget };
+export {
+	type Held,
+	type Search,
+	heldForClaim,
+	heldInFiles,
+	resolvedSitesOf,
+	terraformRootOfTarget,
+};

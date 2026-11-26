@@ -172,10 +172,40 @@ function unparsedSkip(
 	return unparsedSourceSkip(base, held);
 }
 
-/** Where a cited enclosing resource is defined. */
-interface EnclosingResourceSite {
+/** Where a cited symbol is defined for mismatch diagnostics. */
+interface MismatchSite {
 	readonly path: string;
-	readonly definition: { readonly start: number };
+	readonly definition: { readonly start: number; readonly declaration?: boolean };
+}
+
+/**
+ * The warning for an anchor whose symbol is defined outside both ends.
+ * @param claim The anchor.
+ * @param site Where the symbol is defined.
+ * @param use The anchored use, if the file uses the symbol.
+ * @returns The finding.
+ */
+function anchorMismatch(
+	claim: AnchorClaim,
+	site: MismatchSite,
+	use: CodeEvidence | undefined,
+): CodeFinding {
+	const ends = claim.ends.map((end) => JSON.stringify(end.name)).join(" nor ");
+	const candidate = site.definition.declaration === true;
+	return {
+		...claim.site,
+		severity: candidate ? "information" : "warning",
+		code: "ANCHOR_MISMATCH",
+		message:
+			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
+			`which ${site.path}:${site.definition.start} ${candidate ? "declares" : "defines"}, and that ` +
+			`${candidate ? "declaration" : "definition"} is in the bound code of neither ${ends}, nor of ` +
+			"a part inside one. Cite the symbol in the code of an end that proves the relationship, " +
+			"bind the part whose code it is, or change the relationship to what the code does.",
+		...(use === undefined
+			? {}
+			: { evidence: [{ ...use, resolution: candidate ? "candidate" : use.resolution }] }),
+	};
 }
 
 /**
@@ -188,7 +218,7 @@ interface EnclosingResourceSite {
  */
 function enclosingResourceMismatch(
 	claim: AnchorClaim,
-	site: EnclosingResourceSite,
+	site: MismatchSite,
 	use: CodeEvidence | undefined,
 ): CodeFinding {
 	return {
@@ -205,6 +235,7 @@ function enclosingResourceMismatch(
 }
 
 export {
+	anchorMismatch,
 	anchorPathMissing,
 	anchorSymbolMissing,
 	bindingPathMissing,
