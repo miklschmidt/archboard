@@ -207,7 +207,11 @@ describe("codex settings guardrails", () => {
 			});
 			const role = { model: model.model, effort: "low", serviceTier: null };
 			const reading = service.readSettings();
-			const saving = service.saveSettings({ orchestrator: role, workhorse: role });
+			const saving = service.saveSettings({
+				orchestrator: role,
+				workhorse: role,
+				voiceLanguage: null,
+			});
 			await listed.promise;
 			if (change === "sign-out") await first.scope.account.logout();
 			else

@@ -2,6 +2,7 @@ import { useCallback, useId, useState, type ChangeEvent, type FormEvent, type JS
 import { RiExternalLinkLine, RiKey2Line, RiLogoutBoxRLine, RiRefreshLine } from "@remixicon/react";
 import { Button, Input, cn } from "@archboard/ui-kit/components";
 import type { CodexAuthState } from "#shared/codex-settings/schemas/codex-settings.ts";
+import { HiddenEmail } from "#ui/codex-settings/components/HiddenEmail.tsx";
 import { formatAuthenticatedAccount } from "#ui/codex-settings/rules/model-selection.ts";
 
 interface CodexAuthSectionProps {
@@ -25,18 +26,35 @@ const LAMP_BY_STATE: Readonly<Record<CodexAuthState["state"], string>> = {
 const SIGNED_OUT_FALLBACK =
 	"Archboard keeps its own Codex sign-in, separate from any Codex CLI you use elsewhere.";
 
-/**
- * Title and secondary line for the current Codex authentication state.
- * @param auth Current Codex auth state.
- * @returns Title and optional subtitle.
- */
-function authSummary(auth: CodexAuthState): {
+interface AuthSummary {
 	readonly label: string;
+	readonly email?: string;
 	readonly detail: string | null;
-} {
+}
+
+/**
+ * Keep a signed-in email separate from the label so the toggle can hide it.
+ * @param auth The authenticated Codex state.
+ * @returns Label, email when present, and account details.
+ */
+function authenticatedSummary(
+	auth: Extract<CodexAuthState, { state: "authenticated" }>,
+): AuthSummary {
+	const formatted = formatAuthenticatedAccount(auth);
+	if (auth.account.type === "chatgpt" && auth.account.email !== null) {
+		return { label: "Signed in as", email: auth.account.email, detail: formatted.secondary };
+	}
+	return { label: `Signed in as ${formatted.primary}`, detail: formatted.secondary };
+}
+
+/**
+ * Summarize the current Codex authentication state.
+ * @param auth Current Codex auth state.
+ * @returns Title, email when there is one, and optional subtitle.
+ */
+function authSummary(auth: CodexAuthState): AuthSummary {
 	if (auth.state === "authenticated") {
-		const formatted = formatAuthenticatedAccount(auth);
-		return { label: `Signed in as ${formatted.primary}`, detail: formatted.secondary };
+		return authenticatedSummary(auth);
 	}
 	if (auth.state === "login_pending") {
 		return {
@@ -190,7 +208,15 @@ function CodexAuthSection(props: CodexAuthSectionProps): JSX.Element {
 				<div className="flex min-w-0 flex-1 items-start gap-2.5">
 					<span aria-hidden="true" className={cn("mt-1.5 shrink-0", LAMP_BY_STATE[auth.state])} />
 					<div className="flex min-w-0 flex-col gap-0.5">
-						<span className="text-control font-medium">{summary.label}</span>
+						<span className="text-control font-medium">
+							{summary.label}
+							{summary.email !== undefined && (
+								<>
+									{" "}
+									<HiddenEmail key={summary.email} email={summary.email} />
+								</>
+							)}
+						</span>
 						{summary.detail !== null && (
 							<span className="text-body text-muted-foreground">{summary.detail}</span>
 						)}

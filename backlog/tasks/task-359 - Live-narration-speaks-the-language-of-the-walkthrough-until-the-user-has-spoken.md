@@ -5,7 +5,8 @@ title: >-
   spoken
 status: To Do
 assignee: []
-created_date: '2026-09-28 14:48'
+created_date: 2026-09-28 14:48
+updated_date: '2026-11-26T13:00:00Z'
 labels:
   - voice
 dependencies: []
@@ -25,3 +26,9 @@ Found 2026-09-28 by review, not reproduced. TASK-352 fixed recordings, which pic
 - [ ] #1 A live narration of an English walkthrough starts in English before the user speaks
 - [ ] #2 Once the user speaks another language, narration follows it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-684 adds a Voice language setting to the Codex settings tab. With a language set, a live narration names it from the first step, so this bug no longer reaches those users; Automatic still behaves as described here.
+<!-- SECTION:NOTES:END -->

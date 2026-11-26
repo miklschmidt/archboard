@@ -27,6 +27,7 @@ const DEFAULT_CODEX_MODEL_PREFERENCES: CodexModelPreferences = Object.freeze({
 	version: 1,
 	orchestrator: null,
 	workhorse: null,
+	voiceLanguage: null,
 });
 
 /**
@@ -142,8 +143,23 @@ function readVoiceAgentModelPreferences(): VoiceAgentModelPreferences {
 	};
 }
 
+/**
+ * Read the language the voice is asked to speak.
+ * Falls back to following the user when the state file cannot be read, so voice can still start.
+ * @returns A BCP 47 language tag, or null to follow the user.
+ */
+function readVoiceLanguage(): string | null {
+	const current = readCodexModelPreferences();
+	if (!current.ok) {
+		logger().error("Cannot read the voice language; following the user:", current.error);
+		return null;
+	}
+	return current.selection.voiceLanguage;
+}
+
 export {
 	DEFAULT_CODEX_MODEL_PREFERENCES,
+	readVoiceLanguage,
 	readCodexModelPreferences,
 	saveCodexModelPreferences,
 	resetCodexModelPreferences,

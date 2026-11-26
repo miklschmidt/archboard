@@ -253,7 +253,7 @@ async function applyToLiveWorkhorses(
  * @returns First validation error message, or null when both are valid.
  */
 function validateBothRoles(
-	input: CodexSettingsSaveRequest,
+	input: Pick<CodexSettingsSaveRequest, "orchestrator" | "workhorse">,
 	models: readonly CodexModelOption[],
 ): string | null {
 	return (
@@ -421,7 +421,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			return {
 				ok: false as const,
 				code: "CODEX_UNAUTHENTICATED" as const,
-				error: "Sign in to Codex before choosing models.",
+				error: "Sign in to Codex before changing settings.",
 			};
 		}
 		const listed = await readCatalogue(scope, snapshot);
@@ -462,8 +462,9 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			return stored.ok ? buildReply(stored.selection, true, dependencies.getScope()) : stored;
 		},
 		/**
-		 * Validate orchestrator and workhorse selections against live model/list, persist them, and apply to live workhorses.
-		 * @param input Requested orchestrator and workhorse model selections.
+		 * Validate orchestrator and workhorse selections against live model/list, persist them with the
+		 * voice language, and apply them to live workhorses.
+		 * @param input Requested orchestrator and workhorse model selections and voice language.
 		 * @returns The updated settings snapshot or failure.
 		 */
 		saveSettings: async (input: CodexSettingsSaveRequest): Promise<CodexSettingsResult> => {
@@ -479,6 +480,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 				version: 1,
 				orchestrator: input.orchestrator,
 				workhorse: input.workhorse,
+				voiceLanguage: input.voiceLanguage,
 			});
 			if (!saved.ok) return saved;
 			await applyToLiveWorkhorses(loaded.scope, input.workhorse);

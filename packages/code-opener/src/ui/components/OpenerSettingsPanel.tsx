@@ -171,9 +171,8 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 			<Dialog.Busy busy={busy.test} text="Testing the opener…" />
 			<Dialog.Busy busy={busy.save} text="Saving the opener…" />
 			<Dialog.Busy busy={busy.reset} text="Restoring the platform default…" />
-			{/* The keys stay at the foot of the dialog while the form scrolls behind them. The offset
-				reaches past the bottom padding of the scrolling panel, to the edge of the dialog. */}
-			<Dialog.Footer className="bg-card sticky -bottom-5">
+			{/* The keys stay at the foot of the dialog while the form scrolls behind them. */}
+			<Dialog.Footer sticky>
 				<Button variant="ghost" size="sm" disabled={anyBusy} onClick={panel.onReset}>
 					Reset
 				</Button>

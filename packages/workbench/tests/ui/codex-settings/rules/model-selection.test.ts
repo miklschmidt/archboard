@@ -73,7 +73,7 @@ function makeReply(overrides: Partial<CodexSettingsReply> = {}): CodexSettingsRe
 		},
 		models: [SOL, ASTRA],
 		modelError: null,
-		selection: { version: 1, orchestrator: null, workhorse: null },
+		selection: { version: 1, orchestrator: null, workhorse: null, voiceLanguage: null },
 		defaults: {
 			orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 			workhorse: { model: "gpt-6-astra", effort: "medium", serviceTier: null },
@@ -88,6 +88,7 @@ describe("codex model selection rules", () => {
 		expect(authedDraft).toEqual({
 			orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 			workhorse: { model: "gpt-6-astra", effort: "medium", serviceTier: null },
+			voiceLanguage: null,
 		});
 		expect(isCodexModelDraftValid(authedDraft, [SOL, ASTRA])).toBe(true);
 
@@ -100,6 +101,7 @@ describe("codex model selection rules", () => {
 		expect(signedOutDraft).toEqual({
 			orchestrator: { model: "", effort: "", serviceTier: null },
 			workhorse: { model: "", effort: "", serviceTier: null },
+			voiceLanguage: null,
 		});
 		expect(isCodexModelDraftValid(signedOutDraft, [])).toBe(false);
 	});
@@ -133,6 +135,7 @@ describe("codex model selection rules", () => {
 				version: 1,
 				orchestrator: null,
 				workhorse: { model: "retired-model", effort: "medium", serviceTier: null },
+				voiceLanguage: null,
 			},
 		});
 		const draft = resolveCodexModelDraft(reply);

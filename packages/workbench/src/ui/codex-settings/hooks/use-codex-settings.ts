@@ -211,20 +211,20 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 
 	const save = useCallback(
 		async (payload: CodexSettingsSaveRequest): Promise<void> => {
-			const reply = await runBusy("save", "Could not save Codex models", () =>
+			const reply = await runBusy("save", "Could not save Codex settings", () =>
 				saveCodexSettings(payload),
 			);
 			if (reply !== null) {
-				onSuccess("Saved Codex models for orchestrator and workhorse.");
+				onSuccess("Saved Codex settings.");
 			}
 		},
 		[onSuccess, runBusy],
 	);
 
 	const reset = useCallback(async (): Promise<void> => {
-		const reply = await runBusy("reset", "Could not reset Codex models", resetCodexSettings);
+		const reply = await runBusy("reset", "Could not reset Codex settings", resetCodexSettings);
 		if (reply !== null) {
-			onSuccess("Restored default Codex models.");
+			onSuccess("Restored default Codex settings.");
 		}
 	}, [onSuccess, runBusy]);
 

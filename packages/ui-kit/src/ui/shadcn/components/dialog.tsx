@@ -80,19 +80,34 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
+/**
+ * Archboard: a sticky footer stays at the foot of a panel that scrolls behind it, so it takes the
+ * dialog's fill to hide what passes under it. Its sides keep a 1px transparent border the fill
+ * does not paint, so the ring inside the dialog's edge shows through, and its bottom corners
+ * follow the dialog's: it reads as the dialog's own foot, not a strip laid over it. Its bottom
+ * is filled to the edge, where content scrolling under it would show. Its offset reaches past
+ * the bottom padding of the scrolling panel, to the edge of the dialog.
+ */
+const STICKY_FOOTER =
+	"bg-card sticky -bottom-5 rounded-b-window border-x border-x-transparent bg-clip-padding";
+
 function DialogFooter({
 	className,
 	showCloseButton = false,
+	sticky = false,
 	children,
 	...props
 }: React.ComponentProps<"div"> & {
 	showCloseButton?: boolean;
+	/** Archboard: stay at the foot of a scrolling panel that reaches the dialog's edges. */
+	sticky?: boolean;
 }) {
 	return (
 		<div
 			data-slot="dialog-footer"
 			className={cn(
 				"border-border -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t px-5 py-4 sm:flex-row sm:justify-end",
+				sticky && STICKY_FOOTER,
 				className,
 			)}
 			{...props}

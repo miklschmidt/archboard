@@ -6,6 +6,7 @@ import type {
 } from "#shared/codex-settings/schemas/codex-settings.ts";
 import { CodexAuthSection } from "#ui/codex-settings/components/CodexAuthSection.tsx";
 import { RoleModelFields } from "#ui/codex-settings/components/RoleModelFields.tsx";
+import { VoiceLanguageField } from "#ui/codex-settings/components/VoiceLanguageField.tsx";
 import {
 	useCodexSettings,
 	type CodexSettingsBusy,
@@ -32,6 +33,19 @@ interface CodexModelFormProps {
 }
 
 /**
+ * Tell whether any saved setting differs from the defaults, so Reset has something to restore.
+ * @param selection Saved settings.
+ * @returns True when a model or the voice language is set.
+ */
+function hasOverrides(selection: CodexSettingsReply["selection"]): boolean {
+	return (
+		selection.orchestrator !== null ||
+		selection.workhorse !== null ||
+		selection.voiceLanguage !== null
+	);
+}
+
+/**
  * Compute form action availability flags from the current settings reply and draft.
  * @param settings Current settings reply.
  * @param draft Current editable draft.
@@ -43,14 +57,13 @@ function formFlags(settings: CodexSettingsReply, draft: CodexModelDraft, anyBusy
 	const controlsDisabled = !isAuthenticated || anyBusy;
 	const canSave = !controlsDisabled && isCodexModelDraftValid(draft, settings.models);
 	const canReset =
-		!controlsDisabled &&
-		settings.models.length > 0 &&
-		(settings.selection.orchestrator !== null || settings.selection.workhorse !== null);
+		!controlsDisabled && settings.models.length > 0 && hasOverrides(settings.selection);
 	return { isAuthenticated, controlsDisabled, canSave, canReset };
 }
 
 /**
- * Editable form for orchestrator and workhorse model selections, keyed by saved selection and auth state.
+ * Editable form for orchestrator and workhorse model selections and the voice language, keyed by
+ * saved selection and auth state.
  * Disabled and visually grayed out whenever Codex is not authenticated.
  * @param props Current reply, busy flags, error, and save/reset callbacks.
  * @returns The form fields and sticky dialog footer.
@@ -72,9 +85,17 @@ function CodexModelForm(props: CodexModelFormProps): JSX.Element {
 		setDraft((current) => ({ ...current, workhorse: next }));
 	}, []);
 
+	const handleVoiceLanguageChange = useCallback((voiceLanguage: string | null) => {
+		setDraft((current) => ({ ...current, voiceLanguage }));
+	}, []);
+
 	const handleSave = useCallback(() => {
 		if (canSave) {
-			onSave({ orchestrator: draft.orchestrator, workhorse: draft.workhorse });
+			onSave({
+				orchestrator: draft.orchestrator,
+				workhorse: draft.workhorse,
+				voiceLanguage: draft.voiceLanguage,
+			});
 		}
 	}, [canSave, draft, onSave]);
 
@@ -87,7 +108,8 @@ function CodexModelForm(props: CodexModelFormProps): JSX.Element {
 			>
 				{!isAuthenticated && (
 					<p className="text-body text-muted-foreground">
-						Sign in to Codex above to choose models, reasoning levels, and service tiers.
+						Sign in to Codex above to choose models, reasoning levels, service tiers, and the voice
+						language.
 					</p>
 				)}
 				<RoleModelFields
@@ -109,16 +131,23 @@ function CodexModelForm(props: CodexModelFormProps): JSX.Element {
 					disabled={controlsDisabled}
 					onChange={handleWorkhorseChange}
 				/>
+				<Separator />
+				<VoiceLanguageField
+					language={draft.voiceLanguage}
+					saved={settings.selection.voiceLanguage}
+					disabled={controlsDisabled}
+					onChange={handleVoiceLanguageChange}
+				/>
 			</div>
 
 			<Dialog.Error error={error} />
 			<Dialog.Busy busy={busy.login} text="Starting Codex sign-in…" />
 			<Dialog.Busy busy={busy.cancel} text="Cancelling sign-in…" />
 			<Dialog.Busy busy={busy.logout} text="Signing out of Codex…" />
-			<Dialog.Busy busy={busy.save} text="Saving Codex model settings…" />
-			<Dialog.Busy busy={busy.reset} text="Restoring default Codex models…" />
+			<Dialog.Busy busy={busy.save} text="Saving Codex settings…" />
+			<Dialog.Busy busy={busy.reset} text="Restoring default Codex settings…" />
 
-			<Dialog.Footer className="bg-card sticky -bottom-5">
+			<Dialog.Footer sticky>
 				<Button variant="ghost" size="sm" disabled={!canReset} onClick={onReset}>
 					Reset
 				</Button>
@@ -151,7 +180,7 @@ function CodexSettingsPending(props: {
 					Reading Codex settings…
 				</p>
 			)}
-			<Dialog.Footer className="bg-card sticky -bottom-5">
+			<Dialog.Footer sticky>
 				<Dialog.Cancel>Close</Dialog.Cancel>
 				{props.error !== null && (
 					<Button size="sm" onClick={props.onRetry}>
@@ -217,7 +246,8 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 	return (
 		<div data-slot="codex-settings" className="flex flex-col gap-4">
 			<p className="text-body text-muted-foreground">
-				Codex sign-in and the models used for orchestrator and workhorse threads on this machine.
+				Codex sign-in, the models used for orchestrator and workhorse threads, and the language the
+				voice speaks on this machine.
 			</p>
 			{settings === null ? (
 				<CodexSettingsPending error={error} onRetry={handleRefresh} />

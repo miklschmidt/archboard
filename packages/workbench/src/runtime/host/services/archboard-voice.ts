@@ -1,9 +1,9 @@
 import type { WorkbenchVoicePolicy } from "#runtime/voice/protocol/extension.ts";
 import { z } from "zod";
-import { recordingNarrationSchema } from "@archboard/walkthrough/recording";
+import { languageName, recordingNarrationSchema } from "@archboard/walkthrough/recording";
 import {
 	ARCHBOARD_RECORDING_VOICE_PROMPT,
-	ARCHBOARD_VOICE_PROMPT,
+	archboardVoicePrompt,
 } from "#runtime/realtime/rules/voice-prompt.ts";
 import {
 	presentationSpeech,
@@ -36,13 +36,17 @@ function archboardPresentation(value: unknown): RealtimePresentation | null {
 function isArchboardRecording(value: unknown): boolean {
 	return archboardPresentation(value)?.recording != null;
 }
+
 /**
  * Supply Archboard persona and narration rules through the neutral voice port.
  * @param subscribe The source of Archboard narration changes.
+ * @param voiceLanguage Reads the language the Codex settings ask the voice to speak, as a BCP 47
+ *   tag, or null to follow the user. Read at each start, so a change applies from the next one.
  * @returns The Archboard voice policy.
  */
 function createArchboardVoicePolicy(
 	subscribe?: (listener: (change: RealtimePresentationChange) => void) => () => void,
+	voiceLanguage: () => string | null = () => null,
 ): WorkbenchVoicePolicy {
 	return Object.freeze({
 		/**
@@ -53,10 +57,14 @@ function createArchboardVoicePolicy(
 		start: (value: unknown) => {
 			const presentation = archboardPresentation(value);
 			const recording = presentation?.recording != null;
-			const base = recording ? ARCHBOARD_RECORDING_VOICE_PROMPT : ARCHBOARD_VOICE_PROMPT;
+			const tag = recording ? null : voiceLanguage();
+			const language = tag === null ? null : languageName(tag);
+			const base = recording ? ARCHBOARD_RECORDING_VOICE_PROMPT : archboardVoicePrompt(language);
 			return Object.freeze({
 				prompt:
-					presentation === null ? base : `${base}\n\n${voicePresentationPrompt(presentation)}`,
+					presentation === null
+						? base
+						: `${base}\n\n${voicePresentationPrompt(presentation, language)}`,
 				suppressCoordinatorSpeech: recording,
 				delegationAckFiller: !recording,
 			});

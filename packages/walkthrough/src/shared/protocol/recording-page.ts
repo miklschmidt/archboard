@@ -49,7 +49,8 @@ const DEFAULT_RECORDING_LANGUAGE = "en";
  * the language it speaks, and the variant every frame is drawn against when the recording was
  * made with `--against`, so that the voice hears each subject's standing against the same variant
  * the picture shows it against (TASK-478.01). Only a recording carries these. A live narration
- * speaks the user's language and hears standings against the usual variant.
+ * speaks the user's language, or the voice language the Codex settings name, and hears standings
+ * against the usual variant.
  */
 const RecordingNarrationSchema = z
 	.object({

@@ -10,6 +10,7 @@ import { createIdentityAuthorities } from "@archboard/codex-app-server/identity"
 import {
 	readCodexModelPreferences,
 	readVoiceAgentModelPreferences,
+	readVoiceLanguage,
 	resetCodexModelPreferences,
 	saveCodexModelPreferences,
 } from "#server/codex-settings/store/configuration.ts";
@@ -241,32 +242,44 @@ describe("codex model preferences store", () => {
 		const configFile = tempConfigPath();
 		process.env["ARCHBOARD_CODEX_MODELS_CONFIG"] = configFile;
 
-		expect(readCodexModelPreferences()).toEqual({
-			ok: true,
-			selection: { version: 1, orchestrator: null, workhorse: null },
-		});
+		const defaults = {
+			version: 1 as const,
+			orchestrator: null,
+			workhorse: null,
+			voiceLanguage: null,
+		};
+		expect(readCodexModelPreferences()).toEqual({ ok: true, selection: defaults });
 		expect(readVoiceAgentModelPreferences()).toEqual({ coordinator: null, workhorse: null });
+		expect(readVoiceLanguage()).toBeNull();
+
+		// A file saved before the voice language existed still reads, and follows the user.
+		fs.writeFileSync(
+			configFile,
+			JSON.stringify({ version: 1, orchestrator: null, workhorse: null }),
+		);
+		expect(readCodexModelPreferences()).toEqual({ ok: true, selection: defaults });
 
 		const saved = saveCodexModelPreferences({
 			version: 1,
 			orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 			workhorse: { model: "gpt-6-astra", effort: "high", serviceTier: null },
+			voiceLanguage: "da",
 		});
 		expect(saved.ok).toBe(true);
 		expect(readVoiceAgentModelPreferences()).toEqual({
 			coordinator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 			workhorse: { model: "gpt-6-astra", effort: "high", serviceTier: null },
 		});
+		expect(readVoiceLanguage()).toBe("da");
 
-		expect(resetCodexModelPreferences()).toEqual({
-			ok: true,
-			selection: { version: 1, orchestrator: null, workhorse: null },
-		});
+		expect(resetCodexModelPreferences()).toEqual({ ok: true, selection: defaults });
+		expect(readVoiceLanguage()).toBeNull();
 
 		fs.writeFileSync(configFile, "{invalid json");
 		const corrupted = readCodexModelPreferences();
 		expect(corrupted.ok).toBe(false);
 		expect(readVoiceAgentModelPreferences()).toEqual({ coordinator: null, workhorse: null });
+		expect(readVoiceLanguage()).toBeNull();
 	});
 });
 
@@ -321,6 +334,7 @@ describe("codex settings HTTP routes and service", () => {
 				body: JSON.stringify({
 					orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 					workhorse: { model: "gpt-6-astra", effort: "medium", serviceTier: null },
+					voiceLanguage: null,
 				}),
 			});
 			expect(unauthSave.status).toBe(409);
@@ -367,6 +381,7 @@ describe("codex settings HTTP routes and service", () => {
 				body: JSON.stringify({
 					orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
 					workhorse: { model: "gpt-6-astra", effort: "high", serviceTier: "priority" },
+					voiceLanguage: null,
 				}),
 			});
 			expect(invalidSave.status).toBe(422);
@@ -379,6 +394,7 @@ describe("codex settings HTTP routes and service", () => {
 				body: JSON.stringify({
 					orchestrator: { model: "gpt-6-sol", effort: "medium", serviceTier: null },
 					workhorse: { model: "gpt-6-astra", effort: "high", serviceTier: null },
+					voiceLanguage: "da",
 				}),
 			});
 			expect(validSave.status).toBe(200);
@@ -387,6 +403,7 @@ describe("codex settings HTTP routes and service", () => {
 				version: 1,
 				orchestrator: { model: "gpt-6-sol", effort: "medium", serviceTier: null },
 				workhorse: { model: "gpt-6-astra", effort: "high", serviceTier: null },
+				voiceLanguage: "da",
 			});
 			expect(fake.settingsUpdates).toHaveLength(1);
 			expect(fake.settingsUpdates[0]).toMatchObject({
@@ -447,6 +464,7 @@ describe("codex settings HTTP routes and service", () => {
 				version: 1,
 				orchestrator: null,
 				workhorse: null,
+				voiceLanguage: null,
 			});
 			expect(fake.settingsUpdates[1]).toMatchObject({
 				model: "gpt-6.2-sol",

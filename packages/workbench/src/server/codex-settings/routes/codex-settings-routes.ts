@@ -104,7 +104,7 @@ function createCodexSettingsRouter(
 				sendResult(response, {
 					ok: false,
 					code: "REQUEST_INVALID",
-					error: "The Codex model selection request is invalid.",
+					error: "The Codex settings request is invalid.",
 				});
 				return;
 			}

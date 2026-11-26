@@ -266,7 +266,7 @@ function RoleModelFields(props: RoleModelFieldsProps): JSX.Element {
 			>
 				{title}
 			</Field.Legend>
-			<p className={cn("text-body text-muted-foreground -mt-2.5", disabled && "opacity-60")}>
+			<p className={cn("text-body text-muted-foreground", disabled && "opacity-60")}>
 				{description}
 			</p>
 
