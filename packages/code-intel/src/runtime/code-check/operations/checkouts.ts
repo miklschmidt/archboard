@@ -17,7 +17,7 @@ import {
 	type LocalCodeTarget,
 	type OtherRef,
 } from "@archboard/code-binding/resolution";
-import { listReadableFiles } from "#runtime/code-check/operations/readable-files.ts";
+import { listReadableFiles } from "#runtime/code-facts/operations/readable-files.ts";
 import { neverRead } from "#runtime/code-facts/operations/never-read.ts";
 import { pairOf } from "#runtime/code-facts/c/operations/c-pairs.ts";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";

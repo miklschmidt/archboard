@@ -15,6 +15,7 @@ import type { LocalCodeTarget } from "@archboard/code-binding/resolution";
 import type { FileFacts } from "#runtime/code-facts/operations/facts.ts";
 import { findSymbol } from "#runtime/code-facts/operations/lookup.ts";
 import { neverRead } from "#runtime/code-facts/operations/never-read.ts";
+import { listReadableFiles } from "#runtime/code-facts/operations/readable-files.ts";
 import { createCodeFacts } from "#runtime/code-facts/services/reader.ts";
 import {
 	isTerraformFile,
@@ -25,15 +26,16 @@ import {
 	terraformRootOf,
 } from "#runtime/code-facts/terraform/operations/terraform-configuration.ts";
 
-/** Directories never walked when collecting Terraform files for "open the code". */
+/** Directories never walked when collecting Terraform files outside a Git checkout. */
 const SKIP_DIRS = new Set([".git", ".terraform", "node_modules", "dist", "target"]);
 
 /** One cache for the opener: a file is parsed again only when its bytes change. */
 const codeFacts = createCodeFacts();
 
-/** A resolved checkout-contained file and 1-based line for "open the code". */
+/** A resolved checkout-contained file, relative path, and 1-based line for "open the code". */
 interface SymbolLocation {
 	readonly target: string;
+	readonly relativePath: string;
 	readonly line: number;
 }
 
@@ -127,21 +129,57 @@ function canonicalCheckoutRoot(root: string): string | undefined {
 }
 
 /**
+ * Filter checkout-relative paths to readable, checkout-contained Terraform files.
+ * @param canonicalRoot The checkout's realpath.
+ * @param listed Candidate relative POSIX paths.
+ * @returns Readable Terraform files inside `canonicalRoot`.
+ */
+function filterTerraformFiles(canonicalRoot: string, listed: Iterable<string>): Set<string> {
+	const files = new Set<string>();
+	for (const relative of listed) {
+		if (!isTerraformFile(relative) || neverRead(relative)) continue;
+		if (containedRealPath(canonicalRoot, relative) !== undefined) files.add(relative);
+	}
+	return files;
+}
+
+/**
+ * List readable Terraform files for a checkout using Git's ignore rules,
+ * falling back to a contained directory walk only for non-Git directories.
+ * @param canonicalRoot The checkout's realpath.
+ * @param signal Cancels listing when the request is abandoned.
+ * @returns Readable Terraform files relative to `canonicalRoot`.
+ */
+async function readableTerraformFiles(
+	canonicalRoot: string,
+	signal: AbortSignal,
+): Promise<Set<string>> {
+	try {
+		return filterTerraformFiles(canonicalRoot, await listReadableFiles(canonicalRoot, signal));
+	} catch {
+		signal.throwIfAborted();
+		if (fs.existsSync(path.join(canonicalRoot, ".git"))) return new Set();
+		const files = new Set<string>();
+		walkTerraformFiles(canonicalRoot, "", files, signal);
+		return files;
+	}
+}
+
+/**
  * Collect checkout-contained Terraform files and determine the root module directory.
  * @param canonicalRoot The checkout's realpath.
  * @param relative The binding's relative path inside the checkout.
  * @param kind Whether the binding names a file or directory.
- * @param signal Cancels the walk when the request is abandoned.
+ * @param signal Cancels listing when the request is abandoned.
  * @returns The files and root directory, or undefined when not a Terraform root.
  */
-function terraformRootFiles(
+async function terraformRootFiles(
 	canonicalRoot: string,
 	relative: string,
 	kind: LocalCodeTarget["kind"],
 	signal: AbortSignal,
-): { readonly files: Set<string>; readonly root: string } | undefined {
-	const files = new Set<string>();
-	walkTerraformFiles(canonicalRoot, "", files, signal);
+): Promise<{ readonly files: Set<string>; readonly root: string } | undefined> {
+	const files = await readableTerraformFiles(canonicalRoot, signal);
 	const root = terraformRootOf(relative === "." ? "" : relative, kind, files);
 	return root === undefined ? undefined : { files, root };
 }
@@ -150,16 +188,16 @@ function terraformRootFiles(
  * Prepare a checkout-contained Terraform lookup scope for one binding target.
  * @param symbol The binding's Terraform address symbol.
  * @param target Where the binding resolved on this machine.
- * @param signal Cancels the walk when the request is abandoned.
+ * @param signal Cancels listing when the request is abandoned.
  * @returns The canonical root, files, and Terraform root directory, or undefined.
  */
-function terraformLookupScope(symbol: string, target: LocalCodeTarget, signal: AbortSignal) {
+async function terraformLookupScope(symbol: string, target: LocalCodeTarget, signal: AbortSignal) {
 	const relative = path.relative(target.root, target.target).split(path.sep).join("/");
 	if (target.kind === "file" && !isTerraformFile(relative)) return undefined;
 	if (parseTerraformAddress(symbol) === undefined) return undefined;
 	const canonicalRoot = canonicalCheckoutRoot(target.root);
 	if (canonicalRoot === undefined) return undefined;
-	const scope = terraformRootFiles(canonicalRoot, relative, target.kind, signal);
+	const scope = await terraformRootFiles(canonicalRoot, relative, target.kind, signal);
 	return scope === undefined ? undefined : { canonicalRoot, ...scope };
 }
 
@@ -169,14 +207,14 @@ function terraformLookupScope(symbol: string, target: LocalCodeTarget, signal: A
  * @param symbol The binding's Terraform address symbol.
  * @param target Where the binding resolved on this machine.
  * @param signal Ends the reading when the request is abandoned.
- * @returns The checkout-contained file and 1-based line, or undefined.
+ * @returns The checkout-contained file, relative path, and 1-based line, or undefined.
  */
 async function terraformSymbolLocation(
 	symbol: string,
 	target: LocalCodeTarget,
 	signal: AbortSignal,
 ): Promise<SymbolLocation | undefined> {
-	const scope = terraformLookupScope(symbol, target, signal);
+	const scope = await terraformLookupScope(symbol, target, signal);
 	if (scope === undefined) return undefined;
 	const configuration = await terraformConfiguration(
 		codeFacts.pass(signal),
@@ -188,7 +226,11 @@ async function terraformSymbolLocation(
 	const resolved = containedRealPath(scope.canonicalRoot, declared.site.path);
 	return resolved === undefined
 		? undefined
-		: { target: resolved, line: declared.site.definition.start };
+		: {
+				target: resolved,
+				relativePath: declared.site.path,
+				line: declared.site.definition.start,
+			};
 }
 
 /**
@@ -212,11 +254,11 @@ async function factsOfFile(
 }
 
 /**
- * Resolve a single-file symbol definition to its file path and line.
+ * Resolve a single-file symbol definition to its file path, relative path, and line.
  * @param symbol The bound symbol.
  * @param target The resolved local file target.
  * @param signal Ends the reading when the request is abandoned.
- * @returns The file and line, or undefined when absent.
+ * @returns The file, relative path, and line, or undefined when absent.
  */
 async function singleFileSymbolLocation(
 	symbol: string,
@@ -225,9 +267,9 @@ async function singleFileSymbolLocation(
 ): Promise<SymbolLocation | undefined> {
 	const facts = await factsOfFile(target, signal);
 	const found = facts && findSymbol(facts, symbol, "definition");
-	return found?.status === "found" && found.line !== undefined
-		? { target: target.target, line: found.line }
-		: undefined;
+	if (found?.status !== "found" || found.line === undefined) return undefined;
+	const relativePath = path.relative(target.root, target.target).split(path.sep).join("/");
+	return { target: target.target, relativePath, line: found.line };
 }
 
 /**

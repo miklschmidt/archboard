@@ -4,7 +4,7 @@
 // triggering BINDING_SHARED.
 
 import { describe, expect, test } from "bun:test";
-import { structureDiagnostics } from "@archboard/model/vault-policy";
+import { sameInfrastructureBinding, structureDiagnostics } from "@archboard/model/vault-policy";
 
 type Structure = Parameters<typeof structureDiagnostics>[0];
 type Module = Structure["modules"][number];
@@ -123,6 +123,10 @@ describe("Terraform nested-block containment", () => {
 		[
 			"a Terraform resource with a Unicode HCL identifier",
 			at("infra/main.tf", 'aws_s3_bucket.café.cors_rule["edge"]'),
+		],
+		[
+			"a Terraform resource with a Unicode NFD combining-mark identifier",
+			at("infra/main.tf", 'aws_s3_bucket.cafe\u0301.cors_rule["edge"]'),
 		],
 	])("leaves source containment to the parts of %s", (_label, binding) => {
 		expect(containment(binding)).toEqual([]);
@@ -326,5 +330,12 @@ describe("BINDING_SHARED single-direct-child infrastructure exception", () => {
 		expect(diagnostics).toMatchObject([
 			{ severity: "warning", file: `${second}.module.json`, id: second },
 		]);
+		expect(sameInfrastructureBinding(canonical, escaped)).toBe(true);
+		expect(
+			sameInfrastructureBinding(
+				at("infra/main.tf", "aws_lambda_function.api[0]"),
+				at("infra/main.tf", "aws_lambda_function.api[1]"),
+			),
+		).toBe(false);
 	});
 });

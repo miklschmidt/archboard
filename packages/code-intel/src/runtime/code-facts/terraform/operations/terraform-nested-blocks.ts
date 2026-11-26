@@ -74,40 +74,111 @@ function hasDynamicTemplate(stringLit: Node): boolean {
 }
 
 /**
- * The `string_lit` node inside a plain literal expression, if any.
- * @param expression An attribute's value node.
- * @returns The `string_lit` node, or undefined when the expression is not a single literal string.
+ * Unwrap parenthesized HCL `expression` wrappers (`((expr))` -> `expr`).
+ * @param node The expression node.
+ * @returns The innermost wrapped `expression` node.
  */
-function literalStringNode(expression: Node | undefined): Node | undefined {
-	const literal = onlyChild(expression, "expression");
-	const stringLit = onlyChild(literal, "literal_value");
-	return stringLit?.type === "string_lit" ? stringLit : undefined;
+function unwrapExpression(node: Node | undefined): Node | undefined {
+	let current = node;
+	while (current?.type === "expression") {
+		const inner = onlyChild(current, "expression");
+		if (inner?.type !== "expression") break;
+		current = inner;
+	}
+	return current;
 }
 
 /**
- * The unescaped string value of a plain literal double-quoted HCL expression,
- * rejecting dynamic template interpolations and directives while decoding HCL
- * escapes including `$${` and `%%{`.
- * @param expression The expression node.
- * @returns The decoded literal string, or undefined when not a plain literal.
+ * Count leading ASCII space characters on one line.
+ * @param line The line text.
+ * @returns The number of leading spaces.
  */
-function literalStringValue(expression: Node | undefined): string | undefined {
-	const stringLit = literalStringNode(expression);
-	if (stringLit === undefined || hasDynamicTemplate(stringLit)) return undefined;
+function leadingSpaces(line: string): number {
+	let count = 0;
+	while (count < line.length && line[count] === " ") count += 1;
+	return count;
+}
+
+/**
+ * Strip the minimum common leading-space indentation from an indented HCL
+ * heredoc (`<<-`), ignoring blank lines.
+ * @param lines The raw body lines between opening and closing markers.
+ * @returns The dedented lines.
+ */
+function stripHeredocIndent(lines: readonly string[]): string[] {
+	const counts = lines.filter((line) => /[^ ]/u.test(line)).map(leadingSpaces);
+	if (counts.length === 0) return [...lines];
+	const min = Math.min(...counts);
+	return lines.map((line) => line.slice(Math.min(min, leadingSpaces(line))));
+}
+
+/**
+ * Decode an interpolation-free HCL heredoc template (`<<EOF` or `<<-EOF`),
+ * applying indentation stripping for `<<-`, preserving the trailing newline,
+ * and unescaping `$${` / `%%{` template escapes without touching backslashes.
+ * @param heredoc The `heredoc_template` node.
+ * @returns The decoded string, or undefined when dynamic or malformed.
+ */
+function heredocLiteralValue(heredoc: Node): string | undefined {
+	if (hasDynamicTemplate(heredoc)) return undefined;
+	const lines = heredoc.text.replaceAll("\r\n", "\n").split("\n");
+	if (lines.length < 2) return undefined;
+	const header = lines[0] ?? "";
+	const bodyLines = lines.slice(1, -1);
+	if (bodyLines.length === 0) return "";
+	const normalized = header.startsWith("<<-") ? stripHeredocIndent(bodyLines) : bodyLines;
+	return `${normalized.join("\n")}\n`.replaceAll("$${", "${").replaceAll("%%{", "%{");
+}
+
+/**
+ * Decode a double-quoted `literal_value` node when it holds no dynamic template.
+ * @param literal The `literal_value` node.
+ * @returns The decoded string, or undefined.
+ */
+function quotedLiteralValue(literal: Node): string | undefined {
+	const stringLit = onlyChild(literal, "literal_value");
+	if (stringLit?.type !== "string_lit" || hasDynamicTemplate(stringLit)) return undefined;
 	return decodeHclString(stringLit.text, true);
 }
 
 /**
- * Literal double-quoted string values carried by an attribute's expression:
- * either a single literal string or the literal string elements of a literal
- * HCL tuple, ignoring non-literal elements.
+ * Decode a `template_expr` node when it is an interpolation-free heredoc.
+ * @param template The `template_expr` node.
+ * @returns The decoded heredoc string, or undefined.
+ */
+function templateLiteralValue(template: Node): string | undefined {
+	const heredoc = onlyChild(template, "template_expr");
+	return heredoc?.type === "heredoc_template" ? heredocLiteralValue(heredoc) : undefined;
+}
+
+/**
+ * The unescaped string value of a plain literal HCL string or interpolation-free
+ * heredoc expression (including parenthesized wrappers), rejecting dynamic
+ * template interpolations and directives while decoding HCL escapes.
+ * @param expression The expression node.
+ * @returns The decoded literal string, or undefined when not a plain literal.
+ */
+function literalStringValue(expression: Node | undefined): string | undefined {
+	const inner = onlyChild(unwrapExpression(expression), "expression");
+	if (inner?.type === "literal_value") return quotedLiteralValue(inner);
+	if (inner?.type === "template_expr") return templateLiteralValue(inner);
+	return undefined;
+}
+
+/**
+ * Literal string values carried by an attribute's expression: either a single
+ * literal string/heredoc (with optional parentheses) or the literal string
+ * elements of a literal HCL tuple, ignoring non-literal elements.
  * @param expression The attribute's value node.
  * @returns The decoded literal strings in order.
  */
 function literalStringsOf(expression: Node | undefined): string[] {
 	const single = literalStringValue(expression);
 	if (single !== undefined) return [single];
-	const tuple = onlyChild(onlyChild(expression, "expression"), "collection_value");
+	const tuple = onlyChild(
+		onlyChild(unwrapExpression(expression), "expression"),
+		"collection_value",
+	);
 	if (tuple?.type !== "tuple") return [];
 	return syntaxChildren(tuple).flatMap((child) => {
 		const value = literalStringValue(child);

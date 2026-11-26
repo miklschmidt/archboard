@@ -16,8 +16,8 @@
 // block names, depth-2 blocks, invalid string escapes, and nested selectors on
 // non-resource declarations are rejected.
 
-/** An HCL identifier at the start of a slice (Unicode letters, digits, `_`, `-`). */
-const IDENT_PREFIX = /^[\p{L}_][\p{L}\p{N}_-]*/u;
+/** An HCL identifier at the start of a slice (Unicode ID_Start/ID_Continue, `_`, `-`). */
+const IDENT_PREFIX = /^[\p{ID_Start}_][\p{ID_Continue}_-]*/u;
 
 /** A provider-qualified Terraform resource or data source type, such as `aws_sqs_queue`. */
 const PROVIDER_TYPE = /^[a-z][a-z0-9]*_[a-z0-9_]+$/u;

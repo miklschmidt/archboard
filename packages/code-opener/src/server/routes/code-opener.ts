@@ -25,7 +25,6 @@ import {
 	snapshotCheckoutAccess,
 	type LocalCodeTarget,
 	type LocalCodeTargetResult,
-	type OtherRef,
 } from "@archboard/code-binding/resolution";
 import { githubUrlForBinding } from "#server/projections/github-link.ts";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
@@ -211,6 +210,31 @@ async function launchAtTarget(
 }
 
 /**
+ * Resolve a bound symbol's working-tree location and launch the editor, or report failure.
+ * @param binding The resolved binding.
+ * @param target The local checkout target.
+ * @param signal Cancels location lookup when abandoned.
+ * @param response The response to write.
+ * @param launch The injected launcher, if any.
+ * @returns Once the response is written.
+ */
+async function launchBoundTarget(
+	binding: CodeBinding,
+	target: LocalCodeTarget,
+	signal: AbortSignal,
+	response: Response,
+	launch: OpeningDependencies["launch"],
+): Promise<void> {
+	const location = await symbolLocation(binding, target, signal);
+	const launched = await launchAtTarget(target, launch, location);
+	if (!launched.ok) {
+		const fallback = location ? { ...binding, path: location.relativePath } : binding;
+		return sendFailure(response, launched, statusFor(launched.code), fallback, location?.line);
+	}
+	response.json(openedReply(target));
+}
+
+/**
  * Opens the code a node or a module is bound to, at the line that defines its symbol.
  * @param request The legacy board or canonical module address.
  * @param vault The explicitly addressed vault.
@@ -233,13 +257,7 @@ async function openBound(
 	}
 	const opening = openable(found.target, found.binding);
 	if (!opening.ok) return sendFailure(response, opening.failure, opening.status, found.binding);
-	// Read from the working tree; another ref was refused above, so a fallback link names the line.
-	const location = await symbolLocation(found.binding, opening.target, signal);
-	const launched = await launchAtTarget(opening.target, dependencies.launch, location);
-	if (!launched.ok) {
-		return sendFailure(response, launched, statusFor(launched.code), found.binding, location?.line);
-	}
-	response.json(openedReply(opening.target));
+	await launchBoundTarget(found.binding, opening.target, signal, response, dependencies.launch);
 }
 
 /**
@@ -340,7 +358,14 @@ function openable(
 	}
 	const { otherRef } = target;
 	if (otherRef !== undefined && githubUrlForBinding(binding) !== undefined) {
-		return { ok: false, failure: otherRefFailure(target.repository, otherRef), status: 409 };
+		return {
+			ok: false,
+			failure: {
+				code: "CHECKOUT_ON_OTHER_REF",
+				error: `The checkout of ${target.repository} is on ${otherRef.checkedOut}, and this binding names ${otherRef.named}.`,
+			},
+			status: 409,
+		};
 	}
 	return { ok: true, target };
 }
@@ -358,19 +383,6 @@ function openedReply(target: LocalCodeTarget): CodeTargetOpenSuccess {
 		path: target.path,
 		kind: target.kind,
 		...(target.otherRef === undefined ? {} : { otherRef: target.otherRef }),
-	};
-}
-
-/**
- * The refusal for a local target whose checkout is on another ref than the binding names.
- * @param repository The repository the checkout is of.
- * @param otherRef The ref the binding names and the one the checkout has out.
- * @returns The failure the person is shown, with both refs.
- */
-function otherRefFailure(repository: string, otherRef: OtherRef): RouteFailure {
-	return {
-		code: "CHECKOUT_ON_OTHER_REF",
-		error: `The checkout of ${repository} is on ${otherRef.checkedOut}, and this binding names ${otherRef.named}.`,
 	};
 }
 
@@ -395,10 +407,7 @@ function isBodyParserFailure(error: unknown): boolean {
  */
 function bodyFailure(): ErrorRequestHandler {
 	return (error, _request, response, next) => {
-		if (!isBodyParserFailure(error)) {
-			next(error);
-			return;
-		}
+		if (!isBodyParserFailure(error)) return next(error);
 		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
 	};
 }
@@ -431,16 +440,6 @@ export function createCodeOpenerPreguard(): Router {
 	router.post("/api/code-targets/open", createBrowserOriginGuard("mutation"), body, pass);
 	router.use(bodyFailure());
 	return router;
-}
-
-/**
- * The command a selection runs, as the opener settings show it: with `{path}` and
- * `{line}` where they go, as a custom command is written.
- * @param selection The opener selection.
- * @returns The planned command, or why the selection cannot be planned here.
- */
-function shownCommand(selection: OpenerSelection): OpenerPlan {
-	return planOpenerCommand(selection, PATH_TOKEN, { line: LINE_TOKEN });
 }
 
 /**
@@ -493,13 +492,17 @@ export function createCodeOpenerRouter(
 		asyncEndpoint(async (request, response) => {
 			const current = readOpenerSelection();
 			if (!current.ok) return sendFailure(response, current);
-			const plannedCurrent = shownCommand(current.selection);
+			const plannedCurrent = planOpenerCommand(current.selection, PATH_TOKEN, { line: LINE_TOKEN });
 			const effective = plannedCurrent.ok
 				? resolveOpenerCommand(plannedCurrent.command)
 				: plannedCurrent;
-			const native = shownCommand({ version: 1, kind: "platform" });
+			const native = planOpenerCommand({ version: 1, kind: "platform" }, PATH_TOKEN, {
+				line: LINE_TOKEN,
+			});
 			const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
-				const planned = shownCommand({ version: 1, kind: "preset", preset });
+				const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, PATH_TOKEN, {
+					line: LINE_TOKEN,
+				});
 				if (!planned.ok) throw new Error(planned.error);
 				return { preset, command: planned.command };
 			});

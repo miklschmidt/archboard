@@ -1,4 +1,4 @@
-// The files of a checkout that the code check may read (ADR 0046).
+// The files of a checkout that the code check and code opener may read (ADR 0046).
 //
 // It reads only what Git does not ignore: the tracked files, and the new files
 // that Git does not ignore. So a binding to a directory never reads

@@ -18,7 +18,7 @@ import {
 } from "#runtime/code-check/operations/part-code.ts";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import type { DefinitionSite } from "#runtime/code-facts/operations/definition-site.ts";
-import { namesInfrastructure } from "@archboard/model/vault-policy";
+import { sameInfrastructureBinding } from "@archboard/model/vault-policy";
 
 /** The parts that bind code in one repository, by how narrowly. */
 interface Owners {
@@ -169,18 +169,18 @@ function lineagesOf(codes: ReadonlyMap<string, PartCode>): Map<string, Set<strin
 }
 
 /**
- * Whether a tied parent and direct child both carry infrastructure bindings
- * (Terraform, Kubernetes, or Compose) eligible for deeper-child tie-breaking.
+ * Whether a tied parent and direct child share the exact same canonical
+ * infrastructure binding (preserving instance keys while normalizing quoted
+ * nested-block selector spellings), matching `BINDING_SHARED`'s exemption.
  * @param parent The direct parent container.
  * @param child The direct child part.
- * @returns True when both bindings name infrastructure addresses.
+ * @returns True when both bind the same canonical infrastructure address.
  */
 function isSharedInfraTie(parent: ReadPart | undefined, child: ReadPart): boolean {
 	return (
 		parent?.node.binding !== undefined &&
 		child.node.binding !== undefined &&
-		namesInfrastructure(parent.node.binding) &&
-		namesInfrastructure(child.node.binding)
+		sameInfrastructureBinding(parent.node.binding, child.node.binding)
 	);
 }
 

@@ -190,8 +190,8 @@ async function holding(
  * @returns Its matching addresses in `configuration`.
  */
 function siteAddressesIn(configuration: TerraformConfiguration, site: Site): readonly string[] {
-	if (site.address !== undefined && (site.root === undefined || site.root === configuration.root)) {
-		return [site.address];
+	if (site.address !== undefined) {
+		return site.root === undefined || site.root === configuration.root ? [site.address] : [];
 	}
 	return configuration.addressesAt(site.path, site.definition.start);
 }
@@ -293,6 +293,31 @@ async function isEnclosingResourceAnchor(
 }
 
 /**
+ * Judge holding in a Terraform root module; when the anchor carries an
+ * authoritative qualified address, bypass the file-span fallback if the
+ * address identities disagree so a shared local module file cannot match
+ * another module call.
+ * @param bound The bound files and Terraform root.
+ * @param symbol The part's binding symbol.
+ * @param site Where the anchor's symbol is defined.
+ * @param context The pass.
+ * @returns A Terraform holding verdict, or undefined to fall back to file spans.
+ */
+async function terraformHoldingAt(
+	bound: Bound,
+	symbol: string,
+	site: Site,
+	context: SupportContext,
+): Promise<Holding | undefined> {
+	if (bound.root === undefined) return undefined;
+	const { search } = context;
+	const configuration = await terraformConfiguration(search.facts, search.checkout, bound.root);
+	if (holdsTerraformSite(configuration, symbol, site)) return "holds";
+	if (site.address === undefined || parseTerraformAddress(symbol) === undefined) return undefined;
+	return configuration.declared(symbol).status === "found" ? "elsewhere" : "unknown";
+}
+
+/**
  * Whether the definition a binding's symbol names holds another one, in its
  * file or in a file its tool merges with it. In a Terraform root module, the
  * symbol is an address of its address space, and it holds every declaration
@@ -309,11 +334,9 @@ async function holdingAt(
 	site: Site,
 	context: SupportContext,
 ): Promise<Holding> {
+	const terraform = await terraformHoldingAt(bound, symbol, site, context);
+	if (terraform !== undefined) return terraform;
 	const { search } = context;
-	if (bound.root !== undefined) {
-		const configuration = await terraformConfiguration(search.facts, search.checkout, bound.root);
-		if (holdsTerraformSite(configuration, symbol, site)) return "holds";
-	}
 	const held = await heldInFiles(search, bound.files, symbol, "definition", bound.root);
 	if (held.status !== "found" || held.definition === undefined) return "unknown";
 	const { file, definition } = held;
@@ -511,6 +534,32 @@ async function outsideMismatch(
 }
 
 /**
+ * The warning for an anchor citing the enclosing Terraform resource of an end
+ * that binds a nested block of that resource (ADR 0046, TASK-682).
+ * @param claim The anchor.
+ * @param site Where the enclosing resource is defined.
+ * @param use The anchored use, if any.
+ * @returns The finding.
+ */
+function enclosingResourceMismatch(
+	claim: AnchorClaim,
+	site: Site,
+	use: CodeEvidence | undefined,
+): CodeFinding {
+	return {
+		...claim.site,
+		severity: "warning",
+		code: "ANCHOR_MISMATCH",
+		message:
+			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
+			`which ${site.path}:${site.definition.start} defines as the enclosing Terraform resource of a ` +
+			"nested-block end. A whole-resource anchor cannot stand for a relationship involving a nested " +
+			"block; cite the nested block or a 1-hop sibling block that links the ends instead.",
+		...(use === undefined ? {} : { evidence: [use] }),
+	};
+}
+
+/**
  * Judge whether an anchor that holds supports its relationship or step.
  * @param claim The anchor.
  * @param file The anchored file, relative to its checkout.
@@ -532,7 +581,7 @@ async function judgeSupport(
 	const site = await anchoredSite(claim, file, checkout, context, resolved);
 	if (site === undefined) return undefined;
 	if (await isEnclosingResourceAnchor(claim, site, checkout, context)) {
-		return anchorMismatch(claim, site, anchoredUse(fileFacts, claim));
+		return enclosingResourceMismatch(claim, site, anchoredUse(fileFacts, claim));
 	}
 	const holdings = await Promise.all(
 		claim.holders.map((part) => holding(part, site, checkout, context)),

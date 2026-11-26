@@ -229,19 +229,6 @@ async function heldByBinding(
 	return elsewhere.status === "absent" ? held : elsewhere;
 }
 
-/**
- * Whether an anchor's cited `.tf` file matches a Terraform configuration
- * lookup: either the cited file is in the root module itself or it is the
- * defining module file of the target declaration (or its parent resource).
- * @param file The anchor's cited file, relative to the checkout.
- * @param root The Terraform root module directory.
- * @param targetFile The defining file of the declaration, if known.
- * @returns True when the anchor's cited file agrees with the lookup.
- */
-function anchorFileMatches(file: string, root: string, targetFile: string | undefined): boolean {
-	return directoryOf(file) === root || targetFile === file;
-}
-
 /** Pass checkout snapshot and ref readings needed to resolve holder bindings. */
 interface AnchorContext {
 	readonly snapshot: CheckoutSnapshot;
@@ -249,11 +236,13 @@ interface AnchorContext {
 }
 
 /**
- * Convert a found Terraform declaration into a `Held` site when it matches `file`.
+ * Convert a found Terraform declaration into a `Held` site when the anchor's
+ * cited file is its defining file. Citations in files that merely reference
+ * the symbol fall through to `heldInFiles`.
  * @param configuration The root module's configuration.
  * @param declared A found declaration from the configuration.
  * @param file The anchor's cited file.
- * @returns The resolved `Held`, or undefined when the file does not match.
+ * @returns The resolved `Held`, or undefined when `file` does not define it.
  */
 function foundAnchorInRoot(
 	configuration: TerraformConfiguration,
@@ -261,9 +250,7 @@ function foundAnchorInRoot(
 	file: string,
 ): Held | undefined {
 	const { site, declaration } = declared;
-	if (site === undefined || !anchorFileMatches(file, configuration.root, site.path)) {
-		return undefined;
-	}
+	if (site === undefined || site.path !== file) return undefined;
 	return {
 		status: "found",
 		file: site.path,
@@ -275,13 +262,32 @@ function foundAnchorInRoot(
 }
 
 /**
- * Convert an unheld (unparsed, unread, or unfollowed) Terraform lookup into `Held`
- * when the anchor's cited file agrees with the lookup target.
+ * The file that owns an unheld (unparsed, unread, or plan-only unfollowed)
+ * Terraform declaration in `configuration`.
+ * @param configuration The root module's configuration.
+ * @param declared The unheld configuration lookup.
+ * @param parentDeclaration The enclosing resource address for a nested block.
+ * @returns The defining or module-call file path, if known.
+ */
+function unheldTargetFile(
+	configuration: TerraformConfiguration,
+	declared: Exclude<Declared, { status: "found" | "absent" }>,
+	parentDeclaration: string,
+): string | undefined {
+	if (declared.status === "unparsed") return declared.path;
+	if (declared.status === "unread") return configuration.siteOf(declared.module)?.path;
+	return configuration.siteOf(parentDeclaration)?.path;
+}
+
+/**
+ * Convert an unheld (unparsed, unread, or plan-only unfollowed) Terraform
+ * lookup into `Held` only when the anchor's cited file is the defining or
+ * module-call file.
  * @param configuration The root module's configuration.
  * @param declared The unheld configuration lookup.
  * @param file The anchor's cited file.
  * @param parentDeclaration The enclosing resource address for a nested block.
- * @returns The resolved `Held`, or undefined when the file does not match.
+ * @returns The resolved `Held`, or undefined when `file` does not match.
  */
 function unheldAnchorInRoot(
 	configuration: TerraformConfiguration,
@@ -289,11 +295,30 @@ function unheldAnchorInRoot(
 	file: string,
 	parentDeclaration: string,
 ): Held | undefined {
-	const targetFile =
-		declared.status === "unparsed" ? declared.path : configuration.siteOf(parentDeclaration)?.path;
-	return anchorFileMatches(file, configuration.root, targetFile)
-		? unheldAddress(declared)
-		: undefined;
+	const targetFile = unheldTargetFile(configuration, declared, parentDeclaration);
+	return targetFile === file ? unheldAddress(declared) : undefined;
+}
+
+/**
+ * Resolve an unqualified (root-module) plan-only nested-block anchor when the
+ * cited file owns the parent declaration (or sits in the root if no source declares it).
+ * @param configuration The root module's configuration.
+ * @param declared What the configuration holds at the symbol.
+ * @param file The anchor's cited file.
+ * @param parentDeclaration The enclosing resource address.
+ * @returns The unfollowed `Held`, or undefined.
+ */
+function rootUnfollowedAnchor(
+	configuration: TerraformConfiguration,
+	declared: Declared,
+	file: string,
+	parentDeclaration: string,
+): Held | undefined {
+	if (declared.status !== "unfollowed") return undefined;
+	const ownerFile = configuration.siteOf(parentDeclaration)?.path;
+	const matches =
+		ownerFile === undefined ? directoryOf(file) === configuration.root : ownerFile === file;
+	return matches ? unheldAddress(declared) : undefined;
 }
 
 /**
@@ -314,10 +339,7 @@ function anchorHeldInRoot(
 	qualified: boolean,
 ): Held | undefined {
 	if (declared.status === "absent") return undefined;
-	if (!qualified) {
-		const inRoot = declared.status === "unfollowed" && directoryOf(file) === configuration.root;
-		return inRoot ? unheldAddress(declared) : undefined;
-	}
+	if (!qualified) return rootUnfollowedAnchor(configuration, declared, file, parentDeclaration);
 	return declared.status === "found"
 		? foundAnchorInRoot(configuration, declared, file)
 		: unheldAnchorInRoot(configuration, declared, file, parentDeclaration);

@@ -236,4 +236,20 @@ function duplicateDiagnostics(model: Model): VaultDiagnostic[] {
 	return [...sharedBindings(model), ...repeatedRelationships(model)];
 }
 
-export { duplicateDiagnostics };
+/**
+ * Whether two bindings name the exact same canonical infrastructure target
+ * (same repository, normalized path, and canonical address including instance
+ * keys, with quoted nested-block selector spellings normalized).
+ * @param left First binding.
+ * @param right Second binding.
+ * @returns True when both bindings name the same infrastructure address.
+ */
+function sameInfrastructureBinding(left: Binding, right: Binding): boolean {
+	return (
+		namesInfrastructure(left) &&
+		namesInfrastructure(right) &&
+		bindingKey(left) === bindingKey(right)
+	);
+}
+
+export { duplicateDiagnostics, sameInfrastructureBinding };

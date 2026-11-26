@@ -21,7 +21,7 @@ import {
 	type AnchorClaim,
 	type Claim,
 } from "#runtime/code-check/claims/operations/claims.ts";
-import { heldInFiles, type Search } from "#runtime/code-check/claims/operations/symbols.ts";
+import { heldForClaim, type Search } from "#runtime/code-check/claims/operations/symbols.ts";
 import { codeFacts } from "#runtime/code-check/operations/check.ts";
 import {
 	normalized,
@@ -50,7 +50,6 @@ import { readStatesToCheck, type StateToCheck } from "#runtime/code-check/operat
 import { ownersOf, ownersOfFile } from "#runtime/code-check/evidence/operations/ownership.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
-import type { Accept } from "#runtime/code-facts/operations/lookup.ts";
 import { definitionsOfText } from "#runtime/code-facts/operations/text-definitions.ts";
 import type { z } from "zod";
 import type { CodeFileSchema } from "#shared/protocol/code-files.ts";
@@ -99,9 +98,6 @@ type ModelRefusal = Extract<ArchitectureModelRead, { success: false }>;
 function noteNothing(): void {
 	// Nothing says "read as text" to a person who opened the file.
 }
-
-/** What an anchor's symbol may be: a definition, or a use. */
-const ANCHOR_ACCEPTS: Accept = "definition-or-reference";
 
 /** The owners of a file no part of the reading binds. */
 const EMPTY: CodeFileOwners = { file: [], symbols: [], anchors: [] };
@@ -237,8 +233,18 @@ async function anchorLine(claim: AnchorClaim, reading: RepoReading): Promise<num
 	const readable = anchorFiles(claim, reading);
 	if (readable === undefined) return null;
 	const search: Search = { facts: reading.facts, checkout: readable.code, readAsText: noteNothing };
-	const held = await heldInFiles(search, readable.files, claim.anchor.symbol, ANCHOR_ACCEPTS);
-	return held.status === "found" ? (held.line ?? null) : null;
+	const held = await heldForClaim(
+		search,
+		readable.files,
+		claim,
+		claim.anchor.symbol,
+		readable.code,
+		{
+			snapshot: reading.snapshot,
+			refs: reading.refs,
+		},
+	);
+	return held.status === "found" && held.file === reading.file ? (held.line ?? null) : null;
 }
 
 /**

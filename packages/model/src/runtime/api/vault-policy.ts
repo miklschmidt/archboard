@@ -1,6 +1,6 @@
 // A vault's configuration, the check of a vault against its policy, and the subject a diagnostic names.
 
-export { namesInfrastructure } from "#runtime/check/operations/containment.ts";
+export { sameInfrastructureBinding } from "#runtime/check/operations/duplicates.ts";
 export {
 	type NestedBlockSelector,
 	type ParsedTerraformAddress,
