@@ -10,7 +10,7 @@ Unbuilt proposal subjects remain plans until adoption.
 If two modules describe the same code, read it to decide whether they represent one responsibility.
 Resolve that question from source without asking the user.
 Matching names or bindings raise the question but do not answer it.
-`archboard check` warns with `BINDING_SHARED` when a module binds the same code as another.
+`archboard check` warns with `BINDING_SHARED` when a module binds the same code as another, except for at most one direct child sharing its parent container's infrastructure address (Terraform, Kubernetes, or Compose).
 If they represent one module, keep the identity located with that code.
 In one intent, move relationships, flow steps, and walkthrough references to it, then remove the duplicate.
 Tell the user which modules you combined and which code proved the match.
@@ -187,7 +187,7 @@ The six evidence kinds are:
 - `build-dependency`: a package, workspace, or build-graph requirement.
 - `provisioning`: infrastructure provisioning of one part by another.
 
-An anchor can cite a symbol defined in the bound code of either end or one of its parts. It can also cite an infrastructure declaration that joins the ends. A listed Terraform join supports the anchor when one instance matches both ends under the provider's endpoint roles. An unlisted declaration supports the anchor when one instance reaches the bound code of both ends through its references. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
+An anchor can cite a symbol defined in the bound code of either end or one of its parts. It can also cite an infrastructure declaration that joins the ends. A listed Terraform join supports the anchor when one instance matches both ends under the provider's endpoint roles. An unlisted declaration supports the anchor when one instance reaches the bound code of both ends through its references. For a part bound to a Terraform depth-1 named nested block (`<resource_address>.<block_type>["<name>"]`), an anchor on a 1-hop intra-resource sibling block linked by literal `name` (such as `request_routing_rule["device"]` referencing `http_listener_name = "device-https"`) supports the relationship without emitting `configured-path` evidence; citing the enclosing whole resource or an unlinked sibling warns `ANCHOR_MISMATCH`. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
 For `ANCHOR_MISMATCH`, check the symbol's definition and how the file uses it. When the check rules out the bound code of both ends and their parts, a definition outside that code produces a warning and a declaration alone produces an information finding. If the mismatch is about evidence kind, any resolved use makes it a warning and candidate uses alone make it information.
 
 For an unanchored relationship, `RELATIONSHIP_BACKWARDS` means accepted evidence runs only in the opposite direction, and `RELATIONSHIP_UNSUPPORTED` means no accepted evidence joins its ends. Read the source to correct the relationship or cite the code that proves it.
@@ -218,8 +218,9 @@ The exception uses these stated paths and symbols:
 
 - Kubernetes: A YAML file with a `Kind/name` symbol, including objects such as ConfigMap and Secret.
 - Compose: `compose.yaml`, `compose.yml`, `docker-compose.yaml`, `docker-compose.yml`, or one of their `.override` files, with a service symbol such as `services.web`.
-- Terraform and OpenTofu: A `.tf` or `.tofu` file or root module directory with a resource, data, or module-call address.
-  Nested modules and instance keys, such as `module.api[0].aws_lambda_function.web["blue"]`, receive the exception too.
+- Terraform and OpenTofu: A `.tf` or `.tofu` file or root module directory with a resource, data, ephemeral, module-call, or depth-1 named resource nested-block address (`<resource_address>.<block_type>["<name>"]`, such as `azurerm_application_gateway.ingress.http_listener["device-https"]`).
+  Nested modules and instance keys, such as `module.api[0].aws_lambda_function.web["blue"]` or `module.api[0].azurerm_application_gateway.ingress["blue"].http_listener["device-https"]`, normalize by position and receive the exception too. Quoted block names may hold dots, spaces, slashes, or escapes; numeric indices on nested blocks (such as `http_listener[0]`) are rejected. A nested-block binding is not a runner; bind runners to top-level resources, workloads, or services.
+- Whole-resource child part: When a Terraform resource, Kubernetes workload, or Compose service is a container with parts inside it, at most one direct child may bind that same infrastructure address without triggering `BINDING_SHARED`, allowing whole-resource relationships to satisfy `RELATIONSHIP_ON_CONTAINER`. Code-check ownership prefers that deeper child for unallocated resource references. A second sibling sharing the address still warns `BINDING_SHARED`.
 
 In a directory, a code symbol such as `order_service.start` has the same form as a Terraform address.
 Bind its code file to distinguish it.
