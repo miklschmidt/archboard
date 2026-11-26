@@ -191,11 +191,13 @@ function noteActiveTurn(
  * @param workhorse The workhorse.
  * @param event A notification.
  * @param decoder Names threads as Codex spells them.
+ * @param publish Notifies browsers after the confirmed values are recorded.
  */
 function noteWorkhorseSettings(
 	workhorse: CodexWorkbenchWorkhorse,
 	event: TransportServerNotification,
 	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">,
+	publish: (() => void) | undefined,
 ): void {
 	const { notification } = event;
 	if (notification.method !== "thread/settings/updated") {
@@ -207,21 +209,32 @@ function noteWorkhorseSettings(
 	}
 	const { model, effort, serviceTier } = notification.params.threadSettings;
 	workhorse.state.effectiveSettings = Object.freeze({ threadId, model, effort, serviceTier });
+	publish?.();
 }
 
 /**
  * Record turn lifecycle and settings updates for one workhorse thread.
  * @param workhorse The workhorse.
  * @param event A notification.
- * @param decoder Names threads and turns as Codex spells them.
+ * @param options Identity decoding and confirmed settings publication.
+ * @param options.identity The generation's identity authority.
+ * @param options.identity.decoder Names threads and turns as Codex spells them.
+ * @param options.onWorkhorseSettingsChanged Publishes confirmed settings.
  */
 function noteWorkhorseNotification(
 	workhorse: CodexWorkbenchWorkhorse,
 	event: TransportServerNotification,
-	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity" | "adoptTurnId">,
+	options: {
+		readonly identity: { readonly decoder: TrustedIdentityDecoder };
+		readonly onWorkhorseSettingsChanged?: () => void;
+	},
 ): void {
+	const {
+		identity: { decoder },
+		onWorkhorseSettingsChanged,
+	} = options;
 	noteActiveTurn(workhorse, event, decoder);
-	noteWorkhorseSettings(workhorse, event, decoder);
+	noteWorkhorseSettings(workhorse, event, decoder, onWorkhorseSettingsChanged);
 }
 
 export { freshWorkhorseState, noteActiveTurn, noteWorkhorseNotification };
