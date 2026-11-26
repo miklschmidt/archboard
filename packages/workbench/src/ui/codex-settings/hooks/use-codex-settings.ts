@@ -102,12 +102,15 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 	const [error, setError] = useState<DialogError | null>(null);
 	const mounted = useRef(true);
 	const activeRead = useRef<AbortController | null>(null);
+	const mutationInFlight = useRef(false);
 	const anyBusy = Object.values(busy).some(Boolean);
 
 	useEffect(() => {
 		mounted.current = true;
 		return () => {
 			mounted.current = false;
+			activeRead.current?.abort();
+			activeRead.current = null;
 		};
 	}, []);
 
@@ -117,12 +120,16 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 			title: string,
 			request: () => Promise<CodexSettingsOutcome>,
 		): Promise<CodexSettingsReply | null> => {
+			if (mutationInFlight.current) return null;
+			mutationInFlight.current = true;
 			activeRead.current?.abort();
+			activeRead.current = null;
 			setError(null);
 			setBusy((current) => ({ ...current, [flag]: true }));
 			try {
 				return commitSettingsOutcome(await request(), title, mounted, setError, setSettings);
 			} finally {
+				mutationInFlight.current = false;
 				if (mounted.current) {
 					setBusy((current) => ({ ...current, [flag]: false }));
 				}
@@ -132,19 +139,25 @@ function useCodexSettings(options: UseCodexSettingsOptions) {
 	);
 
 	const refresh = useCallback(async (): Promise<CodexSettingsReply | null> => {
+		if (mutationInFlight.current) return null;
 		activeRead.current?.abort();
 		const controller = new AbortController();
 		activeRead.current = controller;
-		const outcome = await fetchCodexSettings(controller.signal);
-		if (activeRead.current === controller) activeRead.current = null;
-		if (controller.signal.aborted) return null;
-		return commitSettingsOutcome(
-			outcome,
-			"Could not read Codex settings",
-			mounted,
-			setError,
-			setSettings,
-		);
+		try {
+			const outcome = await fetchCodexSettings(controller.signal);
+			if (controller.signal.aborted) return null;
+			return commitSettingsOutcome(
+				outcome,
+				"Could not read Codex settings",
+				mounted,
+				setError,
+				setSettings,
+			);
+		} finally {
+			if (activeRead.current === controller) {
+				activeRead.current = null;
+			}
+		}
 	}, []);
 
 	useEffect(() => {

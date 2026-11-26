@@ -106,6 +106,7 @@ export const CodexSettingsReplySchema = z.object({
 	success: z.literal(true),
 	auth: CodexAuthStateSchema,
 	models: z.array(CodexModelOptionSchema),
+	modelError: z.string().nullable(),
 	selection: CodexModelPreferencesSchema,
 	defaults: z.object({
 		orchestrator: RoleModelSelectionSchema,

@@ -1,4 +1,4 @@
-import { useCallback, useState, type JSX } from "react";
+import { useCallback, useMemo, useState, type JSX } from "react";
 import { Button, Dialog, Separator, cn, type DialogError } from "@archboard/ui-kit/components";
 import type {
 	CodexSettingsReply,
@@ -41,9 +41,10 @@ interface CodexModelFormProps {
 function formFlags(settings: CodexSettingsReply, draft: CodexModelDraft, anyBusy: boolean) {
 	const isAuthenticated = settings.auth.state === "authenticated";
 	const controlsDisabled = !isAuthenticated || anyBusy;
-	const canSave = isAuthenticated && !anyBusy && isCodexModelDraftValid(draft, settings.models);
+	const canSave = !controlsDisabled && isCodexModelDraftValid(draft, settings.models);
 	const canReset =
 		!controlsDisabled &&
+		settings.models.length > 0 &&
 		(settings.selection.orchestrator !== null || settings.selection.workhorse !== null);
 	return { isAuthenticated, controlsDisabled, canSave, canReset };
 }
@@ -182,6 +183,14 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 		save,
 		reset,
 	} = useCodexSettings({ onSuccess: props.onSuccess });
+	const modelErrorMessage = settings?.modelError ?? null;
+	const modelError = useMemo(
+		() =>
+			modelErrorMessage === null
+				? null
+				: { title: "Could not load Codex models", message: modelErrorMessage },
+		[modelErrorMessage],
+	);
 
 	const handleRefresh = useCallback(() => {
 		void refresh();
@@ -223,6 +232,14 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 						onLogout={handleLogout}
 						onRefresh={handleRefresh}
 					/>
+					{modelError !== null && (
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<Dialog.Error error={modelError} />
+							<Button variant="outline" size="sm" disabled={anyBusy} onClick={handleRefresh}>
+								Retry loading models
+							</Button>
+						</div>
+					)}
 					<CodexModelForm
 						key={`${settings.auth.state}:${JSON.stringify(settings.selection)}:${settings.models.map((m) => m.id).join(",")}`}
 						settings={settings}

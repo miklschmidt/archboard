@@ -98,8 +98,8 @@ function serviceTierChoicesForModel(
 	return [
 		{
 			value: DEFAULT_TIER_VALUE,
-			label: model.defaultServiceTier === null ? "Standard (default)" : "Model default",
-			description: "Let Codex choose the service tier.",
+			label: model.defaultServiceTier === null ? "Standard (default)" : "Standard",
+			description: "Use the standard service tier.",
 		},
 		...advertised,
 	];
@@ -117,14 +117,10 @@ function resolveRoleDraft(
 	fallback: RoleModelSelection,
 	models: readonly CodexModelOption[],
 ): RoleModelDraft {
-	if (models.length === 0) {
-		return EMPTY_ROLE_DRAFT;
-	}
 	const preferred = saved ?? fallback;
 	const matched = models.find((entry) => entry.model === preferred.model);
 	if (matched === undefined) {
-		const defaultModel = models.find((entry) => entry.isDefault) ?? models[0]!;
-		return reconcileRoleForModelChange(EMPTY_ROLE_DRAFT, defaultModel);
+		return EMPTY_ROLE_DRAFT;
 	}
 	return reconcileRoleForModelChange(preferred, matched);
 }

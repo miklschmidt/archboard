@@ -1,4 +1,5 @@
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
+import { matchesServiceTier } from "#runtime/host/protocol/models.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { EpochExecutionProof } from "#runtime/epoch/store/contract.ts";
 import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
@@ -49,9 +50,7 @@ function modelSettingsMismatches(
 		reasoningEffort:
 			response.reasoningEffort !== null &&
 			response.reasoningEffort !== requested.config?.["model_reasoning_effort"],
-		serviceTier:
-			response.serviceTier?.length === 0 ||
-			(typeof requested.serviceTier === "string" && response.serviceTier !== requested.serviceTier),
+		serviceTier: !matchesServiceTier(requested.serviceTier ?? null, response.serviceTier),
 	};
 }
 

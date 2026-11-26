@@ -20,6 +20,7 @@ test("retry loads the signed-out controls after the first read fails", async () 
 		success: true,
 		auth: { state: "signed_out", requiresOpenaiAuth: true, reason: null },
 		models: [],
+		modelError: null,
 		selection: { version: 1, orchestrator: null, workhorse: null },
 		defaults: {
 			orchestrator: { model: "gpt-6.1-terra", effort: "low", serviceTier: null },

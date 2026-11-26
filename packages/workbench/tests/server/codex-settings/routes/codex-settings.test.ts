@@ -74,12 +74,23 @@ interface FakeScopeController {
 	readonly scope: CodexSettingsScope;
 	readonly settingsUpdates: Array<Record<string, unknown>>;
 	publishCount: number;
+	failModelList: boolean;
 	setSignedIn: (signedIn: boolean) => void;
 }
 
 function createFakeScope(pages: readonly (readonly ModelEntry[])[]): FakeScopeController {
 	const authorities = createIdentityAuthorities();
+	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("workhorse-thread-1");
+	const staleThreadId = authorities.identity.decoder.adoptThreadId("stale-workhorse");
+	const operationId = authorities.operation.issuer.mintOperationId();
+	const readyWorkhorse = (id: typeof threadId) => ({
+		components: {
+			workhorse: {
+				snapshot: () => ({ state: "ready", threadId: id, childId, epoch, operationId }),
+			},
+		},
+	});
 	let accountState: ReturnType<CodexSettingsScope["account"]["snapshot"]>["account"] = {
 		kind: "codex_account_response",
 		response: { account: null, requiresOpenaiAuth: true, workspaceRouting: null },
@@ -92,6 +103,7 @@ function createFakeScope(pages: readonly (readonly ModelEntry[])[]): FakeScopeCo
 	const controller: FakeScopeController = {
 		settingsUpdates,
 		publishCount: 0,
+		failModelList: false,
 		setSignedIn: (signedIn: boolean) => {
 			loginState = { kind: "login", state: "idle" };
 			accountState = signedIn
@@ -114,6 +126,15 @@ function createFakeScope(pages: readonly (readonly ModelEntry[])[]): FakeScopeCo
 					};
 		},
 		scope: {
+			assertCurrent: () => undefined,
+			epoch: {
+				assertCurrent: (request: Parameters<CodexSettingsScope["epoch"]["assertCurrent"]>[0]) => {
+					if (request.threadId === staleThreadId) {
+						throw new Error("Workhorse start is no longer current");
+					}
+					expect(request).toEqual({ childId, epoch, operationId, threadId });
+				},
+			} as unknown as CodexSettingsScope["epoch"],
 			account: {
 				snapshot: () => ({
 					account: accountState,
@@ -171,6 +192,7 @@ function createFakeScope(pages: readonly (readonly ModelEntry[])[]): FakeScopeCo
 			},
 			session: {
 				modelList: async (params?: { cursor?: string | null }) => {
+					if (controller.failModelList) throw new Error("Model catalogue unavailable");
 					const index = params?.cursor ? Number(params.cursor) : 0;
 					const data = pages[index] ?? [];
 					const nextCursor = index + 1 < pages.length ? String(index + 1) : null;
@@ -185,16 +207,8 @@ function createFakeScope(pages: readonly (readonly ModelEntry[])[]): FakeScopeCo
 				list: () => [
 					{
 						workhorses: new Map([
-							[
-								"/checkout",
-								{
-									components: {
-										workhorse: {
-											snapshot: () => ({ state: "ready", threadId }),
-										},
-									},
-								},
-							],
+							["/stale-checkout", readyWorkhorse(staleThreadId)],
+							["/checkout", readyWorkhorse(threadId)],
 						]),
 					},
 				],
@@ -380,6 +394,25 @@ describe("codex settings HTTP routes and service", () => {
 				serviceTier: null,
 			});
 			expect(fake.publishCount).toBe(1);
+
+			// Reset refuses while signed out or when model/list fails without erasing preferences.
+			fake.setSignedIn(false);
+			const signedOutReset = await fetch(`${server.baseUrl}/api/settings/codex`, {
+				method: "DELETE",
+				headers: originHeaders,
+			});
+			expect(signedOutReset.status).toBe(409);
+			expect(readCodexModelPreferences()).toEqual({ ok: true, selection: savedBody.selection });
+
+			fake.setSignedIn(true);
+			fake.failModelList = true;
+			const failedReset = await fetch(`${server.baseUrl}/api/settings/codex`, {
+				method: "DELETE",
+				headers: originHeaders,
+			});
+			expect(failedReset.status).toBe(502);
+			expect(readCodexModelPreferences()).toEqual({ ok: true, selection: savedBody.selection });
+			fake.failModelList = false;
 
 			// Reset clears overrides back to null.
 			const resetRes = await fetch(`${server.baseUrl}/api/settings/codex`, {

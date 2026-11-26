@@ -1,5 +1,8 @@
 import type { RoleModelSelection } from "@archboard/codex-realtime-voice/server";
-import type { CodexWorkbenchDomainScope } from "#runtime/voice/protocol/extension.ts";
+import type {
+	CodexWorkbenchDomainScope,
+	CodexWorkbenchWorkhorseComponents,
+} from "#runtime/voice/protocol/extension.ts";
 import {
 	authStateFromSnapshot,
 	effectiveDefaults,
@@ -34,8 +37,10 @@ type CodexSettingsResult =
 /** Narrow scope contract required by the Codex settings service (and injectable in tests). */
 type CodexSettingsScope = Pick<
 	CodexWorkbenchDomainScope,
-	"account" | "session" | "sessions" | "publish"
+	"account" | "epoch" | "session" | "sessions" | "publish" | "assertCurrent"
 >;
+type AccountSnapshot = ReturnType<CodexSettingsScope["account"]["snapshot"]>;
+type WorkhorseSnapshot = ReturnType<CodexWorkbenchWorkhorseComponents["workhorse"]["snapshot"]>;
 
 interface CodexSettingsStorePort {
 	readonly read: () => CodexModelConfigResult;
@@ -67,7 +72,12 @@ function errorMessage(error: unknown, fallback: string): string {
  */
 async function readCurrentSnapshot(scope: CodexSettingsScope, refreshIfNeeded: boolean) {
 	const initial = scope.account.snapshot();
-	if (!refreshIfNeeded || !needsAccountRefresh(initial)) {
+	if (
+		!refreshIfNeeded ||
+		processAuthState(initial.process) !== null ||
+		initial.login.state === "pending" ||
+		!needsAccountRefresh(initial)
+	) {
 		return initial;
 	}
 	try {
@@ -79,29 +89,27 @@ async function readCurrentSnapshot(scope: CodexSettingsScope, refreshIfNeeded: b
 }
 
 /**
- * Derive the current Codex authentication state from the live generation scope.
- * @param scope The active Codex generation scope, or null while unavailable.
- * @param startup The workbench startup state when no scope is attached yet.
- * @param refreshIfNeeded Whether to call account.read() when account state is unknown or failed.
- * @returns The derived authentication state.
+ * Project the process and account facts from the same generation snapshot.
+ * @param snapshot The generation's account and process facts.
+ * @returns The state of Codex authentication.
  */
-async function resolveAuthState(
-	scope: CodexSettingsScope | null,
-	startup: CodexSettingsStartupState,
-	refreshIfNeeded: boolean,
-): Promise<CodexAuthState> {
-	if (scope === null) {
-		return startup.state === "starting"
-			? { state: "starting", reason: startup.reason }
-			: { state: "unavailable", reason: startup.reason };
-	}
-	const initial = scope.account.snapshot();
-	const processState = processAuthState(initial.process);
-	if (processState !== null) return processState;
-	const pendingBefore = pendingLoginState(initial.login);
-	if (pendingBefore !== null) return pendingBefore;
-	const snap = await readCurrentSnapshot(scope, refreshIfNeeded);
-	return pendingLoginState(snap.login) ?? authStateFromSnapshot(snap);
+function resolveAuthState(snapshot: AccountSnapshot): CodexAuthState {
+	return (
+		processAuthState(snapshot.process) ??
+		pendingLoginState(snapshot.login) ??
+		authStateFromSnapshot(snapshot)
+	);
+}
+
+/**
+ * Derive the unavailable or starting auth state when no generation scope is attached.
+ * @param startup Current workbench startup state.
+ * @returns The matching startup auth state.
+ */
+function startupAuthState(startup: CodexSettingsStartupState): CodexAuthState {
+	return startup.state === "starting"
+		? { state: "starting", reason: startup.reason }
+		: { state: "unavailable", reason: startup.reason };
 }
 
 /**
@@ -175,6 +183,36 @@ async function listAvailableModels(
 }
 
 /**
+ * Extract the epoch identity fields from a ready workhorse snapshot when all are populated.
+ * @param snapshot The workhorse's start facts.
+ * @returns The complete epoch identity, or null if incomplete.
+ */
+function workhorseEpochIdentity(snapshot: WorkhorseSnapshot) {
+	const { childId, epoch, operationId, threadId } = snapshot;
+	if (childId === null || epoch === null || operationId === null || threadId === null) {
+		return null;
+	}
+	return { childId, epoch, operationId, threadId };
+}
+
+/**
+ * Check that a ready workhorse still has a delivered start in the current child epoch.
+ * @param epoch The generation's epoch store.
+ * @param snapshot The ready workhorse's start facts.
+ * @returns The thread ID when the epoch store proves the start is current.
+ */
+function currentWorkhorseThread(epoch: CodexSettingsScope["epoch"], snapshot: WorkhorseSnapshot) {
+	const identity = workhorseEpochIdentity(snapshot);
+	if (identity === null) return null;
+	try {
+		epoch.assertCurrent(identity);
+		return identity.threadId;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Best-effort apply updated workhorse settings to every ready workhorse thread in the generation.
  * @param scope Active Codex generation scope.
  * @param selection Target workhorse model, reasoning effort, and service tier.
@@ -186,19 +224,20 @@ async function applyToLiveWorkhorses(
 	const updates: Promise<unknown>[] = [];
 	for (const session of scope.sessions.list()) {
 		for (const workhorse of session.workhorses.values()) {
-			const snap = workhorse.components.workhorse.snapshot();
-			if (snap.state === "ready" && snap.threadId !== null) {
-				updates.push(
-					scope.session
-						.threadSettingsUpdate({
-							threadId: snap.threadId,
-							model: selection.model,
-							effort: selection.effort,
-							serviceTier: selection.serviceTier,
-						})
-						.catch(() => undefined),
-				);
-			}
+			const snapshot = workhorse.components.workhorse.snapshot();
+			if (snapshot.state !== "ready") continue;
+			const threadId = currentWorkhorseThread(scope.epoch, snapshot);
+			if (threadId === null) continue;
+			updates.push(
+				scope.session
+					.threadSettingsUpdate({
+						threadId,
+						model: selection.model,
+						effort: selection.effort,
+						serviceTier: selection.serviceTier,
+					})
+					.catch(() => undefined),
+			);
 		}
 	}
 	if (updates.length > 0) {
@@ -224,6 +263,33 @@ function validateBothRoles(
 }
 
 /**
+ * Report the account, its model options, any model-list error, and persisted selections together.
+ * @param selection Saved preferences.
+ * @param auth The current Codex authentication state.
+ * @param models Models listed for the authenticated account.
+ * @param modelError Why the model catalogue could not be read, if applicable.
+ * @returns The complete settings reply.
+ */
+function settingsReply(
+	selection: CodexModelPreferences,
+	auth: CodexAuthState,
+	models: readonly CodexModelOption[] = [],
+	modelError: string | null = null,
+): CodexSettingsResult {
+	return {
+		ok: true,
+		reply: {
+			success: true,
+			auth,
+			models: [...models],
+			modelError,
+			selection,
+			defaults: effectiveDefaults(models),
+		},
+	};
+}
+
+/**
  * Build the Codex settings service backed by the active generation scope and model preferences store.
  * @param dependencies Scope reader, startup status reader, and optional store override for tests.
  * @returns Read, save, reset, login, cancel-login, and logout operations.
@@ -236,39 +302,77 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 	};
 
 	/**
+	 * Stop a request from using model pages obtained under a replaced account or child.
+	 * @param scope The generation asked for its models.
+	 * @param snapshot The account and child that authorized the request.
+	 * @returns A failure if the model pages no longer describe the current account.
+	 */
+	function staleCatalogue(scope: CodexSettingsScope, snapshot: AccountSnapshot) {
+		const current = scope.account.snapshot();
+		const sameAccount = current.account === snapshot.account && current.login === snapshot.login;
+		if (scope === dependencies.getScope() && sameAccount) {
+			try {
+				scope.assertCurrent();
+				return null;
+			} catch {
+				// The scope no longer owns the child or its transport.
+			}
+		}
+		return {
+			ok: false as const,
+			code: "CODEX_UNAVAILABLE" as const,
+			error: "The Codex account or app-server changed. Refresh Settings and try again.",
+		};
+	}
+
+	/**
+	 * Read models for the account that supplied the Settings auth state.
+	 * @param scope The generation asked for its models.
+	 * @param snapshot The authenticated account snapshot.
+	 * @returns Models from the same live account, or a failure.
+	 */
+	async function readCatalogue(scope: CodexSettingsScope, snapshot: AccountSnapshot) {
+		const stale = staleCatalogue(scope, snapshot);
+		if (stale !== null) return stale;
+		try {
+			const models = await listAvailableModels(scope.session);
+			const afterStale = staleCatalogue(scope, snapshot);
+			return afterStale ?? { ok: true as const, models };
+		} catch (error) {
+			return {
+				ok: false as const,
+				code: "MODEL_LIST_FAILED" as const,
+				error: errorMessage(error, "Could not read available models from Codex."),
+			};
+		}
+	}
+
+	/**
 	 * Build a complete settings reply from the current scope and persisted selection.
+	 * Preserves the signed-in account state and reports modelError when model/list fails.
 	 * @param selection Persisted preferences to report.
 	 * @param refreshIfNeeded Whether to trigger account/read if account state is unknown/failed.
+	 * @param scope The generation the request started with.
 	 * @returns The settings reply or a structured failure.
 	 */
 	async function buildReply(
 		selection: CodexModelPreferences,
 		refreshIfNeeded: boolean,
+		scope: CodexSettingsScope | null,
 	): Promise<CodexSettingsResult> {
-		const scope = dependencies.getScope();
-		const auth = await resolveAuthState(scope, dependencies.getStartupState(), refreshIfNeeded);
-		let models: readonly CodexModelOption[] = [];
-		if (auth.state === "authenticated" && scope !== null) {
-			try {
-				models = await listAvailableModels(scope.session);
-			} catch (error) {
-				return {
-					ok: false,
-					code: "MODEL_LIST_FAILED",
-					error: errorMessage(error, "Could not read available models from Codex."),
-				};
-			}
+		if (scope === null) {
+			return settingsReply(selection, startupAuthState(dependencies.getStartupState()));
 		}
-		return {
-			ok: true,
-			reply: {
-				success: true,
-				auth,
-				models: [...models],
-				selection,
-				defaults: effectiveDefaults(models),
-			},
-		};
+		const snapshot = await readCurrentSnapshot(scope, refreshIfNeeded);
+		const auth = resolveAuthState(snapshot);
+		if (auth.state !== "authenticated") return settingsReply(selection, auth);
+		const listed = await readCatalogue(scope, snapshot);
+		if (!listed.ok) {
+			return listed.code === "MODEL_LIST_FAILED"
+				? settingsReply(selection, auth, [], listed.error)
+				: listed;
+		}
+		return settingsReply(selection, auth, listed.models);
 	}
 
 	/**
@@ -293,16 +397,24 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 			return { ok: false, code, error: errorMessage(error, fallback) };
 		}
 		const stored = store.read();
-		return stored.ok ? buildReply(stored.selection, false) : stored;
+		return stored.ok ? buildReply(stored.selection, false, scope) : stored;
 	}
 
 	/**
-	 * Load authenticated models for a write operation, refusing unauthenticated or unavailable state.
-	 * @param scope Live generation scope.
-	 * @returns Auth state and live models, or a structured refusal.
+	 * Load authenticated models for a write operation, refusing unauthenticated, stale, or unavailable state.
+	 * @returns Generation scope, auth state, and live models, or a structured refusal.
 	 */
-	async function requireAuthenticatedModels(scope: CodexSettingsScope) {
-		const auth = await resolveAuthState(scope, dependencies.getStartupState(), true);
+	async function requireAuthenticatedModels() {
+		const scope = dependencies.getScope();
+		if (scope === null) {
+			return {
+				ok: false as const,
+				code: "CODEX_UNAVAILABLE" as const,
+				error: dependencies.getStartupState().reason,
+			};
+		}
+		const snapshot = await readCurrentSnapshot(scope, true);
+		const auth = resolveAuthState(snapshot);
 		if (auth.state !== "authenticated") {
 			return {
 				ok: false as const,
@@ -310,15 +422,8 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 				error: "Sign in to Codex before choosing models.",
 			};
 		}
-		try {
-			return { ok: true as const, auth, models: await listAvailableModels(scope.session) };
-		} catch (error) {
-			return {
-				ok: false as const,
-				code: "MODEL_LIST_FAILED" as const,
-				error: errorMessage(error, "Could not read available models from Codex."),
-			};
-		}
+		const listed = await readCatalogue(scope, snapshot);
+		return listed.ok ? { ...listed, scope, auth } : listed;
 	}
 
 	return Object.freeze({
@@ -328,7 +433,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 		 */
 		readSettings: async (): Promise<CodexSettingsResult> => {
 			const stored = store.read();
-			return stored.ok ? buildReply(stored.selection, true) : stored;
+			return stored.ok ? buildReply(stored.selection, true, dependencies.getScope()) : stored;
 		},
 		/**
 		 * Validate orchestrator and workhorse selections against live model/list, persist them, and apply to live workhorses.
@@ -336,15 +441,7 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 		 * @returns The updated settings snapshot or failure.
 		 */
 		saveSettings: async (input: CodexSettingsSaveRequest): Promise<CodexSettingsResult> => {
-			const scope = dependencies.getScope();
-			if (scope === null) {
-				return {
-					ok: false,
-					code: "CODEX_UNAVAILABLE",
-					error: dependencies.getStartupState().reason,
-				};
-			}
-			const loaded = await requireAuthenticatedModels(scope);
+			const loaded = await requireAuthenticatedModels();
 			if (!loaded.ok) return loaded;
 			const validationError = validateBothRoles(input, loaded.models);
 			if (validationError !== null) {
@@ -356,37 +453,23 @@ function createCodexSettingsService(dependencies: CodexSettingsServiceDependenci
 				workhorse: input.workhorse,
 			});
 			if (!saved.ok) return saved;
-			await applyToLiveWorkhorses(scope, input.workhorse);
-			return {
-				ok: true,
-				reply: {
-					success: true,
-					auth: loaded.auth,
-					models: [...loaded.models],
-					selection: saved.selection,
-					defaults: effectiveDefaults(loaded.models),
-				},
-			};
+			await applyToLiveWorkhorses(loaded.scope, input.workhorse);
+			return settingsReply(saved.selection, loaded.auth, loaded.models);
 		},
 		/**
-		 * Reset persisted model selections to defaults and apply default workhorse settings if authenticated.
+		 * Reset persisted model selections to defaults after verifying Codex authentication and live models.
 		 * @returns The updated settings snapshot or failure.
 		 */
 		resetSettings: async (): Promise<CodexSettingsResult> => {
+			const loaded = await requireAuthenticatedModels();
+			if (!loaded.ok) return loaded;
 			const reset = store.reset();
 			if (!reset.ok) return reset;
-			const result = await buildReply(reset.selection, false);
-			if (!result.ok) return result;
-			const scope = dependencies.getScope();
-			if (
-				scope !== null &&
-				result.reply.auth.state === "authenticated" &&
-				validateRoleSelection("Workhorse", result.reply.defaults.workhorse, result.reply.models) ===
-					null
-			) {
-				await applyToLiveWorkhorses(scope, result.reply.defaults.workhorse);
+			const { workhorse } = effectiveDefaults(loaded.models);
+			if (validateRoleSelection("Workhorse", workhorse, loaded.models) === null) {
+				await applyToLiveWorkhorses(loaded.scope, workhorse);
 			}
-			return result;
+			return settingsReply(reset.selection, loaded.auth, loaded.models);
 		},
 		/**
 		 * Start a Codex sign-in (ChatGPT OAuth or OpenAI API key) through the shared generation account owner.

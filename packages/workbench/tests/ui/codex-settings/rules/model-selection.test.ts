@@ -72,6 +72,7 @@ function makeReply(overrides: Partial<CodexSettingsReply> = {}): CodexSettingsRe
 			},
 		},
 		models: [SOL, ASTRA],
+		modelError: null,
 		selection: { version: 1, orchestrator: null, workhorse: null },
 		defaults: {
 			orchestrator: { model: "gpt-6-sol", effort: "low", serviceTier: "priority" },
@@ -123,6 +124,21 @@ describe("codex model selection rules", () => {
 			effort: "medium",
 			serviceTier: "priority",
 		});
+	});
+
+	test("leaves unavailable configured models unselected until the user chooses an offered model", () => {
+		const reply = makeReply({
+			models: [ASTRA],
+			selection: {
+				version: 1,
+				orchestrator: null,
+				workhorse: { model: "retired-model", effort: "medium", serviceTier: null },
+			},
+		});
+		const draft = resolveCodexModelDraft(reply);
+		expect(draft.orchestrator.model).toBe("");
+		expect(draft.workhorse.model).toBe("");
+		expect(isCodexModelDraftValid(draft, reply.models)).toBe(false);
 	});
 
 	test("builds service tier choices strictly from advertised tiers", () => {
