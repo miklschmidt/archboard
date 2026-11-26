@@ -3,10 +3,10 @@ id: TASK-682.05
 title: >-
   Document Terraform nested-block bindings in CLI help, authoring skill, and
   docs site
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T02:50:00Z'
+updated_date: '2026-11-26T02:52:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -51,7 +51,13 @@ Sync every user- and agent-facing description of Terraform bindings, anchors, sk
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CLI check code and check semantics help describe Terraform nested-block bindings, expression-not-followed skips for dynamic/computed/plan-only nested selectors, and the direct-child infrastructure exception to BINDING_SHARED
-- [ ] #2 The consumer archboard authoring reference documents nested-block syntax, 1-hop sibling anchors, the direct-child whole-resource pattern, and notes that a nested-block binding is not a runner
-- [ ] #3 Affected docs site pages match the shipped behavior and the site build passes with no reference, guide, or link errors
+- [x] #1 CLI check code and check semantics help describe Terraform nested-block bindings, expression-not-followed skips for dynamic/computed/plan-only nested selectors, and the direct-child infrastructure exception to BINDING_SHARED
+- [x] #2 The consumer archboard authoring reference documents nested-block syntax, 1-hop sibling anchors, the direct-child whole-resource pattern, and notes that a nested-block binding is not a runner
+- [x] #3 Affected docs site pages match the shipped behavior and the site build passes with no reference, guide, or link errors
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Updated check code and check semantics CLI help in apps/cli/src/cli/commands/vault/operations/check-help.ts, consumer authoring guidance in skills/archboard/references/authoring.md (including nested-block syntax, 1-hop sibling anchors, direct-child whole-resource pattern, and explicit note that a nested-block binding is not a runner), and site/src/content/docs/platform.mdx. Verified with vp fmt --check, lint:policy (0 warnings/errors), types (0 errors), and full site build (13/13 script tests, 8/8 guides, astro check 0 errors, 19 pages built, all internal links resolved).
+<!-- SECTION:FINAL_SUMMARY:END -->
