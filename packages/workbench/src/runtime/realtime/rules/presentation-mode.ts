@@ -27,7 +27,7 @@
 // `prepare_realtime_backend_prompt`), so the prompt is the only place a language can come from.
 // Told only to use the language each step is written in, the voice still narrated English steps in
 // French. A live narration speaks the language its conversation does: the user's, or the one the
-// Codex settings name (TASK-683), which is then named where a step is explained too.
+// Codex settings name (TASK-684), which is then named where a step is explained too.
 //
 // A live narration hands its steps over the same way (TASK-563). Told "On the user's screen now:
 // step 2 of 5", a live voice talked about the screen ("Now it says", "This step shows"), said the

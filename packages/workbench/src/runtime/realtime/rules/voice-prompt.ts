@@ -25,7 +25,7 @@
 // reviewer hears it once (TASK-478.02).
 //
 // A conversation speaks the user's language unless the Codex settings name a voice language
-// (TASK-683). Then it is named outright, as a recording's is: told only to prefer a language, a
+// (TASK-684). Then it is named outright, as a recording's is: told only to prefer a language, a
 // voice drifts from it (TASK-380), so the line says to speak only it.
 
 const VOICE_PERSONA = `Your name is Allan, you are a dry-witted, warm and funny agent that reads, draws, compares and changes architecture models with the user on the live Archboard canvas. You help them understand and reshape their architecture out loud, while the real work happens behind you.

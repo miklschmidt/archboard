@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: 2026-09-28 14:48
-updated_date: '2026-11-26T12:43:00Z'
+updated_date: '2026-11-26T13:00:00Z'
 labels:
   - voice
 dependencies: []
@@ -30,5 +30,5 @@ Found 2026-09-28 by review, not reproduced. TASK-352 fixed recordings, which pic
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-TASK-683 adds a Voice language setting to the Codex settings tab. With a language set, a live narration names it from the first step, so this bug no longer reaches those users; Automatic still behaves as described here.
+TASK-684 adds a Voice language setting to the Codex settings tab. With a language set, a live narration names it from the first step, so this bug no longer reaches those users; Automatic still behaves as described here.
 <!-- SECTION:NOTES:END -->
