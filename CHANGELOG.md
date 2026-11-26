@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.0](https://github.com/miklschmidt/archboard/compare/v0.6.0...v0.7.0) (2026-11-26)
+
+
+### Features
+
+* **browser:** give agents full filtering, settings, navigation, and temporary flow controls ([#163](https://github.com/miklschmidt/archboard/issues/163)) ([f5e6b19](https://github.com/miklschmidt/archboard/commit/f5e6b199c89b193a23ea946cc17437a7a37b3ce0))
+* **settings:** add Codex authentication and model selection settings ([#168](https://github.com/miklschmidt/archboard/issues/168)) ([11c8403](https://github.com/miklschmidt/archboard/commit/11c84039df9f940b721b8026be4adc0b9b9c6ae0))
+* **terraform:** support depth-1 named nested-block bindings and sibling anchors ([#166](https://github.com/miklschmidt/archboard/issues/166)) ([#169](https://github.com/miklschmidt/archboard/issues/169)) ([ba51d4d](https://github.com/miklschmidt/archboard/commit/ba51d4d75be9a30f47b80b8f881cd04cf19021ad))
+* **voice:** choose the language the voice speaks in the Codex settings tab ([#172](https://github.com/miklschmidt/archboard/issues/172)) ([c19c59b](https://github.com/miklschmidt/archboard/commit/c19c59bf93d991a3f31c68abf45f07c8412ebb04))
+* **web:** a presented walkthrough keeps the legend in its column ([#171](https://github.com/miklschmidt/archboard/issues/171)) ([0ded818](https://github.com/miklschmidt/archboard/commit/0ded81828bead1f3bf6e8b19000021e01167da17))
+
+
+### Bug Fixes
+
+* **code-intel:** judge Terraform joining anchors per instance and add Azure rules ([#167](https://github.com/miklschmidt/archboard/issues/167)) ([19c88f9](https://github.com/miklschmidt/archboard/commit/19c88f95452c93443eec4c432b8280660b27f7c1))
+* **walkthrough:** let Space pan the picture instead of stepping ([#170](https://github.com/miklschmidt/archboard/issues/170)) ([1f80fea](https://github.com/miklschmidt/archboard/commit/1f80fea580dd2d785882e3e9dc476d0644c013f2))
+
 ## [0.6.0](https://github.com/miklschmidt/archboard/compare/v0.5.0...v0.6.0) (2026-11-25)
 
 
