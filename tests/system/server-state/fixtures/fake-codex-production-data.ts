@@ -27,12 +27,12 @@ const configFixture = {
 	desktop: null,
 };
 const modelFixture = {
-	id: "gpt-6-luna",
-	model: "gpt-6-luna",
+	id: "gpt-6.2-sol",
+	model: "gpt-6.2-sol",
 	upgrade: null,
 	upgradeInfo: null,
 	availabilityNux: null,
-	displayName: "Luna",
+	displayName: "GPT-6.2 Sol",
 	description: "production fixture",
 	modelSpecialty: null,
 	hidden: false,
@@ -59,6 +59,7 @@ const coordinatorModelFixture = {
 		{ reasoningEffort: "medium", description: "fixture" },
 	],
 	defaultReasoningEffort: "medium",
+	serviceTiers: [{ id: "priority", name: "Fast", description: "fixture" }],
 	isDefault: false,
 };
 

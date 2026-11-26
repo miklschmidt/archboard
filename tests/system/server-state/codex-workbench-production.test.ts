@@ -116,8 +116,7 @@ describe.serial("actual production Codex composition", () => {
 			});
 			expect(created).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			// The coordinator's thread starts before the workhorse's.
-			expect(startedModels()[0]).toBe("gpt-6.1-terra");
-			expect(startedModels()).toHaveLength(2);
+			expect(startedModels()).toEqual(["gpt-6.1-terra", "gpt-6.2-sol"]);
 			// The app-server and the coordinator work in a directory of their own under the state
 			// directory, which holds no vault. The workhorse works in its checkout: for this untracked
 			// vault, the directory that holds it. No thread works in the archboard checkout (ADR 0050).
@@ -130,6 +129,11 @@ describe.serial("actual production Codex composition", () => {
 			expect(basename(coordinatorDirectory)).toBe("coordinator");
 			expect(existsSync(join(coordinatorDirectory, ".archboard"))).toBe(false);
 			expect(coordinatorDirectory.startsWith(repoRoot)).toBe(false);
+			expect(coordinatorStart?.params?.["serviceTier"]).toBe("priority");
+			expect(workhorseStart?.params).toMatchObject({
+				config: { model_reasoning_effort: "high" },
+				serviceTier: null,
+			});
 			expect(workhorseStart?.params?.["cwd"]).toBe(realpathSync(root));
 			expect(workhorseStart?.params?.["runtimeWorkspaceRoots"]).toEqual([realpathSync(root)]);
 
@@ -143,7 +147,7 @@ describe.serial("actual production Codex composition", () => {
 				configuredEffort: "low",
 				model: "gpt-6.1-terra",
 				effort: "low",
-				serviceTier: null,
+				serviceTier: "priority",
 			});
 			expect(typeof (linked["coordinator"] as Record<string, unknown>)["threadId"]).toBe("string");
 
