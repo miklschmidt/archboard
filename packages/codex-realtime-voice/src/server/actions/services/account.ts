@@ -321,6 +321,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			loginId: result.loginId,
 			variant,
 		};
+		publish();
 		if (earlyCompletion !== null) onNotification(earlyCompletion);
 	};
 	/**
@@ -338,6 +339,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			loginId: null,
 			reason: "The Codex sign-in could not be started. Try signing in again.",
 		};
+		publish();
 	};
 	/**
 	 * Record how a cancellation went, unless a later command has already claimed
@@ -371,6 +373,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			state: "unknown",
 			reason: "Refresh the account after cancelling sign-in.",
 		};
+		publish();
 	};
 
 	/**
@@ -445,6 +448,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 				state.account = { kind: "account", state: "signed_out" };
 				state.login = { kind: "login", state: "idle" };
 				input.clearQueue();
+				publish();
 			}
 		} finally {
 			loggingOut = false;

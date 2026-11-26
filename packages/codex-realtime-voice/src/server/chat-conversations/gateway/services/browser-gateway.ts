@@ -498,11 +498,12 @@ function createServerBrowserGatewayOptions(
 		 */
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
-			const unsubscribeAccount = account.subscribe(listener);
+			// Shared account changes already reach this gateway through input.onChange.
+			const unsubscribeAccount = ownsAccount ? account.subscribe(listener) : undefined;
 			const unsubscribeTranscript = watchSessionTranscripts(input.sessions, listener);
 			return () => {
 				unsubscribeTranscript();
-				unsubscribeAccount();
+				unsubscribeAccount?.();
 				if (ownsAccount) {
 					account.dispose();
 				}

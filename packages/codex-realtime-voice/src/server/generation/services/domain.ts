@@ -39,47 +39,18 @@ export function domainScope(
 				login: context.owners.browserState.login,
 				process: context.input.process.snapshot(),
 			}),
-			/** Refresh the account from the Codex app-server and notify browser listeners. */
-			read: async () => {
-				try {
-					await accountOwner.read();
-				} finally {
-					publishProjection(context.owners);
-				}
-			},
+			read: accountOwner.read,
+			login: accountOwner.login,
 			/**
-			 * Start a Codex sign-in flow and notify browser listeners of the updated state.
-			 * @param login The requested sign-in method and credentials.
-			 */
-			login: async (login) => {
-				try {
-					await accountOwner.login(login);
-				} finally {
-					publishProjection(context.owners);
-				}
-			},
-			/**
-			 * Cancel an in-progress Codex sign-in flow and notify browser listeners.
+			 * Cancel an in-progress Codex sign-in flow.
 			 * @param loginId The pending sign-in identifier.
+			 * @returns Resolves when Codex answers the cancellation.
 			 */
-			loginCancel: async (loginId) => {
-				try {
-					const adopted = requireCreated(created, "identity").identity.decoder.adoptLoginId(
-						loginId,
-					);
-					await accountOwner.loginCancel(adopted);
-				} finally {
-					publishProjection(context.owners);
-				}
-			},
-			/** Sign out of Codex and notify browser listeners. */
-			logout: async () => {
-				try {
-					await accountOwner.logout();
-				} finally {
-					publishProjection(context.owners);
-				}
-			},
+			loginCancel: async (loginId) =>
+				accountOwner.loginCancel(
+					requireCreated(created, "identity").identity.decoder.adoptLoginId(loginId),
+				),
+			logout: accountOwner.logout,
 		},
 		sessions: {
 			/**
