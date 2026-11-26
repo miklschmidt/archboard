@@ -132,11 +132,15 @@ function CodexModelForm(props: CodexModelFormProps): JSX.Element {
 
 /**
  * Placeholder shown while initial Codex settings are loading or failed to load.
- * @param props Current load error, if any.
+ * @param props Current load error and retry handler.
  * @param props.error Initial fetch error, or null while loading.
+ * @param props.onRetry Try loading Codex settings again.
  * @returns Loading state and footer.
  */
-function CodexSettingsPending(props: { readonly error: DialogError | null }): JSX.Element {
+function CodexSettingsPending(props: {
+	readonly error: DialogError | null;
+	readonly onRetry: () => void;
+}): JSX.Element {
 	return (
 		<>
 			{props.error !== null ? (
@@ -148,6 +152,11 @@ function CodexSettingsPending(props: { readonly error: DialogError | null }): JS
 			)}
 			<Dialog.Footer className="bg-card sticky -bottom-5">
 				<Dialog.Cancel>Close</Dialog.Cancel>
+				{props.error !== null && (
+					<Button size="sm" onClick={props.onRetry}>
+						Retry
+					</Button>
+				)}
 			</Dialog.Footer>
 		</>
 	);
@@ -202,7 +211,7 @@ function CodexSettings(props: CodexSettingsProps): JSX.Element {
 				Codex sign-in and the models used for orchestrator and workhorse threads on this machine.
 			</p>
 			{settings === null ? (
-				<CodexSettingsPending error={error} />
+				<CodexSettingsPending error={error} onRetry={handleRefresh} />
 			) : (
 				<>
 					<CodexAuthSection
