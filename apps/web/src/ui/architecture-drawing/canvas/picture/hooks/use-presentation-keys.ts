@@ -1,12 +1,13 @@
 // The keys a presented walkthrough answers to, wherever focus is in the pane.
 //
-// A presentation is stepped the way slides are: arrows, Space, Page keys and the
+// A presentation is stepped the way slides are: arrows, Page keys and the
 // reader's `[` and `]` move a step, Home and End go to the ends, and Escape or the
 // reader's Backspace leaves. They are heard on
 // the window, before the diagram's own keys, because a presentation is the one
 // thing the pane is doing while it lasts and Escape must leave it rather than
-// clear a selection underneath. A key typed into a field is left alone, and so is
-// Space while focus is on a control, which presses that control instead of stepping.
+// clear a selection underneath. A key typed into a field is left alone. Space is
+// not a stepping key: held, it is the hand that drags the picture to look around a
+// step, and on a control it presses that control.
 //
 // Two panes can each present a walkthrough at once, and the keys step only one
 // of them: the active pane's, which is where the shell sends every shortcut, or,
@@ -21,7 +22,6 @@ const STEP_KEYS: Readonly<Record<string, number>> = {
 	ArrowRight: 1,
 	ArrowDown: 1,
 	PageDown: 1,
-	" ": 1,
 	"]": 1,
 	ArrowLeft: -1,
 	ArrowUp: -1,
@@ -78,30 +78,14 @@ function typedIntoField(target: EventTarget | null): boolean {
 }
 
 /**
- * Whether Space pressed here would press a control: focus is on a button or a link.
- * @param event The key.
- * @returns True when it would.
- */
-function pressesAControl(event: KeyboardEvent): boolean {
-	return (
-		event.key === " " &&
-		event.target instanceof Element &&
-		event.target.closest("button, a[href], [role='button']") !== null
-	);
-}
-
-/**
  * Whether a key is one a presentation leaves alone: already handled, typed into
- * a field, held with a modifier that makes it somebody else's shortcut, or Space
- * on a control.
+ * a field, or held with a modifier that makes it somebody else's shortcut.
  * @param event The key.
  * @returns True to ignore it.
  */
 function notOurs(event: KeyboardEvent): boolean {
 	const modified = event.metaKey || event.ctrlKey;
-	return (
-		event.defaultPrevented || typedIntoField(event.target) || modified || pressesAControl(event)
-	);
+	return event.defaultPrevented || typedIntoField(event.target) || modified;
 }
 
 /** One presented walkthrough's claim on the keys: whether its pane is the active one. */
