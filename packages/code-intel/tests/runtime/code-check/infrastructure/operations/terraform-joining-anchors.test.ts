@@ -199,6 +199,20 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
+		"azure-servicebus/main.tf": [
+			'resource "azurerm_servicebus_topic" "events" {}',
+			'resource "azurerm_servicebus_queue" "dest" {}',
+			'resource "azurerm_servicebus_queue" "other" {}',
+			'resource "azurerm_servicebus_subscription" "opaque_forward" {',
+			"  topic_id   = azurerm_servicebus_topic.events.id",
+			'  forward_to = "destination"',
+			"}",
+			'resource "azurerm_servicebus_subscription" "resolved_forward" {',
+			"  topic_id   = azurerm_servicebus_topic.events.id",
+			"  forward_to = azurerm_servicebus_queue.other.name",
+			"}",
+			"",
+		].join("\n"),
 	});
 	write(scratch, { gitconfig: "" });
 	git(scratch, shop, "init", "-q", "-b", "main");
@@ -343,6 +357,23 @@ beforeAll(async () => {
 			]),
 		],
 	);
+	current(
+		"Azure opaque forward",
+		[
+			part("T", "azure-servicebus/main.tf", "azurerm_servicebus_topic.events"),
+			part("Q", "azure-servicebus/main.tf", "azurerm_servicebus_queue.dest"),
+		],
+		[
+			edge("e1", ["T", "Q"], "event", [
+				"azure-servicebus/main.tf",
+				"azurerm_servicebus_subscription.opaque_forward",
+			]),
+			edge("e2", ["T", "Q"], "event", [
+				"azure-servicebus/main.tf",
+				"azurerm_servicebus_subscription.resolved_forward",
+			]),
+		],
+	);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no documents");
@@ -420,4 +451,5 @@ test("an unlisted join cannot combine addresses in separate roots that call the 
 test("open join sides leave room for opaque targets in either orientation", () => {
 	expect(found("Azure opaque security groups")).toEqual([]);
 	expect(found("Azure opaque destination")).toEqual([]);
+	expect(found("Azure opaque forward")).toEqual(["ANCHOR_MISMATCH | e2 | warning"]);
 });

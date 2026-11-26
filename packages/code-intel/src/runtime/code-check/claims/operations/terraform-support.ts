@@ -202,23 +202,33 @@ async function endHoldsAny(
 	return checks.some(Boolean);
 }
 
+/** One side of a listed joining declaration instance. */
+interface JoinSide {
+	readonly addresses: readonly string[];
+	readonly open: boolean;
+}
+
 /**
  * The addresses at one side of a listed joining declaration instance.
  * @param instanceAddress The instance's root-relative address.
  * @param reached What the instance reaches.
  * @param side Which side of the join.
  * @param rule The provider's join rule.
- * @returns The addresses on that side.
+ * @returns The addresses on that side and whether an opaque target could still match it.
  */
 function joinSideAddresses(
 	instanceAddress: string,
 	reached: ReturnType<TerraformConfiguration["reached"]>,
 	side: "from" | "to",
 	rule: JoinRule,
-): string[] {
+): JoinSide {
+	const args = side === "from" ? rule.from : rule.to;
 	const named = reached.filter(({ link }) => link.joins === side).map(({ to }) => to.address);
-	if (named.length > 0) return named;
-	return side === "to" && rule.selfTo ? [instanceAddress] : [];
+	if (named.length > 0) return { addresses: named, open: !isClosedJoinSide(args) };
+	if (side === "to" && rule.selfTo) {
+		return { addresses: [instanceAddress], open: args.length > 0 };
+	}
+	return { addresses: [], open: true };
 }
 
 /**
@@ -249,12 +259,11 @@ function matchesPair(match: SideMatches): boolean {
 /**
  * Whether a non-matching listed join instance surely rules out the claimed pair.
  * @param match Which claimed ends matched each side.
- * @param rule The provider's join rule.
+ * @param fromOpen Whether the `from` side leaves room for an opaque target.
+ * @param toOpen Whether the `to` side leaves room for an opaque target.
  * @returns True when no opaque target on an open side could still match.
  */
-function rulesOutPair(match: SideMatches, rule: JoinRule): boolean {
-	const fromOpen = !isClosedJoinSide(rule.from);
-	const toOpen = !isClosedJoinSide(rule.to);
+function rulesOutPair(match: SideMatches, fromOpen: boolean, toOpen: boolean): boolean {
 	return !matchesPair({
 		from0: match.from0 || fromOpen,
 		from1: match.from1 || fromOpen,
@@ -288,16 +297,18 @@ async function judgeListedInstance(
 	const from = joinSideAddresses(instanceAddress, reached, "from", rule);
 	const to = joinSideAddresses(instanceAddress, reached, "to", rule);
 	const [from0, from1, to0, to1] = await Promise.all([
-		endHoldsAny(ends[0], from, configuration, deps),
-		endHoldsAny(ends[1], from, configuration, deps),
-		endHoldsAny(ends[0], to, configuration, deps),
-		endHoldsAny(ends[1], to, configuration, deps),
+		endHoldsAny(ends[0], from.addresses, configuration, deps),
+		endHoldsAny(ends[1], from.addresses, configuration, deps),
+		endHoldsAny(ends[0], to.addresses, configuration, deps),
+		endHoldsAny(ends[1], to.addresses, configuration, deps),
 	]);
 	const match: SideMatches = { from0, from1, to0, to1 };
 	if (matchesPair(match)) return "supports";
-	if (!bothInRoot || from.length === 0 || to.length === 0) return "inconclusive";
-	return rulesOutPair(match, rule)
-		? { status: "contradicted", pair: { from, to } }
+	if (!bothInRoot || from.addresses.length === 0 || to.addresses.length === 0) {
+		return "inconclusive";
+	}
+	return rulesOutPair(match, from.open, to.open)
+		? { status: "contradicted", pair: { from: from.addresses, to: to.addresses } }
 		: "inconclusive";
 }
 
