@@ -1,9 +1,9 @@
 {
-  "outgoing": [],
   "order": 31000,
   "name": "code-intel",
   "kind": "package",
   "responsibility": "What the code says about a model: the code check, its facts and the history lens",
+  "description": "Owns code-fact extraction, Terraform nested-block parsing and sibling-link verification, code-check evidence ownership, and history lenses.",
   "groups": [
     "code",
     "packages"
@@ -14,11 +14,12 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

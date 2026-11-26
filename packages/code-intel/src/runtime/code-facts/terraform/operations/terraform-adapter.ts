@@ -39,11 +39,14 @@ import type {
 	Import,
 	ParsedFacts,
 	Reference,
+	SiblingLink,
+	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { sourceRange, spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { addressOf } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { environmentOf } from "#runtime/code-facts/terraform/operations/terraform-environment.ts";
+import { resourceNestedFacts } from "#runtime/code-facts/terraform/operations/terraform-nested-blocks.ts";
 import { classifyReference } from "#runtime/code-facts/terraform/operations/terraform-providers.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -164,26 +167,60 @@ function declared(symbol: string, node: Node, visibility: string): Definition {
 	};
 }
 
+/** What one top-level block declares: its definitions and nested-block metadata. */
+interface BlockFacts {
+	readonly definitions: readonly Definition[];
+	readonly siblingLinks: readonly SiblingLink[];
+	readonly ambiguousSymbols: readonly string[];
+	readonly unparsed: readonly Unparsed[];
+}
+
+/** Empty nested-block metadata for blocks other than top-level `resource`. */
+const NO_NESTED: Omit<BlockFacts, "definitions"> = {
+	siblingLinks: [],
+	ambiguousSymbols: [],
+	unparsed: [],
+};
+
 /**
  * What one top-level block declares.
  * @param block The block.
- * @returns Its definitions.
+ * @returns Its definitions and any nested-block metadata.
  */
-function blockDefinitions(block: Node): Definition[] {
+function blockFacts(block: Node): BlockFacts {
 	const { kind, labels, body } = partsOf(block);
 	if (kind === "locals") {
-		return attributesOf(body).map(({ name, node }) => declared(`local.${name}`, node, "local"));
+		return {
+			definitions: attributesOf(body).map(({ name, node }) =>
+				declared(`local.${name}`, node, "local"),
+			),
+			...NO_NESTED,
+		};
 	}
 	const declares = DECLARES[kind];
-	if (declares === undefined || labels.length < declares.labels) return [];
+	if (declares === undefined || labels.length < declares.labels) {
+		return { definitions: [], ...NO_NESTED };
+	}
 	const symbol = `${declares.prefix}${labels.slice(0, declares.labels).join(".")}`;
 	const own = declared(symbol, block, kind);
-	if (kind !== "module") return [own];
+	if (kind === "resource") {
+		const nested = resourceNestedFacts(symbol, body);
+		return {
+			definitions: [own, ...nested.definitions],
+			siblingLinks: nested.siblingLinks,
+			ambiguousSymbols: nested.ambiguousSymbols,
+			unparsed: nested.unparsed,
+		};
+	}
+	if (kind !== "module") return { definitions: [own], ...NO_NESTED };
 	const passed = attributesOf(body).filter(({ name }) => !META_ARGUMENTS.has(name));
-	return [
-		own,
-		...passed.map(({ name, node }) => declared(`${symbol}.var.${name}`, node, "argument")),
-	];
+	return {
+		definitions: [
+			own,
+			...passed.map(({ name, node }) => declared(`${symbol}.var.${name}`, node, "argument")),
+		],
+		...NO_NESTED,
+	};
 }
 
 /**
@@ -454,6 +491,22 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 }
 
 /**
+ * Collect deduplicated code references from captured first-name nodes.
+ * @param nodes The captured reference first-name nodes.
+ * @param unparsed The file's unparsed spans.
+ * @returns The deduplicated code references.
+ */
+function codeReferences(nodes: readonly Node[], unparsed: Spans): Reference[] {
+	const references = new Map<string, Reference>();
+	for (const first of nodes) {
+		const reference = referenceAt(first, unparsed);
+		const key = `${reference?.symbol}\0${reference?.line}`;
+		if (reference !== undefined && !references.has(key)) references.set(key, reference);
+	}
+	return [...references.values()];
+}
+
+/**
  * The code facts of one parsed Terraform or OpenTofu file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -462,17 +515,19 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 function terraformFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const captured = sorted(grammar.query.captures(tree.rootNode));
 	const unparsed = spansOf(captured.unparsed);
-	const references = new Map<string, Reference>();
-	for (const first of captured.reference) {
-		const reference = referenceAt(first, unparsed);
-		const key = `${reference?.symbol}\0${reference?.line}`;
-		if (reference !== undefined && !references.has(key)) references.set(key, reference);
-	}
+	const blocks = captured.block.map(blockFacts);
+	const siblingLinks = blocks.flatMap((each) => each.siblingLinks);
+	const ambiguousSymbols = blocks.flatMap((each) => each.ambiguousSymbols);
 	return {
-		definitions: captured.block.flatMap(blockDefinitions),
-		references: [...references.values(), ...captured.block.flatMap(environmentOf)],
+		definitions: blocks.flatMap((each) => each.definitions),
+		references: [
+			...codeReferences(captured.reference, unparsed),
+			...captured.block.flatMap(environmentOf),
+		],
 		imports: captured.block.flatMap((block) => moduleImport(block) ?? []),
-		unparsed: unparsedOf(captured.unparsed),
+		unparsed: [...unparsedOf(captured.unparsed), ...blocks.flatMap((each) => each.unparsed)],
+		...(siblingLinks.length > 0 ? { siblingLinks } : {}),
+		...(ambiguousSymbols.length > 0 ? { ambiguousSymbols } : {}),
 	};
 }
 

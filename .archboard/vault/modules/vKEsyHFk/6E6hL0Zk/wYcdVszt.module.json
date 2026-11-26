@@ -1,10 +1,9 @@
 {
-  "outgoing": [],
   "order": 3000,
   "name": "Architecture runtime API",
   "kind": "module",
   "responsibility": "Exposes canonical architecture operations through the shared runtime boundary",
-  "description": "Local CLI and HTTP adapters share canonical reads, edits, subject claims, proposals, migration, archive retention, and recovery. Legacy decoding serves explicit migration and exact retained originals.",
+  "description": "Local CLI and HTTP adapters share canonical reads, edits, subject claims, proposals, migration, archive retention, and recovery. Legacy decoding serves explicit migration and exact retained originals. Semantic checks recognize Terraform nested-block addresses in containment and exempt at most one direct child sharing its parent container infrastructure address from BINDING_SHARED.",
   "groups": [
     "writes"
   ],
@@ -43,5 +42,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
-  ]
+  ],
+  "outgoing": []
 }

@@ -20,6 +20,7 @@ import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import {
 	declarationAddress,
 	isTerraformFile,
+	parseTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
 	terraformConfiguration,
@@ -47,6 +48,24 @@ interface TerraformSite {
 	readonly definition: Pick<Definition, "start" | "end" | "declaration"> & {
 		readonly symbol?: string;
 	};
+	readonly address?: string;
+	readonly root?: string;
+}
+
+/**
+ * The declaration instances of an anchored site in one root module.
+ * @param configuration The root module's address space.
+ * @param site Where the declaration is defined.
+ * @returns The selected instance address when qualified for this root, else every instance at the line.
+ */
+function instancesIn(
+	configuration: TerraformConfiguration,
+	site: TerraformSite,
+): readonly string[] {
+	if (site.address !== undefined) {
+		return site.root === undefined || site.root === configuration.root ? [site.address] : [];
+	}
+	return configuration.addressesAt(site.path, site.definition.start);
 }
 
 /** A holder part paired with the files its binding names in the anchor's checkout. */
@@ -380,7 +399,7 @@ async function unlistedReachesBoth(
 ): Promise<boolean> {
 	const perRoot = await Promise.all(
 		configurations.map(async (configuration) => {
-			const instances = configuration.addressesAt(site.path, site.definition.start);
+			const instances = instancesIn(configuration, site);
 			const verdicts = await Promise.all(
 				instances.map(async (instanceAddress) => {
 					const targets = configuration.reached(instanceAddress).map(({ to }) => to.address);
@@ -421,7 +440,7 @@ async function judgeListedConfigurations(
 	const verdicts = (
 		await Promise.all(
 			configurations.map((configuration) => {
-				const instances = configuration.addressesAt(site.path, site.definition.start);
+				const instances = instancesIn(configuration, site);
 				const bothInRoot =
 					endBoundInRoot(ends[0], configuration.root) &&
 					endBoundInRoot(ends[1], configuration.root);
@@ -528,4 +547,46 @@ async function judgeTerraformDeclaration(
 	return judgeListedConfigurations(claim, site, configurations, rule, ends, use, deps);
 }
 
-export { judgeTerraformDeclaration };
+/**
+ * Convert a found Terraform declaration into a `TerraformSite` for support checks.
+ * @param found The configuration lookup result.
+ * @param root The Terraform root directory.
+ * @param qualified Whether the anchor symbol carried a `module.<name>` prefix.
+ * @returns The site, or undefined when the declaration has no source definition.
+ */
+function foundReferenceSite(
+	found: ReturnType<TerraformConfiguration["declared"]>,
+	root: string,
+	qualified: boolean,
+): TerraformSite | undefined {
+	if (found.status !== "found") return undefined;
+	const { path, definition, address } = found.declaration;
+	if (path === undefined || definition === undefined) return undefined;
+	return qualified ? { path, definition, address, root } : { path, definition };
+}
+
+/**
+ * Resolve a Terraform reference anchor (confirmed by `heldInFiles` in `file`)
+ * to its declared definition in `file`'s Terraform root so enclosing-resource
+ * and support checks still judge the referenced resource.
+ * @param symbol The anchored Terraform address symbol.
+ * @param file The cited `.tf` or `.tofu` file.
+ * @param checkout The anchor's checkout.
+ * @param facts The facts pass.
+ * @returns The definition site, or undefined when not a resolved Terraform declaration.
+ */
+async function terraformReferenceSite(
+	symbol: string,
+	file: string,
+	checkout: ReadCheckout,
+	facts: FactsPass,
+): Promise<TerraformSite | undefined> {
+	if (!isTerraformFile(file)) return undefined;
+	const parsed = parseTerraformAddress(symbol);
+	const root = parsed === undefined ? undefined : terraformRootOf(file, "file", checkout.files);
+	if (parsed === undefined || root === undefined) return undefined;
+	const configuration = await terraformConfiguration(facts, checkout, root);
+	return foundReferenceSite(configuration.declared(symbol), root, parsed.modules.length > 0);
+}
+
+export { judgeTerraformDeclaration, terraformReferenceSite };

@@ -9,7 +9,7 @@ import {
 } from "#runtime/code-facts/operations/anchored-calls.ts";
 import type { CallTiming } from "#shared/protocol/code-check.ts";
 import { createCodeFacts } from "#runtime/code-facts/services/reader.ts";
-import { listReadableFiles } from "#runtime/code-check/operations/readable-files.ts";
+import { listReadableFiles } from "#runtime/code-facts/operations/readable-files.ts";
 
 /**
  * Reads how the calls an anchor names run their callee, in one checkout,

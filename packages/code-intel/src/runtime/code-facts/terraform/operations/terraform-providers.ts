@@ -38,6 +38,10 @@
 // reference in one is provisioning in every block.
 
 import type { Reference } from "#runtime/code-facts/operations/facts.ts";
+import {
+	parseTerraformAddress,
+	splitAddressSegments,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import { isEnvironmentArgument } from "#runtime/code-facts/terraform/operations/terraform-environment.ts";
 import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
@@ -503,17 +507,30 @@ function unreadModuleArgumentKind(argument: readonly string[]): TerraformKind {
 }
 
 /**
- * The resource or data source type named by a declaration address, stripping
- * any leading `module.<name>.` prefixes and `data.` or `ephemeral.` markers.
- * @param address The declaration's address, module-local or root-relative.
- * @returns The type, or undefined when the address names none.
+ * The resource or data source type in already-split address segments.
+ * @param names The address's dot-separated segments.
+ * @returns The type, or undefined when absent.
  */
-function resourceTypeOf(address: string): string | undefined {
-	const names = address.split(".");
+function declarationTypeOf(names: readonly string[]): string | undefined {
 	let index = 0;
 	while (names[index] === "module" && index + 2 < names.length) index += 2;
 	if (names[index] === "data" || names[index] === "ephemeral") index += 1;
 	return names[index];
+}
+
+/**
+ * The resource or data source type named by a declaration address, stripping
+ * any leading `module.<name>.` prefixes and `data.` or `ephemeral.` markers.
+ * Depth-1 nested blocks are not top-level joining declarations and return undefined.
+ * @param address The declaration's address, module-local or root-relative.
+ * @returns The type, or undefined when the address names none.
+ */
+function resourceTypeOf(address: string): string | undefined {
+	const parsed = parseTerraformAddress(address);
+	if (parsed === undefined) return declarationTypeOf(splitAddressSegments(address));
+	return parsed.kind === "block"
+		? undefined
+		: declarationTypeOf(splitAddressSegments(parsed.address));
 }
 
 /**

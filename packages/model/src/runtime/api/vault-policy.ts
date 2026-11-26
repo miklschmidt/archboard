@@ -1,5 +1,15 @@
 // A vault's configuration, the check of a vault against its policy, and the subject a diagnostic names.
 
+export { sameInfrastructureBinding } from "#runtime/check/operations/duplicates.ts";
+export {
+	type NestedBlockSelector,
+	type ParsedTerraformAddress,
+	declarationAddress,
+	decodeHclString,
+	moduleOutputReferenceAddress,
+	parseTerraformAddress,
+	splitAddressSegments,
+} from "#runtime/check/operations/terraform-address.ts";
 export { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";
 export { structureDiagnostics } from "#runtime/check/operations/structure.ts";
 export { readVaultConfiguration, vaultConfigurationSchema } from "#runtime/store/configuration.ts";

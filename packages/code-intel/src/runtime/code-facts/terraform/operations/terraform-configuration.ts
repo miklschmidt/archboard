@@ -33,9 +33,11 @@ import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/modul
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 import {
 	addressOf,
-	declarationAddress,
 	isTerraformFile,
 	namesOf,
+	parseTerraformAddress,
+	splitAddressSegments,
+	type ParsedTerraformAddress,
 } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import type {
 	PlanModule,
@@ -50,7 +52,17 @@ import {
 	directoryOf,
 	terraformModules,
 } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
-import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
+import {
+	createNestedIndex,
+	nestedQueries,
+	planOnlyParentPath,
+	recordNestedBlocks,
+	siteIn,
+	unparsedPartIn,
+	writtenIn,
+	type NestedBlockIndex,
+	type NestedBlockQueries,
+} from "#runtime/code-facts/terraform/operations/terraform-siblings.ts";
 import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
@@ -60,11 +72,13 @@ type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 interface Declaration {
 	/** Its address, relative to the root module. */
 	readonly address: string;
-	/** `resource`, `data`, `ephemeral`, `module`, `variable`, `argument`, `output` or `local`. */
+	/** `resource`, `block`, `data`, `ephemeral`, `module`, `variable`, `argument`, `output` or `local`. */
 	readonly kind: string;
 	/** Where the checkout declares it; absent for a declaration only a plan names. */
 	readonly path?: string;
 	readonly definition?: Definition;
+	/** The plan JSON file that declared it when absent from disk. */
+	readonly planPath?: string;
 }
 
 /** One reference from a declaration to an address. */
@@ -80,6 +94,8 @@ interface Link {
 	readonly kind: EvidenceKind;
 	/** The end of the joining declaration it is written in that it names, if any. */
 	readonly joins?: JoinEnd;
+	/** The depth-1 nested block holding the reference, if any. */
+	readonly block?: string;
 }
 
 /** Where the checkout declares an address, or the module call that holds it. */
@@ -94,10 +110,14 @@ type Declared =
 	/** It is inside a module the check does not read: the module call's address. */
 	| { readonly status: "unread"; readonly module: string }
 	| { readonly status: "unparsed"; readonly path: string; readonly unparsed: Unparsed }
+	/** A selector whose target cannot be statically followed, such as a plan-only resource's nested block. */
+	| { readonly status: "unfollowed"; readonly detail: string }
+	/** Multiple blocks of the same type share that literal name in one resource. */
+	| { readonly status: "ambiguous" }
 	| { readonly status: "absent" };
 
 /** The address space of one root module. */
-interface TerraformConfiguration {
+interface TerraformConfiguration extends NestedBlockQueries {
 	/** The root module's directory, relative to the checkout. */
 	readonly root: string;
 	/**
@@ -110,9 +130,17 @@ interface TerraformConfiguration {
 	/**
 	 * What a declaration reaches, each with the reference of the declaration
 	 * that starts the way there, once for each thing those references prove.
+	 * Pass `{ perBlock: true }` when attributing direct relationship evidence
+	 * to bound nested-block owners so two distinct nested blocks reaching the
+	 * same target keep separate links.
 	 * @param address The declaration's address.
+	 * @param options Optional reach deduplication mode.
+	 * @param options.perBlock Keep separate links for distinct nested blocks reaching the same target.
 	 */
-	reached(address: string): readonly { readonly to: Declaration; readonly link: Link }[];
+	reached(
+		address: string,
+		options?: { readonly perBlock?: boolean },
+	): readonly { readonly to: Declaration; readonly link: Link }[];
 	/**
 	 * Where the checkout holds a declaration: its own block, else the call of
 	 * the module the checkout does not read that holds it.
@@ -147,6 +175,8 @@ interface Written {
 	readonly joins?: JoinEnd;
 	/** The path of the argument it sits in, for a reference a file writes. */
 	readonly argument?: string;
+	/** The depth-1 nested block holding the reference, if any. */
+	readonly block?: string;
 }
 
 /** What the reading of one root module collects. */
@@ -167,18 +197,8 @@ interface Reading {
 	 * variable that a module call's argument already declares at its address too.
 	 */
 	readonly sites: Map<string, string[]>;
-}
-
-/**
- * The narrowest declaration of a file that holds a line.
- * @param facts The file's facts.
- * @param line The line.
- * @returns The definition, or undefined outside every declaration.
- */
-function holderAt(facts: SyntaxFacts, line: number): Definition | undefined {
-	return facts.definitions
-		.filter((definition) => definition.start <= line && line <= definition.end)
-		.toSorted((left, right) => left.end - left.start - (right.end - right.start))[0];
+	/** Depth-1 nested block spans and 1-hop intra-resource sibling adjacency. */
+	readonly nested: NestedBlockIndex;
 }
 
 /**
@@ -190,27 +210,6 @@ function declare(reading: Reading, declaration: Declaration): void {
 	if (!reading.declarations.has(declaration.address)) {
 		reading.declarations.set(declaration.address, declaration);
 	}
-}
-
-/**
- * The references one file of a module instance writes, each from the
- * narrowest declaration that holds it.
- * @param facts The file's facts.
- * @param scope The module instance.
- * @returns The references; one outside every declaration, and the name of an
- * environment value, which names no address, are none.
- */
-function writtenIn(facts: SyntaxFacts, scope: string): Written[] {
-	return facts.references.flatMap((reference) => {
-		const holder = holderAt(facts, reference.line);
-		if (holder === undefined || reference.via !== "code") return [];
-		const { symbol, line, joins, argument } = reference;
-		const names = symbol.split(".");
-		const kind = reference.kind ?? "configured-path";
-		const from = `${scope}${holder.symbol}`;
-		const where = { path: facts.path, line, symbol, ...(argument !== undefined && { argument }) };
-		return [{ from, scope, names, ...where, kind, ...(joins && { joins }) }];
-	});
 }
 
 /**
@@ -226,7 +225,8 @@ function readFile(reading: Reading, facts: SyntaxFacts, scope: string): void {
 		const at = `${facts.path}\0${definition.start}`;
 		reading.sites.set(at, [...(reading.sites.get(at) ?? []), address]);
 	}
-	reading.written.push(...writtenIn(facts, scope));
+	recordNestedBlocks(reading.nested, facts, scope);
+	reading.written.push(...writtenIn(facts, scope, reading.nested));
 	const parts = facts.unparsed.map((unparsed) => ({ path: facts.path, unparsed }));
 	reading.unparsed.set(scope, [...(reading.unparsed.get(scope) ?? []), ...parts]);
 }
@@ -315,7 +315,7 @@ function readPlanScope(
 		reading.unread.delete(scope.slice(0, -1));
 		reading.scopes.set(scope, []);
 		for (const { address, kind } of module.declarations) {
-			declare(reading, { address: `${scope}${address}`, kind });
+			declare(reading, { address: `${scope}${address}`, kind, planPath: plan.path });
 		}
 		reading.written.push(
 			...module.links.flatMap((link) => {
@@ -396,7 +396,7 @@ function linksOf(reading: Reading): Map<string, Link[]> {
  * @returns The module call's address.
  */
 function unreadModuleOf(reading: Reading, address: string): string | undefined {
-	const names = address.split(".");
+	const names = splitAddressSegments(address);
 	for (let index = 0; index + 1 < names.length; index += 1) {
 		if (names[index] !== "module") continue;
 		const call = names.slice(0, index + 2).join(".");
@@ -413,7 +413,7 @@ function unreadModuleOf(reading: Reading, address: string): string | undefined {
  * @returns Its scope.
  */
 function scopeOf(reading: Reading, address: string): string {
-	const names = address.split(".");
+	const names = splitAddressSegments(address);
 	let scope = "";
 	for (let index = 0; index + 1 < names.length && names[index] === "module"; index += 2) {
 		const inner = `${names.slice(0, index + 2).join(".")}.`;
@@ -424,21 +424,22 @@ function scopeOf(reading: Reading, address: string): string {
 }
 
 /**
- * Where the checkout holds an address: its own block, else the block of the
- * nearest module call that holds it.
- * @param declarations The address space.
- * @param address The address.
- * @returns The site, or undefined when no declaration of the checkout holds it.
+ * Check why an absent parsed address is missing: duplicate-name ambiguity,
+ * unread module, plan-only resource block, dynamic/computed-name or syntax
+ * unparsed code, or absence.
+ * @param reading What the reading collected.
+ * @param parsed The parsed Terraform address.
+ * @returns The diagnosis.
  */
-function siteIn(declarations: ReadonlyMap<string, Declaration>, address: string): Site | undefined {
-	const names = address.split(".");
-	for (let count = names.length; count > 0; count -= 1) {
-		const held = declarations.get(names.slice(0, count).join("."));
-		if (held?.path !== undefined && held.definition !== undefined) {
-			return { path: held.path, definition: held.definition };
-		}
-	}
-	return undefined;
+function missingDeclared(reading: Reading, parsed: ParsedTerraformAddress): Declared {
+	if (reading.nested.ambiguous.has(parsed.address)) return { status: "ambiguous" };
+	const module = unreadModuleOf(reading, parsed.address);
+	if (module !== undefined) return { status: "unread", module };
+	const planPath = planOnlyParentPath(reading.declarations, parsed);
+	if (planPath !== undefined) return { status: "unfollowed", detail: planPath };
+	const scope = scopeOf(reading, parsed.address);
+	const part = unparsedPartIn(parsed, scope, reading.unparsed.get(scope) ?? []);
+	return part === undefined ? { status: "absent" } : { status: "unparsed", ...part };
 }
 
 /**
@@ -448,18 +449,12 @@ function siteIn(declarations: ReadonlyMap<string, Declaration>, address: string)
  * @returns The declaration and its site, or why there is none.
  */
 function declaredIn(reading: Reading, symbol: string): Declared {
-	const address = declarationAddress(symbol);
-	const declaration = reading.declarations.get(address);
-	if (declaration !== undefined) {
-		const site = siteIn(reading.declarations, address);
-		return { status: "found", declaration, ...(site === undefined ? {} : { site }) };
-	}
-	const module = unreadModuleOf(reading, address);
-	if (module !== undefined) return { status: "unread", module };
-	const name = lastName(address);
-	const parts = reading.unparsed.get(scopeOf(reading, address)) ?? [];
-	const part = parts.find((each) => each.unparsed.names.includes(name));
-	return part === undefined ? { status: "absent" } : { status: "unparsed", ...part };
+	const parsed = parseTerraformAddress(symbol);
+	if (parsed === undefined) return { status: "absent" };
+	const declaration = reading.declarations.get(parsed.address);
+	if (declaration === undefined) return missingDeclared(reading, parsed);
+	const site = siteIn(reading.declarations, parsed.address);
+	return { status: "found", declaration, ...(site === undefined ? {} : { site }) };
 }
 
 /**
@@ -473,7 +468,9 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 	const { declarations } = reading;
 	return {
 		root,
-		endpoints: [...declarations.values()].filter((each) => !PASSING.has(each.kind)),
+		endpoints: [...declarations.values()].filter(
+			(each) => !PASSING.has(each.kind) && each.kind !== "block",
+		),
 		/**
 		 * Where the checkout holds an address.
 		 * @param address The address.
@@ -502,11 +499,13 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 		/**
 		 * What a declaration reaches.
 		 * @param address Its address.
+		 * @param options Optional reach deduplication mode.
 		 * @returns Each declaration reached, with the link that starts the way.
 		 */
-		reached(address) {
-			return reachedFrom(declarations, links, address, PASSING);
+		reached(address, options) {
+			return reachedFrom(declarations, links, address, PASSING, options?.perBlock === true);
 		},
+		...nestedQueries(reading.nested),
 	};
 }
 
@@ -535,6 +534,7 @@ async function readConfiguration(
 		unread: new Set(),
 		unparsed: new Map(),
 		sites: new Map(),
+		nested: createNestedIndex(),
 	};
 	if (reading.modules.has(root)) await readScope(reading, root, "", []);
 	for (const plan of pass.plans) {

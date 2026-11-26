@@ -43,6 +43,7 @@
 
 import { piecesBetween, type Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import {
+	deepestTied,
 	lineagesOf,
 	ownersAtLine,
 	ownersOf,
@@ -139,7 +140,7 @@ function readsInFile(found: FileFacts | undefined, owners: Owners, repo: string)
 	}
 	return found.references.flatMap(({ symbol: name, line, via }) =>
 		via === "environment"
-			? ownersAtLine(owners, found.path, line).map((part) => ({
+			? deepestTied(ownersAtLine(owners, found.path, line)).map((part) => ({
 					part,
 					name,
 					repo,

@@ -32,9 +32,16 @@
 // plan that names it.
 
 import { piecesBetween, type Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
-import { ownersOf, ownersOfSite } from "#runtime/code-check/evidence/operations/ownership.ts";
+import {
+	deepestTied,
+	ownersOf,
+	ownersOfSite,
+} from "#runtime/code-check/evidence/operations/ownership.ts";
 import type { PartCode, ReadPart } from "#runtime/code-check/operations/part-code.ts";
-import { declarationAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	declarationAddress,
+	parseTerraformAddress,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
 	terraformConfiguration,
 	type TerraformConfiguration,
@@ -96,6 +103,30 @@ function holdsDeclarationAt(
 }
 
 /**
+ * Whether a Terraform address targets a module call or a declaration inside a module call.
+ * @param symbol The binding's symbol.
+ * @returns True when module-scoped.
+ */
+function isModuleScopedAddress(symbol: string | undefined): boolean {
+	if (symbol === undefined) return false;
+	const parsed = parseTerraformAddress(symbol);
+	return parsed !== undefined && (parsed.modules.length > 0 || parsed.kind === "module");
+}
+
+/**
+ * Whether a part is bound to a module-qualified address or module call in a
+ * different Terraform root than `root`, so it must not claim declarations from
+ * `root` via shared local-module source spans.
+ * @param part The candidate part.
+ * @param root The Terraform root module being judged.
+ * @returns True when the part belongs to a different root's module instance.
+ */
+function isOtherRootModuleBinding(part: ReadPart, root: string): boolean {
+	if (part.root === undefined || part.root === root) return false;
+	return isModuleScopedAddress(part.node.binding?.symbol);
+}
+
+/**
  * Who owns each declaration of one root module.
  * @param configuration The root module's address space.
  * @param parts The read parts of the document in the root's checkout.
@@ -109,7 +140,13 @@ function ownershipIn(
 		const address = part.root === configuration.root ? addressOf(part) : undefined;
 		return address === undefined ? [] : [{ part, address }];
 	});
-	const others = ownersOf(parts.filter((part) => !addressed.some((each) => each.part === part)));
+	const others = ownersOf(
+		parts.filter(
+			(part) =>
+				!addressed.some((each) => each.part === part) &&
+				!isOtherRootModuleBinding(part, configuration.root),
+		),
+	);
 	return (address) => {
 		const holding = addressed.filter((each) => holds(each.address, address));
 		const longest = Math.max(...holding.map((each) => each.address.length));
@@ -179,6 +216,21 @@ function joinedBy(declaration: Declaration, reached: Reached, reading: RootReadi
 }
 
 /**
+ * Evidence owners of each address in one root module, breaking direct
+ * parent-child ties in favor of the deeper child part (TASK-682.03).
+ * @param configuration The root module's address space.
+ * @param parts The read parts of the document in its checkout.
+ * @returns The evidence owners of an address.
+ */
+function evidenceOwnersIn(
+	configuration: TerraformConfiguration,
+	parts: readonly ReadPart[],
+): (address: string) => ReadPart[] {
+	const raw = ownershipIn(configuration, parts);
+	return (address) => deepestTied(raw(address));
+}
+
+/**
  * The evidence one root module gives between the parts of a document.
  * @param configuration The root module's address space.
  * @param parts The read parts of the document in its checkout.
@@ -191,18 +243,21 @@ function piecesIn(
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): Piece[] {
 	const reading: RootReading = {
-		ownersAt: ownershipIn(configuration, parts),
+		ownersAt: evidenceOwnersIn(configuration, parts),
 		lineages,
 		repo: parts[0].checkout.repo,
 	};
 	return configuration.endpoints.flatMap((declaration) => {
 		const reached = configuration.reached(declaration.address);
-		const from = reading.ownersAt(declaration.address);
-		const direct = reached
+		const direct = configuration
+			.reached(declaration.address, { perBlock: true })
 			.filter(({ link }) => link.joins === undefined)
-			.flatMap(({ to, link }) =>
-				piecesBetween(
-					from,
+			.flatMap(({ to, link }) => {
+				const source =
+					configuration.nestedBlockAt(declaration.address, link.path, link.line) ??
+					declaration.address;
+				return piecesBetween(
+					reading.ownersAt(source),
 					{ to: reading.ownersAt(to.address), resolution: "resolved" },
 					lineages,
 					{
@@ -212,8 +267,8 @@ function piecesIn(
 						line: link.line,
 						symbol: link.symbol,
 					},
-				),
-			);
+				);
+			});
 		return [...direct, ...joinedBy(declaration, reached, reading)];
 	});
 }

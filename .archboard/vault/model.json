@@ -3,15 +3,15 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "eWn1Z5xB",
-    "name": "Terraform joining anchors judged by what they reach",
-    "summary": "Judges Terraform joining anchors per instance across both listed provider rules and unlisted declarations, adds directed Azure joining rules, and stops pure links from inventing self-evidence when an external end is opaque.",
-    "predecessor": "LzXvT7U7",
-    "baseline": "06187b8f0a6fbd66757f30b44e46945e53135862",
-    "createdAt": "2026-11-26T00:38:55.764Z",
-    "adoptedAt": "2026-11-26T01:13:39.516Z",
-    "reason": "Fixes issue #165 and completes TASK-681: adds four directed Azure configured-path join rules, prevents pure links from falling back to self-endpoints, and judges anchored Terraform joining declarations per instance.",
-    "previousCurrent": "LzXvT7U7"
+    "id": "qkPB3Whk",
+    "name": "Terraform nested block bindings",
+    "summary": "Let Terraform parts and anchors bind named nested blocks of a resource, verify sibling-block anchors by intra-resource name links, and allow a direct child to share its infrastructure container address.",
+    "predecessor": "eWn1Z5xB",
+    "baseline": "c1e5a74fb24d3f4b608c80d593cad4f4d8be3fca",
+    "createdAt": "2026-11-26T01:44:29.456Z",
+    "adoptedAt": "2026-11-26T10:30:43.420Z",
+    "reason": "Fixes issue #166 and completes TASK-682: supports depth-1 named Terraform nested-block bindings and 1-hop sibling-block anchors, per-block HCL evidence ownership, single-direct-child infrastructure container sharing, code-opener/code-browser/history-lens support, and synced documentation.",
+    "previousCurrent": "eWn1Z5xB"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

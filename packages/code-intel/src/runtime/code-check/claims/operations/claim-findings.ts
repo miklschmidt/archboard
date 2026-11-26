@@ -7,11 +7,12 @@
 import type {
 	AnchorClaim,
 	BindingClaim,
+	Claim,
 	ClaimSite,
 } from "#runtime/code-check/claims/operations/claims.ts";
 import type { Held } from "#runtime/code-check/claims/operations/symbols.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
-import type { CodeFinding } from "#shared/protocol/code-check.ts";
+import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import { describeSubject } from "@archboard/model/policy";
 
 /**
@@ -45,6 +46,9 @@ const LACKS = {
  * @returns The phrase.
  */
 function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: string): string {
+	if (held.status === "absent" && held.ambiguous === true) {
+		return "multiple blocks of that type share that name in the same resource, so the symbol is ambiguous";
+	}
 	const asText = held.status === "absent" && held.asText === true;
 	return asText ? `${lacks.text} ${JSON.stringify(lastName(symbol))}` : lacks.code;
 }
@@ -125,4 +129,117 @@ function anchorSymbolMissing(claim: AnchorClaim, held: Held): CodeFinding {
 	);
 }
 
-export { anchorPathMissing, anchorSymbolMissing, bindingPathMissing, bindingSymbolMissing };
+/**
+ * Format the skip for a symbol found only inside unparsed or unfollowed source lines.
+ * @param base The shared skip site and repository.
+ * @param held The unparsed result.
+ * @returns The skip naming the file and line range.
+ */
+function unparsedSourceSkip(
+	base: Pick<CodeCheckSkip, "model" | "variant" | "subject" | "repo">,
+	held: Extract<Held, { status: "unparsed" }>,
+): CodeCheckSkip {
+	const { path: file, start, end } = held.unparsed.source ?? { path: held.file, ...held.unparsed };
+	const detail = `${file}:${start === end ? start : `${start}-${end}`}`;
+	const reason = held.unparsed.under === undefined ? "symbol-unparsed" : "expression-not-followed";
+	return { ...base, reason, detail };
+}
+
+/**
+ * The skip of a symbol found only in code that did not parse or below an
+ * expression it cannot follow, or of an address in a module it does not read.
+ * @param claim The claim.
+ * @param held Where it was found.
+ * @returns The skip, which names the file and its lines, plan path, or module call.
+ */
+function unparsedSkip(
+	claim: Claim,
+	held: Extract<Held, { status: "unparsed" | "module-unread" | "unfollowed" }>,
+): CodeCheckSkip {
+	const repo = claim.kind === "binding" ? claim.binding.repo : claim.anchor.repo;
+	const base = {
+		model: claim.site.model,
+		variant: claim.site.variant,
+		subject: claim.site.subject,
+		repo,
+	};
+	if (held.status === "module-unread") {
+		return { ...base, reason: "module-not-read", detail: held.module };
+	}
+	if (held.status === "unfollowed") {
+		return { ...base, reason: "expression-not-followed", detail: held.detail };
+	}
+	return unparsedSourceSkip(base, held);
+}
+
+/** Where a cited symbol is defined for mismatch diagnostics. */
+interface MismatchSite {
+	readonly path: string;
+	readonly definition: { readonly start: number; readonly declaration?: boolean };
+}
+
+/**
+ * The warning for an anchor whose symbol is defined outside both ends.
+ * @param claim The anchor.
+ * @param site Where the symbol is defined.
+ * @param use The anchored use, if the file uses the symbol.
+ * @returns The finding.
+ */
+function anchorMismatch(
+	claim: AnchorClaim,
+	site: MismatchSite,
+	use: CodeEvidence | undefined,
+): CodeFinding {
+	const ends = claim.ends.map((end) => JSON.stringify(end.name)).join(" nor ");
+	const candidate = site.definition.declaration === true;
+	return {
+		...claim.site,
+		severity: candidate ? "information" : "warning",
+		code: "ANCHOR_MISMATCH",
+		message:
+			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
+			`which ${site.path}:${site.definition.start} ${candidate ? "declares" : "defines"}, and that ` +
+			`${candidate ? "declaration" : "definition"} is in the bound code of neither ${ends}, nor of ` +
+			"a part inside one. Cite the symbol in the code of an end that proves the relationship, " +
+			"bind the part whose code it is, or change the relationship to what the code does.",
+		...(use === undefined
+			? {}
+			: { evidence: [{ ...use, resolution: candidate ? "candidate" : use.resolution }] }),
+	};
+}
+
+/**
+ * The warning for an anchor citing the enclosing Terraform resource of an end
+ * that binds a nested block of that resource (ADR 0046, TASK-682).
+ * @param claim The anchor.
+ * @param site Where the enclosing resource is defined.
+ * @param use The anchored use, if any.
+ * @returns The finding.
+ */
+function enclosingResourceMismatch(
+	claim: AnchorClaim,
+	site: MismatchSite,
+	use: CodeEvidence | undefined,
+): CodeFinding {
+	return {
+		...claim.site,
+		severity: "warning",
+		code: "ANCHOR_MISMATCH",
+		message:
+			`The anchor of ${describeSubject(claim.site.subject)} names ${JSON.stringify(claim.anchor.symbol)}, ` +
+			`which ${site.path}:${site.definition.start} defines as the enclosing Terraform resource of a ` +
+			"nested-block end. A whole-resource anchor cannot stand for a relationship involving a nested " +
+			"block; cite the nested block or a 1-hop sibling block that links the ends instead.",
+		...(use === undefined ? {} : { evidence: [use] }),
+	};
+}
+
+export {
+	anchorMismatch,
+	anchorPathMissing,
+	anchorSymbolMissing,
+	bindingPathMissing,
+	bindingSymbolMissing,
+	enclosingResourceMismatch,
+	unparsedSkip,
+};

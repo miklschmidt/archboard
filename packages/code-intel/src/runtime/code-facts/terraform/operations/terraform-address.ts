@@ -1,14 +1,20 @@
 // How Terraform and OpenTofu spell an address (ADR 0046), shared by the
-// adapter, which reads it from an expression, and the plan reader, which reads
-// it from the strings of a plan JSON.
+// adapter, which reads it from an expression, the configuration reader, and
+// the plan reader, which reads it from the strings of a plan JSON.
 //
-// An address names a declaration of one module: `aws_sqs_queue.jobs`,
-// `data.aws_iam_policy_document.read`, `ephemeral.random_password.db`,
-// `module.checkout`, `var.region`, `local.tags`, and `module.checkout.url`
-// for the output `url` of the module call `checkout`. An attribute after it,
-// an index key and a splat are not part of the address, and a binding's
-// instance key (`aws_instance.web[0]`) names an instance of a declaration, so
-// it is dropped before an address is compared.
+// The positional address grammar itself lives in `@archboard/model/vault-policy`
+// so semantics checks (containment, duplicate bindings) and code-intel agree
+// on every valid address and canonical nested-block spelling.
+
+import {
+	type NestedBlockSelector,
+	type ParsedTerraformAddress,
+	declarationAddress,
+	decodeHclString,
+	moduleOutputReferenceAddress,
+	parseTerraformAddress,
+	splitAddressSegments,
+} from "@archboard/model/vault-policy";
 
 /** The files of a Terraform or OpenTofu module. */
 const TERRAFORM_FILE = /\.(?:tf|tofu)$/u;
@@ -51,7 +57,7 @@ function addressOf(names: readonly string[]): string | undefined {
 }
 
 /**
- * A reference as a plan JSON or a binding writes it, without its index keys.
+ * A reference as a plan JSON or HCL writes it, without its index keys.
  * @param written The reference, such as `module.app[0].url` or `aws_instance.web["a.b"]`.
  * @returns Its names.
  */
@@ -62,14 +68,15 @@ function namesOf(written: string): string[] {
 		.filter((name) => name !== "");
 }
 
-/**
- * A declaration's address as a binding or an anchor spells it, without the
- * instance key that names one of its instances.
- * @param symbol The symbol.
- * @returns The address.
- */
-function declarationAddress(symbol: string): string {
-	return namesOf(symbol).join(".");
-}
-
-export { addressOf, declarationAddress, isTerraformFile, namesOf };
+export {
+	type NestedBlockSelector,
+	type ParsedTerraformAddress,
+	addressOf,
+	declarationAddress,
+	decodeHclString,
+	isTerraformFile,
+	moduleOutputReferenceAddress,
+	namesOf,
+	parseTerraformAddress,
+	splitAddressSegments,
+};

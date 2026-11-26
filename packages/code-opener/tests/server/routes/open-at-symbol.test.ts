@@ -138,4 +138,37 @@ describe("open code at the bound symbol", () => {
 		});
 		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
 	});
+
+	test("opens a file-bound Terraform nested block at its defining line", async () => {
+		await using resources = new AsyncDisposableStack();
+		const { fixture, invocation } = await openerAtLine(resources);
+		writeFileSync(
+			join(fixture.checkout, "main.tf"),
+			[
+				'resource "azurerm_application_gateway" "ingress" {',
+				'  name = "ingress"',
+				"  http_listener {",
+				'    name = "device"',
+				"  }",
+				"}",
+				"",
+			].join("\n"),
+		);
+		fixture.writeBinding({
+			repo: REPOSITORY,
+			path: "main.tf",
+			symbol: 'azurerm_application_gateway.ingress.http_listener["device"]',
+		});
+		const reply = await open(fixture);
+		expect(reply.status).toBe(200);
+		expect(CodeTargetOpenReplySchema.parse(reply.body)).toMatchObject({
+			success: true,
+			path: "main.tf",
+			kind: "file",
+		});
+		expect(await invocation.waitForCapture()).toMatchObject({
+			target: join(fixture.checkout, "main.tf"),
+			extra: ["--at=3"],
+		});
+	});
 });
