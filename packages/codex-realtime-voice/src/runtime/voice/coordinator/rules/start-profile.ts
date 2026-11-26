@@ -96,7 +96,16 @@ function assertStartedResponse(
  */
 function coordinatorSettings(
 	configured: CoordinatorConfiguredSettings,
-	settings: CoordinatorThreadSettings,
+	settings: Pick<
+		CoordinatorThreadSettings,
+		| "model"
+		| "effort"
+		| "serviceTier"
+		| "approvalPolicy"
+		| "approvalsReviewer"
+		| "sandboxPolicy"
+		| "activePermissionProfile"
+	>,
 ): CoordinatorSettings {
 	const effective: CoordinatorEffectiveSettings = Object.freeze({
 		model: settings.model,

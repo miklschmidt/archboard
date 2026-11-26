@@ -335,4 +335,25 @@ describe("coordinator lifecycle", () => {
 		expect(fixtureValue.epoch.records[0]?.status).toBe("inspect_only");
 		expect(fixtureValue.epoch.records[0]?.outcome).toBe("outcome_unknown");
 	});
+
+	test("commits a start that already confirms the selected model and effort", async () => {
+		const selection = { model: "gpt-custom", effort: "high", serviceTier: "priority" } as const;
+		const value = fixture({
+			model: coordinatorModel({
+				id: selection.model,
+				model: selection.model,
+				supportedReasoningEfforts: [{ reasoningEffort: selection.effort, description: "" }],
+				defaultReasoningEffort: selection.effort,
+			}),
+			modelSelection: selection,
+			emitSettings: false,
+		});
+		const snapshot = await ready(value);
+
+		expect(snapshot.configured).toEqual(selection);
+		expect(snapshot.effective).toEqual(selection);
+		expect(snapshot.sandboxPolicy).toEqual(value.session.started.sandbox);
+		expect(value.session.updateParams).toHaveLength(0);
+		expect(value.epoch.records.at(-1)).toMatchObject({ status: "committed" });
+	});
 });
