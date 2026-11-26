@@ -11,11 +11,13 @@
 // The column stands where the right panel stands while nothing is presented, a little wider. Along
 // its top is the rail of steps, with a piece of gold that travels to the step shown. Under it are
 // the step's number and its heading and words, with the name of the walkthrough under them. At its
-// foot is the key that has the walkthrough narrated (PresentationFoot), then the keys that step and
-// leave. The voice and its words stay where the shell lays them, low over the picture. A step is
-// handed to the next by the steps' own places (see PresentationStep), and every step
-// stands in one cell, so stepping never moves the foot. The picture is as wide as the column
-// leaves it, so the camera fits the step to all of its viewport and keeps nothing clear.
+// foot, pinned under what scrolls, is the key that has the walkthrough narrated (PresentationFoot),
+// then the keys that step and leave. Over the foot stands the legend of the step's picture, when the
+// reading supplies one, because the column takes the place of the panel that holds it. The voice
+// and its words stay where the shell lays them, low over the picture. A step is handed to the next
+// by the steps' own places (see PresentationStep), and every step stands in one cell, so stepping
+// never moves the foot. The picture is as wide as the column leaves it, so the camera fits the step
+// to all of its viewport and keeps nothing clear.
 //
 // The stage decides everything the picture does; this is the column and its keys. A page recording
 // the walkthrough (TASK-304) steps it by itself and nobody can press anything in the video, so
@@ -24,9 +26,11 @@
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	type CSSProperties,
 	type JSX,
+	type ReactNode,
 	type RefObject,
 } from "react";
 
@@ -67,6 +71,8 @@ interface SemanticPresentationProps {
 	readonly onLeave: () => void;
 	/** Narrating this walkthrough aloud from its first step, when the shell can. */
 	readonly narration?: WalkthroughNarration | undefined;
+	/** What the marks of the step's picture mean, over the keys at the column's foot. */
+	readonly legend?: ReactNode;
 }
 
 /**
@@ -90,6 +96,21 @@ function useFocusWhenOpened(): RefObject<HTMLElement | null> {
 }
 
 /**
+ * Open the new step at the top and move focus to its rail button if the reset hides it.
+ * @param region The scrolling part of the column, including the rail and the legend.
+ */
+function resetStepScroll(region: HTMLDivElement): void {
+	region.scrollTop = 0;
+	const focused = document.activeElement;
+	if (focused === null || !region.contains(focused)) return;
+	if (focused.getBoundingClientRect().top >= region.getBoundingClientRect().bottom) {
+		region
+			.querySelector<HTMLButtonElement>("[aria-current='step']")
+			?.focus({ preventScroll: true });
+	}
+}
+
+/**
  * A walkthrough presented beside the picture.
  * @param props The walkthrough, the step shown, and how to step and leave.
  * @returns The column.
@@ -99,6 +120,15 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const count = walkthrough.beats.length;
 	usePresentationKeys({ index, count, go: onGo, leave: onLeave }, true);
 	const box = useFocusWhenOpened();
+	const scroll = useRef<HTMLDivElement>(null);
+	const scrolledFor = useRef(index);
+	// A new step opens at its heading, however far down the legend a reader scrolled, whether a
+	// key or the voice stepped on.
+	useLayoutEffect(() => {
+		if (scrolledFor.current === index) return;
+		scrolledFor.current = index;
+		if (scroll.current !== null) resetStepScroll(scroll.current);
+	}, [index]);
 	const previous = useCallback((): void => {
 		onGo(Math.max(0, index - 1));
 	}, [onGo, index]);
@@ -118,14 +148,21 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 				data-slot="semantic-presentation"
 				data-step={index}
 				style={BOX_STYLE}
-				className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5 outline-none"
+				className="flex min-h-0 flex-1 flex-col outline-none"
 			>
-				<PresentationRail walkthrough={walkthrough} index={index} onGo={onGo} />
-				<div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
-					<StepFigure walkthrough={walkthrough} index={index} className="self-start" />
-					<StepWords walkthrough={walkthrough} index={index} missing={props.missing} />
+				<div
+					ref={scroll}
+					data-slot="semantic-presentation-scroll"
+					className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto [mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent)] p-5"
+				>
+					<PresentationRail walkthrough={walkthrough} index={index} onGo={onGo} />
+					<div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
+						<StepFigure walkthrough={walkthrough} index={index} className="self-start" />
+						<StepWords walkthrough={walkthrough} index={index} missing={props.missing} />
+					</div>
+					<div className="mt-auto empty:hidden">{props.legend}</div>
 				</div>
-				<div className="mt-auto flex flex-col gap-3">
+				<div className="flex shrink-0 flex-col gap-3 px-5 pb-5">
 					<PresentationFoot walkthrough={walkthrough.id} narration={props.narration} />
 					<PresentationKeys
 						hasPrevious={index > 0}

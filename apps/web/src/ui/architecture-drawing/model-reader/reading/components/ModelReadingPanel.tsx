@@ -71,6 +71,16 @@ function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook
 	const { shown, scene } = accepted;
 	const picture = legendOf(scene);
 	const structural = shown.reading.grammar === "architecture";
+	const { setHidden, selectLens, showAll } = location;
+	const controls = useMemo(
+		() => ({
+			onHide: setHidden,
+			onLens: structural ? selectLens : undefined,
+			onShowAll: showAll,
+			selection,
+		}),
+		[setHidden, selectLens, showAll, structural, selection],
+	);
 	return (
 		<ModelLegend
 			model={shown.model}
@@ -78,10 +88,7 @@ function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook
 			picture={picture}
 			look={props.look}
 			filters={structural ? location.filters : NO_FILTERS}
-			onHide={location.setHidden}
-			onLens={structural ? location.selectLens : undefined}
-			onShowAll={location.showAll}
-			selection={selection}
+			controls={controls}
 		/>
 	);
 }

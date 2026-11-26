@@ -1,8 +1,7 @@
 import { RiEyeLine, RiEyeOffLine, type RemixiconComponentType } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
-import { hiddenKinds } from "@archboard/model/policy";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
@@ -15,9 +14,11 @@ import {
 import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { GroupTags } from "#ui/architecture-drawing/model-reader/reading/components/ModelLegendGroups.tsx";
 import { ModelLensPresets } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
 import type { FilterField } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { useHideRows } from "#ui/architecture-drawing/model-reader/reading/hooks/use-hide-rows.ts";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
@@ -37,7 +38,6 @@ import {
 	type LegendSwitch,
 	type RelationshipRows,
 } from "#ui/architecture-drawing/model-reader/reading/rules/legend-rows.ts";
-import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";
 
 /**
@@ -64,6 +64,18 @@ interface ModelLegendProps {
 	/** How the vault's kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
 	readonly filters: Pick<ModelFilters, "hideKinds" | "hideEffects">;
+	/**
+	 * How a reader changes what the picture draws, or nothing for a presented walkthrough, whose
+	 * steps say what they draw: its legend only explains.
+	 */
+	readonly controls?: LegendControls | undefined;
+}
+
+/** A legend that only explains offers no control. */
+const EXPLAINS_ONLY: Partial<LegendControls> = {};
+
+/** How a reader changes what the picture draws from its legend. */
+interface LegendControls {
 	/** Hide these kinds or effects besides what the lens leaves out, and show the rest. */
 	readonly onHide: (field: FilterField, ids: readonly string[]) => void;
 	/** Read the picture through another lens, or nothing for a flow, which draws every message. */
@@ -78,25 +90,18 @@ interface ModelLegendProps {
  * with no click: its part kinds, its relationships and its groups. The relationships open with the
  * lenses, one press each, then each kind and each effect a reader can hide or show alone, then what
  * the lens leaves out, then the marks no reader hides. A group's tag selects the group's parts.
+ * Without controls the same rows only explain: no lens, no switch, and tags that press nothing.
  * @param props The reading and its visibility choices.
  * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
-	const { model, projection, picture, selection, filters, onHide } = props;
+	const { model, projection, picture, filters, controls } = props;
 	const rows = useMemo(
 		() => relationshipRows({ model, projection, ...filters }),
 		[model, projection, filters],
 	);
-	const hideRows = useCallback(
-		(field: FilterField, ids: readonly string[]): void => {
-			const kinds = field === "hideKinds";
-			const current = kinds ? hiddenKinds(filters.hideKinds, model.policy) : filters.hideEffects;
-			const visibleRows = kinds ? rows.kinds : rows.effects;
-			const unlisted = (current ?? []).filter((id) => !visibleRows.some((row) => row.id === id));
-			onHide(field, [...unlisted, ...ids]);
-		},
-		[filters, model.policy, onHide, rows],
-	);
+	const { onHide, onLens, onShowAll, selection } = controls ?? EXPLAINS_ONLY;
+	const hideRows = useHideRows(model, filters, rows, onHide);
 	if (picture === null) return null;
 	return (
 		<div data-slot="model-legend" className="flex flex-col gap-5">
@@ -106,18 +111,34 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 				marks={markRows(projection)}
 				standings={comparisonRows(projection)}
 				lensName={projection.lens.name}
-				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
+				leftOut={onLens === undefined ? 0 : projection.leftOut}
 				onHide={hideRows}
-				onShowAll={props.onShowAll}
+				onShowAll={onShowAll}
 			>
-				{/* A reading with one lens, as one from before lenses, has nothing to choose. */}
-				{props.onLens !== undefined && Object.keys(model.policy.lenses).length > 1 && (
-					<ModelLensPresets model={model} lens={projection.lens.id} onSelect={props.onLens} />
-				)}
+				<LensChoice model={model} lens={projection.lens.id} onLens={onLens} />
 			</Relationships>
 			<Groups groups={groupRows(model, projection)} selection={selection} />
 		</div>
 	);
+}
+
+/**
+ * The lenses a structural reading offers, one press each. A reading with one lens, as one from
+ * before lenses, has nothing to choose, and nor has a legend that only explains.
+ * @param props The reading and how to choose.
+ * @param props.model The reading, whose policy names the lenses.
+ * @param props.lens The lens the picture draws through.
+ * @param props.onLens Read the picture through another lens, or nothing.
+ * @returns The selector, or nothing.
+ */
+function LensChoice(props: {
+	readonly model: Model;
+	readonly lens: string;
+	readonly onLens: ((id: string) => void) | undefined;
+}): JSX.Element | null {
+	const { model, onLens } = props;
+	if (onLens === undefined || Object.keys(model.policy.lenses).length <= 1) return null;
+	return <ModelLensPresets model={model} lens={props.lens} onSelect={onLens} />;
 }
 
 /**
@@ -223,8 +244,9 @@ interface RelationshipsProps {
 	readonly children: ReactNode;
 	/** How many lines a structural reading leaves out; none for a flow. */
 	readonly leftOut: number;
-	readonly onHide: ModelLegendProps["onHide"];
-	readonly onShowAll: () => void;
+	/** Hide these rows, or nothing where the legend only explains. */
+	readonly onHide: LegendControls["onHide"] | undefined;
+	readonly onShowAll: (() => void) | undefined;
 }
 
 /**
@@ -239,7 +261,7 @@ function Relationships(props: RelationshipsProps): JSX.Element | null {
 	const hidden = props.leftOut > 0 || [...kinds, ...effects].some((row) => row.hidden);
 	const action = useMemo(
 		() =>
-			hidden ? (
+			hidden && onShowAll !== undefined ? (
 				<button
 					type="button"
 					data-slot="model-legend-show-all"
@@ -251,8 +273,15 @@ function Relationships(props: RelationshipsProps): JSX.Element | null {
 			) : undefined,
 		[hidden, onShowAll],
 	);
-	const hideKinds = useCallback((ids: readonly string[]) => onHide("hideKinds", ids), [onHide]);
-	const hideEffects = useCallback((ids: readonly string[]) => onHide("hideEffects", ids), [onHide]);
+	const hideKinds = useMemo(
+		() => (onHide === undefined ? undefined : (ids: readonly string[]) => onHide("hideKinds", ids)),
+		[onHide],
+	);
+	const hideEffects = useMemo(
+		() =>
+			onHide === undefined ? undefined : (ids: readonly string[]) => onHide("hideEffects", ids),
+		[onHide],
+	);
 	if (kinds.length === 0) return null;
 	return (
 		<ModelPanel.Section
@@ -328,7 +357,8 @@ function RowSample(props: { readonly row: LegendKind | LegendEffect }): JSX.Elem
  * @param props.slot Where a test finds the list.
  * @param props.field Whether the rows are kinds or effects.
  * @param props.rows The rows, those the lens leaves out among them.
- * @param props.onHide Hide these rows and show the rest of the list.
+ * @param props.onHide Hide these rows and show the rest of the list, or nothing where the rows only
+ * explain.
  * @returns The list, or nothing when the lens leaves out every row.
  */
 function Switches(props: {
@@ -336,7 +366,7 @@ function Switches(props: {
 	readonly slot: string;
 	readonly field: "kind" | "effect";
 	readonly rows: readonly (LegendKind | LegendEffect)[];
-	readonly onHide: (ids: readonly string[]) => void;
+	readonly onHide: ((ids: readonly string[]) => void) | undefined;
 }): JSX.Element | null {
 	const { label, rows, field, onHide } = props;
 	const shown = rows.filter((row) => !row.leftOut);
@@ -344,9 +374,17 @@ function Switches(props: {
 	return (
 		<RelationshipGroup label={label}>
 			<ul data-slot={props.slot} className="flex flex-col">
-				{shown.map((row) => (
-					<SwitchRow key={row.id} row={row} field={field} rows={rows} onHide={onHide} />
-				))}
+				{shown.map((row) =>
+					onHide === undefined ? (
+						<Cell key={row.id}>
+							<Mark name={row.name} dimmed={row.dimmed}>
+								<RowSample row={row} />
+							</Mark>
+						</Cell>
+					) : (
+						<SwitchRow key={row.id} row={row} field={field} rows={rows} onHide={onHide} />
+					),
+				)}
 			</ul>
 		</RelationshipGroup>
 	);
@@ -529,12 +567,12 @@ function SwitchRow(props: {
  * The groups of the reading, which close the legend.
  * @param props The groups.
  * @param props.groups One row for each.
- * @param props.selection The selection that their tags choose.
+ * @param props.selection The selection that their tags choose, or nothing where they only explain.
  * @returns Their tags, or nothing for a reading with no groups.
  */
 function Groups(props: {
 	readonly groups: readonly LegendGroup[];
-	readonly selection: ModelSelection;
+	readonly selection: ModelSelection | undefined;
 }): JSX.Element | null {
 	const { groups, selection } = props;
 	if (groups.length === 0) return null;
@@ -545,51 +583,8 @@ function Groups(props: {
 			slot="model-legend-groups"
 			className="flex flex-wrap gap-x-2 gap-y-2.5"
 		>
-			{groups.map((group) => (
-				<GroupTag key={group.id} group={group} selection={selection} />
-			))}
+			<GroupTags groups={groups} selection={selection} />
 		</LegendList>
-	);
-}
-
-/**
- * A group, as a tag with its name inside. It selects what the picture draws of the group, and it
- * reads as on while the selection is exactly that. A group whose parts a filter took off the
- * picture has nothing to select, so its tag stays, dimmed.
- * @param props The group.
- * @param props.group Its name, its colour and its parts.
- * @param props.selection The selection that it chooses.
- * @returns The tag.
- */
-function GroupTag(props: {
-	readonly group: LegendGroup;
-	readonly selection: ModelSelection;
-}): JSX.Element {
-	const { group, selection } = props;
-	const { color, parts } = group;
-	const { ids, selectMany, clear } = selection;
-	const held = parts.length === 0;
-	const on = !held && parts.length === ids.size && parts.every((id) => ids.has(id));
-	const style = useMemo<CSSProperties>(() => ({ "--tag": paletteTag(color) }), [color]);
-	const choose = useCallback((): void => {
-		if (on) clear();
-		else selectMany(parts);
-	}, [on, clear, selectMany, parts]);
-	return (
-		<li>
-			<button
-				type="button"
-				data-group-id={group.id}
-				aria-pressed={on}
-				disabled={held}
-				title={held ? "A filter hides its parts" : on ? "Clear the selection" : "Select its parts"}
-				style={style}
-				onClick={choose}
-				className="group-tag text-technical block px-2 py-0.5 leading-4 whitespace-nowrap disabled:opacity-40"
-			>
-				{group.name}
-			</button>
-		</li>
 	);
 }
 

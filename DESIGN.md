@@ -722,7 +722,8 @@ A module with code history has a `Changes with` section. It lists the modules wh
 
 The foot of the panel holds what can be done: a row of keys on the panel's ground, pinned under what scrolls, with no tone of its own, no line and no shadow. It lies on two columns 8px apart between the panel's 16px edges, the columns of the legend, with 16px under it. A key in it is 32px high, as the keys of the left column are, and takes half its line, so two keys stand on the columns and a key alone takes the whole line. With nothing selected it holds `Explain with Codex`. With a selection it holds the action bar: `Open module`, `Open code` and `Expand here` or `Collapse` where they apply, then `Focus` and `Explain`. Beside `Focus` the menu says `Explain`, its mark names the agent, and `with Codex` stays in its name for assistive technology. So a selection of parts keeps the foot one line high, and the legend over it stays where it was. The head of the subject says how many are selected. A note about the code takes the whole line. The count of warnings is the first line of the foot while the last code check found a warning to walk through. Its icon and words start where the keys start, and its plate reaches 8px past them. When the check found none, the foot says nothing of it, because a count of none has nothing to do and reads as noise on a panel that is quiet when nothing is wrong. A foot with nothing in it takes no room. The words that scroll above the foot fade out over their last 12px, inside the padding of the last row, so that the foot never cuts a row in two and the last row at the end of the scroll stays whole.
 
-The legend is the last section of the panel, under every subject, and it needs no click. It
+The legend is the last section of the panel, under every subject, and it needs no click. A
+presented walkthrough keeps it in its column (see Walkthrough box). It
 ends the scroll. While the subject is short it stands at the foot of the scroll, over the keys,
 and a long subject scrolls it down with its lists, so a reader finds it in one place. It lives
 outside the subject, so a new subject neither redraws it nor moves it, and a press on a group's
@@ -1056,6 +1057,14 @@ name of the walkthrough, in muted ink. When the picture does not draw some subje
 the same line says so after the name, and the name then keeps half of the line. The line is cut
 short and never wraps.
 
+The legend of the step's picture stands at the bottom of what scrolls, over the key that
+narrates, because the column takes the place of the panel that holds it. It is the panel's
+legend, with its parts, rows and folds, but it only explains: a step says what its picture
+draws, so it has no lens selector, no eye, no `Show all`, and a group's tag presses nothing.
+The key that narrates and the keys that step are pinned under what scrolls, so a tall legend
+scrolls with the step's words and never pushes the keys off the screen, and the words fade out
+over their last 12px above the keys, as the panel's do.
+
 The key that narrates the walkthrough stands at the foot of the column, as wide as the column.
 It is a pill, 76px high and round at both ends, a well sunk into the column (the well shadow, on
 the Well Floor). It is there for as long as the shell has a voice to offer. At its start is a
@@ -1079,8 +1088,8 @@ the first step. It stays a key, so that focus is not left on nothing. A recordin
 because nobody can press anything in the video.
 
 Every step stands in one cell. So the cell is as high as its highest step, and stepping never
-moves the foot of the column. A step is handed to the next over 520ms, and nothing else in the
-column moves. The step shown leaves first and fast. When the reader steps on, it leaves to the
+moves the foot of the column. A new step opens at the top of the scroll. A step is handed to the
+next over 520ms. The step shown leaves first and fast. When the reader steps on, it leaves to the
 left. When the reader goes back, it leaves to the right. The number rolls up or down the same
 way, like the digit of a flip board.
 

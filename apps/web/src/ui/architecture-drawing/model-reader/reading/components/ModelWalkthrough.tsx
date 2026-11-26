@@ -13,10 +13,16 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
+import { ModelLegend } from "#ui/architecture-drawing/model-reader/reading/components/ModelLegend.tsx";
+import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { allLens, projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
-import { drawableGrammar } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
+import {
+	drawableGrammar,
+	type AcceptedScene,
+} from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 import { projectFlow } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 import { useModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import { useModelExplanation } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-explanation.ts";
@@ -140,6 +146,11 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 	);
 	useModelExplanation(props.vault, model, location, accepted.selected, reporting);
 	const ignore = useCallback((): void => {}, []);
+	const { scene } = accepted;
+	const legend = useMemo(
+		() => (available && scene !== null ? <BeatLegend scene={scene} /> : null),
+		[available, scene],
+	);
 	return (
 		<div
 			data-slot="model-walkthrough"
@@ -167,6 +178,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					onGo={position.goTo}
 					onLeave={props.onLeave}
 					narration={drawnNarration(props.narration, presentation, available)}
+					legend={legend}
 				/>
 			)}
 		</div>
@@ -217,6 +229,28 @@ function BeatStage(
 				</output>
 			)}
 		</>
+	);
+}
+
+/**
+ * Explain the marks of the accepted beat using the appearances from its picture.
+ * @param props The accepted beat.
+ * @param props.scene The beat on screen.
+ * @returns The read-only legend.
+ */
+function BeatLegend(props: { readonly scene: AcceptedScene }): JSX.Element {
+	const { scene } = props;
+	const { model, projection, picture, reading } = scene;
+	const appearances = useSceneAppearances(scene);
+	const look = useMemo(() => kindLookOf(model.policy, appearances), [model.policy, appearances]);
+	return (
+		<ModelLegend
+			model={model}
+			projection={projection}
+			picture={picture.legend}
+			look={look}
+			filters={reading.filters}
+		/>
 	);
 }
 

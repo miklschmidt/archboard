@@ -106,7 +106,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 			{
 				name: "Where writes go",
 				beats: [
-					{ heading: "All of it", body: "Four parts, one direction." },
+					{ heading: "All of it", body: "Four parts, one direction.\n".repeat(50) },
 					{ heading: "The gateway", body: "Everything enters here." },
 					{ heading: "The ledger", body: "Where it lands." },
 				],
@@ -151,7 +151,33 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 		WAIT,
 	);
 
-	// A key steps, wherever focus is; the camera moves there and lands.
+	// The column keeps the legend that it took the place of, over the key that narrates, and the
+	// legend only explains: the step says what the picture draws.
+	const legend = await pollUntil(
+		() =>
+			browser.eval<{ kinds: string; switches: number; above: boolean } | null>(
+				`(() => { const column = document.querySelector('[data-slot="semantic-presentation"]');` +
+					` const scroll = column?.querySelector('[data-slot="semantic-presentation-scroll"]');` +
+					` const legend = column?.querySelector('[data-slot="model-legend"]');` +
+					` const key = column?.querySelector('[data-slot="semantic-presentation-narrate"]');` +
+					` if (!scroll || !legend || !key) return null;` +
+					` scroll.scrollTop = scroll.scrollHeight;` +
+					` return { kinds: legend.querySelector('[data-slot="model-legend-kinds"]')?.textContent ?? "",` +
+					`  switches: legend.querySelectorAll('[role="switch"], button[data-group-id]').length,` +
+					`  above: scroll.scrollTop > 0 && legend.getBoundingClientRect().bottom <= key.getBoundingClientRect().top }; })()`,
+			),
+		(state) => state !== null && state.kinds !== "",
+		"the legend to stand in the presented column",
+		WAIT,
+	);
+	expect(legend).toMatchObject({ switches: 0, above: true });
+	expect(legend!.kinds).toContain("Data store");
+
+	// A key steps from the legend, and the next step opens at its heading.
+	await browser.run([
+		"focus",
+		"[data-slot='semantic-presentation'] [data-slot='model-legend-kinds-section'] button",
+	]);
 	await browser.run(["press", "ArrowRight"]);
 	await pollUntil(
 		() => presented(browser),
@@ -162,6 +188,18 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const second = await arrivedAt(browser, "1");
 	expect(second.heading).toBe("The gateway");
 	expect(second.camera).not.toBe(first.camera);
+	expect(
+		await browser.eval<{ scrollTop: number; headingVisible: boolean; currentStepFocused: boolean }>(
+			`(() => { const scroll = document.querySelector('[data-slot="semantic-presentation-scroll"]');` +
+				` const heading = scroll.querySelector('[data-slot="semantic-presentation-heading"]');` +
+				` const bounds = scroll.getBoundingClientRect();` +
+				` const focus = document.activeElement;` +
+				` const focusBounds = focus.getBoundingClientRect();` +
+				` return { scrollTop: scroll.scrollTop, headingVisible: heading.getBoundingClientRect().top >= bounds.top,` +
+				` currentStepFocused: scroll.contains(focus) && focus.matches('[data-slot="semantic-presentation-step"][aria-current="step"]')` +
+				` && focusBounds.bottom > bounds.top && focusBounds.top < bounds.bottom }; })()`,
+		),
+	).toEqual({ scrollTop: 0, headingVisible: true, currentStepFocused: true });
 	// And what was shown has gone, not only faded: it can be neither seen nor reached.
 	expect(
 		await browser.eval<boolean>(
