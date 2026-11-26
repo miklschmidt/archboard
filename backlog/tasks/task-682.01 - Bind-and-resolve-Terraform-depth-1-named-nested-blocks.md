@@ -1,10 +1,10 @@
 ---
 id: TASK-682.01
 title: Bind and resolve Terraform depth-1 named nested blocks
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:50:00Z'
-updated_date: '2026-11-26T01:45:00Z'
+updated_date: '2026-11-26T02:10:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -46,9 +46,15 @@ With this slice complete, `check code`, "Open the code", the code browser's symb
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Parts and anchors can bind unique depth-1 nested blocks of Terraform resource blocks using <resource_address>.<block_type>["name"], including inside local modules and indexed resources
-- [ ] #2 Quoted nested block names containing dots, spaces, slashes, or escaped quotes resolve accurately, and numeric index selectors such as http_listener[0] are rejected
-- [ ] #3 A container bound to a local module call (such as module.gw) still holds nested-block anchors declared inside that module
-- [ ] #4 An invariance test confirms a fixture with named nested blocks (env, container, joining declarations) and no nested-block bindings produces identical code-check findings, evidence, and runners
-- [ ] #5 Code opener (symbolLine), code browser file owners (readFileOwners), and History lens commit/footprint attribution resolve a bound nested block to its exact lines and isolate edits to that block
+- [x] #1 Parts and anchors can bind unique depth-1 nested blocks of Terraform resource blocks using <resource_address>.<block_type>["name"], including inside local modules and indexed resources
+- [x] #2 Quoted nested block names containing dots, spaces, slashes, or escaped quotes resolve accurately, and numeric index selectors such as http_listener[0] are rejected
+- [x] #3 A container bound to a local module call (such as module.gw) still holds nested-block anchors declared inside that module
+- [x] #4 An invariance test confirms a fixture with named nested blocks (env, container, joining declarations) and no nested-block bindings produces identical code-check findings, evidence, and runners
+- [x] #5 Code opener (symbolLine), code browser file owners (readFileOwners), and History lens commit/footprint attribution resolve a bound nested block to its exact lines and isolate edits to that block
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented positional Terraform address parsing (parseTerraformAddress, splitAddressSegments, decodeHclString), depth-1 resource nested-block definitions (visibility: block) with duplicate suppression, Terraform definition-site and lookup normalization, and resource-level guards in terraform-configuration.ts and terraform-providers.ts. Verified with 470 passing code-intel tests (including nested-block binding, module.gw containment, invariance, symbolLine, readFileOwners, and History lens locality/footprint), lint:policy, lint:tests, types, and format:check.
+<!-- SECTION:FINAL_SUMMARY:END -->

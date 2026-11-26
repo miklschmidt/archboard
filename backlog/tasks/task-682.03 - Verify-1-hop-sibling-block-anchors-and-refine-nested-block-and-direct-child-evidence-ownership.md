@@ -3,10 +3,10 @@ id: TASK-682.03
 title: >-
   Verify 1-hop sibling-block anchors and refine nested-block and direct-child
   evidence ownership
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T00:51:00Z'
-updated_date: '2026-11-26T01:45:00Z'
+updated_date: '2026-11-26T02:10:00Z'
 labels:
   - ready-for-agent
   - enhancement
