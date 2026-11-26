@@ -344,6 +344,7 @@ describe.serial("actual production Codex composition", () => {
 				body: {
 					orchestrator: { ...workhorse, effort: "low" },
 					workhorse,
+					voiceLanguage: null,
 				},
 			});
 			expect(saved.status).toBe(200);
