@@ -189,15 +189,17 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(second.heading).toBe("The gateway");
 	expect(second.camera).not.toBe(first.camera);
 	expect(
-		await browser.eval<{ headingVisible: boolean; focusVisible: boolean }>(
+		await browser.eval<{ scrollTop: number; headingVisible: boolean; currentStepFocused: boolean }>(
 			`(() => { const scroll = document.querySelector('[data-slot="semantic-presentation-scroll"]');` +
 				` const heading = scroll.querySelector('[data-slot="semantic-presentation-heading"]');` +
 				` const bounds = scroll.getBoundingClientRect();` +
 				` const focus = document.activeElement;` +
-				` return { headingVisible: heading.getBoundingClientRect().top >= bounds.top,` +
-				` focusVisible: scroll.contains(focus) && focus.getBoundingClientRect().top < bounds.bottom }; })()`,
+				` const focusBounds = focus.getBoundingClientRect();` +
+				` return { scrollTop: scroll.scrollTop, headingVisible: heading.getBoundingClientRect().top >= bounds.top,` +
+				` currentStepFocused: scroll.contains(focus) && focus.matches('[data-slot="semantic-presentation-step"][aria-current="step"]')` +
+				` && focusBounds.bottom > bounds.top && focusBounds.top < bounds.bottom }; })()`,
 		),
-	).toEqual({ headingVisible: true, focusVisible: true });
+	).toEqual({ scrollTop: 0, headingVisible: true, currentStepFocused: true });
 	// And what was shown has gone, not only faded: it can be neither seen nor reached.
 	expect(
 		await browser.eval<boolean>(
