@@ -33,6 +33,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "field": "description",
+      "value": "Modules own their outgoing relationships. Independent flow collections describe exchanges. Compact proposals—including active drafts reconciled against the branch footprint—and authored narratives refer to stable subjects, while exact history lives in the signed archive."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
       "field": "description",
       "value": "The checker reads current architecture, one selected state, or independent drafts, reporting bindings, anchors, declared relationships, interfaces, module depth, and document references with canonical identities. It reads every bound module interface across all languages it holds and hands Module depth what it read; EXPOSED_UNUSED warns when every use in that language resolved with no drawn outside caller, else reports information. The answer marks branch-touched modules and carries the model shallow-module setting; severities never depend on caller flags. Its state reader also reads a selected state at a source ref for branch footprint; Git locality and footprint use separate history operations, and language server timings name the program and TypeScript read. An anchor on a Terraform declaration neither end holds is judged per instance: unlisted declarations support when one instance reaches both ends (or descendants) without emitting undrawn evidence, and listed joins check roles per instance—supporting either orientation, warning ANCHOR_MISMATCH when every instance rules out the pair, withholding when an opaque end leaves room, and never falling back to self on pure links. For Terraform nested blocks, anchor support accepts 1-hop intra-resource name-linked sibling blocks (anchor-only, still warning on whole-resource anchors for nested-block ends), ownership attributes references in bound nested blocks to those parts and prefers a direct child sharing its parent infrastructure address, duplicate literal names report ambiguity in symbol-missing warnings, and dynamic, computed-name, or plan-only nested selectors skip with expression-not-followed."
@@ -42,6 +48,24 @@
       "subject": "vKEsyHFk/XppR9owz#bLpk2XKU",
       "field": "description",
       "value": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers. Check command help documents Terraform nested-block bindings, the runner restriction to top-level resources, expression-not-followed skips for dynamic or plan-only nested selectors, and the direct-child infrastructure exception to BINDING_SHARED."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "description",
+      "value": "Owns canonical model schemas, positional Terraform address parsing (including depth-1 resource nested-block selectors), containment and infrastructure duplicate-binding rules, and vault persistence."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+      "field": "description",
+      "value": "Owns code-fact extraction, Terraform nested-block parsing and sibling-link verification, symbol location lookup through the code-facts API, code-check evidence ownership, and history lenses."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
+      "field": "description",
+      "value": "Resolves and opens module bindings and file links in local editors, including route status projections and checkout-contained Terraform local-module nested-block targets."
     },
     {
       "type": "assign",

@@ -57,6 +57,12 @@ const EDGE_CASES_TF = [
 	"  second",
 	"    EOF",
 	"  }",
+	"  listener {",
+	"    name = <<-EOF",
+	" \u0301",
+	"  second",
+	"    EOF",
+	"  }",
 	"}",
 ].join("\n");
 
@@ -119,6 +125,12 @@ beforeAll(async () => {
 						"edges/main.tf",
 						'constructor.gateway.listener["first\\n second\\n"]',
 					),
+					node(
+						"GraphAcc",
+						"Grapheme accent-only line heredoc",
+						"edges/main.tf",
+						'constructor.gateway.listener["\\n second\\n"]',
+					),
 				],
 				edges: [
 					edge("eFwd", "OtherA", "RuleB", "mod/main.tf", anchorSym),
@@ -145,7 +157,8 @@ test("R5 #1: qualified anchor support across two roots calling the same local mo
 	expect(findingsFor("eRev")).toEqual([]);
 });
 
-test("R5 #3, #4: grapheme-cluster flush heredoc strips space+combining-mark together and constructor resource type parses cleanly", () => {
+test("R5 #3, #4, R6 #2: flush heredoc counts indent by code point, strips by grapheme cluster, and constructor resource type parses cleanly", () => {
 	expect(findingsFor("CtorApi")).toEqual([]);
 	expect(findingsFor("Grapheme")).toEqual([]);
+	expect(findingsFor("GraphAcc")).toEqual([]);
 });

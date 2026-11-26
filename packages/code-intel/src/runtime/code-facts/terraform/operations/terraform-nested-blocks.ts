@@ -110,18 +110,25 @@ function splitLinesPreservingEndings(text: string): string[] {
 const GRAPHEME_SEGMENTER = new Intl.Segmenter("en", { granularity: "grapheme" });
 
 /**
- * Count leading whitespace grapheme clusters on one segmented heredoc line.
- * @param clusters The grapheme clusters of the line without its trailing newline.
- * @returns Number of leading clusters whose first code point is Unicode whitespace.
+ * Count leading Unicode whitespace code points on one heredoc line and report
+ * whether the entire line is whitespace-only, matching HCL's flush-heredoc
+ * `countIndent` (which inspects `unicode.IsSpace` runes before trimming
+ * grapheme clusters).
+ * @param content The line without its trailing newline.
+ * @returns Leading whitespace code-point count and blankness flag.
  */
-function leadingWhitespaceClusters(clusters: readonly string[]): number {
-	const firstNonSpace = clusters.findIndex((cluster) => !/^\p{White_Space}/u.test(cluster));
-	return firstNonSpace === -1 ? clusters.length : firstNonSpace;
+function heredocLineIndent(content: string): { readonly indent: number; readonly blank: boolean } {
+	let indent = 0;
+	for (const cp of content) {
+		if (!/\p{White_Space}/u.test(cp)) return { indent, blank: false };
+		indent += 1;
+	}
+	return { indent, blank: true };
 }
 
 /**
  * Split one heredoc body line into its grapheme clusters before the newline
- * ending, its leading whitespace grapheme count, whether it is whitespace-only,
+ * ending, its leading whitespace code-point count, whether it is whitespace-only,
  * and its original trailing newline sequence.
  * @param line One line, including its trailing newline.
  * @returns Segmented line info for HCL flush-heredoc indentation stripping.
@@ -136,8 +143,8 @@ function segmentHeredocLine(line: string): {
 	const ending = match ? match[0] : "";
 	const content = line.slice(0, line.length - ending.length);
 	const clusters = Array.from(GRAPHEME_SEGMENTER.segment(content), ({ segment }) => segment);
-	const indent = leadingWhitespaceClusters(clusters);
-	return { clusters, ending, indent, blank: indent === clusters.length };
+	const { indent, blank } = heredocLineIndent(content);
+	return { clusters, ending, indent, blank };
 }
 
 /**

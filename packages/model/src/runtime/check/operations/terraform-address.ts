@@ -460,13 +460,14 @@ function parseTerraformAddress(symbol: string): ParsedTerraformAddress | undefin
 
 /**
  * Whether a parsed Terraform address names an infrastructure declaration for
- * containment and duplicate-binding rules (module call, data/ephemeral source,
- * managed resource, or depth-1 named nested block on a provider-qualified resource).
+ * containment and duplicate-binding rules (module call, depth-1 named nested
+ * block selector, or provider-qualified managed resource / data / ephemeral
+ * source).
  * @param parsed The parsed address.
  * @returns True when it has an infrastructure declaration form.
  */
 function isInfrastructureAddress(parsed: ParsedTerraformAddress): boolean {
-	if (parsed.kind === "module") return true;
+	if (parsed.kind === "module" || parsed.kind === "block") return true;
 	const { resourceType } = parsed;
 	return resourceType !== undefined && PROVIDER_TYPE.test(resourceType);
 }

@@ -132,6 +132,10 @@ describe("Terraform nested-block containment", () => {
 			"an empty quoted nested-block name",
 			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener[""]'),
 		],
+		[
+			"a nested-block selector on a non-underscored resource type",
+			at("infra/main.tf", 'constructor.gateway.listener["api"]'),
+		],
 	])("leaves source containment to the parts of %s", (_label, binding) => {
 		expect(containment(binding)).toEqual([]);
 	});
@@ -186,6 +190,11 @@ describe("BINDING_SHARED single-direct-child infrastructure exception", () => {
 			"a Terraform nested block",
 			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener["device-https"]'),
 			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener["device-https"]'),
+		],
+		[
+			"a Terraform nested block on a non-underscored resource type",
+			at("infra/main.tf", 'constructor.gateway.listener["api"]'),
+			at("infra/main.tf", 'constructor.gateway.listener["api"]'),
 		],
 		[
 			"a Terraform module call with normalized paths",
