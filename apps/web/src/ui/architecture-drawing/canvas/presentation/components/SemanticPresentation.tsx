@@ -96,6 +96,21 @@ function useFocusWhenOpened(): RefObject<HTMLElement | null> {
 }
 
 /**
+ * Open the new step at the top and move focus to its rail button if the reset hides it.
+ * @param region The scrolling part of the column, including the rail and the legend.
+ */
+function resetStepScroll(region: HTMLDivElement): void {
+	region.scrollTop = 0;
+	const focused = document.activeElement;
+	if (focused === null || !region.contains(focused)) return;
+	if (focused.getBoundingClientRect().top >= region.getBoundingClientRect().bottom) {
+		region
+			.querySelector<HTMLButtonElement>("[aria-current='step']")
+			?.focus({ preventScroll: true });
+	}
+}
+
+/**
  * A walkthrough presented beside the picture.
  * @param props The walkthrough, the step shown, and how to step and leave.
  * @returns The column.
@@ -112,7 +127,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	useLayoutEffect(() => {
 		if (scrolledFor.current === index) return;
 		scrolledFor.current = index;
-		if (scroll.current !== null) scroll.current.scrollTop = 0;
+		if (scroll.current !== null) resetStepScroll(scroll.current);
 	}, [index]);
 	const previous = useCallback((): void => {
 		onGo(Math.max(0, index - 1));

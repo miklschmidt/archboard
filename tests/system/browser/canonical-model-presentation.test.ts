@@ -189,12 +189,15 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(second.heading).toBe("The gateway");
 	expect(second.camera).not.toBe(first.camera);
 	expect(
-		await browser.eval<boolean>(
+		await browser.eval<{ headingVisible: boolean; focusVisible: boolean }>(
 			`(() => { const scroll = document.querySelector('[data-slot="semantic-presentation-scroll"]');` +
 				` const heading = scroll.querySelector('[data-slot="semantic-presentation-heading"]');` +
-				` return heading.getBoundingClientRect().top >= scroll.getBoundingClientRect().top; })()`,
+				` const bounds = scroll.getBoundingClientRect();` +
+				` const focus = document.activeElement;` +
+				` return { headingVisible: heading.getBoundingClientRect().top >= bounds.top,` +
+				` focusVisible: scroll.contains(focus) && focus.getBoundingClientRect().top < bounds.bottom }; })()`,
 		),
-	).toBe(true);
+	).toEqual({ headingVisible: true, focusVisible: true });
 	// And what was shown has gone, not only faded: it can be neither seen nor reached.
 	expect(
 		await browser.eval<boolean>(
