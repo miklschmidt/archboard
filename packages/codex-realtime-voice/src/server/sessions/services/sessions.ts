@@ -32,7 +32,7 @@ import { workhorseLinkKey, type TabSessionId } from "#server/tab-session/rules/t
 import { endTabSession, settleEach, stopVoice } from "#server/sessions/services/end.ts";
 import {
 	freshWorkhorseState,
-	noteActiveTurn,
+	noteWorkhorseNotification,
 	type CodexWorkbenchWorkhorse,
 	type CodexWorkbenchWorkhorseComponents,
 	type CodexWorkbenchWorkhorseState,
@@ -106,7 +106,7 @@ function deliver(
 	const { coordinator, realtime, spokenApproval, callbacks } = session.components;
 	coordinator.onNotification(event);
 	for (const workhorse of session.workhorses.values()) {
-		noteActiveTurn(workhorse, event, decoder);
+		noteWorkhorseNotification(workhorse, event, decoder);
 		workhorse.components.operations.onNotification(event);
 	}
 	realtime.onNotification(event);

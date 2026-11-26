@@ -6,6 +6,7 @@ import type {
 	WorkbenchOperation,
 } from "#runtime/host/protocol/context.ts";
 import type { WorkbenchInstructions } from "#runtime/host/protocol/instructions.ts";
+import type { VoiceAgentModelPreferences } from "#runtime/host/protocol/models.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
@@ -48,6 +49,8 @@ export interface CodexWorkbenchHostPolicy {
 	readonly checkoutLabel: (checkout: string) => string;
 	/** Checks, prepares, opens and forgets the narrative a browser starts voice to present. */
 	readonly narrative?: VoiceNarrativeAdapter;
+	/** Optional host-configured model preferences read when threads start. */
+	readonly modelPreferences?: () => VoiceAgentModelPreferences;
 	/** The host's own Codex dynamic tools, installed on each generation. */
 	readonly domainTools?: CodexWorkbenchDomainTools;
 	/** Install context and authority readers before browser work is accepted. Retirement removes them. */

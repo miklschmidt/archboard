@@ -116,7 +116,7 @@ describe.serial("actual production Codex composition", () => {
 			});
 			expect(created).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			// The coordinator's thread starts before the workhorse's.
-			expect(startedModels()[0]).toBe("gpt-6-sol");
+			expect(startedModels()[0]).toBe("gpt-6.1-terra");
 			expect(startedModels()).toHaveLength(2);
 			// The app-server and the coordinator work in a directory of their own under the state
 			// directory, which holds no vault. The workhorse works in its checkout: for this untracked
@@ -139,9 +139,9 @@ describe.serial("actual production Codex composition", () => {
 			expect(typeof threadLink["threadId"]).toBe("string");
 			expect(linked["coordinator"]).toMatchObject({
 				state: "ready",
-				configuredModel: "gpt-6-sol",
+				configuredModel: "gpt-6.1-terra",
 				configuredEffort: "low",
-				model: "gpt-6-sol",
+				model: "gpt-6.1-terra",
 				effort: "low",
 				serviceTier: null,
 			});

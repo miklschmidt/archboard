@@ -3,14 +3,16 @@ import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 import { describe, expect, test } from "bun:test";
 
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
+import { defaultVoiceAgentModels } from "#runtime/host/protocol/models.ts";
 import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 	listCoordinatorModels,
 	selectCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
+
+const reviewedCoordinatorModel = () => defaultVoiceAgentModels().coordinator.model;
+const reviewedCoordinatorEffort = () => defaultVoiceAgentModels().coordinator.effort;
 import { type CoordinatorModel } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { type CodexCoordinatorError } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
@@ -210,6 +212,63 @@ describe("coordinator model and literal profile", () => {
 			threadId,
 			model: reviewedCoordinatorModel(),
 			effort: reviewedCoordinatorEffort(),
+		});
+	});
+
+	test("honours explicit host model, effort, and service tier overrides and refuses unsupported tiers", () => {
+		const custom = model({
+			id: "gpt-custom",
+			model: "gpt-custom",
+			supportedReasoningEfforts: [
+				{ reasoningEffort: "low", description: "low" },
+				{ reasoningEffort: "high", description: "high" },
+			],
+			serviceTiers: [
+				{ id: "priority", name: "Priority", description: "fast" },
+				{ id: "flex", name: "Flex", description: "batch" },
+			],
+		});
+
+		const selected = selectCoordinatorModel([model(), custom], {
+			model: "gpt-custom",
+			effort: "high",
+			serviceTier: "flex",
+		});
+		expect(selected.model.model).toBe("gpt-custom");
+		expect(selected.configuredEffort).toBe("high");
+		expect(selected.configuredServiceTier).toBe("flex");
+
+		const noTier = selectCoordinatorModel([custom], {
+			model: "gpt-custom",
+			effort: "low",
+			serviceTier: null,
+		});
+		expect(noTier.configuredServiceTier).toBeNull();
+
+		expect(() =>
+			selectCoordinatorModel([custom], {
+				model: "gpt-custom",
+				effort: "low",
+				serviceTier: "unknown-tier",
+			}),
+		).toThrowError(expect.objectContaining({ code: "unsupported_service_tier" }));
+
+		const startParams = createCoordinatorThreadStartParams(
+			WORKING_DIRECTORY,
+			"flex",
+			TEST_INSTRUCTIONS.coordinator,
+			"gpt-custom",
+		);
+		expect(startParams.model).toBe("gpt-custom");
+		expect(startParams.serviceTier).toBe("flex");
+
+		const threadId =
+			createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator-custom");
+		expect(createCoordinatorSettingsUpdateParams(threadId, "flex", "gpt-custom", "high")).toEqual({
+			threadId,
+			model: "gpt-custom",
+			serviceTier: "flex",
+			effort: "high",
 		});
 	});
 });

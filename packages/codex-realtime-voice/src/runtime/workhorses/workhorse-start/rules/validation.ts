@@ -97,6 +97,7 @@ function validateWorkhorseStartResponse(
 		threadSource: options.profile.identity.threadSource,
 		model: response.model,
 		modelProvider: response.modelProvider,
+		reasoningEffort: response.reasoningEffort,
 		serviceTier: response.serviceTier,
 		approvalPolicy: response.approvalPolicy,
 		approvalsReviewer: response.approvalsReviewer,

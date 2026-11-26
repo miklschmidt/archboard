@@ -10,6 +10,7 @@ import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { listenAddress, serverUrl } from "#server/host/services/listener-address.ts";
+import { readVoiceAgentModelPreferences } from "#server/codex-settings/store/configuration.ts";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
 
 /**
@@ -87,6 +88,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 			voiceFor: server.host.voiceFor,
 			contextForOperation: server.host.contextForOperation,
 			checkoutLabel: server.host.checkoutLabel,
+			modelPreferences: readVoiceAgentModelPreferences,
 			...(server.host.narrative ? { narrative: server.host.narrative } : {}),
 			...(server.host.domainTools ? { domainTools: server.host.domainTools } : {}),
 			...(server.host.onGeneration ? { onGeneration: server.host.onGeneration } : {}),

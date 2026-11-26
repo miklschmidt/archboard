@@ -4,7 +4,11 @@ import {
 	createServerBrowserProjectionBudget,
 	createServerTimelineOwner,
 } from "#server/timeline/projections/timeline.ts";
-import { publishProjection, requireCreated } from "#server/generation/services/owners.ts";
+import {
+	ensureGenerationAccountOwner,
+	publishProjection,
+	requireCreated,
+} from "#server/generation/services/owners.ts";
 import type { BindingContext } from "#server/generation/services/bindings.ts";
 
 /** What the voice coordinator's turns may take in a snapshot, beside the workhorse's own. */
@@ -44,6 +48,7 @@ function createGatewayBinding(
 		const options = createServerBrowserGatewayOptions({
 			components: created,
 			sessions: requireCreated(created, "sessions"),
+			account: ensureGenerationAccountOwner(owners, created),
 			dynamicApprovals: dynamic,
 			...(server.host.narrative === undefined ? {} : { narrative: server.host.narrative }),
 			timeline: owners.timeline,

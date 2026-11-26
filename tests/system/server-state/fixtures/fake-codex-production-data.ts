@@ -51,9 +51,9 @@ const modelFixture = {
 /** The model the coordinator runs on, listed with the effort it asks for. */
 const coordinatorModelFixture = {
 	...modelFixture,
-	id: "gpt-6-sol",
-	model: "gpt-6-sol",
-	displayName: "Sol",
+	id: "gpt-6.1-terra",
+	model: "gpt-6.1-terra",
+	displayName: "GPT-6.1 Terra",
 	supportedReasoningEfforts: [
 		{ reasoningEffort: "low", description: "fixture" },
 		{ reasoningEffort: "medium", description: "fixture" },

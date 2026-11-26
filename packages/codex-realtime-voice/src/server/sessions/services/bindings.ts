@@ -140,6 +140,15 @@ function voiceBindings(
 		coordinator: () => ({
 			workingDirectory: context.coordinatorDirectory,
 			profile: server.host.instructions.coordinator,
+			...(server.host.modelPreferences === undefined
+				? {}
+				: {
+						/**
+						 * Read the current coordinator model preference when a coordinator starts.
+						 * @returns The coordinator override, or null to use the default.
+						 */
+						modelSelection: () => server.host.modelPreferences?.().coordinator ?? null,
+					}),
 		}),
 	};
 }
@@ -431,6 +440,15 @@ function createWorkhorseBindings(
 		workhorse: () => ({
 			checkoutRoot: scope.checkout,
 			profile: server.host.instructions.workhorse,
+			...(server.host.modelPreferences === undefined
+				? {}
+				: {
+						/**
+						 * Read the current workhorse model preference when a workhorse starts.
+						 * @returns The workhorse override, or null to use the default.
+						 */
+						modelSelection: () => server.host.modelPreferences?.().workhorse ?? null,
+					}),
 		}),
 		/**
 		 * How a context change is delivered into this workhorse.

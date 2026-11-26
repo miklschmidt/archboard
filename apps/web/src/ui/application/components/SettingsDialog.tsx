@@ -1,9 +1,15 @@
 import { useCallback, useState, type JSX } from "react";
-import { RiCodeSSlashLine, RiShapesLine, type RemixiconComponentType } from "@remixicon/react";
+import {
+	RiCodeSSlashLine,
+	RiCpuLine,
+	RiShapesLine,
+	type RemixiconComponentType,
+} from "@remixicon/react";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { OpenerSettings } from "@archboard/code-opener/opener-settings";
 import { Dialog, Tabs } from "@archboard/ui-kit/components";
+import { CodexSettings } from "@archboard/workbench/agent";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import { PictureSettings } from "#ui/architecture-drawing/model-reader/reading/components/PictureSettings.tsx";
 import { SETTINGS_TRIGGER_ID } from "#ui/shell/components/BrandBar.tsx";
@@ -23,6 +29,12 @@ const TABS = [
 		Icon: RiCodeSSlashLine,
 		label: "Code opener",
 		gloss: "Which editor opens a module's code",
+	},
+	{
+		value: "codex",
+		Icon: RiCpuLine,
+		label: "Codex",
+		gloss: "Sign-in and models for orchestrator and workhorse",
 	},
 ] as const satisfies readonly {
 	readonly value: SettingsSurface;
@@ -81,9 +93,15 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 	const { notices, onClose } = props;
 	const [tab, setTab] = useState<SettingsSurface>(props.surface);
 	const [keepOpenerMounted, setKeepOpenerMounted] = useState(props.surface === "opener");
-	const onSuccess = useCallback(
+	const [keepCodexMounted, setKeepCodexMounted] = useState(props.surface === "codex");
+	const onOpenerSuccess = useCallback(
 		(message: string): void =>
 			notices.raise(infoNotice("opener-settings", "Opener settings", message)),
+		[notices],
+	);
+	const onCodexSuccess = useCallback(
+		(message: string): void =>
+			notices.raise(infoNotice("codex-settings", "Codex settings", message)),
 		[notices],
 	);
 	const onFailure = useCallback(
@@ -101,6 +119,7 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 		if (next !== undefined) {
 			setTab(next.value);
 			if (next.value === "opener") setKeepOpenerMounted(true);
+			if (next.value === "codex") setKeepCodexMounted(true);
 		}
 	}, []);
 	return (
@@ -116,8 +135,8 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 				<Dialog.Header>
 					<Dialog.Title>Settings</Dialog.Title>
 					<Dialog.Description className="sr-only">
-						How this browser lays out and lights pictures, and which editor opens a module's code on
-						this machine.
+						How this browser lays out and lights pictures, which editor opens a module's code, and
+						Codex sign-in and models on this machine.
 					</Dialog.Description>
 				</Dialog.Header>
 				<Tabs value={tab} onValueChange={changeTab} className="min-h-0 gap-4">
@@ -142,7 +161,15 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 						tabIndex={-1}
 						className={PANEL}
 					>
-						<OpenerSettings onSuccess={onSuccess} onFailure={onFailure} onClose={onClose} />
+						<OpenerSettings onSuccess={onOpenerSuccess} onFailure={onFailure} onClose={onClose} />
+					</Tabs.Content>
+					<Tabs.Content
+						value="codex"
+						keepMounted={keepCodexMounted}
+						tabIndex={-1}
+						className={PANEL}
+					>
+						<CodexSettings onSuccess={onCodexSuccess} onClose={onClose} />
 					</Tabs.Content>
 				</Tabs>
 			</Dialog.Content>

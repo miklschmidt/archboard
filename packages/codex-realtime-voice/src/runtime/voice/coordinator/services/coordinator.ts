@@ -12,8 +12,6 @@ import {
 	type CoordinatorSnapshot,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
 	listCoordinatorModels,
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
@@ -39,8 +37,8 @@ import {
  */
 function configuredSettings(selection: CoordinatorModelSelection): CoordinatorConfiguredSettings {
 	return Object.freeze({
-		model: reviewedCoordinatorModel(),
-		effort: reviewedCoordinatorEffort(),
+		model: selection.model.model,
+		effort: selection.configuredEffort,
 		serviceTier: selection.configuredServiceTier,
 	});
 }
@@ -191,7 +189,7 @@ export function createCodexCoordinator(starterOptions: CodexCoordinatorOptions):
 			);
 		}
 		startedOperations.add(operationId);
-		return starter.start(operationId, selection, configured, reviewed, epochSnapshot);
+		return starter.start(operationId, configured, reviewed, epochSnapshot);
 	}
 
 	/**
@@ -222,13 +220,7 @@ export function createCodexCoordinator(starterOptions: CodexCoordinatorOptions):
 			const configured = configuredSettings(selection);
 			const epochSnapshot = currentEpochSnapshot(configured);
 			startedOperations.add(operationId);
-			const started = await starter.start(
-				operationId,
-				selection,
-				configured,
-				reviewed,
-				epochSnapshot,
-			);
+			const started = await starter.start(operationId, configured, reviewed, epochSnapshot);
 			if (started.state !== "ready") {
 				throw new CodexCoordinatorError(
 					"transaction_failed",
@@ -255,7 +247,10 @@ export function createCodexCoordinator(starterOptions: CodexCoordinatorOptions):
 	 */
 	async function selectModel(): Promise<CoordinatorModelSelection> {
 		try {
-			return selectCoordinatorModel(await listCoordinatorModels(options.session));
+			return selectCoordinatorModel(
+				await listCoordinatorModels(options.session),
+				options.modelSelection?.() ?? null,
+			);
 		} catch (error) {
 			const failure = coordinatorError(
 				error,

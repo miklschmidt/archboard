@@ -3,6 +3,7 @@ import type { CodexWorkbenchComponents } from "#server/generation/services/lifec
 import type { CodexWorkbenchGenerationInput } from "#server/owner/services/lifecycle.ts";
 import { ownsProcessChild } from "#server/owner/services/owner-state.ts";
 import {
+	ensureGenerationAccountOwner,
 	publishProjection,
 	requireCreated,
 	type GenerationOwners,
@@ -20,6 +21,7 @@ export function domainScope(
 	context: { readonly input: CodexWorkbenchGenerationInput; readonly owners: GenerationOwners },
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 ): CodexWorkbenchDomainScope {
+	const accountOwner = ensureGenerationAccountOwner(context.owners, created);
 	return Object.freeze<CodexWorkbenchDomainScope>({
 		identity: requireCreated(created, "identity"),
 		epoch: requireCreated(created, "epoch"),
@@ -27,6 +29,58 @@ export function domainScope(
 		session: requireCreated(created, "session"),
 		threadLink: requireCreated(created, "threadLink"),
 		approvals: requireCreated(created, "approvals"),
+		account: {
+			/**
+			 * Read the generation's current account, pending login, and owned process state.
+			 * @returns The snapshot.
+			 */
+			snapshot: () => ({
+				account: context.owners.browserState.account,
+				login: context.owners.browserState.login,
+				process: context.input.process.snapshot(),
+			}),
+			/** Refresh the account from the Codex app-server and notify browser listeners. */
+			read: async () => {
+				try {
+					await accountOwner.read();
+				} finally {
+					publishProjection(context.owners);
+				}
+			},
+			/**
+			 * Start a Codex sign-in flow and notify browser listeners of the updated state.
+			 * @param login The requested sign-in method and credentials.
+			 */
+			login: async (login) => {
+				try {
+					await accountOwner.login(login);
+				} finally {
+					publishProjection(context.owners);
+				}
+			},
+			/**
+			 * Cancel an in-progress Codex sign-in flow and notify browser listeners.
+			 * @param loginId The pending sign-in identifier.
+			 */
+			loginCancel: async (loginId) => {
+				try {
+					const adopted = requireCreated(created, "identity").identity.decoder.adoptLoginId(
+						loginId,
+					);
+					await accountOwner.loginCancel(adopted);
+				} finally {
+					publishProjection(context.owners);
+				}
+			},
+			/** Sign out of Codex and notify browser listeners. */
+			logout: async () => {
+				try {
+					await accountOwner.logout();
+				} finally {
+					publishProjection(context.owners);
+				}
+			},
+		},
 		sessions: {
 			/**
 			 * Open a tab session in this generation.

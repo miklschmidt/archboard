@@ -1,6 +1,10 @@
 import { semanticPaneContextFor, onSemanticPaneContext } from "#server/panes/services/context.ts";
 import { createExplanationActions } from "#server/explanations/services/actions.ts";
 import { installExplanationActions } from "#server/explanations/services/dispatch.ts";
+import {
+	installCodexSettingsScope,
+	setCodexSettingsStartupState,
+} from "#server/codex-settings/services/codex-settings.ts";
 import { basename } from "node:path";
 import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
@@ -411,6 +415,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 */
 		installLifecycleSignals: (components) => {
 			active = components;
+			const stopCodexSettings = installCodexSettingsScope(components);
 			const explanations = createExplanationActions(components);
 			const stopExplanations = installExplanationActions(explanations);
 			/** Give every tab session of the graph its publisher, and dispose of the rest. */
@@ -456,6 +461,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			return () => {
 				stopReconciling();
 				stopExplanations();
+				stopCodexSettings();
 				explanations.dispose();
 				announcements.dispose();
 				if (active === components) {
@@ -480,6 +486,7 @@ let codexApplication: VoiceAgent | null = null;
 
 /** Shut the Codex workbench application down and forget its wiring. */
 async function stopCodexWorkbench(): Promise<void> {
+	setCodexSettingsStartupState("unavailable", "Codex app-server is stopped.");
 	const application = codexApplication;
 	if (application === null) {
 		resetCodexWorkbenchWiring();
@@ -496,8 +503,10 @@ async function stopCodexWorkbench(): Promise<void> {
  * @param signal Cancels the preparation.
  */
 async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
+	setCodexSettingsStartupState("starting", "Codex app-server is starting.");
 	const productionModule = await import("#server/workbench-host/services/production.ts");
 	if (signal.aborted) {
+		setCodexSettingsStartupState("unavailable", "Codex startup was canceled.");
 		throw new Error("Codex startup was canceled before installation.");
 	}
 	const application = createVoiceAgent(
@@ -511,6 +520,14 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	signal.addEventListener("abort", cancel, { once: true });
 	try {
 		await application.start();
+	} catch (error) {
+		setCodexSettingsStartupState(
+			"unavailable",
+			error instanceof Error && error.message.length > 0
+				? error.message
+				: "Codex app-server could not start.",
+		);
+		throw error;
 	} finally {
 		signal.removeEventListener("abort", cancel);
 	}

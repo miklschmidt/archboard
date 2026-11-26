@@ -16,10 +16,10 @@ import {
 	type CoordinatorThreadLinkTarget,
 	type CoordinatorThreadSettings,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
-} from "#runtime/voice/coordinator/services/model.ts";
+import { defaultVoiceAgentModels } from "#runtime/host/protocol/models.ts";
+
+const reviewedCoordinatorModel = () => defaultVoiceAgentModels().coordinator.model;
+const reviewedCoordinatorEffort = () => defaultVoiceAgentModels().coordinator.effort;
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
 import {
 	createIdentityAuthorities,

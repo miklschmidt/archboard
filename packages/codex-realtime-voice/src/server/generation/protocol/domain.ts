@@ -15,6 +15,22 @@ import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.t
 import type { WorkbenchDomainApprovals } from "#server/projection/protocol/domain-approvals.ts";
 import type { CodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
+import type { BrowserAccountLogin } from "#server/actions/services/account.ts";
+import type { ServerBrowserBindingState } from "#server/chat-conversations/browser-state/projections/binding-state.ts";
+import type { ServerReadinessProcessFacts } from "#server/generation/rules/readiness.ts";
+
+/** Host-facing access to the generation's shared Codex account and login state. */
+export interface CodexWorkbenchAccountScope {
+	readonly snapshot: () => {
+		readonly account: ServerBrowserBindingState["account"];
+		readonly login: ServerBrowserBindingState["login"];
+		readonly process: ServerReadinessProcessFacts;
+	};
+	readonly read: () => Promise<void>;
+	readonly login: (login: BrowserAccountLogin) => Promise<void>;
+	readonly loginCancel: (loginId: string) => Promise<void>;
+	readonly logout: () => Promise<void>;
+}
 
 /** Capabilities granted to an installed domain. The core retains generation and process ownership. */
 export interface CodexWorkbenchDomainScope {
@@ -24,6 +40,7 @@ export interface CodexWorkbenchDomainScope {
 	readonly session: CodexSession;
 	readonly threadLink: CodexThreadLinkPort;
 	readonly approvals: CodexApprovalBroker;
+	readonly account: CodexWorkbenchAccountScope;
 	readonly sessions: Pick<
 		CodexWorkbenchSessions,
 		"open" | "list" | "require" | "forThread" | "workhorseForThread" | "end" | "onChange"

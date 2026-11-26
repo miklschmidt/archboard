@@ -10,10 +10,6 @@ import {
 	type CoordinatorPersistedState,
 	type CoordinatorReviewHashes,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
-} from "#runtime/voice/coordinator/services/model.ts";
 import { hashCoordinatorSettings } from "#runtime/voice/coordinator/rules/review.ts";
 import { errorMessage } from "#runtime/voice/coordinator/state/state.ts";
 
@@ -485,9 +481,9 @@ function effectiveSettingsMatch(
 ): boolean {
 	const effective = persistence.settings.effective;
 	const checks = [
-		effective.model === reviewedCoordinatorModel(),
-		effective.effort === reviewedCoordinatorEffort(),
-		configured.serviceTier !== "priority" || effective.serviceTier === "priority",
+		effective.model === configured.model,
+		effective.effort === configured.effort,
+		configured.serviceTier === null || effective.serviceTier === configured.serviceTier,
 	];
 	return checks.every((matched) => matched);
 }

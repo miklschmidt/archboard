@@ -1,4 +1,5 @@
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
+import type { RoleModelSelection } from "#runtime/host/protocol/models.ts";
 import type {
 	CodexEpochStore,
 	EpochSnapshot,
@@ -62,7 +63,7 @@ interface CoordinatorIdentityPort {
 interface CoordinatorConfiguredSettings {
 	readonly model: string;
 	readonly effort: string;
-	readonly serviceTier: "priority" | null;
+	readonly serviceTier: string | null;
 }
 
 interface CoordinatorEffectiveSettings {
@@ -151,6 +152,7 @@ interface CodexCoordinatorOptions {
 	/** The directory of its own the coordinator works in. It is no checkout. */
 	readonly workingDirectory: string;
 	readonly profile: WorkbenchThreadProfile;
+	readonly modelSelection?: () => RoleModelSelection | null;
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
@@ -188,6 +190,7 @@ type CoordinatorErrorCode =
 	| "model_unavailable"
 	| "model_ambiguous"
 	| "unsupported_effort"
+	| "unsupported_service_tier"
 	| "repeated_cursor"
 	| "epoch_unavailable"
 	| "transaction_failed"

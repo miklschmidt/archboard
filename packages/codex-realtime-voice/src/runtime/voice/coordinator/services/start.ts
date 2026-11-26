@@ -16,7 +16,6 @@ import {
 import {
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
-	type CoordinatorModelSelection,
 } from "#runtime/voice/coordinator/services/model.ts";
 import {
 	hashCoordinatorSettings,
@@ -119,7 +118,6 @@ function createCoordinatorStarter(
 ): {
 	readonly start: (
 		operationId: string,
-		selection: CoordinatorModelSelection,
 		configured: CoordinatorConfiguredSettings,
 		reviewed: CoordinatorReviewHashes,
 		epochSnapshot: CoordinatorEpochSnapshot,
@@ -153,7 +151,6 @@ function createCoordinatorStarter(
 	/**
 	 * Start one coordinator thread end to end.
 	 * @param operationId - The server operation identity the start runs under.
-	 * @param selection - The chosen model and service tier.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param reviewed - The reviewed instruction and manifest hashes.
 	 * @param epochSnapshot - The durable epoch the start is staged against.
@@ -161,7 +158,6 @@ function createCoordinatorStarter(
 	 */
 	const start = async (
 		operationId: string,
-		selection: CoordinatorModelSelection,
 		configured: CoordinatorConfiguredSettings,
 		reviewed: CoordinatorReviewHashes,
 		epochSnapshot: CoordinatorEpochSnapshot,
@@ -170,8 +166,9 @@ function createCoordinatorStarter(
 		const transaction = stageStart(operationId, configured, reviewed, epochSnapshot);
 		const startParams = createCoordinatorThreadStartParams(
 			options.workingDirectory,
-			selection.configuredServiceTier,
+			configured.serviceTier,
 			options.profile,
+			configured.model,
 		);
 		hooks.setSnapshot(
 			startingSnapshot(
@@ -186,7 +183,6 @@ function createCoordinatorStarter(
 		const created = await createCoordinatorThread(
 			transaction,
 			operationId,
-			selection,
 			configured,
 			startParams,
 		);
@@ -198,7 +194,12 @@ function createCoordinatorStarter(
 		const waiting = waitForSettings(startedThreadId, started, configured);
 		try {
 			await options.session.threadSettingsUpdate(
-				createCoordinatorSettingsUpdateParams(startedThreadId, selection.configuredServiceTier),
+				createCoordinatorSettingsUpdateParams(
+					startedThreadId,
+					configured.serviceTier,
+					configured.model,
+					configured.effort,
+				),
 			);
 		} catch (error) {
 			waiting.cancel();
@@ -298,7 +299,6 @@ function createCoordinatorStarter(
 	 * thread that may exist, so the snapshot becomes inspect-only and nothing is retried.
 	 * @param transaction - The staged transaction.
 	 * @param operationId - The server operation identity.
-	 * @param selection - The chosen model and service tier.
 	 * @param configured - The settings the coordinator is asked for.
 	 * @param startParams - The authored thread/start body.
 	 * @returns The started thread, or the snapshot the start settled as.
@@ -306,7 +306,6 @@ function createCoordinatorStarter(
 	async function createCoordinatorThread(
 		transaction: CoordinatorEpochTransaction,
 		operationId: string,
-		selection: CoordinatorModelSelection,
 		configured: CoordinatorConfiguredSettings,
 		startParams: ReturnType<typeof createCoordinatorThreadStartParams>,
 	): Promise<CreatedCoordinatorThread> {
@@ -323,7 +322,7 @@ function createCoordinatorStarter(
 			assertStartedResponse(
 				started,
 				options.workingDirectory,
-				selection.configuredServiceTier,
+				configured,
 				options.profile.identity.threadSource,
 			);
 			return { ok: true, started, startedThreadId: started.thread.id };

@@ -26,6 +26,7 @@ import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/read
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
+import { mountCodexSettingsRoutes } from "@archboard/workbench/server";
 import { mountServiceRoutes } from "#server/http/handlers/reads/routes/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/http/handlers/reads/routes/migration-routes.ts";
 import { mountUpgradeRoutes } from "#server/http/handlers/reads/routes/upgrade-routes.ts";
@@ -116,6 +117,10 @@ mountUpgradeRoutes(app);
 mountCodeCheckRoute(app);
 mountCodeFilesRoute(app);
 mountSemanticPaneContextRoutes(app);
+mountCodexSettingsRoutes(app, {
+	read: createBrowserOriginGuard("settings-read"),
+	mutation: createBrowserOriginGuard("mutation"),
+});
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write

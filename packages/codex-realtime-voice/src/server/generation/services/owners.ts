@@ -10,12 +10,19 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 } from "#server/sessions/services/sessions.ts";
 import type { ServerBrowserBindingState } from "#server/chat-conversations/gateway/services/browser-gateway.ts";
+import {
+	createServerBrowserAccountOwner,
+	type ServerBrowserAccountOwner,
+} from "#server/actions/services/account.ts";
+import { UNAVAILABLE_QUEUE } from "#server/chat-conversations/browser-state/projections/binding-state.ts";
 import type { CodexWorkbenchDomain } from "#server/generation/protocol/domain.ts";
 import type { ServerTimelineOwner } from "#server/timeline/projections/timeline.ts";
 
 /** Everything one generation owns beyond the component graph itself. */
 interface GenerationOwners {
 	domain: CodexWorkbenchDomain | null;
+	accountOwner: ServerBrowserAccountOwner | null;
+	accountUnsubscribe: (() => void) | null;
 	browserState: ServerBrowserBindingState;
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
@@ -188,6 +195,8 @@ function currentRealtimeGeneration(
 function retire(owners: GenerationOwners): void {
 	owners.retired = true;
 	owners.domain = null;
+	owners.accountUnsubscribe = null;
+	owners.accountOwner = null;
 	owners.timeline = null;
 	owners.coordinatorTimeline = null;
 	owners.dynamicProjectionUnsubscribe = null;
@@ -203,6 +212,8 @@ function retire(owners: GenerationOwners): void {
 function freshOwners(): GenerationOwners {
 	return {
 		domain: null,
+		accountOwner: null,
+		accountUnsubscribe: null,
 		approvalProjectionInstalled: false,
 		projectionListeners: new Set(),
 		accountListeners: new Set(),
@@ -215,6 +226,54 @@ function freshOwners(): GenerationOwners {
 			login: { kind: "login", state: "idle" },
 		},
 	};
+}
+
+/**
+ * Ensure this generation owns one shared account owner subscribed to account notifications for
+ * the lifetime of the generation, so both browser sockets and host settings see the same state.
+ * @param owners The generation's record.
+ * @param created The components built for this generation.
+ * @returns The shared account owner.
+ */
+function ensureGenerationAccountOwner(
+	owners: GenerationOwners,
+	created: Readonly<Partial<CodexWorkbenchComponents>>,
+): ServerBrowserAccountOwner {
+	if (owners.accountOwner !== null) {
+		return owners.accountOwner;
+	}
+	const accountOwner = createServerBrowserAccountOwner({
+		components: {
+			identity: requireCreated(created, "identity"),
+			session: requireCreated(created, "session"),
+		},
+		state: owners.browserState,
+		/** Drop every live workhorse's cached queue when the account signs out. */
+		clearQueue: () => {
+			for (const session of created.sessions?.list() ?? []) {
+				for (const workhorse of session.workhorses.values()) {
+					workhorse.state.queue = UNAVAILABLE_QUEUE;
+					workhorse.state.queueThreadId = null;
+				}
+			}
+		},
+		/**
+		 * Watch account notifications routed to this generation.
+		 * @param listener Receives transport notifications.
+		 * @returns Unsubscribes.
+		 */
+		onNotification: (listener) => {
+			owners.accountListeners.add(listener);
+			return () => {
+				owners.accountListeners.delete(listener);
+			};
+		},
+	});
+	owners.accountOwner = accountOwner;
+	owners.accountUnsubscribe = accountOwner.subscribe(() => {
+		publishProjection(owners);
+	});
+	return accountOwner;
 }
 
 /**
@@ -295,6 +354,7 @@ export {
 	createGenerationOwnerStore,
 	currentOperationBinding,
 	currentRealtimeGeneration,
+	ensureGenerationAccountOwner,
 	requireCreated,
 	publishProjection,
 	retire,

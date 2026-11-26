@@ -171,6 +171,8 @@ async function settleGenerationOwners(
  */
 function releaseGenerationOwners(owners: GenerationOwners): void {
 	owners.dynamicProjectionUnsubscribe?.();
+	owners.accountUnsubscribe?.();
+	owners.accountOwner?.dispose();
 }
 
 /**

@@ -11,3 +11,4 @@ export { tabSessionOf } from "#server/panes/services/tab-sessions.ts";
 export { shownConversationRoute as showConversation } from "#server/panes/services/shown-conversation.ts";
 
 export { explainArchitecture } from "#server/explanations/services/dispatch.ts";
+export { mountCodexSettingsRoutes } from "#server/codex-settings/routes/codex-settings-routes.ts";

@@ -8,12 +8,14 @@ import {
 	type CoordinatorSnapshot,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { COORDINATOR_CAPABILITY_POLICY } from "#runtime/voice/coordinator/protocol/contract.ts";
+import { defaultVoiceAgentModels } from "#runtime/host/protocol/models.ts";
 import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
+
+const reviewedCoordinatorModel = () => defaultVoiceAgentModels().coordinator.model;
+const reviewedCoordinatorEffort = () => defaultVoiceAgentModels().coordinator.effort;
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	WORKING_DIRECTORY,
