@@ -1,9 +1,9 @@
 {
-  "outgoing": [],
   "order": 29000,
   "name": "model",
   "kind": "package",
   "responsibility": "The canonical model contract and its rules, the coherent reader and durable writer, the signed archive of its history, and legacy decoding for migration and retained originals",
+  "description": "Owns canonical model schemas, positional Terraform address parsing (including depth-1 resource nested-block selectors), containment and infrastructure duplicate-binding rules, and vault persistence.",
   "groups": [
     "packages",
     "writes"
@@ -14,6 +14,7 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
     "board"
   ],
@@ -23,5 +24,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

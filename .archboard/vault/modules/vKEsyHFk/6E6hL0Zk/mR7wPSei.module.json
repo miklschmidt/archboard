@@ -1,24 +1,9 @@
 {
-  "outgoing": [
-    {
-      "id": "vKEsyHFk/6E6hL0Zk#ZKvJWd4O",
-      "order": 121000,
-      "kind": "sync",
-      "effect": "query",
-      "label": "select the adapters for each checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-facts/services/reader.ts",
-        "symbol": "readingsIn"
-      },
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    }
-  ],
   "order": 43000,
   "name": "Cached fact reader",
   "kind": "module",
   "responsibility": "Reads permitted source files through a cache keyed by file content and creates disk or historical passes",
+  "description": "Reads permitted source files through a content-hashed cache and carries adapter-extracted facts—including logic counts, computations, Terraform intra-resource sibling links, and ambiguous duplicate block symbols—into resolved SyntaxFacts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts/services/reader.ts"
@@ -40,6 +25,22 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 121000,
+      "kind": "sync",
+      "effect": "query",
+      "label": "select the adapters for each checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-facts/services/reader.ts",
+        "symbol": "readingsIn"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ZKvJWd4O",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
     }
   ]
 }

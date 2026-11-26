@@ -1,10 +1,10 @@
 ---
 id: TASK-682
 title: 'Terraform: let a part bind a nested block of a resource'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-26T00:45:00Z'
-updated_date: '2026-11-26T01:44:00Z'
+updated_date: '2026-11-26T10:30:00Z'
 labels:
   - ready-for-agent
   - enhancement
@@ -120,11 +120,17 @@ Let a Terraform code binding and an anchor address a named direct child block of
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Parts and anchors can bind depth-1 named nested blocks of Terraform resource blocks using <resource_address>.<block_type>["name"], with module and resource instance keys normalized by position, quoted names with dots/spaces/escapes supported, and numeric indices rejected
-- [ ] #2 Anchoring a relationship on a 1-hop intra-resource name-linked sibling block supports a nested-block end (anchor-only), while wrong sibling blocks, cross-resource blocks, and whole-resource anchors on nested-block ends warn ANCHOR_MISMATCH
-- [ ] #3 HCL references inside bound nested blocks are attributed to those parts, unbound blocks remain owned by the resource, and fixtures with named nested blocks (including env, container, and joining blocks) but no nested-block bindings produce unchanged findings and runners
-- [ ] #4 Semantics checks recognize nested-block addresses in Terraform containment and exempt at most one direct child sharing its parent container infrastructure address from BINDING_SHARED (while still warning on a second sibling or non-infrastructure duplicates), with code-check ownership preferring the deeper child part
-- [ ] #5 Duplicate literal names of the same block type in one resource produce no definition and report ambiguity in BINDING_SYMBOL_MISSING / ANCHOR_SYMBOL_MISSING; unmatched selectors with dynamic blocks, computed names, or plan-only remote resources skip with expression-not-followed
-- [ ] #6 Code opener (symbolLine), code browser file owners, and History lens footprint/locality work for nested-block bindings
-- [ ] #7 Authoring skill reference, CLI check help, and docs site are updated in sync and the site build passes
+- [x] #1 Parts and anchors can bind depth-1 named nested blocks of Terraform resource blocks using <resource_address>.<block_type>["name"], with module and resource instance keys normalized by position, quoted names with dots/spaces/escapes supported, and numeric indices rejected
+- [x] #2 Anchoring a relationship on a 1-hop intra-resource name-linked sibling block supports a nested-block end (anchor-only), while wrong sibling blocks, cross-resource blocks, and whole-resource anchors on nested-block ends warn ANCHOR_MISMATCH
+- [x] #3 HCL references inside bound nested blocks are attributed to those parts, unbound blocks remain owned by the resource, and fixtures with named nested blocks (including env, container, and joining blocks) but no nested-block bindings produce unchanged findings and runners
+- [x] #4 Semantics checks recognize nested-block addresses in Terraform containment and exempt at most one direct child sharing its parent container infrastructure address from BINDING_SHARED (while still warning on a second sibling or non-infrastructure duplicates), with code-check ownership preferring the deeper child part
+- [x] #5 Duplicate literal names of the same block type in one resource produce no definition and report ambiguity in BINDING_SYMBOL_MISSING / ANCHOR_SYMBOL_MISSING; unmatched selectors with dynamic blocks, computed names, or plan-only remote resources skip with expression-not-followed
+- [x] #6 Code opener (symbolLine), code browser file owners, and History lens footprint/locality work for nested-block bindings
+- [x] #7 Authoring skill reference, CLI check help, and docs site are updated in sync and the site build passes
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented Terraform depth-1 named nested-block bindings and 1-hop sibling-block anchors for GitHub issue #166 across packages/model, packages/code-opener, packages/code-intel, skills/archboard, apps/cli, and site/src/content/docs. Added positional nested-block address parsing and normalization (plus indexed/chained module-output reference anchors), HCL nested-block extraction and 1-hop intra-resource name-linked sibling anchor verification, per-block HCL evidence attribution with zero-nested-block invariance, Terraform containment and single-direct-child infrastructure BINDING_SHARED exemption with deeper-child ownership, duplicate-name ambiguity and expression-not-followed skips, file-bound code-opener/code-browser/history-lens support, and synced authoring skill, CLI help, and docs site. Adopted Archboard proposal qkPB3Whk.
+<!-- SECTION:FINAL_SUMMARY:END -->
