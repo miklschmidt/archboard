@@ -187,7 +187,7 @@ The six evidence kinds are:
 - `build-dependency`: a package, workspace, or build-graph requirement.
 - `provisioning`: infrastructure provisioning of one part by another.
 
-An anchor can cite a symbol defined in the bound code of either end or one of its parts. It can also cite an infrastructure declaration that joins the ends: for Terraform, one instance of the declaration either matches the ends under its provider's join rule or reaches the bound code of both ends through its references. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
+An anchor can cite a symbol defined in the bound code of either end or one of its parts. It can also cite an infrastructure declaration that joins the ends. A listed Terraform join supports the anchor when one instance matches both ends under the provider's endpoint roles. An unlisted declaration supports the anchor when one instance reaches the bound code of both ends through its references. When the check can classify the cited use, one evidence kind on the relationship kind's list is enough.
 For `ANCHOR_MISMATCH`, check the symbol's definition and how the file uses it. When the check rules out the bound code of both ends and their parts, a definition outside that code produces a warning and a declaration alone produces an information finding. If the mismatch is about evidence kind, any resolved use makes it a warning and candidate uses alone make it information.
 
 For an unanchored relationship, `RELATIONSHIP_BACKWARDS` means accepted evidence runs only in the opposite direction, and `RELATIONSHIP_UNSUPPORTED` means no accepted evidence joins its ends. Read the source to correct the relationship or cite the code that proves it.
