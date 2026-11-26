@@ -538,6 +538,7 @@ const first = walkthrough.beats[0];
 		const beats = JSON.parse(root.dataset["walkthrough"] ?? "[]") as Beat[];
 		const stage = root.querySelector<HTMLElement>(".stage");
 		const figure = root.querySelector<HTMLElement>(".view.architecture");
+		const scroll = root.querySelector<HTMLElement>(".scroll");
 		const title = root.querySelector<HTMLElement>("[data-beat-title]");
 		const subtitle = root.querySelector<HTMLElement>("[data-subtitle]");
 		const number = root.querySelector<HTMLElement>("[data-step-number]");
@@ -548,7 +549,7 @@ const first = walkthrough.beats[0];
 		const next = root.querySelector<HTMLButtonElement>("[data-next]");
 		const segments = [...root.querySelectorAll<HTMLButtonElement>(".seg")];
 		const orb = root.querySelector<HTMLCanvasElement>("[data-orb]");
-		if (!stage || !figure || !title || !subtitle || !number || !said || !voiceWord || !narrate || !previous || !next || !orb) continue;
+		if (!stage || !figure || !scroll || !title || !subtitle || !number || !said || !voiceWord || !narrate || !previous || !next || !orb) continue;
 
 		let index = 0;
 		let playing = false;
@@ -584,6 +585,7 @@ const first = walkthrough.beats[0];
 		// The column shows the whole step, and the voice box gets the words as they are said.
 		const show = (to: number, speak: boolean) => {
 			window.clearTimeout(timer);
+			const from = index;
 			index = (to + beats.length) % beats.length;
 			const beat = beats[index];
 			if (!beat) return;
@@ -591,6 +593,7 @@ const first = walkthrough.beats[0];
 			title.textContent = beat.title;
 			subtitle.textContent = beat.narrative;
 			number.textContent = String(index + 1);
+			if (index !== from) scroll.scrollTop = 0;
 			segments.forEach((segment, at) => {
 				segment.classList.toggle("is-on", at === index);
 				segment.classList.toggle("is-done", at < index);
