@@ -21,6 +21,8 @@ const EMPTY_ROLE_DRAFT: RoleModelDraft = { model: "", effort: "", serviceTier: n
 interface CodexModelDraft {
 	readonly orchestrator: RoleModelDraft;
 	readonly workhorse: RoleModelDraft;
+	/** The language the voice speaks, as a BCP 47 tag, or null to follow the user. */
+	readonly voiceLanguage: string | null;
 }
 
 /** One choice in a service tier dropdown. */
@@ -138,6 +140,7 @@ function resolveCodexModelDraft(reply: CodexSettingsReply): CodexModelDraft {
 			reply.models,
 		),
 		workhorse: resolveRoleDraft(reply.selection.workhorse, reply.defaults.workhorse, reply.models),
+		voiceLanguage: reply.selection.voiceLanguage,
 	};
 }
 

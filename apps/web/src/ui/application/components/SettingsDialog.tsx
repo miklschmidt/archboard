@@ -34,7 +34,7 @@ const TABS = [
 		value: "codex",
 		Icon: RiCpuLine,
 		label: "Codex",
-		gloss: "Sign-in and models for orchestrator and workhorse",
+		gloss: "Sign-in, models and the voice language",
 	},
 ] as const satisfies readonly {
 	readonly value: SettingsSurface;

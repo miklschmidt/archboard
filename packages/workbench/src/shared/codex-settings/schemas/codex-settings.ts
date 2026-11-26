@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recordingNarrationSchema } from "@archboard/walkthrough/recording";
 
 /** One role's selected Codex model, reasoning effort, and optional service tier. */
 export const RoleModelSelectionSchema = z.object({
@@ -9,11 +10,19 @@ export const RoleModelSelectionSchema = z.object({
 
 export type RoleModelSelection = z.infer<typeof RoleModelSelectionSchema>;
 
-/** Persisted per-machine Codex model overrides for the orchestrator and workhorse. */
+/** The language the voice speaks, as a BCP 47 tag that names a language, as a recording's is. */
+const VoiceLanguageSchema = recordingNarrationSchema().shape.language;
+
+/**
+ * Persisted per-machine Codex settings: model overrides for the orchestrator and workhorse, and
+ * the language the voice speaks, or null to follow the user. Files saved before the voice
+ * language existed read as null.
+ */
 export const CodexModelPreferencesSchema = z.object({
 	version: z.literal(1),
 	orchestrator: RoleModelSelectionSchema.nullable(),
 	workhorse: RoleModelSelectionSchema.nullable(),
+	voiceLanguage: VoiceLanguageSchema.nullable().default(null),
 });
 
 export type CodexModelPreferences = z.infer<typeof CodexModelPreferencesSchema>;
@@ -120,6 +129,7 @@ export type CodexSettingsReply = z.infer<typeof CodexSettingsReplySchema>;
 export const CodexSettingsSaveRequestSchema = z.object({
 	orchestrator: RoleModelSelectionSchema,
 	workhorse: RoleModelSelectionSchema,
+	voiceLanguage: VoiceLanguageSchema.nullable(),
 });
 
 export type CodexSettingsSaveRequest = z.infer<typeof CodexSettingsSaveRequestSchema>;

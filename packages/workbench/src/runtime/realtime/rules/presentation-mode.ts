@@ -26,7 +26,8 @@
 // hands the voice model this prompt as it is (Codex 0.158.0 to 0.166.0,
 // `prepare_realtime_backend_prompt`), so the prompt is the only place a language can come from.
 // Told only to use the language each step is written in, the voice still narrated English steps in
-// French. A live narration names none: it speaks the user's language, as a conversation does.
+// French. A live narration speaks the language its conversation does: the user's, or the one the
+// Codex settings name (TASK-683), which is then named where a step is explained too.
 //
 // A live narration hands its steps over the same way (TASK-563). Told "On the user's screen now:
 // step 2 of 5", a live voice talked about the screen ("Now it says", "This step shows"), said the
@@ -89,12 +90,17 @@ const STEP_SUBJECTS_RULE =
 /**
  * What the voice model is told when it is started to narrate a walkthrough the user steps.
  * @param name The walkthrough's name.
+ * @param language The name of the language the Codex settings ask for, or null to follow the user.
  * @returns The section appended to the voice prompt.
  */
-function narrationPrompt(name: string): string {
+function narrationPrompt(name: string, language: string | null): string {
+	const spoken =
+		language === null
+			? "their language"
+			: `${language}, even when the step is written in another language`;
 	return [
 		`Walkthrough narration. The user pressed Narrate on the walkthrough "${presentationName(name)}". They step through it by hand on their screen, and you give the talk: you explain the step they are on. Each step reaches you as it lands on their screen, beginning "${STEP_LEAD_IN}", with its heading and what it says: the first a moment after the session starts, and every step they move to after that. Say nothing before the first step reaches you. It opens the talk: nobody asked you anything, so start on the system, not on what the step says.`,
-		'When a step reaches you, explain it at once, from the first step on, without waiting to be spoken to, as a good conference speaker would: what it means and why it matters, in two to four sentences of your own and in their language, with names and never ids, and at most one aside. Begin with the system itself, never with a sound or a word such as "mm", "okay", "right", "yep" or "got it". You cannot see their screen, and they can read the step on it, so never read a step out, describe what the picture looks like, say where anything sits in it, or mention a step or its number. The last step says so: once you have explained it, say the walkthrough is complete and invite questions.',
+		`When a step reaches you, explain it at once, from the first step on, without waiting to be spoken to, as a good conference speaker would: what it means and why it matters, in two to four sentences of your own and in ${spoken}, with names and never ids, and at most one aside. Begin with the system itself, never with a sound or a word such as "mm", "okay", "right", "yep" or "got it". You cannot see their screen, and they can read the step on it, so never read a step out, describe what the picture looks like, say where anything sits in it, or mention a step or its number. The last step says so: once you have explained it, say the walkthrough is complete and invite questions.`,
 		STEP_SUBJECTS_RULE,
 		"Explain only the step you were handed last, and never one you have not been handed. When you have explained it, stop and wait: they move on when they are ready. Never ask for the next step or whether they are ready for it, hand off for it, or go on to it by yourself.",
 		"They can move on while you are still explaining a step. A step that reaches you while you speak means they have moved on: end your sentence, say nothing more about the older step, and explain the new one at once. If several steps reach you while you speak, explain only the last of them. A step that reached you while you were speaking is never left unexplained: when you stop talking, the step you explain is always the last one handed to you, unless you have already explained it.",
@@ -147,11 +153,16 @@ function recordingPrompt(name: string, recording: RecordingNarration): string {
  * The section a walkthrough adds to the voice model's prompt: the narration's for a walkthrough the
  * user steps, the recording's for one that steps itself.
  * @param presentation The walkthrough, and whether the talk is recorded.
+ * @param language For a narration, the name of the language the Codex settings ask for, or null to
+ *   follow the user. A recording speaks its own language.
  * @returns The section.
  */
-function voicePresentationPrompt(presentation: RealtimePresentation): string {
+function voicePresentationPrompt(
+	presentation: RealtimePresentation,
+	language: string | null,
+): string {
 	return presentation.recording === null
-		? narrationPrompt(presentation.name)
+		? narrationPrompt(presentation.name, language)
 		: recordingPrompt(presentation.name, presentation.recording);
 }
 

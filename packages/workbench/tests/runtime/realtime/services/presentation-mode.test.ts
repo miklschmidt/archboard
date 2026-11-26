@@ -98,6 +98,24 @@ test("a recording's voice prompt names the one language it is narrated in, and a
 	for (const name of names) expect(starts.get(null)).not.toContain(name);
 });
 
+test("a voice language from the Codex settings is named in a conversation and a narration, and a recording keeps its own", () => {
+	let tag: string | null = "da";
+	const policy = createArchboardVoicePolicy(undefined, () => tag);
+	const conversation = policy.start(null).prompt;
+	const narration = policy.start(walkthrough(null)).prompt;
+	expect(conversation).toContain("Speak only Danish");
+	expect(conversation).not.toContain("the user's language");
+	// Named where the talk is introduced and again where a step is explained.
+	expect(narration.split("Danish").length - 1).toBeGreaterThanOrEqual(2);
+	expect(narration).not.toContain("their language");
+	const recorded = policy.start(walkthrough("en")).prompt;
+	expect(recorded).toContain("English");
+	expect(recorded).not.toContain("Danish");
+	// Read at each start, so a change applies from the next one; Automatic is today's prompt.
+	tag = null;
+	expect(policy.start(null).prompt).toBe(createArchboardVoicePolicy().start(null).prompt);
+});
+
 test("a start carries a walkthrough's name cut to a bound, never the whole of a runaway one", () => {
 	const policy = createArchboardVoicePolicy();
 	const long = policy.start({

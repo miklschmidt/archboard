@@ -18,6 +18,7 @@ import { createArchboardDomainTools } from "#server/generation/services/domain.t
 import { isArchboardRecording } from "#runtime/host/services/archboard-voice.ts";
 import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/host/services/archboard.ts";
 import { createArchboardVoicePolicy } from "#runtime/host/services/archboard-voice.ts";
+import { readVoiceLanguage } from "#server/codex-settings/store/configuration.ts";
 import { checkoutNamedBy } from "#server/host/services/archboard-checkouts.ts";
 import { createArchboardCoordinatorContextSource } from "#server/host/services/archboard-context-source.ts";
 import { logger } from "@archboard/diagnostics/logger";
@@ -299,7 +300,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			 * @param tabSessionId The tab session that owns this policy.
 			 * @returns The Archboard voice policy for this session.
 			 */
-			voiceFor: (tabSessionId) => createArchboardVoicePolicy(narrationChangesOf(tabSessionId)),
+			voiceFor: (tabSessionId) =>
+				createArchboardVoicePolicy(narrationChangesOf(tabSessionId), readVoiceLanguage),
 			/**
 			 * Publish complete domain snapshots for this tab session.
 			 * @param tabSessionId The tab session that owns this policy.

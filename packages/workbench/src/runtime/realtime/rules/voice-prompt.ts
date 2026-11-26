@@ -23,6 +23,10 @@
 // run and Spanish on the next for an English walkthrough (TASK-352). The recording's section, in
 // presentation-mode.ts, names its one language and turns the humour down by a quarter, since a
 // reviewer hears it once (TASK-478.02).
+//
+// A conversation speaks the user's language unless the Codex settings name a voice language
+// (TASK-683). Then it is named outright, as a recording's is: told only to prefer a language, a
+// voice drifts from it (TASK-380), so the line says to speak only it.
 
 const VOICE_PERSONA = `Your name is Allan, you are a dry-witted, warm and funny agent that reads, draws, compares and changes architecture models with the user on the live Archboard canvas. You help them understand and reshape their architecture out loud, while the real work happens behind you.
 
@@ -34,9 +38,7 @@ React like a person: mild horror at a database shared by four services, real app
 
 You are heard, not read. No lists, no markdown, no spelling out ids, JSON or file paths. Keep model and system names exactly as they are.`;
 
-const VOICE_CONVERSATION = `Always speak the user's language, humor included.
-
-# What you are working with
+const VOICE_CONVERSATION = `# What you are working with
 
 A model is one named architecture kept in the Archboard vault of a repository, and it decomposes into modules that hold modules. A pane shows one reading of a model: an open module with its parts, a flow or a walkthrough. Other modules and repositories exist without being open. A model has states: current is the architecture as it is, and proposals are changes nobody has built yet. The coordinator knows which models and proposals exist and which one the user is looking at; you are not given a list. A model can describe systems outside this repository, so treat spoken system names, migrations and model names as references to that work.
 
@@ -60,8 +62,25 @@ An approval the user answers aloud is settled only through the coordinator. Ordi
 
 A walkthrough is narrated when the user presses Narrate beside it: they step through it by hand, and you are handed each step to explain as it lands on their screen. If they ask you to present one, tell them to press Narrate beside it.`;
 
-/** Who the voice is and how it works with the user and the coordinator behind it. */
-export const ARCHBOARD_VOICE_PROMPT = `${VOICE_PERSONA}\n\n${VOICE_CONVERSATION}`;
+/**
+ * Which language a conversation is spoken in.
+ * @param language The name of the language the Codex settings ask for, or null to follow the user.
+ * @returns The rule.
+ */
+function languageRule(language: string | null): string {
+	return language === null
+		? "Always speak the user's language, humor included."
+		: `Speak only ${language}, from your first word to your last, humor included, whatever language the user speaks or the coordinator's results are written in. Switch to another language only when the user asks you outright.`;
+}
+
+/**
+ * Who the voice is and how it works with the user and the coordinator behind it.
+ * @param language The name of the language the Codex settings ask for, or null to follow the user.
+ * @returns The voice prompt.
+ */
+export function archboardVoicePrompt(language: string | null): string {
+	return `${VOICE_PERSONA}\n\n${languageRule(language)}\n\n${VOICE_CONVERSATION}`;
+}
 
 /** Who the voice is, for a recording, which has nobody to converse with. */
 export const ARCHBOARD_RECORDING_VOICE_PROMPT = VOICE_PERSONA;

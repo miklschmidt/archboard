@@ -11,7 +11,7 @@ const pending: CodexSettingsReply = {
 	auth: { state: "login_pending", loginId: "login", variant: "chatgpt", authUrl: null },
 	models: [],
 	modelError: null,
-	selection: { version: 1, orchestrator: null, workhorse: null },
+	selection: { version: 1, orchestrator: null, workhorse: null, voiceLanguage: null },
 	defaults: {
 		orchestrator: { model: "gpt-6.1-terra", effort: "low", serviceTier: "priority" },
 		workhorse: { model: "gpt-6.2-sol", effort: "high", serviceTier: null },

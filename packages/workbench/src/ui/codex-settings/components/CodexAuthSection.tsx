@@ -2,6 +2,7 @@ import { useCallback, useId, useState, type ChangeEvent, type FormEvent, type JS
 import { RiExternalLinkLine, RiKey2Line, RiLogoutBoxRLine, RiRefreshLine } from "@remixicon/react";
 import { Button, Input, cn } from "@archboard/ui-kit/components";
 import type { CodexAuthState } from "#shared/codex-settings/schemas/codex-settings.ts";
+import { HiddenEmail } from "#ui/codex-settings/components/HiddenEmail.tsx";
 import { formatAuthenticatedAccount } from "#ui/codex-settings/rules/model-selection.ts";
 
 interface CodexAuthSectionProps {
@@ -26,16 +27,21 @@ const SIGNED_OUT_FALLBACK =
 	"Archboard keeps its own Codex sign-in, separate from any Codex CLI you use elsewhere.";
 
 /**
- * Title and secondary line for the current Codex authentication state.
+ * Title, the signed-in email shown blurred after it, and secondary line for the current Codex
+ * authentication state.
  * @param auth Current Codex auth state.
- * @returns Title and optional subtitle.
+ * @returns Title, email when there is one, and optional subtitle.
  */
 function authSummary(auth: CodexAuthState): {
 	readonly label: string;
+	readonly email?: string;
 	readonly detail: string | null;
 } {
 	if (auth.state === "authenticated") {
 		const formatted = formatAuthenticatedAccount(auth);
+		if (auth.account.type === "chatgpt" && auth.account.email !== null) {
+			return { label: "Signed in as", email: auth.account.email, detail: formatted.secondary };
+		}
 		return { label: `Signed in as ${formatted.primary}`, detail: formatted.secondary };
 	}
 	if (auth.state === "login_pending") {
@@ -190,7 +196,15 @@ function CodexAuthSection(props: CodexAuthSectionProps): JSX.Element {
 				<div className="flex min-w-0 flex-1 items-start gap-2.5">
 					<span aria-hidden="true" className={cn("mt-1.5 shrink-0", LAMP_BY_STATE[auth.state])} />
 					<div className="flex min-w-0 flex-col gap-0.5">
-						<span className="text-control font-medium">{summary.label}</span>
+						<span className="text-control font-medium">
+							{summary.label}
+							{summary.email !== undefined && (
+								<>
+									{" "}
+									<HiddenEmail email={summary.email} />
+								</>
+							)}
+						</span>
 						{summary.detail !== null && (
 							<span className="text-body text-muted-foreground">{summary.detail}</span>
 						)}
