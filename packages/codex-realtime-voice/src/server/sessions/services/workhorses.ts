@@ -9,6 +9,7 @@
 // A workhorse belongs to a checkout, so it stays linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
+import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/contract";
 import type { CodexThreadContextController } from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { CoordinatorToolStop } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import type { CodexWorkhorseOperations } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
@@ -39,12 +40,22 @@ interface CodexWorkbenchWorkhorseActions {
 	readonly ensureStarted: () => Promise<void>;
 }
 
+/** The model settings Codex most recently confirmed for one workhorse thread. */
+interface WorkhorseEffectiveSettings {
+	readonly threadId: ThreadId;
+	readonly model: string;
+	readonly effort: CodexServerNotificationParamsByMethod["thread/settings/updated"]["threadSettings"]["effort"];
+	readonly serviceTier: string | null;
+}
+
 /** What the server remembers about one workhorse between the reads that fill it in. */
 interface CodexWorkbenchWorkhorseState {
 	/** The last authoritative queue listing. */
 	queue: CodexQueueProjectionInput;
 	/** The workhorse thread that listing was read for. */
 	queueThreadId: ThreadId | null;
+	/** The latest thread/settings/updated values confirmed for the current workhorse thread. */
+	effectiveSettings: WorkhorseEffectiveSettings | null;
 	/** The turn running on the workhorse's thread, as Codex last said, or null while none runs. */
 	activeTurn: { readonly threadId: ThreadId; readonly turnId: TurnId } | null;
 	/** Where its last work tree stop stands, or null before any stop. */
@@ -108,6 +119,7 @@ function freshWorkhorseState(stopAskers: Set<TurnId> = new Set()): CodexWorkbenc
 	return {
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
+		effectiveSettings: null,
 		activeTurn: null,
 		stop: null,
 		stopAskers,
@@ -173,7 +185,59 @@ function noteActiveTurn(
 	}
 }
 
-export { freshWorkhorseState, noteActiveTurn };
+/**
+ * Record confirmed thread/settings/updated facts for a workhorse thread so browser projections
+ * reflect live model, reasoning effort, and service tier updates.
+ * @param workhorse The workhorse.
+ * @param event A notification.
+ * @param decoder Names threads as Codex spells them.
+ * @param publish Notifies browsers after the confirmed values are recorded.
+ */
+function noteWorkhorseSettings(
+	workhorse: CodexWorkbenchWorkhorse,
+	event: TransportServerNotification,
+	decoder: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">,
+	publish: (() => void) | undefined,
+): void {
+	const { notification } = event;
+	if (notification.method !== "thread/settings/updated") {
+		return;
+	}
+	const { threadId } = workhorse.components.workhorse.snapshot();
+	if (!namesThread(threadId, notification.params.threadId, decoder)) {
+		return;
+	}
+	const { model, effort, serviceTier } = notification.params.threadSettings;
+	workhorse.state.effectiveSettings = Object.freeze({ threadId, model, effort, serviceTier });
+	publish?.();
+}
+
+/**
+ * Record turn lifecycle and settings updates for one workhorse thread.
+ * @param workhorse The workhorse.
+ * @param event A notification.
+ * @param options Identity decoding and confirmed settings publication.
+ * @param options.identity The generation's identity authority.
+ * @param options.identity.decoder Names threads and turns as Codex spells them.
+ * @param options.onWorkhorseSettingsChanged Publishes confirmed settings.
+ */
+function noteWorkhorseNotification(
+	workhorse: CodexWorkbenchWorkhorse,
+	event: TransportServerNotification,
+	options: {
+		readonly identity: { readonly decoder: TrustedIdentityDecoder };
+		readonly onWorkhorseSettingsChanged?: () => void;
+	},
+): void {
+	const {
+		identity: { decoder },
+		onWorkhorseSettingsChanged,
+	} = options;
+	noteActiveTurn(workhorse, event, decoder);
+	noteWorkhorseSettings(workhorse, event, decoder, onWorkhorseSettingsChanged);
+}
+
+export { freshWorkhorseState, noteActiveTurn, noteWorkhorseNotification };
 export type {
 	CodexWorkbenchWorkhorse,
 	CodexWorkbenchWorkhorseActions,

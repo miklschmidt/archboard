@@ -8,12 +8,14 @@ import {
 	type CoordinatorSnapshot,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { COORDINATOR_CAPABILITY_POLICY } from "#runtime/voice/coordinator/protocol/contract.ts";
+import { defaultVoiceAgentModels } from "#runtime/host/protocol/models.ts";
 import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
+
+const reviewedCoordinatorModel = () => defaultVoiceAgentModels().coordinator.model;
+const reviewedCoordinatorEffort = () => defaultVoiceAgentModels().coordinator.effort;
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	WORKING_DIRECTORY,
@@ -124,16 +126,17 @@ describe("coordinator lifecycle", () => {
 		expect(fixtureValue.epoch.records[0]?.provenance.threadSource).toBe("vscode");
 	});
 
-	test("keeps configured and effective service tier absent when priority is not advertised", async () => {
+	test("confirms Standard when start reports null and the settings update reports default", async () => {
 		const fixtureValue = fixture({
 			model: coordinatorModel({ serviceTiers: [], defaultServiceTier: null }),
+			settingsOverrides: { serviceTier: "default" },
 		});
 		const snapshot = await ready(fixtureValue, "fallback-operation");
 
 		expect(snapshot.configured?.serviceTier).toBeNull();
-		expect(snapshot.effective?.serviceTier).toBeNull();
-		expect(Object.hasOwn(fixtureValue.session.startParams[0] ?? {}, "serviceTier")).toBe(false);
-		expect(Object.hasOwn(fixtureValue.session.updateParams[0] ?? {}, "serviceTier")).toBe(false);
+		expect(snapshot.effective?.serviceTier).toBe("default");
+		expect(fixtureValue.session.startParams[0]?.serviceTier).toBeNull();
+		expect(fixtureValue.session.updateParams[0]?.serviceTier).toBeNull();
 	});
 
 	test("refuses while model/list lacks the coordinator model, then starts once it is listed", async () => {
@@ -330,5 +333,26 @@ describe("coordinator lifecycle", () => {
 		expect(snapshot.reason).toContain("durable ownership proof");
 		expect(fixtureValue.epoch.records[0]?.status).toBe("inspect_only");
 		expect(fixtureValue.epoch.records[0]?.outcome).toBe("outcome_unknown");
+	});
+
+	test("commits a start that already confirms the selected model and effort", async () => {
+		const selection = { model: "gpt-custom", effort: "high", serviceTier: "priority" } as const;
+		const value = fixture({
+			model: coordinatorModel({
+				id: selection.model,
+				model: selection.model,
+				supportedReasoningEfforts: [{ reasoningEffort: selection.effort, description: "" }],
+				defaultReasoningEffort: selection.effort,
+			}),
+			modelSelection: selection,
+			emitSettings: false,
+		});
+		const snapshot = await ready(value);
+
+		expect(snapshot.configured).toEqual(selection);
+		expect(snapshot.effective).toEqual(selection);
+		expect(snapshot.sandboxPolicy).toEqual(value.session.started.sandbox);
+		expect(value.session.updateParams).toHaveLength(0);
+		expect(value.epoch.records.at(-1)).toMatchObject({ status: "committed" });
 	});
 });

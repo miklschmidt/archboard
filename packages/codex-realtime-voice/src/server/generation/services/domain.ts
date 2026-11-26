@@ -3,6 +3,7 @@ import type { CodexWorkbenchComponents } from "#server/generation/services/lifec
 import type { CodexWorkbenchGenerationInput } from "#server/owner/services/lifecycle.ts";
 import { ownsProcessChild } from "#server/owner/services/owner-state.ts";
 import {
+	ensureGenerationAccountOwner,
 	publishProjection,
 	requireCreated,
 	type GenerationOwners,
@@ -20,6 +21,7 @@ export function domainScope(
 	context: { readonly input: CodexWorkbenchGenerationInput; readonly owners: GenerationOwners },
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 ): CodexWorkbenchDomainScope {
+	const accountOwner = ensureGenerationAccountOwner(context.owners, created);
 	return Object.freeze<CodexWorkbenchDomainScope>({
 		identity: requireCreated(created, "identity"),
 		epoch: requireCreated(created, "epoch"),
@@ -27,6 +29,29 @@ export function domainScope(
 		session: requireCreated(created, "session"),
 		threadLink: requireCreated(created, "threadLink"),
 		approvals: requireCreated(created, "approvals"),
+		account: {
+			/**
+			 * Read the generation's current account, pending login, and owned process state.
+			 * @returns The snapshot.
+			 */
+			snapshot: () => ({
+				account: context.owners.browserState.account,
+				login: context.owners.browserState.login,
+				process: context.input.process.snapshot(),
+			}),
+			read: accountOwner.read,
+			login: accountOwner.login,
+			/**
+			 * Cancel an in-progress Codex sign-in flow.
+			 * @param loginId The pending sign-in identifier.
+			 * @returns Resolves when Codex answers the cancellation.
+			 */
+			loginCancel: async (loginId) =>
+				accountOwner.loginCancel(
+					requireCreated(created, "identity").identity.decoder.adoptLoginId(loginId),
+				),
+			logout: accountOwner.logout,
+		},
 		sessions: {
 			/**
 			 * Open a tab session in this generation.

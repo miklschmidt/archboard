@@ -34,6 +34,7 @@ describe.serial("actual production Codex composition", () => {
 						ARCHBOARD_TEST_CODEX_EXECUTABLE: executablePath,
 						ARCHBOARD_TEST_CODEX_LOG: logPath,
 						ARCHBOARD_TEST_CODEX_CONTROL: controlPath,
+						ARCHBOARD_CODEX_MODELS_CONFIG: join(root, "codex-models.json"),
 						ARCHBOARD_SETTLE_MS: "20",
 						XDG_STATE_HOME: join(root, "state"),
 					},
@@ -116,8 +117,7 @@ describe.serial("actual production Codex composition", () => {
 			});
 			expect(created).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			// The coordinator's thread starts before the workhorse's.
-			expect(startedModels()[0]).toBe("gpt-6-sol");
-			expect(startedModels()).toHaveLength(2);
+			expect(startedModels()).toEqual(["gpt-6.1-terra", "gpt-6.2-sol"]);
 			// The app-server and the coordinator work in a directory of their own under the state
 			// directory, which holds no vault. The workhorse works in its checkout: for this untracked
 			// vault, the directory that holds it. No thread works in the archboard checkout (ADR 0050).
@@ -130,6 +130,11 @@ describe.serial("actual production Codex composition", () => {
 			expect(basename(coordinatorDirectory)).toBe("coordinator");
 			expect(existsSync(join(coordinatorDirectory, ".archboard"))).toBe(false);
 			expect(coordinatorDirectory.startsWith(repoRoot)).toBe(false);
+			expect(coordinatorStart?.params?.["serviceTier"]).toBe("priority");
+			expect(workhorseStart?.params).toMatchObject({
+				config: { model_reasoning_effort: "high" },
+				serviceTier: null,
+			});
 			expect(workhorseStart?.params?.["cwd"]).toBe(realpathSync(root));
 			expect(workhorseStart?.params?.["runtimeWorkspaceRoots"]).toEqual([realpathSync(root)]);
 
@@ -139,11 +144,11 @@ describe.serial("actual production Codex composition", () => {
 			expect(typeof threadLink["threadId"]).toBe("string");
 			expect(linked["coordinator"]).toMatchObject({
 				state: "ready",
-				configuredModel: "gpt-6-sol",
+				configuredModel: "gpt-6.1-terra",
 				configuredEffort: "low",
-				model: "gpt-6-sol",
+				model: "gpt-6.1-terra",
 				effort: "low",
-				serviceTier: null,
+				serviceTier: "priority",
 			});
 			expect(typeof (linked["coordinator"] as Record<string, unknown>)["threadId"]).toBe("string");
 
@@ -314,6 +319,38 @@ describe.serial("actual production Codex composition", () => {
 				total: { totalTokens: 1_200 },
 				modelContextWindow: 258_000,
 			});
+
+			const workhorse = { model: "gpt-6.1-terra", effort: "medium", serviceTier: "priority" };
+			type SettingsMessage = { settings?: ({ owner: string } & typeof workhorse)[] };
+			let publishedSettings: unknown;
+			expect(await current.request("subscribe")).toMatchObject({ ok: true });
+			current.socket.on("message", (raw) => {
+				const message = JSON.parse(String(raw)) as {
+					type?: string;
+					message?: { delta?: SettingsMessage; snapshot?: SettingsMessage };
+				};
+				if (message.type !== "codex_workbench_event") return;
+				const settings = message.message?.delta?.settings ?? message.message?.snapshot?.settings;
+				const currentWorkhorse = settings?.find((entry) => entry.owner === "workhorse");
+				if (currentWorkhorse?.model === workhorse.model) {
+					publishedSettings = currentWorkhorse;
+				}
+			});
+			const saved = await request("/api/settings/codex", {
+				method: "PUT",
+				vault: false,
+				doing: false,
+				headers: { Origin: new URL(server.base).origin, "Sec-Fetch-Site": "same-origin" },
+				body: {
+					orchestrator: { ...workhorse, effort: "low" },
+					workhorse,
+				},
+			});
+			expect(saved.status).toBe(200);
+			expect(await waitFor(() => publishedSettings, "confirmed workhorse settings")).toMatchObject(
+				workhorse,
+			);
+
 			const childPid = records(logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
 			if (childPid === undefined) {
 				throw new Error("The controlled app-server pid was not logged.");

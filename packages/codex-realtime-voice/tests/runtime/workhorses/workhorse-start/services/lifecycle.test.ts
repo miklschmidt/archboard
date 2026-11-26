@@ -54,9 +54,10 @@ describe("codex workhorse start transaction", () => {
 				historyMode: "paginated",
 				source: "vscode",
 				threadSource: "test-host",
-				model: "gpt-6-luna",
+				model: "gpt-6.2-sol",
 				modelProvider: "openai",
-				serviceTier: "priority",
+				reasoningEffort: "high",
+				serviceTier: "default",
 				approvalPolicy: "on-request",
 				approvalsReviewer: "user",
 				sandbox: { type: "dangerFullAccess" },
@@ -92,6 +93,38 @@ describe("codex workhorse start transaction", () => {
 					threadSource: "vscode",
 					workspaceRoot: CHECKOUT_ROOT,
 				},
+			});
+		} finally {
+			fixture.dispose();
+		}
+	});
+
+	test.each([
+		{ model: "gpt-fallback" },
+		{ reasoningEffort: "low" },
+		{ serviceTier: "default" },
+	] as const)("keeps substituted workhorse settings inspect-only: %o", async (override) => {
+		const selection = { model: "gpt-custom", effort: "xhigh", serviceTier: "priority" } as const;
+		const fixture = makeFixture(undefined, selection);
+		try {
+			fixture.session.startResult = {
+				...fixture.response,
+				model: selection.model,
+				reasoningEffort: selection.effort,
+				serviceTier: selection.serviceTier,
+				...override,
+			};
+
+			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
+
+			expect(result.state).toBe("inspect_only");
+			expect(result.reason).toContain(`authored profile: ${Object.keys(override)[0]}.`);
+			expect(fixture.session.startParams).toHaveLength(1);
+			expect(fixture.link.targets).toHaveLength(0);
+			expect(fixture.session.deleteParams).toHaveLength(0);
+			expect(fixture.epoch.snapshot().manifest.records.at(-1)).toMatchObject({
+				status: "inspect_only",
+				outcome: "outcome_unknown",
 			});
 		} finally {
 			fixture.dispose();

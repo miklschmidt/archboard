@@ -1,5 +1,6 @@
 import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
 import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
+import { matchesServiceTier } from "#runtime/host/protocol/models.ts";
 import type { ThreadLinkClassification } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
 	CodexCoordinatorError,
@@ -10,10 +11,6 @@ import {
 	type CoordinatorPersistedState,
 	type CoordinatorReviewHashes,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
-} from "#runtime/voice/coordinator/services/model.ts";
 import { hashCoordinatorSettings } from "#runtime/voice/coordinator/rules/review.ts";
 import { errorMessage } from "#runtime/voice/coordinator/state/state.ts";
 
@@ -485,9 +482,9 @@ function effectiveSettingsMatch(
 ): boolean {
 	const effective = persistence.settings.effective;
 	const checks = [
-		effective.model === reviewedCoordinatorModel(),
-		effective.effort === reviewedCoordinatorEffort(),
-		configured.serviceTier !== "priority" || effective.serviceTier === "priority",
+		effective.model === configured.model,
+		effective.effort === configured.effort,
+		matchesServiceTier(configured.serviceTier, effective.serviceTier),
 	];
 	return checks.every((matched) => matched);
 }

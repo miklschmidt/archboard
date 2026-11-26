@@ -5,6 +5,11 @@ export type {
 	VoiceAgentExtensions,
 	VoiceAgentOptions,
 } from "#server/agent/services/voice-agent.ts";
+export { defaultVoiceAgentModels } from "#runtime/host/protocol/models.ts";
+export type {
+	RoleModelSelection,
+	VoiceAgentModelPreferences,
+} from "#runtime/host/protocol/models.ts";
 export type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
 
 export { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";

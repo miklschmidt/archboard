@@ -16,10 +16,10 @@ import {
 	type CoordinatorThreadLinkTarget,
 	type CoordinatorThreadSettings,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
-} from "#runtime/voice/coordinator/services/model.ts";
+import { defaultVoiceAgentModels, type RoleModelSelection } from "#runtime/host/protocol/models.ts";
+
+const reviewedCoordinatorModel = () => defaultVoiceAgentModels().coordinator.model;
+const reviewedCoordinatorEffort = () => defaultVoiceAgentModels().coordinator.effort;
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
 import {
 	createIdentityAuthorities,
@@ -43,8 +43,9 @@ function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): Coordinato
 		hidden: false,
 		supportedReasoningEfforts: [
 			{ reasoningEffort: reviewedCoordinatorEffort(), description: "fixture" },
+			{ reasoningEffort: "medium", description: "fixture default" },
 		],
-		defaultReasoningEffort: reviewedCoordinatorEffort(),
+		defaultReasoningEffort: "medium",
 		inputModalities: ["text"],
 		supportsPersonality: false,
 		multiAgentVersion: null,
@@ -61,6 +62,7 @@ function startResponse(
 	authority: IdentityAuthority,
 	rawThreadId: string,
 	serviceTier: "priority" | null,
+	model: CoordinatorModel,
 ): CoordinatorStartResponse {
 	const thread: SessionThread = {
 		id: authority.decoder.adoptThreadId(rawThreadId),
@@ -98,7 +100,7 @@ function startResponse(
 	};
 	return {
 		thread,
-		model: reviewedCoordinatorModel(),
+		model: model.model,
 		modelProvider: "openai",
 		serviceTier,
 		cwd: WORKING_DIRECTORY,
@@ -108,7 +110,7 @@ function startResponse(
 		approvalsReviewer: "user",
 		sandbox: { type: "dangerFullAccess" },
 		activePermissionProfile: { id: "example-default", extends: null },
-		reasoningEffort: reviewedCoordinatorEffort(),
+		reasoningEffort: model.defaultReasoningEffort,
 		multiAgentMode: "explicitRequestOnly",
 		disabledPluginIds: [],
 	};
@@ -186,7 +188,7 @@ class FakeSession implements CoordinatorSessionPort {
 
 	constructor(
 		private readonly authority: IdentityAuthority,
-		modelValue: CoordinatorModel,
+		private readonly modelValue: CoordinatorModel,
 		public startError: CodexSessionMutationError | null,
 		private readonly updateError: CodexSessionMutationError | null,
 		private readonly staleNotificationAuthority: IdentityAuthority | null,
@@ -199,7 +201,7 @@ class FakeSession implements CoordinatorSessionPort {
 		this.serviceTier = modelValue.serviceTiers.some((tier) => tier.id === "priority")
 			? "priority"
 			: null;
-		this.started = startResponse(authority, threadRawId, this.serviceTier);
+		this.started = startResponse(authority, threadRawId, this.serviceTier, modelValue);
 		this.threadSettings = settings(this.started, settingsOverrides);
 	}
 
@@ -208,7 +210,7 @@ class FakeSession implements CoordinatorSessionPort {
 	 * @param threadRawId The next thread's raw id.
 	 */
 	nextThread(threadRawId: string): void {
-		this.started = startResponse(this.authority, threadRawId, this.serviceTier);
+		this.started = startResponse(this.authority, threadRawId, this.serviceTier, this.modelValue);
 		this.threadSettings = settings(this.started, {});
 	}
 
@@ -322,6 +324,7 @@ class FakeSession implements CoordinatorSessionPort {
 }
 
 interface FixtureOptions extends FakeSessionOptions {
+	readonly modelSelection?: RoleModelSelection;
 	readonly stageError?: Error;
 	readonly commitError?: Error;
 	readonly activeEpoch?: ActiveEpoch | null;
@@ -369,6 +372,7 @@ function fixture(options: FixtureOptions = {}): Fixture {
 		identity: authority,
 		workingDirectory: WORKING_DIRECTORY,
 		profile: TEST_INSTRUCTIONS.coordinator,
+		modelSelection: () => options.modelSelection ?? null,
 	});
 	session.notify = coordinator.onNotification;
 	return { authority, epoch, link, session, coordinator };

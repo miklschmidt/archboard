@@ -1,4 +1,5 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
+import type { RoleModelSelection } from "#runtime/host/protocol/models.ts";
 import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -126,7 +127,10 @@ class FakeThreadLink implements WorkhorseThreadLinkPort {
 	}
 }
 
-function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture {
+function makeFixture(
+	linkOutcome?: ThreadLinkBindingSnapshot,
+	selection: RoleModelSelection | null = null,
+): WorkhorseFixture {
 	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-workhorse-start-")));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
@@ -172,6 +176,7 @@ function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture 
 		operation: authorities.operation,
 		checkoutRoot: CHECKOUT_ROOT,
 		profile: TEST_INSTRUCTIONS.workhorse,
+		modelSelection: () => selection,
 	};
 	return {
 		authorities,
@@ -233,9 +238,9 @@ function startResponse(
 ): SessionResponse<"thread/start"> {
 	return {
 		thread,
-		model: "gpt-6-luna",
+		model: "gpt-6.2-sol",
 		modelProvider: "openai",
-		serviceTier: "priority",
+		serviceTier: "default",
 		cwd: CHECKOUT_ROOT,
 		runtimeWorkspaceRoots: [CHECKOUT_ROOT],
 		instructionSources: [],
@@ -243,7 +248,7 @@ function startResponse(
 		approvalsReviewer: "user",
 		sandbox: { type: "dangerFullAccess" },
 		activePermissionProfile: { id: "example-default", extends: null },
-		reasoningEffort: null,
+		reasoningEffort: "high",
 		multiAgentMode: "explicitRequestOnly",
 		disabledPluginIds: [],
 		...overrides,

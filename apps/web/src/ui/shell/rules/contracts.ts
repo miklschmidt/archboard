@@ -73,8 +73,8 @@ interface RecoveryPresentation {
 /** A fullscreen presentation of one pane. */
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
-/** The tabs of the settings dialog: how pictures are drawn, and which editor opens code. */
-type SettingsSurface = "picture" | "opener";
+/** The tabs of the settings dialog: picture layout, code opener, and Codex models/sign-in. */
+type SettingsSurface = "picture" | "opener" | "codex";
 
 /** One repository and the canonical model of its chosen checkout (ADR 0050). */
 interface ShellRepository {

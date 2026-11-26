@@ -144,7 +144,7 @@ interface ProductionCodexWorkbenchBindings {
 	readonly sessions: ComponentBuilder<
 		Pick<
 			CreateCodexWorkbenchSessionsOptions,
-			"endApprovals" | "shownConversationOf" | "resolveCheckout"
+			"endApprovals" | "shownConversationOf" | "resolveCheckout" | "onWorkhorseSettingsChanged"
 		>
 	>;
 	/** What each component of one tab session is configured with. */

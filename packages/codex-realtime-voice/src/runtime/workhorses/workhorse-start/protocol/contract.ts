@@ -1,4 +1,5 @@
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
+import type { RoleModelSelection } from "#runtime/host/protocol/models.ts";
 import type { CodexEpochStore, EpochTransaction } from "#runtime/epoch/store/contract.ts";
 import type {
 	CodexSession,
@@ -63,6 +64,7 @@ interface CodexWorkhorseStartOptions {
 	readonly operation: WorkhorseOperationPort;
 	readonly checkoutRoot: string;
 	readonly profile: WorkbenchThreadProfile;
+	readonly modelSelection?: () => RoleModelSelection | null;
 }
 
 type WorkhorseLifecycleState = "unbound" | "starting" | "ready" | "inspect_only" | "failed";
@@ -79,6 +81,7 @@ interface WorkhorseStartFacts {
 	readonly threadSource: string;
 	readonly model: string;
 	readonly modelProvider: string;
+	readonly reasoningEffort: WorkhorseStartResponse["reasoningEffort"];
 	readonly serviceTier: string | null;
 	readonly approvalPolicy: WorkhorseApprovalPolicy;
 	readonly approvalsReviewer: WorkhorseApprovalsReviewer;

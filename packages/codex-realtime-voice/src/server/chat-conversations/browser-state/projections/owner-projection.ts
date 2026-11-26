@@ -149,25 +149,49 @@ function contextDeliveryPanel(
 }
 
 /**
- * The settings the workhorse was started with, shown only once it has started.
+ * Resolve the model, reasoning effort, and service tier currently active on a workhorse thread.
+ * @param start The workhorse's initial start facts.
+ * @param state The workhorse's cached live state.
+ * @returns The effective model, effort, and service tier.
+ */
+function effectiveWorkhorseModel(
+	start: NonNullable<ReturnType<WorkhorseComponents["workhorse"]["snapshot"]>["start"]>,
+	state: Pick<CodexWorkbenchWorkhorseState, "effectiveSettings">,
+) {
+	if (state.effectiveSettings?.threadId === start.threadId) {
+		return state.effectiveSettings;
+	}
+	return {
+		model: start.model,
+		effort: start.reasoningEffort,
+		serviceTier: start.serviceTier,
+	};
+}
+
+/**
+ * The settings the workhorse runs under, preferring the latest confirmed settings update for
+ * the current thread over its initial start facts.
  * @param workhorse The workhorse snapshot.
+ * @param state The workhorse's cached live state.
  * @returns The one settings panel, or none.
  */
 function workhorseSettings(
 	workhorse: ReturnType<WorkhorseComponents["workhorse"]["snapshot"]>,
+	state: Pick<CodexWorkbenchWorkhorseState, "effectiveSettings">,
 ): BrowserOwnerProjection["settings"] {
 	const start = workhorse.start;
 	if (start === null) {
 		return [];
 	}
+	const active = effectiveWorkhorseModel(start, state);
 	return [
 		{
 			kind: "codex_thread_settings",
 			owner: "workhorse",
 			settings: {
-				model: start.model,
-				effort: null,
-				serviceTier: start.serviceTier,
+				model: active.model,
+				effort: active.effort,
+				serviceTier: active.serviceTier,
 				approvalPolicy: start.approvalPolicy,
 				approvalsReviewer: start.approvalsReviewer,
 				sandboxPolicy: start.sandbox,
@@ -251,7 +275,7 @@ function workhorsePanels(
 	}
 	const { components, state } = workhorse;
 	return {
-		settings: workhorseSettings(components.workhorse.snapshot()),
+		settings: workhorseSettings(components.workhorse.snapshot(), state),
 		queue: presentedQueue(state, context),
 		contextDelivery: contextDeliveryPanel(presentedContextDelivery(components, context)),
 	};

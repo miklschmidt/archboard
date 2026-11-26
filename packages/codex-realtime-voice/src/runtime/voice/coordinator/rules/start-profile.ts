@@ -1,4 +1,5 @@
 import { CodexCoordinatorError } from "#runtime/voice/coordinator/protocol/contract.ts";
+import { matchesServiceTier } from "#runtime/host/protocol/models.ts";
 import type {
 	CodexCoordinatorOptions,
 	CoordinatorConfiguredSettings,
@@ -7,10 +8,6 @@ import type {
 	CoordinatorStartResponse,
 	CoordinatorThreadSettings,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import {
-	reviewedCoordinatorEffort,
-	reviewedCoordinatorModel,
-} from "#runtime/voice/coordinator/services/model.ts";
 import { sameValue } from "#runtime/voice/coordinator/state/state.ts";
 import {
 	codexSessionThreadSource,
@@ -54,22 +51,22 @@ function threadIdOrNull(response: LooseStartResponse): ThreadId | null {
  * not match so a refusal can be diagnosed from its message alone.
  * @param response - The thread/start response.
  * @param workingDirectory - The directory of its own the coordinator must be in.
- * @param serviceTier - The advertised priority tier, or null.
+ * @param configured - The model, effort, and service tier asked for.
+ * @param threadSource - The host policy for this operation.
  * @throws {CodexCoordinatorError} When any field does not match the authored profile.
- * @param threadSource The host policy for this operation.
  */
 function assertStartedResponse(
 	response: CoordinatorStartResponse,
 	workingDirectory: string,
-	serviceTier: "priority" | null,
+	configured: CoordinatorConfiguredSettings,
 	threadSource: string,
 ): void {
 	const mismatches = Object.entries({
 		"thread.id": response.thread.id.length === 0,
-		model: response.model !== reviewedCoordinatorModel(),
+		model: response.model !== configured.model,
 		modelProvider: response.modelProvider.length === 0,
 		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
-		serviceTier: serviceTier === "priority" && response.serviceTier !== "priority",
+		serviceTier: !matchesServiceTier(configured.serviceTier, response.serviceTier),
 		cwd: response.cwd !== workingDirectory,
 		runtimeWorkspaceRoots:
 			response.runtimeWorkspaceRoots.length !== 1 ||
@@ -99,7 +96,16 @@ function assertStartedResponse(
  */
 function coordinatorSettings(
 	configured: CoordinatorConfiguredSettings,
-	settings: CoordinatorThreadSettings,
+	settings: Pick<
+		CoordinatorThreadSettings,
+		| "model"
+		| "effort"
+		| "serviceTier"
+		| "approvalPolicy"
+		| "approvalsReviewer"
+		| "sandboxPolicy"
+		| "activePermissionProfile"
+	>,
 ): CoordinatorSettings {
 	const effective: CoordinatorEffectiveSettings = Object.freeze({
 		model: settings.model,
@@ -145,9 +151,8 @@ function isCurrentNotification(
 }
 
 /**
- * Why the confirmed model settings are not the reviewed selection: the wrong model or effort, a
- * provider or tier that changed since the start, or a priority tier that was advertised but not
- * applied.
+ * Check that the update preserves the start's directory and provider and confirms the selected
+ * model, effort, and service tier.
  * @param started - The thread/start response.
  * @param configured - The settings the coordinator was asked for.
  * @param settings - The settings Codex confirmed.
@@ -161,36 +166,19 @@ function modelSettingsMismatch(
 	if (settings.cwd !== started.cwd) {
 		return "Coordinator settings changed its working directory.";
 	}
-	if (settings.model !== reviewedCoordinatorModel()) {
-		return `Coordinator settings did not confirm ${reviewedCoordinatorModel()}.`;
+	if (settings.model !== configured.model) {
+		return `Coordinator settings did not confirm ${configured.model}.`;
 	}
 	if (settings.modelProvider !== started.modelProvider) {
 		return "Coordinator settings changed the provider selected at start.";
 	}
-	if (settings.effort !== reviewedCoordinatorEffort()) {
-		return `Coordinator settings did not confirm ${reviewedCoordinatorEffort()} effort.`;
+	if (settings.effort !== configured.effort) {
+		return `Coordinator settings did not confirm ${configured.effort} effort.`;
 	}
-	return tierMismatch(started, configured, settings);
-}
-
-/**
- * Why the confirmed service tier is not the one the thread started with, or not the advertised
- * priority tier the coordinator asked for.
- * @param started - The thread/start response.
- * @param configured - The settings the coordinator was asked for.
- * @param settings - The settings Codex confirmed.
- * @returns The mismatch, or null when the tier matches.
- */
-function tierMismatch(
-	started: CoordinatorStartResponse,
-	configured: CoordinatorConfiguredSettings,
-	settings: CoordinatorThreadSettings,
-): string | null {
-	if (settings.serviceTier !== started.serviceTier) {
-		return "Coordinator settings did not confirm the effective service tier.";
-	}
-	return configured.serviceTier === "priority" && settings.serviceTier !== "priority"
-		? "Coordinator settings did not confirm advertised priority."
+	// Start already confirmed the selection. Its effective tier and the update's selected tier
+	// can spell Standard differently.
+	return !matchesServiceTier(configured.serviceTier, settings.serviceTier)
+		? "Coordinator settings did not confirm the selected service tier."
 		: null;
 }
 

@@ -95,7 +95,9 @@ function modelWords(
 ): string | null {
 	const settings = snapshot?.settings.find((entry) => entry.owner === owner);
 	if (settings === undefined) return null;
-	return settings.effort === null ? settings.model : `${settings.model} · ${settings.effort}`;
+	return [settings.model, settings.effort, settings.serviceTier]
+		.filter((part): part is string => part !== null && part.length > 0)
+		.join(" · ");
 }
 
 /**

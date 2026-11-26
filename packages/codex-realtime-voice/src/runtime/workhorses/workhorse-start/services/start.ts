@@ -166,7 +166,11 @@ function buildStartParams(
 	transaction: WorkhorseStartTransaction,
 ): ReturnType<typeof createWorkhorseThreadStartParams> {
 	try {
-		return createWorkhorseThreadStartParams(context.options.checkoutRoot, context.options.profile);
+		return createWorkhorseThreadStartParams(
+			context.options.checkoutRoot,
+			context.options.profile,
+			context.options.modelSelection?.() ?? null,
+		);
 	} catch (error) {
 		const detail = `The workhorse start profile was not valid: ${errorMessage(error)}`;
 		if (rollback(context.options, transaction, "The workhorse start profile was not valid.")) {
@@ -240,7 +244,7 @@ async function startWorkhorseThread(
 		throw refuseStartFailure(context, transaction, error);
 	}
 	try {
-		return validateWorkhorseStartResponse(response, context.options);
+		return validateWorkhorseStartResponse(response, context.options, params);
 	} catch (error) {
 		markUnknown(
 			context.options,

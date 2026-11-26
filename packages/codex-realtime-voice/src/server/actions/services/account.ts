@@ -9,7 +9,9 @@ import type { ServerBrowserBindingState } from "#server/chat-conversations/gatew
 import type { CodexWorkbenchComponents } from "#server/generation/services/workbench.ts";
 
 /** One sign-in as the browser asked for it. */
-type BrowserLogin = Parameters<BrowserWorkbenchActions["account"]["login"]>[0]["login"];
+export type BrowserAccountLogin = Parameters<
+	BrowserWorkbenchActions["account"]["login"]
+>[0]["login"];
 
 /** One cancellation as the browser asked for it. */
 type BrowserLoginCancel = Parameters<BrowserWorkbenchActions["account"]["loginCancel"]>[0];
@@ -35,7 +37,9 @@ type AccountReadResponse = Awaited<ReturnType<ControlledCodexSession["accountRea
  * @param login The sign-in.
  * @returns The session parameters.
  */
-function chatgptLoginParams(login: Extract<BrowserLogin, { type: "chatgpt" }>): SessionLoginParams {
+function chatgptLoginParams(
+	login: Extract<BrowserAccountLogin, { type: "chatgpt" }>,
+): SessionLoginParams {
 	return {
 		type: login.type,
 		...(login.codexStreamlinedLogin === undefined
@@ -54,7 +58,7 @@ function chatgptLoginParams(login: Extract<BrowserLogin, { type: "chatgpt" }>): 
  * @returns The session parameters.
  */
 function bedrockAccessKeyLoginParams(
-	login: Extract<BrowserLogin, { type: "amazonBedrockAccessKeys" }>,
+	login: Extract<BrowserAccountLogin, { type: "amazonBedrockAccessKeys" }>,
 ): SessionLoginParams {
 	return {
 		type: login.type,
@@ -80,7 +84,7 @@ function unsupportedLogin(login: never): never {
  * @param login The sign-in the browser asked for.
  * @returns The session parameters.
  */
-function sessionLoginParams(login: BrowserLogin): SessionLoginParams {
+function sessionLoginParams(login: BrowserAccountLogin): SessionLoginParams {
 	switch (login.type) {
 		case "apiKey":
 			return { type: login.type, apiKey: login.apiKey };
@@ -121,12 +125,12 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	let revision = 0;
 	let readRevision = 0;
 	let disposed = false;
-	let listener: (() => void) | null = null;
-	/**
-	 * Tell the gateway that what a chat would be shown has changed.
-	 * @returns Nothing; the listener is called for its effect.
-	 */
-	const publish = () => listener?.();
+	const listeners = new Set<() => void>();
+	let unsubscribeNotifications: (() => void) | null = null;
+	/** Tell every subscriber that what a chat or settings panel would be shown has changed. */
+	const publish = () => {
+		for (const listener of listeners) listener();
+	};
 	let starting = false;
 	let cancelling = false;
 	let loggingOut = false;
@@ -296,7 +300,10 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 	 * @param result What Codex answered the start with.
 	 * @param variant Which way the person is signing in.
 	 */
-	const beginPendingLogin = (result: PendingLoginResult, variant: BrowserLogin["type"]): void => {
+	const beginPendingLogin = (
+		result: PendingLoginResult,
+		variant: BrowserAccountLogin["type"],
+	): void => {
 		const pending = model.BrowserLoginSchema.safeParse({
 			kind: "login",
 			state: "pending",
@@ -314,6 +321,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			loginId: result.loginId,
 			variant,
 		};
+		publish();
 		if (earlyCompletion !== null) onNotification(earlyCompletion);
 	};
 	/**
@@ -331,6 +339,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			loginId: null,
 			reason: "The Codex sign-in could not be started. Try signing in again.",
 		};
+		publish();
 	};
 	/**
 	 * Record how a cancellation went, unless a later command has already claimed
@@ -364,6 +373,88 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			state: "unknown",
 			reason: "Refresh the account after cancelling sign-in.",
 		};
+		publish();
+	};
+
+	/**
+	 * Read the account, rethrowing the underlying transport failure when the read failed.
+	 */
+	const read = async (): Promise<void> => {
+		await refresh(revision);
+		if (state.account.kind === "account" && state.account.state === "failed") {
+			throw readFailure ?? new Error(state.account.reason);
+		}
+	};
+
+	/**
+	 * Start one sign-in, presenting whatever continuation Codex hands back.
+	 * @param loginInput The sign-in the person asked for.
+	 */
+	const login = async (loginInput: BrowserAccountLogin): Promise<void> => {
+		const attempt = ++revision;
+		starting = true;
+		earlyCompletion = null;
+		try {
+			const result = await components.session.accountLogin(sessionLoginParams(loginInput));
+			if (superseded(attempt)) return;
+			starting = false;
+			if ("loginId" in result) {
+				beginPendingLogin(result, loginInput.type);
+			} else {
+				state.login = { kind: "login", state: "idle" };
+				await refresh(attempt);
+			}
+		} catch (error) {
+			failLoginStart(attempt);
+			throw error;
+		} finally {
+			if (attempt === revision) {
+				starting = false;
+				earlyCompletion = null;
+			}
+		}
+	};
+
+	/**
+	 * Cancel the sign-in that is outstanding, refusing to cancel any other.
+	 * @param loginId Which sign-in to cancel.
+	 */
+	const loginCancel = async (loginId: BrowserLoginCancel["loginId"]): Promise<void> => {
+		if (state.login.state !== "pending" || state.login.loginId !== loginId)
+			throw new Error("This sign-in is no longer pending. Refresh the account before cancelling.");
+		const pending = state.login;
+		const attempt = ++revision;
+		cancelling = true;
+		try {
+			const result = await components.session.accountLoginCancel({ loginId });
+			applyCancelResult(attempt, pending, result.status, loginId);
+		} finally {
+			cancelling = false;
+		}
+		// Codex announces no account change after a cancel, so nothing else
+		// would replace the unknown account the cancel left.
+		void refresh(attempt);
+	};
+
+	/**
+	 * Sign out, and drop every workhorse queue with the account it belonged to.
+	 */
+	const logout = async (): Promise<void> => {
+		const attempt = ++revision;
+		starting = false;
+		earlyCompletion = null;
+		loggingOut = true;
+		try {
+			await components.session.accountLogout();
+			if (!superseded(attempt)) {
+				state.account = { kind: "account", state: "signed_out" };
+				state.login = { kind: "login", state: "idle" };
+				input.clearQueue();
+				publish();
+			}
+		} finally {
+			loggingOut = false;
+		}
 	};
 
 	const actions: BrowserWorkbenchActions["account"] = {
@@ -373,10 +464,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		 * @returns The browser outcome.
 		 */
 		read: async () => {
-			await refresh(revision);
-			if (state.account.kind === "account" && state.account.state === "failed") {
-				throw readFailure ?? new Error(state.account.reason);
-			}
+			await read();
 			return { outcome: "delivered" };
 		},
 		/**
@@ -385,29 +473,8 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		 * @returns The browser outcome.
 		 */
 		login: async (command) => {
-			const attempt = ++revision;
-			starting = true;
-			earlyCompletion = null;
-			try {
-				const result = await components.session.accountLogin(sessionLoginParams(command.login));
-				if (superseded(attempt)) return { outcome: "delivered" };
-				starting = false;
-				if ("loginId" in result) {
-					beginPendingLogin(result, command.login.type);
-				} else {
-					state.login = { kind: "login", state: "idle" };
-					await refresh(attempt);
-				}
-				return { outcome: "delivered" };
-			} catch (error) {
-				failLoginStart(attempt);
-				throw error;
-			} finally {
-				if (attempt === revision) {
-					starting = false;
-					earlyCompletion = null;
-				}
-			}
+			await login(command.login);
+			return { outcome: "delivered" };
 		},
 		/**
 		 * Cancel the sign-in that is outstanding, refusing to cancel any other.
@@ -415,22 +482,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		 * @returns The browser outcome.
 		 */
 		loginCancel: async (command) => {
-			if (state.login.state !== "pending" || state.login.loginId !== command.loginId)
-				throw new Error(
-					"This sign-in is no longer pending. Refresh the account before cancelling.",
-				);
-			const pending = state.login;
-			const attempt = ++revision;
-			cancelling = true;
-			try {
-				const result = await components.session.accountLoginCancel({ loginId: command.loginId });
-				applyCancelResult(attempt, pending, result.status, command.loginId);
-			} finally {
-				cancelling = false;
-			}
-			// Codex announces no account change after a cancel, so nothing else
-			// would replace the unknown account the cancel left.
-			void refresh(attempt);
+			await loginCancel(command.loginId);
 			return { outcome: "delivered" };
 		},
 		/**
@@ -439,38 +491,47 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		 * @returns The browser outcome.
 		 */
 		logout: async () => {
-			const attempt = ++revision;
-			loggingOut = true;
-			try {
-				await components.session.accountLogout();
-				if (!superseded(attempt)) {
-					state.account = { kind: "account", state: "signed_out" };
-					state.login = { kind: "login", state: "idle" };
-					input.clearQueue();
-				}
-			} finally {
-				loggingOut = false;
-			}
+			await logout();
 			return { outcome: "delivered" };
 		},
 	};
+	/**
+	 * Stop listening to Codex notifications and discard any pending completion state.
+	 */
+	const dispose = (): void => {
+		disposed = true;
+		revision += 1;
+		listeners.clear();
+		earlyCompletion = null;
+		unsubscribeNotifications?.();
+		unsubscribeNotifications = null;
+	};
 	return {
 		actions,
+		read,
+		login,
+		loginCancel,
+		logout,
+		dispose,
 		/**
-		 * Say when the account facts a chat is shown have changed.
+		 * Say when the account facts a chat or settings panel is shown have changed.
 		 * @param onChange What to call.
-		 * @returns How to stop listening, which also disposes this owner.
+		 * @returns How to stop listening.
 		 */
 		subscribe: (onChange: () => void) => {
-			listener = onChange;
-			const unsubscribe = input.onNotification(onNotification);
+			if (disposed) return () => undefined;
+			listeners.add(onChange);
+			unsubscribeNotifications ??= input.onNotification(onNotification);
 			return () => {
-				disposed = true;
-				revision += 1;
-				listener = null;
-				earlyCompletion = null;
-				unsubscribe();
+				listeners.delete(onChange);
+				if (listeners.size === 0 && unsubscribeNotifications !== null) {
+					unsubscribeNotifications();
+					unsubscribeNotifications = null;
+				}
 			};
 		},
 	};
 }
+
+/** One generation's shared account owner. */
+export type ServerBrowserAccountOwner = ReturnType<typeof createServerBrowserAccountOwner>;

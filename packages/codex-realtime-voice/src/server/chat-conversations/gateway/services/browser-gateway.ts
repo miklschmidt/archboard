@@ -31,7 +31,10 @@ import type {
 } from "#server/timeline/projections/timeline.ts";
 import { createServerCanonicalTextActions } from "#server/chat-conversations/gateway/services/text-actions.ts";
 import { admitWork } from "#server/sessions/services/stop.ts";
-import { createServerBrowserAccountOwner } from "#server/actions/services/account.ts";
+import {
+	createServerBrowserAccountOwner,
+	type ServerBrowserAccountOwner,
+} from "#server/actions/services/account.ts";
 import { watchTranscriptChanges } from "#server/voice/services/transcript-changes.ts";
 import type { ServerReadinessProcessFacts } from "#server/generation/rules/readiness.ts";
 import { createServerOrdinaryApprovalActions } from "#server/actions/services/ordinary-approvals.ts";
@@ -57,6 +60,8 @@ async function runMutation(operation: () => Promise<unknown>): Promise<BrowserAc
 interface ServerBrowserGatewayInput {
 	readonly components: CodexWorkbenchSharedComponents;
 	readonly sessions: Pick<CodexWorkbenchSessions, "require" | "list" | "onChange">;
+	/** Shared generation account owner, when supplied; otherwise built locally for this gateway. */
+	readonly account?: ServerBrowserAccountOwner;
 	readonly dynamicApprovals: WorkbenchDomainApprovals | null;
 	/** The host's narrative adapter, which says whether the live voice session is unattended. */
 	readonly narrative?: VoiceNarrativeAdapter;
@@ -259,17 +264,20 @@ function createServerBrowserGatewayOptions(
 		inFlightReread = { threadId, read };
 		return read;
 	};
-	const account = createServerBrowserAccountOwner({
-		components,
-		state,
-		/** Sign-out drops every workhorse's queue with the account it belonged to. */
-		clearQueue: () => {
-			for (const session of input.sessions.list()) {
-				for (const workhorse of session.workhorses.values()) clearQueue(workhorse);
-			}
-		},
-		onNotification: input.onAccountNotification,
-	});
+	const ownsAccount = input.account === undefined;
+	const account =
+		input.account ??
+		createServerBrowserAccountOwner({
+			components,
+			state,
+			/** Sign-out drops every workhorse's queue with the account it belonged to. */
+			clearQueue: () => {
+				for (const session of input.sessions.list()) {
+					for (const workhorse of session.workhorses.values()) clearQueue(workhorse);
+				}
+			},
+			onNotification: input.onAccountNotification,
+		});
 	/**
 	 * Run one queue mutation for the chat's workhorse and cache the listing it answers.
 	 * @param context The chat.
@@ -490,11 +498,15 @@ function createServerBrowserGatewayOptions(
 		 */
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
-			const unsubscribeAccount = account.subscribe(listener);
+			// Shared account changes already reach this gateway through input.onChange.
+			const unsubscribeAccount = ownsAccount ? account.subscribe(listener) : undefined;
 			const unsubscribeTranscript = watchSessionTranscripts(input.sessions, listener);
 			return () => {
 				unsubscribeTranscript();
-				unsubscribeAccount();
+				unsubscribeAccount?.();
+				if (ownsAccount) {
+					account.dispose();
+				}
 				unsubscribe();
 			};
 		},

@@ -161,6 +161,8 @@ interface CreateCodexWorkbenchSessionsOptions {
 	/** The checkout whose conversation a tab shows now, or null before any chat of it was read. */
 	readonly shownConversationOf: (id: TabSessionId) => string | null;
 	readonly resolveCheckout: (named: string) => string | null;
+	/** Publish after Codex confirms a live workhorse's settings. */
+	readonly onWorkhorseSettingsChanged?: () => void;
 	/** Build one session's coordinator and voice. */
 	readonly build: (scope: CodexWorkbenchTabSessionScope) => BuiltTabSession;
 	/** Build one workhorse of a session. */

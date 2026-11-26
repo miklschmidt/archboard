@@ -12,6 +12,7 @@ describe("codex workhorse start profile", () => {
 
 		expect(Object.keys(params)).toEqual([
 			"model",
+			"serviceTier",
 			"config",
 			"cwd",
 			"runtimeWorkspaceRoots",
@@ -25,8 +26,9 @@ describe("codex workhorse start profile", () => {
 			"experimentalRawEvents",
 		]);
 		expect(params).toMatchObject({
-			model: "gpt-6-astra",
-			config: { model_reasoning_effort: "medium" },
+			model: "gpt-6.2-sol",
+			serviceTier: null,
+			config: { model_reasoning_effort: "high" },
 			cwd: CHECKOUT_ROOT,
 			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
 			serviceName: TEST_INSTRUCTIONS.workhorse.identity.serviceName,
@@ -45,7 +47,6 @@ describe("codex workhorse start profile", () => {
 		const intentionallyOmitted = [
 			"modelProvider",
 			"allowProviderModelFallback",
-			"serviceTier",
 			"approvalPolicy",
 			"approvalsReviewer",
 			"sandbox",
@@ -61,5 +62,29 @@ describe("codex workhorse start profile", () => {
 		for (const field of intentionallyOmitted) {
 			expect(Object.hasOwn(params, field)).toBe(false);
 		}
+	});
+
+	test("applies explicit host model, effort, and optional serviceTier selection", () => {
+		const withTier = createWorkhorseThreadStartParams(CHECKOUT_ROOT, TEST_INSTRUCTIONS.workhorse, {
+			model: "gpt-custom-workhorse",
+			effort: "high",
+			serviceTier: "priority",
+		});
+		expect(withTier.model).toBe("gpt-custom-workhorse");
+		expect(withTier.config).toEqual({ model_reasoning_effort: "high" });
+		expect(withTier.serviceTier).toBe("priority");
+
+		const withoutTier = createWorkhorseThreadStartParams(
+			CHECKOUT_ROOT,
+			TEST_INSTRUCTIONS.workhorse,
+			{
+				model: "gpt-custom-workhorse",
+				effort: "low",
+				serviceTier: null,
+			},
+		);
+		expect(withoutTier.model).toBe("gpt-custom-workhorse");
+		expect(withoutTier.config).toEqual({ model_reasoning_effort: "low" });
+		expect(withoutTier.serviceTier).toBeNull();
 	});
 });

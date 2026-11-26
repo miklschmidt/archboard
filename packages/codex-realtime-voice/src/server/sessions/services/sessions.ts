@@ -27,12 +27,12 @@ import { refusedResponse } from "#runtime/voice/coordinator/tools-and-work/coord
 import { createCodexThreadUnload } from "#runtime/thread-unload/operations/unload.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEventListener } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
-import type { IdentityAuthority, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
+import type { ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import { workhorseLinkKey, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { endTabSession, settleEach, stopVoice } from "#server/sessions/services/end.ts";
 import {
 	freshWorkhorseState,
-	noteActiveTurn,
+	noteWorkhorseNotification,
 	type CodexWorkbenchWorkhorse,
 	type CodexWorkbenchWorkhorseComponents,
 	type CodexWorkbenchWorkhorseState,
@@ -96,17 +96,17 @@ function notificationThread(event: TransportServerNotification): string | null {
  * Hand one notification to one session's owners, in the order they depend on each other.
  * @param session The session.
  * @param event The notification.
- * @param decoder Names threads and turns as Codex spells them.
+ * @param options Identity decoding and confirmed settings publication.
  */
 function deliver(
 	session: CodexWorkbenchTabSession,
 	event: TransportServerNotification,
-	decoder: IdentityAuthority["decoder"],
+	options: Pick<CreateCodexWorkbenchSessionsOptions, "identity" | "onWorkhorseSettingsChanged">,
 ): void {
 	const { coordinator, realtime, spokenApproval, callbacks } = session.components;
 	coordinator.onNotification(event);
 	for (const workhorse of session.workhorses.values()) {
-		noteActiveTurn(workhorse, event, decoder);
+		noteWorkhorseNotification(workhorse, event, options);
 		workhorse.components.operations.onNotification(event);
 	}
 	realtime.onNotification(event);
@@ -444,7 +444,7 @@ function createCodexWorkbenchSessions(
 				);
 			}
 			for (const session of owner === null ? every() : [owner.session]) {
-				deliver(session, event, decoder);
+				deliver(session, event, options);
 			}
 		},
 		/**

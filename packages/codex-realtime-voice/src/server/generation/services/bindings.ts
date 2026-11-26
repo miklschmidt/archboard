@@ -186,6 +186,10 @@ function approvalBindings(
 		sessions: (created) => ({
 			shownConversationOf: context.server.host.shownConversationOf,
 			resolveCheckout: context.server.host.resolveCheckout,
+			/** Publish the confirmed workhorse settings after the session records them. */
+			onWorkhorseSettingsChanged: () => {
+				publishProjection(owners);
+			},
 			/**
 			 * Settle every approval an ended tab session was still to answer.
 			 * @param id The tab session.
