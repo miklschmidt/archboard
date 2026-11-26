@@ -376,7 +376,7 @@ function parseNestedBlock(
 	modules: readonly string[],
 	block: AddressSegment,
 ): ParsedTerraformAddress | undefined {
-	if (block.key?.kind !== "string" || block.key.value === "") return undefined;
+	if (block.key?.kind !== "string") return undefined;
 	const nested: NestedBlockSelector = {
 		blockType: block.name,
 		name: block.key.value.normalize("NFC"),

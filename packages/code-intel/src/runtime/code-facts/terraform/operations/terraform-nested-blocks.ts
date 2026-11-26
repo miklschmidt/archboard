@@ -115,7 +115,7 @@ function splitLinesPreservingEndings(text: string): string[] {
 function leadingIndent(line: string): { readonly count: number; readonly blank: boolean } {
 	const content = line.replace(/\r?\n$/u, "");
 	let count = 0;
-	while (count < content.length && /\s/u.test(content[count] ?? "")) count += 1;
+	while (count < content.length && /\p{White_Space}/u.test(content[count] ?? "")) count += 1;
 	return { count, blank: count === content.length };
 }
 
@@ -272,16 +272,15 @@ function attributesDeep(body: Node | undefined): AttributeExpr[] {
 }
 
 /**
- * The non-empty unescaped value of a direct literal double-quoted `name`
- * attribute on a nested block body, rejecting template interpolations,
- * directives, and empty strings.
+ * The unescaped value of a direct literal `name` attribute on a nested block
+ * body (including `""` and interpolation-free heredocs), rejecting dynamic
+ * template interpolations and directives.
  * @param body The nested block's body.
- * @returns The unescaped non-empty literal string, or undefined when absent, empty, or non-literal.
+ * @returns The NFC-normalized literal string, or undefined when absent or non-literal.
  */
 function literalBlockName(body: Node | undefined): string | undefined {
 	const found = directAttributes(body).find((attribute) => attribute.name === "name");
-	const value = literalStringValue(found?.expression);
-	return value === undefined || value === "" ? undefined : value;
+	return literalStringValue(found?.expression);
 }
 
 /**

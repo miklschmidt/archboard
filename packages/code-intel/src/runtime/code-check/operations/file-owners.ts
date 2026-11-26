@@ -244,7 +244,7 @@ async function anchorLine(claim: AnchorClaim, reading: RepoReading): Promise<num
 			refs: reading.refs,
 		},
 	);
-	return held.status === "found" && held.file === reading.file ? (held.line ?? null) : null;
+	return held.status === "found" && readable.files.includes(held.file) ? (held.line ?? null) : null;
 }
 
 /**

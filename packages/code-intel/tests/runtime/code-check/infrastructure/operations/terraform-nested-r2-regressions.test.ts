@@ -309,14 +309,17 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
+function findingsFor(id: string) {
+	return outcome.findings.filter((f) => f.subject?.id === id);
+}
+
 test("R2 #1, #2, #9: wrong-module definition anchor, unrelated root-file anchors, and enclosing-resource message", () => {
-	const bySubject = (id: string) => outcome.findings.filter((f) => f.subject?.id === id);
-	expect(bySubject("e1").map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
-	expect(bySubject("e2").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
-	expect(bySubject("e3").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
+	expect(findingsFor("e1").map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
+	expect(findingsFor("e2").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
+	expect(findingsFor("e3").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
 	expect(outcome.skipped.filter((s) => s.subject?.id === "e3")).toEqual([]);
-	expect(bySubject("e5")).toEqual([]);
-	const enclosing = bySubject("e6");
+	expect(findingsFor("e5")).toEqual([]);
+	const enclosing = findingsFor("e6");
 	expect(enclosing.map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
 	expect(enclosing[0]?.message).toContain("enclosing Terraform resource");
 	expect(JSON.stringify(outcome)).not.toContain("r2-secret");

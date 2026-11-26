@@ -38,7 +38,10 @@ import {
 	ownersOfSite,
 } from "#runtime/code-check/evidence/operations/ownership.ts";
 import type { PartCode, ReadPart } from "#runtime/code-check/operations/part-code.ts";
-import { declarationAddress } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import {
+	declarationAddress,
+	parseTerraformAddress,
+} from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
 	terraformConfiguration,
 	type TerraformConfiguration,
@@ -100,6 +103,30 @@ function holdsDeclarationAt(
 }
 
 /**
+ * Whether a Terraform address targets a module call or a declaration inside a module call.
+ * @param symbol The binding's symbol.
+ * @returns True when module-scoped.
+ */
+function isModuleScopedAddress(symbol: string | undefined): boolean {
+	if (symbol === undefined) return false;
+	const parsed = parseTerraformAddress(symbol);
+	return parsed !== undefined && (parsed.modules.length > 0 || parsed.kind === "module");
+}
+
+/**
+ * Whether a part is bound to a module-qualified address or module call in a
+ * different Terraform root than `root`, so it must not claim declarations from
+ * `root` via shared local-module source spans.
+ * @param part The candidate part.
+ * @param root The Terraform root module being judged.
+ * @returns True when the part belongs to a different root's module instance.
+ */
+function isOtherRootModuleBinding(part: ReadPart, root: string): boolean {
+	if (part.root === undefined || part.root === root) return false;
+	return isModuleScopedAddress(part.node.binding?.symbol);
+}
+
+/**
  * Who owns each declaration of one root module.
  * @param configuration The root module's address space.
  * @param parts The read parts of the document in the root's checkout.
@@ -113,7 +140,13 @@ function ownershipIn(
 		const address = part.root === configuration.root ? addressOf(part) : undefined;
 		return address === undefined ? [] : [{ part, address }];
 	});
-	const others = ownersOf(parts.filter((part) => !addressed.some((each) => each.part === part)));
+	const others = ownersOf(
+		parts.filter(
+			(part) =>
+				!addressed.some((each) => each.part === part) &&
+				!isOtherRootModuleBinding(part, configuration.root),
+		),
+	);
 	return (address) => {
 		const holding = addressed.filter((each) => holds(each.address, address));
 		const longest = Math.max(...holding.map((each) => each.address.length));

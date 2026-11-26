@@ -40,17 +40,26 @@ interface SymbolLocation {
 }
 
 /**
- * The canonical path of a checkout-relative file if it stays strictly inside
- * `canonicalRoot` after resolving symbolic links.
+ * Whether a relative path stays strictly inside its base directory.
+ * @param rel Relative path computed from `canonicalRoot`.
+ * @returns True when non-empty and not escaping upward.
+ */
+function isInsideRoot(rel: string): boolean {
+	return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+}
+
+/**
+ * The canonical path of a checkout-relative regular file if it stays strictly
+ * inside `canonicalRoot` after resolving symbolic links.
  * @param canonicalRoot The checkout's realpath.
  * @param relative The file path, relative to the checkout.
- * @returns The realpath inside the checkout, or undefined when outside or missing.
+ * @returns The realpath inside the checkout, or undefined when outside, missing, or not a file.
  */
 function containedRealPath(canonicalRoot: string, relative: string): string | undefined {
 	try {
 		const real = fs.realpathSync.native(path.join(canonicalRoot, relative));
 		const rel = path.relative(canonicalRoot, real);
-		return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel) ? real : undefined;
+		return isInsideRoot(rel) && fs.statSync(real).isFile() ? real : undefined;
 	} catch {
 		return undefined;
 	}

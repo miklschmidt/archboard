@@ -5,7 +5,7 @@
 // HCL heredoc tab/CRLF/whitespace-only fidelity, and NFC string normalization.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
@@ -35,6 +35,16 @@ const MOD_TF = [
 	"  subnet_id                 = azurerm_subnet.app.id",
 	"  network_security_group_id = azurerm_network_security_group.nsg.id",
 	"}",
+	'resource "azurerm_public_ip" "shared" {',
+	'  name = "shared"',
+	"}",
+	'resource "azurerm_application_gateway" "ingress" {',
+	'  name = "ingress"',
+	"  backend_address_pool {",
+	'    name  = "pool"',
+	"    fqdns = [azurerm_public_ip.shared.fqdn]",
+	"  }",
+	"}",
 ].join("\n");
 
 const INFRA_MAIN_TF = [
@@ -61,6 +71,25 @@ const INFRA_MAIN_TF = [
 	"    ",
 	"\t\t  more",
 	"    EOF",
+	"  }",
+	"  http_listener {",
+	"    name = <<-EOF",
+	"\u0085nel-stripped",
+	"    EOF",
+	"  }",
+	"  http_listener {",
+	"    name = <<-EOF",
+	"\ufeffbom-kept",
+	"    EOF",
+	"  }",
+	"  http_listener {",
+	'    name = ""',
+	"  }",
+	"  frontend_port {",
+	'    name = ""',
+	"  }",
+	"  frontend_port {",
+	'    name = ""',
 	"  }",
 	"}",
 ].join("\n");
@@ -141,6 +170,7 @@ beforeAll(async () => {
 		"infra/crlf.tf": INFRA_CRLF_TF,
 		"infra/consumer.tf": INFRA_CONSUMER_TF,
 	});
+	symlinkSync("main.tf", join(repoDir, "infra", "alias.tf"));
 	git(scratch, repoDir, "init", "-q", "-b", "main");
 	git(scratch, repoDir, "remote", "add", "origin", `https://${REPO}.git`);
 	git(scratch, repoDir, "add", "-A");
@@ -155,7 +185,13 @@ beforeAll(async () => {
 			lifecycle: "current",
 			content: {
 				nodes: [
-					node("RootA", "Root A", "root-a", "module.net"),
+					node(
+						"PoolA",
+						"Pool A",
+						"root-a",
+						'module.net.azurerm_application_gateway.ingress.backend_address_pool["pool"]',
+					),
+					node("IpB", "IP B", "root-b", "module.net.azurerm_public_ip.shared"),
 					node("SubB", "Subnet B", "root-b", "module.net.azurerm_subnet.app"),
 					node("NsgB", "NSG B", "root-b", "module.net.azurerm_network_security_group.nsg"),
 					node("RemMod", "Remote mod", "infra/main.tf", "module.remote"),
@@ -188,6 +224,34 @@ beforeAll(async () => {
 						"GW tab heredoc",
 						"infra/main.tf",
 						'azurerm_application_gateway.gw.http_listener["device-tab\\n    \\n  more\\n"]',
+						"GwBox",
+					),
+					node(
+						"GwNel",
+						"GW NEL heredoc",
+						"infra/main.tf",
+						'azurerm_application_gateway.gw.http_listener["nel-stripped\\n"]',
+						"GwBox",
+					),
+					node(
+						"GwBom",
+						"GW BOM heredoc",
+						"infra/main.tf",
+						'azurerm_application_gateway.gw.http_listener["\ufeffbom-kept\\n"]',
+						"GwBox",
+					),
+					node(
+						"GwEmp",
+						"GW empty unique",
+						"infra/main.tf",
+						'azurerm_application_gateway.gw.http_listener[""]',
+						"GwBox",
+					),
+					node(
+						"GwEmpD",
+						"GW empty dup",
+						"infra/main.tf",
+						'azurerm_application_gateway.gw.frontend_port[""]',
 						"GwBox",
 					),
 					node(
@@ -241,11 +305,14 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("R3 #1, #3, #4: plan-only resource is rejected as a definition and whole-resource reference anchors warn ANCHOR_MISMATCH while keeping browser use line", async () => {
-	const bySubject = (id: string) => outcome.findings.filter((f) => f.subject?.id === id);
-	expect(bySubject("e2").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
-	expect(bySubject("e3").map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
-	expect(bySubject("e3")[0]?.message).toContain("enclosing Terraform resource");
+function findingsFor(id: string) {
+	return outcome.findings.filter((f) => f.subject?.id === id);
+}
+
+test("R3 #1, #3, #4 & R4 #3: plan-only resource is rejected, whole-resource reference warns while keeping browser line, and tracked symlink keeps highlight", async () => {
+	expect(findingsFor("e2").map((f) => f.code)).toEqual(["ANCHOR_SYMBOL_MISSING"]);
+	expect(findingsFor("e3").map((f) => f.code)).toEqual(["ANCHOR_MISMATCH"]);
+	expect(findingsFor("e3")[0]?.message).toContain("enclosing Terraform resource");
 
 	// Verify readFileOwners keeps the reference line (line 6) in infra/consumer.tf for e3.
 	const canonicalVault = join(scratch, "canonical-vault");
@@ -290,6 +357,19 @@ test("R3 #1, #3, #4: plan-only resource is rejected as a definition and whole-re
 						symbol: "azurerm_application_gateway.gw",
 					},
 				},
+				{
+					id: "Gateway/GwLst#e4",
+					order: 2,
+					kind: "http",
+					effect: "query",
+					emphasis: "normal",
+					to: "Gateway#GwCore",
+					anchor: {
+						repo: REPO,
+						path: "infra/alias.tf",
+						symbol: 'azurerm_application_gateway.gw.http_listener["device"]',
+					},
+				},
 			],
 		}),
 	);
@@ -316,6 +396,19 @@ test("R3 #1, #3, #4: plan-only resource is rejected as a definition and whole-re
 	expect(owners.owners.anchors).toContainEqual({
 		subject: "Gateway/GwLst#e3",
 		symbol: "azurerm_application_gateway.gw",
+		line: 6,
+	});
+	const symlinkOwners = await readFileOwners({
+		vault: canonicalVault,
+		repo: REPO,
+		path: "infra/alias.tf",
+		model: "Gateway",
+		signal: new AbortController().signal,
+	});
+	if (!symlinkOwners.success) throw new Error(JSON.stringify(symlinkOwners));
+	expect(symlinkOwners.owners.anchors).toContainEqual({
+		subject: "Gateway/GwLst#e4",
+		symbol: 'azurerm_application_gateway.gw.http_listener["device"]',
 		line: 6,
 	});
 });
@@ -369,12 +462,19 @@ test("R3 #1: judgeTerraformDeclaration refuses to borrow a join from another roo
 	expect(verdict).toBe("outside");
 });
 
-test("R3 #5, #6: heredoc tabs/CRLF/whitespace-only lines match HCL, NFC duplicates warn, and same name across distinct block types resolves", () => {
-	const bySubject = (id: string) => outcome.findings.filter((f) => f.subject?.id === id);
-	expect(bySubject("GwLst")).toEqual([]);
-	expect(bySubject("GwPool")).toEqual([]);
-	expect(bySubject("GwTab")).toEqual([]);
-	expect(bySubject("GwCrlf")).toEqual([]);
-	expect(bySubject("GwNfc").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
-	expect(bySubject("GwNfc")[0]?.message).toContain("ambiguous");
+test("R3 #5, #6 & R4 #1, #4, #5: cross-root evidence stays isolated, heredocs match HCL White_Space/tabs/CRLF, NFC and empty-name duplicates warn, unique empty name resolves", () => {
+	expect(
+		outcome.findings.filter((f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "IpB"),
+	).toEqual([]);
+	expect(findingsFor("GwLst")).toEqual([]);
+	expect(findingsFor("GwPool")).toEqual([]);
+	expect(findingsFor("GwTab")).toEqual([]);
+	expect(findingsFor("GwNel")).toEqual([]);
+	expect(findingsFor("GwBom")).toEqual([]);
+	expect(findingsFor("GwEmp")).toEqual([]);
+	expect(findingsFor("GwCrlf")).toEqual([]);
+	expect(findingsFor("GwNfc").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
+	expect(findingsFor("GwNfc")[0]?.message).toContain("ambiguous");
+	expect(findingsFor("GwEmpD").map((f) => f.code)).toEqual(["BINDING_SYMBOL_MISSING"]);
+	expect(findingsFor("GwEmpD")[0]?.message).toContain("ambiguous");
 });

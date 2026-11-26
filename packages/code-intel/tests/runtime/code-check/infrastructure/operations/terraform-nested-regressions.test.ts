@@ -353,8 +353,12 @@ test("enclosing whole-resource anchor warns even with a whole-resource child, co
 	expect(findings.filter((f) => f.subject === "CafeEnv")).toEqual([]);
 	expect(findings.filter((f) => f.subject === "CafeDir")).toEqual([]);
 	expect(findings.filter((f) => f.subject === "e6")).toEqual([]);
-	expect(findings).toContainEqual({ code: "BINDING_SYMBOL_MISSING", subject: "CafeEmp" });
-	expect(outcome.skipped.filter((s) => s.subject?.id === "CafeEmp")).toEqual([]);
+	expect(findings.filter((f) => f.subject === "CafeEmp")).toEqual([]);
+	expect(
+		outcome.skipped.filter(
+			(s) => s.subject?.id === "CafeEmp" && s.reason === "expression-not-followed",
+		),
+	).toEqual([]);
 
 	const tsUndrawn = outcome.findings.filter(
 		(f) => f.code === "RELATIONSHIP_UNDRAWN" && f.subject?.id === "TsTgt",

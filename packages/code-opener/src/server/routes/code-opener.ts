@@ -38,6 +38,7 @@ import { resolveInVault } from "#server/projections/resolve-target.ts";
 import { parseActivationRequest } from "#server/projections/activation-request.ts";
 import { canonicalModelTarget } from "#server/projections/model-target.ts";
 import { requestedPathBinding } from "#server/projections/named-path.ts";
+import { isBodyParserFailure, statusFor } from "#server/projections/route-status.ts";
 import { symbolLocation } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
@@ -55,26 +56,10 @@ interface RouteFailure {
 	error: string;
 }
 
-const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set(
-	"charset.unsupported encoding.unsupported entity.parse.failed entity.too.large entity.verify.failed request.aborted request.size.invalid stream.encoding.set stream.not.readable".split(
-		" ",
-	),
-);
-
-/** HTTP statuses for the failure codes that are not a plain 422 refusal. */
-const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
-	CROSS_ORIGIN_REFUSED: 403,
-	MODEL_UNAVAILABLE: 404,
-	CHECKOUT_IDENTITY_CHANGED: 409,
-	CHECKOUT_ON_OTHER_REF: 409,
-	OPENER_SPAWN_FAILED: 500,
-	OPENER_CONFIG_INVALID: 500,
-};
-
 /**
  * Hands the request to the next handler; the preguard only refuses, it never answers a success.
- * @param _request The request, unused here.
- * @param _response The response, unused here.
+ * @param _request Unused.
+ * @param _response Unused.
  * @param next Continues to the Archboard server's own handler.
  */
 const pass: RequestHandler = (_request, _response, next) => {
@@ -127,27 +112,27 @@ function canonicalBinding(_vault: string, _paneKey: string, _subjectId: string):
 
 const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {
 	/**
-	 * Resolves a binding against a fresh checkout snapshot limited to that binding.
+	 * Resolves a binding against a fresh checkout snapshot.
 	 * @param binding The code binding to resolve.
-	 * @param signal Cancels the snapshot when the request is abandoned.
+	 * @param signal Cancels the snapshot when abandoned.
 	 * @param vault The vault the binding was read from.
-	 * @returns The local code target, or why it could not be resolved.
+	 * @returns The local code target, or why it failed.
 	 */
 	resolveTarget: (binding, signal, vault) => resolveInVault(vault, binding, signal),
 	launch: launchOpener,
 	/**
-	 * Runs checkout work directly; the Archboard server supplies request-scoped scheduling in production.
-	 * @param _request The request, unused here.
-	 * @param _response The response, unused here.
-	 * @param _name The work's name, unused here.
+	 * Runs checkout work directly.
+	 * @param _request Unused.
+	 * @param _response Unused.
+	 * @param _name Unused.
 	 * @param work The checkout work.
 	 * @returns The work's result.
 	 */
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	/**
-	 * Runs mutation work directly; the Archboard server supplies request-scoped scheduling in production.
-	 * @param _request The request, unused here.
-	 * @param _name The work's name, unused here.
+	 * Runs mutation work directly.
+	 * @param _request Unused.
+	 * @param _name Unused.
 	 * @param work The mutation work.
 	 * @returns The work's result.
 	 */
@@ -231,7 +216,7 @@ async function launchBoundTarget(
 		const fallback = location ? { ...binding, path: location.relativePath } : binding;
 		return sendFailure(response, launched, statusFor(launched.code), fallback, location?.line);
 	}
-	response.json(openedReply(target));
+	response.json(openedReply(target, location));
 }
 
 /**
@@ -284,7 +269,7 @@ async function openNamedPath(
 	const location = await symbolLocation(named.binding, target, signal);
 	const launched = await launchAtTarget(target, dependencies.launch, location, request.line);
 	if (!launched.ok) return sendFailure(response, launched);
-	response.json(openedReply(target));
+	response.json(openedReply(target, location));
 }
 
 /**
@@ -298,15 +283,6 @@ function asyncEndpoint(
 	return (request, response, next) => {
 		void handler(request, response).catch((error) => setImmediate(next, error));
 	};
-}
-
-/**
- * Maps a failure code to the HTTP status a route answers with.
- * @param code The failure code.
- * @returns The status; refusals without a specific status are 422.
- */
-function statusFor(code: CodeTargetFailureCode): number {
-	return FAILURE_STATUSES[code] ?? 422;
 }
 
 /**
@@ -370,35 +346,26 @@ function openable(
 	return { ok: true, target };
 }
 
+/** Resolved file location returned by `symbolLocation`. */
+interface OpenedLocation {
+	readonly relativePath: string;
+}
+
 /**
  * What the browser is told about code that was opened.
  * @param target The local target that was opened.
+ * @param location Optional resolved symbol file location.
  * @returns The success reply, with the two refs when the checkout was on another one.
  */
-function openedReply(target: LocalCodeTarget): CodeTargetOpenSuccess {
+function openedReply(target: LocalCodeTarget, location?: OpenedLocation): CodeTargetOpenSuccess {
 	return {
 		success: true,
 		code: "CODE_TARGET_OPENED",
 		repository: target.repository,
-		path: target.path,
-		kind: target.kind,
+		path: location?.relativePath ?? target.path,
+		kind: location ? "file" : target.kind,
 		...(target.otherRef === undefined ? {} : { otherRef: target.otherRef }),
 	};
-}
-
-/**
- * Tells whether a thrown value is one of the body parser's own failures.
- * @param error The value the body parser passed to the error pipeline.
- * @returns True when the error's type is a known body-parser failure.
- */
-function isBodyParserFailure(error: unknown): boolean {
-	return (
-		typeof error === "object" &&
-		error !== null &&
-		"type" in error &&
-		typeof error.type === "string" &&
-		BODY_PARSER_FAILURES.has(error.type)
-	);
 }
 
 /**
@@ -438,8 +405,7 @@ export function createCodeOpenerPreguard(): Router {
 	router.delete("/api/settings/opener", createBrowserOriginGuard("mutation"), pass);
 	router.post("/api/settings/opener/test", createBrowserOriginGuard("mutation"), body, pass);
 	router.post("/api/code-targets/open", createBrowserOriginGuard("mutation"), body, pass);
-	router.use(bodyFailure());
-	return router;
+	return router.use(bodyFailure());
 }
 
 /**

@@ -128,6 +128,10 @@ describe("Terraform nested-block containment", () => {
 			"a Terraform resource with a Unicode NFD combining-mark identifier",
 			at("infra/main.tf", 'aws_s3_bucket.cafe\u0301.cors_rule["edge"]'),
 		],
+		[
+			"an empty quoted nested-block name",
+			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener[""]'),
+		],
 	])("leaves source containment to the parts of %s", (_label, binding) => {
 		expect(containment(binding)).toEqual([]);
 	});
@@ -147,10 +151,6 @@ describe("Terraform nested-block containment", () => {
 		[
 			"a nested block without a quoted name selector",
 			at("infra/main.tf", "azurerm_application_gateway.ingress.http_listener"),
-		],
-		[
-			"an empty quoted nested-block name",
-			at("infra/main.tf", 'azurerm_application_gateway.ingress.http_listener[""]'),
 		],
 		[
 			"an invalid escape sequence in a nested-block name",
