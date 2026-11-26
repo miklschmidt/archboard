@@ -244,7 +244,7 @@ async function startWorkhorseThread(
 		throw refuseStartFailure(context, transaction, error);
 	}
 	try {
-		return validateWorkhorseStartResponse(response, context.options);
+		return validateWorkhorseStartResponse(response, context.options, params);
 	} catch (error) {
 		markUnknown(
 			context.options,

@@ -1,4 +1,5 @@
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { EpochExecutionProof } from "#runtime/epoch/store/contract.ts";
 import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
 import type {
@@ -33,25 +34,48 @@ interface ValidatedWorkhorseStart {
 }
 
 /**
+ * Identify model settings that Codex substituted in its start response.
+ * @param response - The decoded response.
+ * @param requested - The thread/start parameters sent to Codex.
+ * @returns One entry per model setting, true when it does not match.
+ */
+function modelSettingsMismatches(
+	response: WorkhorseStartResponse,
+	requested: SessionParams<"thread/start">,
+): Readonly<Record<string, boolean>> {
+	return {
+		model: response.model !== requested.model,
+		// Codex may leave reasoning effort unreported in the start response.
+		reasoningEffort:
+			response.reasoningEffort !== null &&
+			response.reasoningEffort !== requested.config?.["model_reasoning_effort"],
+		serviceTier:
+			response.serviceTier?.length === 0 ||
+			(typeof requested.serviceTier === "string" && response.serviceTier !== requested.serviceTier),
+	};
+}
+
+/**
  * Every field of a thread/start response that must match the authored workhorse profile, named so
  * a refusal can say exactly which ones did not. The decoded response already proves each field is
  * present; these checks prove it holds the value the workbench asked for.
  * @param response - The decoded thread/start response.
  * @param options - The start options carrying the checkout root.
  * @param threadId - The thread identity adopted from the response.
+ * @param requested - The thread/start parameters sent to Codex.
  * @returns One entry per field, true where the field does not match.
  */
 function startProfileMismatches(
 	response: WorkhorseStartResponse,
 	options: CodexWorkhorseStartOptions,
 	threadId: ThreadId,
+	requested: SessionParams<"thread/start">,
 ): Readonly<Record<string, boolean>> {
 	return {
 		"thread.id": response.thread.id !== threadId,
-		model: response.model.length === 0,
+		...modelSettingsMismatches(response, requested),
 		modelProvider: response.modelProvider.length === 0,
 		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
-		serviceTier: response.serviceTier?.length === 0,
 		cwd: response.cwd !== options.checkoutRoot,
 		runtimeWorkspaceRoots:
 			response.runtimeWorkspaceRoots.length !== 1 ||
@@ -71,15 +95,17 @@ function startProfileMismatches(
  * authored profile is not one the workbench will drive.
  * @param response - The decoded thread/start response.
  * @param options - The start options carrying the identity authority and checkout root.
+ * @param requested - The thread/start parameters sent to Codex.
  * @returns The thread, its adopted identity and the start facts.
  * @throws {Error} When any field does not match the authored profile.
  */
 function validateWorkhorseStartResponse(
 	response: WorkhorseStartResponse,
 	options: CodexWorkhorseStartOptions,
+	requested: SessionParams<"thread/start">,
 ): ValidatedWorkhorseStart {
 	const threadId = options.identity.decoder.parseThreadId(response.thread.id);
-	const mismatches = Object.entries(startProfileMismatches(response, options, threadId))
+	const mismatches = Object.entries(startProfileMismatches(response, options, threadId, requested))
 		.filter(([, mismatched]) => mismatched)
 		.map(([field]) => field);
 	if (mismatches.length > 0) {
