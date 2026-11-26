@@ -1,88 +1,135 @@
 ---
-// The last sections of the mock shell's right panel: the legend of the shop's picture, as the
-// shell shows it on the shop under its default lens. The kinds of the parts, then the
-// relationships: the lens select, bounded sub-groups for kinds, effects, and line marks that no
-// reader hides. The shop's lines are all HTTP or storage, so the default lens hides none of them,
-// and the shell shows no hidden-by-lens sub-group.
+// The last sections of the mock shell's right panel: the legend of a picture, as the shell shows
+// it. The kinds of the parts, then the relationships: the lens select, bounded sub-groups for
+// kinds, effects, and line marks that no reader hides, then the groups. A picture whose lines wear
+// no kind, as a sequence's, has no relationships.
+//
+// By default it explains the shop's picture under its default lens. The shop's lines are all HTTP
+// or storage, so the default lens hides none of them, and the shell shows no hidden-by-lens
+// sub-group. A presented walkthrough's column shows the same legend, but it only explains
+// (`explains`): no lens select, no eyes, and its group tags press nothing.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import SectionLabel from "./SectionLabel.astro";
-import type { Kind } from "../../lib/icons";
+import { kinds as looks, type Kind } from "../../lib/icons";
 
-const kinds: [Kind, string][] = [
-	["service", "Service"],
-	["datastore", "Data store"],
-	["cache", "Cache"],
-	["external", "External"],
-	["ui", "User interface"],
-];
-const lines = [
-	["HTTP", "var(--sky)"],
-	["Storage", "var(--emerald)"],
-] as const;
+interface Picture {
+	readonly kinds: readonly Kind[];
+	/** Each kind of line, with its colour. */
+	readonly lines: readonly (readonly [string, string])[];
+	readonly marks: readonly (keyof typeof markNames)[];
+}
+
+const markNames = { emphasis: "More emphasis", traffic: "Illustrated traffic" } as const;
+
+/** The legends the site mocks, each with what its picture draws, in the policy's order. */
+const pictures = {
+	shop: {
+		kinds: ["service", "datastore", "cache", "external", "ui"],
+		lines: [
+			["HTTP", "var(--sky)"],
+			["Storage", "var(--emerald)"],
+		],
+		marks: ["traffic"],
+	},
+	checkout: {
+		kinds: ["service", "function", "route", "datastore", "cache", "external", "ui"],
+		lines: [
+			["HTTP", "var(--sky)"],
+			["Storage", "var(--emerald)"],
+			["Async", "var(--amber)"],
+		],
+		marks: ["emphasis", "traffic"],
+	},
+	sequence: {
+		kinds: ["service", "function", "route", "datastore", "external", "ui"],
+		lines: [],
+		marks: [],
+	},
+} as const satisfies Record<string, Picture>;
+
+interface Props {
+	/** The picture the legend explains. */
+	picture?: keyof typeof pictures;
+	/** The legend only explains, as in a presented walkthrough: no lens and no eyes. */
+	explains?: boolean;
+}
+
+const { picture = "shop", explains = false } = Astro.props;
+const { kinds, lines, marks } = pictures[picture];
 ---
 
 <div class="legend">
 	<p class="head"><SectionLabel icon="shapes" title="Legend" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
 	<ul class="grid">
 		{
-			kinds.map(([kind, name]) => (
+			kinds.map((kind) => (
 				<li>
-					<KindChip kind={kind} size={24} look="panel" /> {name}
+					<KindChip kind={kind} size={24} look="panel" /> {looks[kind].name}
 				</li>
 			))
 		}
 	</ul>
-	<p class="head"><SectionLabel icon="share" title="Relationships" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
-	<div class="lens-select">
-		<span class="lens-prefix">Lens</span>
-		<span class="lens-value">Main lines</span>
-		<Icon name="chevronDown" size={16} class="lens-chev" />
-	</div>
-	<div class="group">
-		<p class="subhead">Kinds</p>
-		<ul class="rows">
-			{
-				lines.map(([name, color]) => (
-					<li>
-						<span class="line" style={`--c: ${color}`} />
-						{name}
-						<Icon name="eye" size={16} class="eye" />
-					</li>
-				))
-			}
-		</ul>
-	</div>
-	<div class="group">
-		<p class="subhead">Effects</p>
-		<ul class="rows">
-			<li>
-				<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
-					<path d="M1 14H17" class="stroke" />
-					<path d="M17 6.5L32 14L17 21.5Z" class="fill" />
-					<path d="M33.5 5V23" class="stroke" />
-				</svg>
-				Mutation
-				<Icon name="eye" size={16} class="eye" />
-			</li>
-			<li>
-				<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
-					<circle cx="6" cy="14" r="4.2" class="stroke" />
-					<path d="M11.3 14H18" class="stroke" />
-					<path d="M18.3 14Q21.5 7.7 25.4 8.3L34 14L25.4 19.7Q21.5 20.3 18.3 14Z" class="stroke" />
-					<circle cx="24.7" cy="14" r="1.4" class="fill" />
-				</svg>
-				Query
-				<Icon name="eye" size={16} class="eye" />
-			</li>
-		</ul>
-	</div>
-	<div class="group">
-		<p class="subhead">Line marks</p>
-		<ul class="grid marks">
-			<li><span class="line traffic"></span> Illustrated traffic</li>
-		</ul>
-	</div>
+	{
+		lines.length > 0 && (
+			<>
+				<p class="head"><SectionLabel icon="share" title="Relationships" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
+				{!explains && (
+					<div class="lens-select">
+						<span class="lens-prefix">Lens</span>
+						<span class="lens-value">Main lines</span>
+						<Icon name="chevronDown" size={16} class="lens-chev" />
+					</div>
+				)}
+				<div class="group">
+					<p class="subhead">Kinds</p>
+					<ul class="rows">
+						{lines.map(([name, color]) => (
+							<li>
+								<span class="line" style={`--c: ${color}`} />
+								{name}
+								{!explains && <Icon name="eye" size={16} class="eye" />}
+							</li>
+						))}
+					</ul>
+				</div>
+				<div class="group">
+					<p class="subhead">Effects</p>
+					<ul class="rows">
+						<li>
+							<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
+								<path d="M1 14H17" class="stroke" />
+								<path d="M17 6.5L32 14L17 21.5Z" class="fill" />
+								<path d="M33.5 5V23" class="stroke" />
+							</svg>
+							Mutation
+							{!explains && <Icon name="eye" size={16} class="eye" />}
+						</li>
+						<li>
+							<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
+								<circle cx="6" cy="14" r="4.2" class="stroke" />
+								<path d="M11.3 14H18" class="stroke" />
+								<path d="M18.3 14Q21.5 7.7 25.4 8.3L34 14L25.4 19.7Q21.5 20.3 18.3 14Z" class="stroke" />
+								<circle cx="24.7" cy="14" r="1.4" class="fill" />
+							</svg>
+							Query
+							{!explains && <Icon name="eye" size={16} class="eye" />}
+						</li>
+					</ul>
+				</div>
+				<div class="group">
+					<p class="subhead">Line marks</p>
+					<ul class="grid marks">
+						{marks.map((mark) => (
+							<li>
+								<span class:list={["line", mark]} /> {markNames[mark]}
+							</li>
+						))}
+					</ul>
+				</div>
+			</>
+		)
+	}
 	<p class="head"><SectionLabel icon="priceTag" title="Groups" /><span class="fold"><Icon name="chevronDown" size={16} /></span></p>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
@@ -198,6 +245,10 @@ const lines = [
 		width: 24px;
 		height: 2px;
 		background: var(--c);
+	}
+	.emphasis {
+		height: 4px;
+		background: var(--neutral);
 	}
 	.traffic {
 		height: 3px;

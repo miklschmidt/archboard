@@ -2,10 +2,12 @@
 // A walkthrough playing over real drawings: the example shop's "How an order is placed today",
 // in the column the shell presents a walkthrough in. Each step selects its parts with the
 // renderer's own gold ring and dims the rest. The column holds the rail, the step's number, its
-// heading and words, and the walkthrough's name, then the Narrate key and the keys that step.
+// heading and words, and the walkthrough's name, then the legend of the step's picture, which only
+// explains. Pinned under what scrolls are the Narrate key and the keys that step.
 // While the voice narrates, the key hangs up, and the voice box stands low over the picture with
 // the orb and the words as they are said. In the product the Codex voice speaks them.
 import Icon from "../Icon.astro";
+import PanelLegend from "../window/PanelLegend.astro";
 import { drawings, inline } from "../../lib/diagrams";
 import { walkthrough } from "../../lib/walkthrough";
 
@@ -39,29 +41,33 @@ const first = walkthrough.beats[0];
 		</div>
 	</div>
 	<div class="box">
-		<nav class="rail" aria-label="Steps">
-			{
-				walkthrough.beats.map((beat, index) => (
-					<button
-						type="button"
-						class:list={["seg", { "is-on": index === 0 }]}
-						aria-current={index === 0 ? "step" : undefined}
-						aria-label={`Step ${index + 1}: ${beat.title}`}
-						title={`Step ${index + 1}: ${beat.title}`}
-					/>
-				))
-			}
-		</nav>
-		<div class="step">
-			<p class="figure" aria-hidden="true">
-				<span class="number" data-step-number>1</span>
-				<span class="mono of">of {walkthrough.beats.length}</span>
-			</p>
-			<div class="words">
-				<p class="beat-title" data-beat-title aria-live="polite">{first?.title}</p>
-				<p class="subtitle" data-subtitle>{first?.narrative}</p>
-				<p class="name">{walkthrough.name}</p>
+		<div class="scroll">
+			<nav class="rail" aria-label="Steps">
+				{
+					walkthrough.beats.map((beat, index) => (
+						<button
+							type="button"
+							class:list={["seg", { "is-on": index === 0 }]}
+							aria-current={index === 0 ? "step" : undefined}
+							aria-label={`Step ${index + 1}: ${beat.title}`}
+							title={`Step ${index + 1}: ${beat.title}`}
+						/>
+					))
+				}
+			</nav>
+			<div class="step">
+				<p class="figure" aria-hidden="true">
+					<span class="number" data-step-number>1</span>
+					<span class="mono of">of {walkthrough.beats.length}</span>
+				</p>
+				<div class="words">
+					<p class="beat-title" data-beat-title aria-live="polite">{first?.title}</p>
+					<p class="subtitle" data-subtitle>{first?.narrative}</p>
+					<p class="name">{walkthrough.name}</p>
+				</div>
 			</div>
+			<div class="legend" data-legend="architecture"><PanelLegend picture="checkout" explains /></div>
+			<div class="legend" data-legend="sequence" hidden><PanelLegend picture="sequence" explains /></div>
 		</div>
 		<div class="foot">
 			<button type="button" class="narrate" data-narrate aria-label="Narrate">
@@ -240,14 +246,29 @@ const first = walkthrough.beats[0];
 		border-radius: 4px 0 32px 4px / 4px 0 29px 4px;
 	}
 	/* The column, as the shell presents a walkthrough: the panel's chrome with a rule on its
-	   left edge, 20px of padding and 20px between its parts. */
+	   left edge. It is as high as the picture beside it, so it sizes as if empty. */
 	.box {
+		display: flex;
+		flex-direction: column;
+		contain: size;
+		background: var(--chrome);
+		box-shadow: inset 1px 0 0 var(--rule);
+	}
+	/* What scrolls: 20px of padding and 20px between its parts, with the words fading out over
+	   their last 12px above the keys. */
+	.scroll {
+		flex: 1;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
 		padding: 20px;
-		background: var(--chrome);
-		box-shadow: inset 1px 0 0 var(--rule);
+		overflow-y: auto;
+		mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent);
+	}
+	/* The legend of the step's picture stands at the bottom of what scrolls. */
+	.legend {
+		margin-top: auto;
 	}
 	/* One segment for each step: the steps before the one shown in gold, the ones after it in
 	   muted ink, and the step shown as a taller piece of gold. */
@@ -293,7 +314,6 @@ const first = walkthrough.beats[0];
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
 		gap: 0 16px;
-		flex: 1;
 	}
 	/* The step's number, as the sheet number of a drawing: the figure over "of N", with a rule on
 	   its right. */
@@ -346,9 +366,11 @@ const first = walkthrough.beats[0];
 		text-overflow: ellipsis;
 	}
 	.foot {
+		flex: none;
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
+		padding: 0 20px 20px;
 	}
 	/* The Narrate key: a pill sunk into the column, with the gold circle of the primary action at
 	   its start. While the voice narrates it is the red hang-up key. */
@@ -498,6 +520,9 @@ const first = walkthrough.beats[0];
 			min-height: 0;
 			padding: 16px 16px 112px;
 		}
+		.box {
+			contain: none;
+		}
 		.words {
 			min-height: 240px;
 		}
@@ -537,6 +562,7 @@ const first = walkthrough.beats[0];
 		const select = (beat: Beat) => {
 			stage.dataset["grammar"] = beat.grammar;
 			for (const view of stage.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(beat.grammar)));
+			for (const legend of root.querySelectorAll<HTMLElement>("[data-legend]")) legend.hidden = legend.dataset["legend"] !== beat.grammar;
 			for (const lit of figure.querySelectorAll(".is-lit, .is-selected")) lit.classList.remove("is-lit", "is-selected");
 			figure.classList.toggle("is-focused", beat.selection.length > 0);
 			const standing = new Set(beat.selection);
