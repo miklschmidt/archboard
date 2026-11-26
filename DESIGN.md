@@ -1088,8 +1088,8 @@ the first step. It stays a key, so that focus is not left on nothing. A recordin
 because nobody can press anything in the video.
 
 Every step stands in one cell. So the cell is as high as its highest step, and stepping never
-moves the foot of the column. A step is handed to the next over 520ms, and nothing else in the
-column moves. The step shown leaves first and fast. When the reader steps on, it leaves to the
+moves the foot of the column. A new step opens at the top of the scroll. A step is handed to the
+next over 520ms. The step shown leaves first and fast. When the reader steps on, it leaves to the
 left. When the reader goes back, it leaves to the right. The number rolls up or down the same
 way, like the digit of a flip board.
 

@@ -26,6 +26,7 @@
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	type CSSProperties,
 	type JSX,
@@ -104,6 +105,15 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const count = walkthrough.beats.length;
 	usePresentationKeys({ index, count, go: onGo, leave: onLeave }, true);
 	const box = useFocusWhenOpened();
+	const scroll = useRef<HTMLDivElement>(null);
+	const scrolledFor = useRef(index);
+	// A new step opens at its heading, however far down the legend a reader scrolled, whether a
+	// key or the voice stepped on.
+	useLayoutEffect(() => {
+		if (scrolledFor.current === index) return;
+		scrolledFor.current = index;
+		if (scroll.current !== null) scroll.current.scrollTop = 0;
+	}, [index]);
 	const previous = useCallback((): void => {
 		onGo(Math.max(0, index - 1));
 	}, [onGo, index]);
@@ -126,6 +136,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 				className="flex min-h-0 flex-1 flex-col outline-none"
 			>
 				<div
+					ref={scroll}
 					data-slot="semantic-presentation-scroll"
 					className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto [mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent)] p-5"
 				>
